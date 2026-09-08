@@ -1,0 +1,172 @@
+{
+  "dza_peanut_butter": {
+    "computed_pillars": null,
+    "engine_confidence": 0.6,
+    "engine_score": 0.579,
+    "engine_verdict": "CONDITIONAL-GO",
+    "insufficient_pillars": null,
+    "pillar_values": {
+      "competition": 0.57,
+      "market": 0.445,
+      "profit": null,
+      "regulatory": 1.0,
+      "risk": null
+    },
+    "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "fettuccine": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.122,
+      "market": 0.831,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.55,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "germany_dates": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.156,
+      "market": 0.901,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.65,
+    "view_verdict": "CONDITIONAL-GO",
+    "view_verdict_label": "دخول مشروط"
+  },
+  "japan_honey": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.29,
+      "market": 0.773,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.55,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "jordan_milk": {
+    "computed_pillars": 1,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": null,
+      "market": 0.7,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "kuwait_peanut_butter": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.58,
+      "market": 0.736,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "nadec_yemen_dairy": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 1.0,
+      "market": 0.363,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.5,
+    "view_verdict": "PRELIMINARY GO — مبدئي إيجابي",
+    "view_verdict_label": "توصية أولية بالدخول"
+  },
+  "netherlands": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.188,
+      "market": 0.847,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.6,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "qatar_peanut_butter": {
+    "computed_pillars": 1,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": null,
+      "market": 0.761,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": null,
+    "view_verdict": "CONDITIONAL-GO",
+    "view_verdict_label": "دخول مشروط"
+  },
+  "yemen": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.62,
+      "market": 0.404,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  }
+}

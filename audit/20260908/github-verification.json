@@ -1,0 +1,32 @@
+{
+  "branch": {
+    "name": "main",
+    "sha": "8143125ea37660986d616007ca1df355ad332b80",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "enforcement_level": "off",
+        "contexts": [],
+        "checks": []
+      }
+    },
+    "url": "https://api.github.com/repos/hadadi2/556/branches/main"
+  },
+  "ci": {
+    "id": 34157910386,
+    "sha": "8143125ea37660986d616007ca1df355ad332b80",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/hadadi2/556/actions/runs/34157910386",
+    "updated_at": "2026-09-07T20:10:21Z"
+  },
+  "e2e": {
+    "id": 34157910463,
+    "sha": "8143125ea37660986d616007ca1df355ad332b80",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/hadadi2/556/actions/runs/34157910463",
+    "updated_at": "2026-09-07T20:08:28Z"
+  }
+}

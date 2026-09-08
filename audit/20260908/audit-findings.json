@@ -1,0 +1,757 @@
+[
+  {
+    "ID": "SILK-AUDIT-001",
+    "Severity": "P1",
+    "Title": "قائمة أدوات المهمة لا تُفرض عند التنفيذ",
+    "Component": "AI runtime / tool authorization",
+    "References": [
+      [
+        "silk_llm_runtime.py",
+        734,
+        "_execute_tool"
+      ],
+      [
+        "silk_llm_runtime.py",
+        1143,
+        "_run_loop: offered tools"
+      ],
+      [
+        "silk_llm_runtime.py",
+        1310,
+        "tool_use dispatch"
+      ]
+    ],
+    "Evidence": "Direct reproduction F01: مهمة trade_flow تسمح بـcomtrade_imports فقط. أرجع النموذج المحاكى web_search فنُفّذت مرة واحدة. العرض على النموذج مقيّد، لكن البحث في TOOLS عند التنفيذ عام.",
+    "Reproduction": "شغّل reproduce_findings.py؛ proof_tools يحقن tool_use مسجلاً خارج allowed_tools، ويراقب استدعاء الأداة، دون أي شبكة.",
+    "Root Cause": "اعتُبرت قائمة الأدوات المعروضة للنموذج تفويضاً تنفيذياً كافياً؛ المرسل غير الموثوق يستطيع إرجاع اسم آخر مسجل.",
+    "Impact": "مسار الاستغلال: تعليمات ضارة في سياق مسترجع أو إخراج نموذج مخالف → tool_use خارج المهمة → استدعاء مصدر غير مصرح به للمهمة وكلفة/بحث غير مطلوب. هذا ليس دليلاً على تنفيذ shell أو وصول لأدوات غير مسجلة.",
+    "Production Risk": "فعّال في مسار البحث العميق؛ الاحتمال الواقعي يعتمد على إخراج المزود. يؤثر في حدود الوكيل وصدق ضبط التكلفة.",
+    "Recommended Fix": "تحقق من عضوية الاسم في allowlist الخاصة بالمهمة عند كل dispatch، ثم تحقق من schema المدخلات. ارفض tool_use في طور finalization، وسجّل الرفض مع run/mission دون تنفيذ.",
+    "Required Regression Test": "مهمة بأداة واحدة؛ إخراج متعدد يتضمن أداة ممنوعة، اسم غير موجود، وأداة مسموحة. الممنوع لا ينفذ ولا يحجز تكلفة؛ المسموح وحده يمر.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-002",
+    "Severity": "P1",
+    "Title": "ميزانية الأدوات تُفحص قبل الجولة ويمكن تجاوزها داخل الدفعة",
+    "Component": "AI budgets / concurrency / cost",
+    "References": [
+      [
+        "silk_llm_runtime.py",
+        1240,
+        "_run_loop: budget check"
+      ],
+      [
+        "silk_llm_runtime.py",
+        1310,
+        "tool_use batch"
+      ],
+      [
+        "silk_context.py",
+        1,
+        "shared data counter"
+      ]
+    ],
+    "Evidence": "Direct reproduction F02: سقف المهمة=1 وسقف التشغيل=1، لكن جواباً واحداً احتوى 3 أدوات؛ نُفّذت الثلاث وسُجّلت الثلاث. عدّاد الاستخدام ليس حجزاً ذرياً قبل كل تنفيذ.",
+    "Reproduction": "proof_tools في reproduce_findings.py يضبط SILK_RESEARCH_MAX_TOOL_CALLS=1 ويرجع ثلاث كتل tool_use في جواب واحد؛ observed.executed=3.",
+    "Root Cause": "فصل فحص السقف عن الاستهلاك واعتماد الجولة كوحدة ضبط. كذلك يمكن لمهام متوازية أن ترى رصيداً متاحاً قبل أن تزيد العدّاد؛ لم يُقَس أقصى التجاوز في هذا السباق.",
+    "Impact": "نداءات وتكاليف تتجاوز الوعد التشغيلي؛ إعادة المحاولة الداخلية والنداء النهائي تزيد صعوبة وضع حد أعلى حقيقي. يمكن لإخراج نموذج كبير استهلاك أدوات كثيرة دفعة واحدة.",
+    "Production Risk": "P1 مثبت لميزانية الأدوات، وليس إثباتاً لخصم فاتورة مكرر. السقوف الافتراضية 40 LLM و100 tool ليست ضماناً صارماً لمجموع محاولات المزود.",
+    "Recommended Fix": "أنشئ ميزانية تشغيل مشتركة بحجز ذري لكل أداة ومحاولة مزود، مع وحدات منفصلة للطلب/token/USD. خصص احتياط finalization صريحاً ومحدوداً؛ أعد الرصيد غير المستهلك عند الإلغاء.",
+    "Required Regression Test": "دفعة تتجاوز المتبقي، حاجز تزامن بين 11 مهمة على آخر رصيد، retry وfinalization بعد النفاد؛ العدد الفعلي لا يتجاوز السياسة المعلنة.",
+    "Estimated Complexity": "L",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-003",
+    "Severity": "P1",
+    "Title": "صحة معرف الاستشهاد لا تمنع اختلاق الرقم المنسوب إليه",
+    "Component": "Evidence / agent output / report evaluation",
+    "References": [
+      [
+        "silk_llm_runtime.py",
+        865,
+        "_parse_output"
+      ],
+      [
+        "silk_llm_runtime.py",
+        1470,
+        "claim -> DataPoint"
+      ],
+      [
+        "silk_evals.py",
+        92,
+        "_known_numbers"
+      ],
+      [
+        "silk_evals.py",
+        192,
+        "citation_correctness_score"
+      ]
+    ],
+    "Evidence": "Direct reproduction F03: المصدر الخام يحمل 10000، والوكيل كتب 999999 مع dp1 الصحيح؛ قُبل الادعاء. ثم حصل النص نفسه على citation correctness=100 لأن التقييم استخرج الأرقام من الادعاءات المولدة.",
+    "Reproduction": "proof_faithfulness يمرر DataPoint رقمياً ثم JSON يغيّر الرقم مع إبقاء معرفه، ويبني مغلف التقرير بالطريقة المستعملة في runtime.",
+    "Root Cause": "التحقق يثبت وجود المعرف، ثم تُستبدل قيمة الحقيقة بنص claim. مقارنة لاحقة تعتمد على مخرجات هذه الطبقة بدلاً من سجل الحقائق الأصلي.",
+    "Impact": "رقم غير مؤيد قد يبدو موثقاً في تقرير تجاري. المسار: بيانات مصدر → إعادة صياغة الوكيل → DataPoint نصي → تقييم الكاتب/التقرير؛ ضياع الحقيقة المرجعية يمنع كشف التغيير بصورة مضمونة.",
+    "Production Risk": "مرتفع لصحة القرار. حراس الجودة الآخرين قد يرفضون تقارير لأسباب إضافية؛ لا يثبت هذا الشاهد أن كل تصدير خاطئ يمر، لكنه ينفي ضمان faithfulness الحالي.",
+    "Recommended Fix": "احتفظ بسجل حقائق immutable ذي معرفات run/mission، وقيم ووحدات وفترات. اجعل claim يشير إليه دون استبداله؛ طابق الأرقام/الوحدات أو اشتقاقاً مسجلاً. غذِّ الكاتب والمراجع والتقييم بالمصدر الأصلي.",
+    "Required Regression Test": "غيّر القيمة أو العملة أو السنة مع معرف صحيح؛ يجب الرفض/إعلان الفجوة. اختبر اشتقاقاً مشروعاً وصياغة عربية/إنجليزية تحفظ القيمة.",
+    "Estimated Complexity": "L",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-004",
+    "Severity": "P1",
+    "Title": "تعذر المراجع يُختزل إلى غياب اعتراضات",
+    "Component": "Writer / reviewer reliability",
+    "References": [
+      [
+        "silk_ai_judge.py",
+        2400,
+        "review_report"
+      ],
+      [
+        "silk_ai_judge.py",
+        2613,
+        "write_reviewed_report review branch"
+      ]
+    ],
+    "Evidence": "Direct reproduction F04: review_report=None، ومع ذلك أعاد write_reviewed_report تقريراً وunresolved_notes=[] بلا review_status. None يُنتَج عند غياب المزود أو فشله/عدم صلاحية جوابه في المسار الخالي من ملاحظات بنيوية.",
+    "Reproduction": "proof_review_failure يمرر مسودة كاملة ذات 11 قسماً ويجعل المراجع يعيد None؛ النتيجة لا تميز ذلك عن عدم وجود اعتراضات.",
+    "Root Cause": "شرط `not review or approved` يوحد فشل عملية التحقق مع موافقة المراجع، فيضيع سبب الفشل قبل persistence/UI.",
+    "Impact": "قد يُعرض تقرير غير مراجع كأنه خالٍ من الملاحظات، ويُفقد تفسير فشل المزود. المشكلة في عقد حالة المراجعة، وليس في أن المراجع يضمن الحقيقة بمفرده.",
+    "Production Risk": "مسار فعلي بعد الكاتب؛ الأعطال العابرة أو نفاد الاعتماد/المهلة تكفي لتفعيله. لا نعتمد على مراجعة اصطناعية واحدة كإثبات جودة إنتاجية.",
+    "Recommended Fix": "اعتمد review_status=approved/rejected/unavailable/error مع السبب والمحاولة. افصل نجاح التوليد عن نجاح المراجعة، واجعل سياسة التصدير/UI صريحة عند عدم التحقق؛ لا تعِد المهام الناجحة.",
+    "Required Regression Test": "timeout، مفتاح غائب، JSON مشوه، موافقة ورفض؛ تبقى الحالة الصحيحة محفوظة عبر checkpoint والتصدير واستئناف المراجع فقط.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-005",
+    "Severity": "P2",
+    "Title": "إعادة الكتابة الجزئية تفقد وسم عدم الاكتمال",
+    "Component": "Writer continuation / checkpoint",
+    "References": [
+      [
+        "silk_ai_judge.py",
+        2588,
+        "initial draft completeness"
+      ],
+      [
+        "silk_ai_judge.py",
+        2626,
+        "revision assignment"
+      ],
+      [
+        "silk_research_pipeline.py",
+        680,
+        "writer partial checkpoint"
+      ]
+    ],
+    "Evidence": "Direct reproduction F05: مسودة أولى كاملة، رفض مراجع، ثم مسودة بديلة بقسم واحد؛ أُعيد النص مع 10 أقسام مفقودة، دون incomplete أو partial_text.",
+    "Reproduction": "proof_revision_partial يستعمل max_cycles=2. هذا الفرع مشروط بتفعيل دورة إعادة كتابة إضافية؛ ليس كل تشغيل افتراضي يعيد الكتابة.",
+    "Root Cause": "فحص الاكتمال مبكر للمسودة الأولى فقط؛ إحلال مسودة لاحقة لا يعيد التحقق النهائي، ومسار حفظ الجزء يعتمد على العلم المفقود.",
+    "Impact": "استئناف/تشخيص غير صحيحين وفقد المسودة المكتملة الأفضل. حارس بنية التصدير قد يمنع بعض النتائج، فلا يُدّعى أن ملفاً ناقصاً سُلّم فعلياً.",
+    "Production Risk": "متوسط عند reviewer rewrite أو تعديل عدد الدورات؛ تكلفة إضافية واحتمال checkpoint يحمل succeeded لنص جزئي.",
+    "Recommended Fix": "تحقق من كل candidate ومن النص النهائي. احتفظ بأفضل نسخة مكتملة، واحفظ الجزء ومحاولته وسبب النقص في حالة مستقلة.",
+    "Required Regression Test": "complete → rejected → partial، ثم resume؛ لا تُستبدل النسخة المكتملة بصمت ولا يسجل الجزء نجاحاً نهائياً.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-006",
+    "Severity": "P2",
+    "Title": "إعدادات لوحة الكاتب والمراجع لا تتحكم في التنفيذ المعلن",
+    "Component": "Agent controls / UI contract",
+    "References": [
+      [
+        "silk_ai_judge.py",
+        2640,
+        "report_writer/reviewer registration"
+      ],
+      [
+        "silk_ai_judge.py",
+        2400,
+        "review_report"
+      ],
+      [
+        "silk_ai_judge.py",
+        2529,
+        "write_reviewed_report"
+      ]
+    ],
+    "Evidence": "Direct reproduction F06: preference للمراجع on=False وتعليمة خاصة، لكن المزود استُدعي مرة ولم تصل التعليمة. المرحلتان مسجلتان في catalog دون استعمال agent_enabled/agent_cmd في الدوال المنفذة.",
+    "Reproduction": "proof_preferences يضع agent_prefs_context ويراقب نداء _call والمدخل المرسل؛ marker اختبار فقط.",
+    "Root Cause": "التحكم الموجود في BaseAgent لا يطبق تلقائياً على وظائف writer/reviewer المباشرة.",
+    "Impact": "عدم تطابق واجهة التحكم مع التنفيذ؛ نداء وكلفة رغم تعطيل المرحلة، وتعليمات لا تؤثر في النتيجة.",
+    "Production Risk": "المثال المباشر للمراجع؛ الكاتب يشترك في مسار الإعداد غير الموصول وفق القراءة الساكنة. لا يشمل ذلك جميع الوكلاء؛ BaseAgent يفرض تفضيلات كثير منهم.",
+    "Recommended Fix": "إما توصيل التحكم والتعليمة بعقد كل مرحلة، أو عرض المرحلة إلزامية بوضوح وإزالة مفتاح تعطيل لا يملك معنى. لا تجعل تعطيل المراجع موافقة ضمنية.",
+    "Required Regression Test": "تبديل كل عنصر ظاهر في catalog ومراقبة provider call count/input؛ إلزامية المرحلة إن كانت سياسة المنتج يجب أن تظهر في API وUI.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-007",
+    "Severity": "P1",
+    "Title": "الاستئناف يعيد استخدام مراحل مشتقة من أدلة تغيّرت",
+    "Component": "Study resume / dependency graph",
+    "References": [
+      [
+        "silk_missions.py",
+        661,
+        "resume_reports"
+      ],
+      [
+        "silk_missions.py",
+        750,
+        "opportunity_gaps reuse"
+      ],
+      [
+        "silk_research_pipeline.py",
+        366,
+        "analyst reuse"
+      ],
+      [
+        "silk_research_pipeline.py",
+        637,
+        "writer reuse"
+      ],
+      [
+        "api.py",
+        2524,
+        "stage checkpoint loading"
+      ]
+    ],
+    "Evidence": "Direct reproduction F07: trade_flow الفاشل أعيد بناؤه بقيمة جديدة، بينما opportunity_gaps بقي نفس الكائن المبني على الأدلة القديمة. المسار اللاحق يعيد analyst/writer checkpoints الناجحة دون بصمة dependencies.",
+    "Reproduction": "proof_resume_dependencies يحفظ 12 checkpoint، يجعل trade_flow وحده فاشلاً، ثم يستأنف؛ new_trade=True ونتيجة الفرص ما زالت old opportunity_gaps.",
+    "Root Cause": "سياسة إعادة الاستخدام تفحص نجاح المرحلة ذاتها لا صلاحية مدخلاتها بعد إعادة تنفيذ سابقاتها.",
+    "Impact": "تقرير يمزج أدلة جديدة مع استنتاج/كاتب قديم، أو نتيجة تنسب النجاح لإصلاح لم ينعكس في القرار. هذا root cause واحد عبر الفرص والمحلل والكاتب.",
+    "Production Risk": "مرتفع عند الاستئناف الجزئي أو regeneration. التنفيذ المتكرر للمهام الصحيحة ليس الحل، لأنه يعيد التكلفة بلا حاجة.",
+    "Recommended Fix": "بصمة مدخلات وإصدار عقد/config لكل checkpoint؛ DAG يبطِل downstream فقط عند تغير dependency. أعد استعمال النتائج فقط إذا تطابقت الهوية والبصمات.",
+    "Required Regression Test": "أعد فاشلاً ثم غيّر/لا تغيّر مخرجه؛ يُعاد الفرع المتأثر وحده. استئناف مكتمل مطابق لا يستدعي أي مزود.",
+    "Estimated Complexity": "L",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-008",
+    "Severity": "P2",
+    "Title": "المهلة لا تمنع تعزيزاً متأخراً من تعديل التقرير المشترك",
+    "Component": "Thread lifecycle / shared mutable data",
+    "References": [
+      [
+        "silk_missions.py",
+        378,
+        "_bounded_augment"
+      ],
+      [
+        "silk_missions.py",
+        633,
+        "augment appends"
+      ]
+    ],
+    "Evidence": "Direct reproduction F08: wrapper بمهلة 0.01s عاد بالفشل وكانت findings فارغة؛ بعد تحرير العامل أصبحت findings تحتوي قيمة، رغم انتهاء مهلة الجهة المنتظرة.",
+    "Reproduction": "proof_late_augment يستخدم Event ليفصل لحظة رجوع المهلة عن لحظة تعديل كائن AgentReport نفسه؛ لا توقيت شبكة غير حتمي.",
+    "Root Cause": "Future.cancel وshutdown(wait=False) لا يوقفان الخيط الجاري. العامل يحتفظ بمرجع mutable يُقرأ بعد المهلة.",
+    "Impact": "نتيجة غير حتمية حسب توقيت القراءة والحفظ، واحتمال اختلاف checkpoint عن التقرير؛ قد يبقى العمل/المورد بعد إعلان التخطي.",
+    "Production Risk": "متوسط؛ الشاهد يثبت التعديل المتأخر، لا تسرب ذاكرة دائم ولا قيمة فاسدة رُصدت في إنتاج.",
+    "Recommended Fix": "اجعل التعزيز يعيد بيانات معزولة؛ طبّقها في الخيط المالك قبل deadline فقط مع generation fence. استخدم cooperative cancel وtimeouts للمصدر، وعزل process إن لزم إيقاف صارم.",
+    "Required Regression Test": "حاجز timeout ثم late completion؛ fingerprint النتيجة بعد رجوع wrapper لا يتغير، ولا يحفظ العامل القديم أو يفتح نداءً جديداً.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-009",
+    "Severity": "P2",
+    "Title": "إعادة تغليف حقائق المحلل تسقط بيانات المصدر والوحدة",
+    "Component": "Market analyst / provenance",
+    "References": [
+      [
+        "silk_market_analyst.py",
+        192,
+        "DataPoint tagging"
+      ]
+    ],
+    "Evidence": "Direct reproduction F09: ضاعت unit وurl وdata_year وreference_period وsource_ids وevidence_ids وretrieval_method عند إعادة إنشاء DataPoint بالحقول الأولى فقط.",
+    "Reproduction": "proof_analyst_metadata يملأ الحقول السبعة بقيم معروفة ويقارن الكائن المعاد؛ جميعها رجعت إلى defaults.",
+    "Root Cause": "نسخ يدوي لنموذج توسع عبر الزمن دون حفظ حقوله الجديدة.",
+    "Impact": "مصدر أقل قابلية للتتبع ووحدات/سنوات مفقودة في المراحل التالية؛ يزيد ضعف التحقق من الحقائق في 003 لكنه عيب نقل مستقل.",
+    "Production Risk": "متوسط في كل حقيقة تمر بفرع tagging؛ لا يلزم خطأ مزود.",
+    "Recommended Fix": "استخدم dataclasses.replace أو copy تحفظ جميع الحقول وتغير الوسم المطلوب فقط.",
+    "Required Regression Test": "DataPoint مكتمل الحقول يمر عبر المحلل دون فقد؛ اختبار يحفظ أي حقول جديدة مستقبلاً.",
+    "Estimated Complexity": "S",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-010",
+    "Severity": "P2",
+    "Title": "انقطاع بث النموذج قبل رسالة النهاية لا يسجل كخطأ",
+    "Component": "LLM streaming / usage accounting",
+    "References": [
+      [
+        "silk_llm_provider.py",
+        587,
+        "_consume_stream"
+      ]
+    ],
+    "Evidence": "Direct reproduction F10: بث يحوي بداية ورسالة نص جزئية ثم EOF بلا message_stop أعاد error=None وstop_reason=None وinput usage فقط.",
+    "Reproduction": "proof_stream_eof يغذي SSE محاكياً مقطوعاً قبل terminal event، ويراقب عقد الخروج.",
+    "Root Cause": "لا توجد state-machine تشترط نهاية بروتوكول مكتملة؛ الوصول إلى EOF وحده ينهي القراءة.",
+    "Impact": "قد يُفسر النص الجزئي كاستجابة عادية، وتصبح محاسبة output tokens ناقصة دون سبب صريح. بعض فحوص اكتمال الكاتب لاحقة لكنها لا تصلح عقد النقل.",
+    "Production Risk": "متوسط في انقطاعات الشبكة/المزود؛ لا يثبت أن الفاتورة الفعلية تزيد بمقدار محدد.",
+    "Recommended Fix": "تحقق من terminal event وإغلاق content blocks؛ احتفظ بالنص الجزئي مع حالة transport_incomplete وusage incomplete، ثم سياسة resume/retry محدودة.",
+    "Required Regression Test": "EOF قبل/بعد message_stop، block غير مغلق، malformed SSE، توقف المستخدم، usage delta مفقود؛ لا يُسجل نجاح كامل في الحالات الجزئية.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-011",
+    "Severity": "P1",
+    "Title": "مقارنة الأسعار تجمع عملات وأحجام عبوات مختلفة",
+    "Component": "LocalPrice / commercial correctness",
+    "References": [
+      [
+        "silk_localprice_agent.py",
+        145,
+        "price aggregation/comparison"
+      ],
+      [
+        "silk_engine.py",
+        564,
+        "local price enrichment"
+      ]
+    ],
+    "Evidence": "Direct reproduction F11: قائمتان 10 USD لعبوة 1kg و100 JPY لعبوة 10kg أنتجتا متوسطاً خاماً 55 وتصنيف تنافسية لسعر المستخدم. currency وpack_size لا يطبعان المقارنة.",
+    "Reproduction": "proof_price_units يمرر قائمتين متباينتين؛ يراقب المتوسط والمقارنة بدلاً من استدعاء متجر حي.",
+    "Root Cause": "استخدام price ككمية قابلة للجمع دون عقد dimension/currency، وسعر المنتج المدخل غير مرتبط بوحدة مقارنة معيارية.",
+    "Impact": "توصية سعرية/تنافسية قد تنقلب بسبب عملة أو عبوة، ثم تدخل enrich/deepen والنتيجة التجارية.",
+    "Production Risk": "مرتفع عند تنوع قوائم المتاجر؛ ليست مشكلة أداء فقط، ولا يجوز إصلاحها بمتوسط أكثر تعقيداً قبل توحيد الوحدات.",
+    "Recommended Fix": "احفظ العملة وكمية العبوة ووحدة القياس وتاريخ FX. طبّع إلى سعر مرجعي قابل للمقارنة، أو أرجع فجوة غير قابل للمقارنة؛ لا تستنتج كتلة مجهولة.",
+    "Required Regression Test": "قوائم متعددة العملات/الأحجام، mass مقابل piece، FX غائب؛ تختبر القيم المعيارية وامتناع المقارنة عند نقص التحويل.",
+    "Estimated Complexity": "L",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-012",
+    "Severity": "P2",
+    "Title": "دالة توصية كامنة تحوّل الرسوم والشحن المجهولين إلى صفر",
+    "Component": "LocalPrice / latent utility",
+    "References": [
+      [
+        "silk_localprice_agent.py",
+        243,
+        "suggest_price landed-cost calculation"
+      ]
+    ],
+    "Evidence": "Direct reproduction F12: cost=50 وtariff/shipping=None نتج عنه landed_cost_floor=50 وهامش 50% لسعر 100، بلا بيان أن هذين المكونين مجهولان.",
+    "Reproduction": "proof_price_units يشغّل suggest_price مباشرة. بحث المستدعين لم يجد مسار إنتاج يستعمل الدالة؛ المستدعون الحاليون اختبارات.",
+    "Root Cause": "استخدام `or 0` يلغي الفرق بين القيمة الصفرية المقاسة وعدم المعرفة.",
+    "Impact": "صحة عقد الدالة معيبة، وقد يصبح الهامش مضللاً عند إعادة استعمالها. لا تُنسب هذه النتيجة إلى تقرير عميل قائم.",
+    "Production Risk": "كامن حالياً؛ إصلاح صغير قبل توصيل الوظيفة، وليس incident إنتاجياً مثبتاً.",
+    "Recommended Fix": "احفظ None كمجهول وبيّن cost_components_complete؛ احسب subtotal المعلوم باسم واضح وامتنع عن هامش نهائي شامل.",
+    "Required Regression Test": "فرّق بين None و0 لكل رسم/شحن؛ نقص مكون ضروري يمنع تقديم landed margin على أنه مكتمل.",
+    "Estimated Complexity": "S",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-013",
+    "Severity": "P1",
+    "Title": "الاستئناف يسمح بتغيير المنتج وHS مع أدلة الدراسة القديمة",
+    "Component": "Research API / run identity",
+    "References": [
+      [
+        "api.py",
+        2430,
+        "resume market guard"
+      ],
+      [
+        "api.py",
+        2501,
+        "resumed product"
+      ],
+      [
+        "api.py",
+        2524,
+        "checkpoint reuse"
+      ],
+      [
+        "api.py",
+        2534,
+        "resumed HS"
+      ]
+    ],
+    "Evidence": "Direct reproduction F13 عبر TestClient وقاعدة مؤقتة: تحليل Milk/040120/YEM استؤنف بطلب Dates/080410/YEM. وصل الطلب الجديد للمحرك ومعه OLD MILK EVIDENCE من checkpoints.",
+    "Reproduction": "proof_resume_identity ينشئ run ويحفظ missions ثم يرسل POST /research مع resume ونفس السوق ومنتج/HS مختلفين. sentinel يوقف المحرك بعد التقاط المدخلات؛ HTTP 500 في الشاهد متعمد وليس موضوع النتيجة.",
+    "Root Cause": "الهوية المقارنة تشمل السوق فقط؛ تعبيرات req.product/req.hs_code تسمح بتجاوز هوية checkpoint مع إبقاء analysis_id.",
+    "Impact": "دراسة تتكلم عن منتج وتستعمل أدلة منتج آخر، ونتائج يصعب إصلاحها بتغيير تسمية العرض. لا يوجد إثبات تسرب بيانات بين مستأجرين في هذه الحالة.",
+    "Production Risk": "مرتفع لكل عميل مخول لمسار /research يرسل resume معدلاً؛ لم يثبت أن واجهة المصنع ترسل ذلك تلقائياً.",
+    "Recommended Fix": "ثبّت هوية التشغيل كاملة: المنتج المطبّع، HS، السوق، بطاقة الاقتصاد/الوحدات، لغة التقرير وإصدار السياسة المؤثر. الاختلاف يرفض 409 أو يبدأ run جديداً دون checkpoints القديمة.",
+    "Required Regression Test": "استئناف بنفس السوق مع تغيير المنتج/HS/الوحدة؛ 409 قبل أي حجز أو نداء. المدخل المطابق يستأنف مرة واحدة حتى مع network retry.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-014",
+    "Severity": "P2",
+    "Title": "تقييم الجودة لا يطابق عقد التقرير أو حالة المهمة",
+    "Component": "QA / AI evaluator",
+    "References": [
+      [
+        "silk_evals.py",
+        79,
+        "report_fields"
+      ],
+      [
+        "silk_evals.py",
+        215,
+        "_judge_prompt"
+      ],
+      [
+        "silk_evals.py",
+        230,
+        "report truncation"
+      ]
+    ],
+    "Evidence": "Direct reproduction F14: مهمة failed=True قُدمت للقاضي كفشل=False؛ prompt يتوقع 15 قسماً بينما report_sections تعيد 11؛ ذيل بعد 8000 حرف لا يصل إليه.",
+    "Reproduction": "proof_eval_contract يبني مهمة فاشلة ونصاً بعلامة بعد 8100 حرف، ويفحص المدخل الفعلي للقاضي دون نموذج حي.",
+    "Root Cause": "عقد تقييم مكرر وقديم، يفقد metadata ثم يعوضه بقيمة ثابتة، ويستخدم قصاً لا يضمن تغطية الأقسام.",
+    "Impact": "درجات قد تكافئ تقريراً ناقصاً أو تعاقب بنية صحيحة؛ لا تصلح وحدها كبوابة جودة أو مقارنة نماذج.",
+    "Production Risk": "متوسط للقرارات المبنية على evals، وليس إثباتاً أن كل اختبار unit زائف.",
+    "Recommended Fix": "مصدر واحد لأقسام التقرير، نقل failed/gaps الحقيقي، تقييم مقسم يغطي كامل النص مع حدود tokens، وgoldens مستقلة عن المخرجات المولدة.",
+    "Required Regression Test": "فشل مهمة يظهر للقاضي، كل الأقسام والذيل يدخل التغطية، نص صحيح من 11 قسماً لا يعاقب لعقد قديم.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-015",
+    "Severity": "P1",
+    "Title": "نجاح CI لا تفرضه حماية main الحالية",
+    "Component": "GitHub governance / deployment gates",
+    "References": [
+      [
+        ".github/workflows/ci.yml",
+        1,
+        "CI"
+      ],
+      [
+        ".github/workflows/e2e-live-shape.yml",
+        1,
+        "E2E and Docker"
+      ]
+    ],
+    "Evidence": "Live read-only GitHub evidence: main.protected=false؛ protection.enabled=false؛ required_status_checks فارغة/enforcement off. في المقابل نجحت CI وE2E+Docker على SHA المدقق، وثُبتت نتائج الخطوات في github-job-steps.json.",
+    "Reproduction": "أعد قراءة branch/protection metadata عبر GitHub API وانظر github-verification.json. لم ننفذ push مخالفاً ولم نغير أي إعداد. استعلام rulesets الإضافي رُفض بقيد خطة/ظهور المستودع؛ لا نفترض نتيجة لم نقرأها.",
+    "Root Cause": "المتطلبات موجودة كتعليمات/workflows لكنها غير مفروضة على مسار main بآلية branch protection المقروءة.",
+    "Impact": "صاحب صلاحية كتابة أو تكامل مخول يستطيع إيصال تغيير إلى الفرع دون انتظار البوابات؛ إذا كان Railway يتابع الفرع فقد ينشر قبل اكتمال التحقق، وهذا الجزء مشروط بإعداد الربط غير المتاح.",
+    "Production Risk": "مرتفع كفجوة منع الانحدار؛ لا يعني أن الالتزام الحالي فشل أو أن كل نشر سابق تجاوز الاختبارات.",
+    "Recommended Fix": "فعّل حماية/قواعد متاحة للخطة تتطلب CI والإنتاج-switches وE2E/Docker والمراجعة، وحدد bypass للطوارئ بضبط واضح. اربط النشر بالبوابات والتحقق بعده؛ لا تغيّر ظهور المستودع بلا قرار مستقل.",
+    "Required Regression Test": "على فرع اختبار آمن، تغيير يفشل بوابة لا يمكن دمجه/نشره عبر المسار المعتاد؛ نجاح البوابات يعطي مسار نشر مضبوطاً وقابلاً للتراجع.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-016",
+    "Severity": "P1",
+    "Title": "اختيار أول قيمة من Eurostat قد ينسب مجموعة فرعية إلى الإجمالي",
+    "Component": "Eurostat / population data",
+    "References": [
+      [
+        "silk_eurostat_agent.py",
+        109,
+        "_first_value"
+      ],
+      [
+        "silk_eurostat_agent.py",
+        159,
+        "foreign_born_population_count"
+      ]
+    ],
+    "Evidence": "Direct reproduction F16: JSON-stat بمجموعتين sex=F بقيمة 40 وsex=T بقيمة 100 أعاد 40 كعدد السكان. query يحدد geo/c_birth/time فقط، ولا sex/age/unit. الوصف الرسمي للبيانات يتضمن العمر والجنس وبلد الميلاد.",
+    "Reproduction": "proof_eurostat_dimensions يغذي استجابة متعددة الأبعاد صحيحة البنية؛ يقارن العدد المعاد بإحداثية الإجمالي في fixture.",
+    "Root Cause": "تسطيح JSON-stat إلى أول value بدلاً من حل إحداثيات الأبعاد والتحقق من وحدتها؛ ترتيب القيم ليس عقداً للإجمالي.",
+    "Impact": "تقدير جمهور/جالية أو حجم سوق خاطئ رغم استعمال مصدر رسمي. مساعد _first_value يستعمل أيضاً لبيانات أخرى؛ يلزم فحص عقد كل dataset، لا تعميم رقم الشاهد على API حي.",
+    "Production Risk": "مرتفع لصحة المؤشرات عند تعدد الأبعاد. لم نسحب عدد سكان حي أو نثبت مقدار خطأ تقرير إنتاجي.",
+    "Recommended Fix": "حدد أبعاد الإجمالي صراحةً، وتحقق من id/size/category/unit/time. ارفض التعدد غير المتوقع. اختبر datasets الاستهلاك أيضاً قبل تفسير أول قيمة.",
+    "Required Regression Test": "استجابات تغير ترتيب الأبعاد والفئات وتحتوي جنساً/عمراً/وحدات متعددة؛ النتيجة هي الإحداثية المطلوبة أو فجوة مفسرة.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-017",
+    "Severity": "P2",
+    "Title": "مقارنة Trends بين استعلامات مطبعة منفصلة ليست مقارنة حجم طلب",
+    "Component": "Demand trends / normalization",
+    "References": [
+      [
+        "silk_trends_agent.py",
+        76,
+        "one-keyword build_payload"
+      ],
+      [
+        "silk_trends_agent.py",
+        395,
+        "broaden_if_weak"
+      ]
+    ],
+    "Evidence": "Direct reproduction F17 ببيانات رياضية معلنة: exact مجموعها 21900 وnormalized mean=1.825؛ broad مجموعها 1200 وmean=100؛ broad وُصفت بالأقوى بناءً على مؤشرين طُبع كل منهما منفرداً.",
+    "Reproduction": "proof_trends_normalization يبني سلسلة كثيرة الحجم ذات قمة وسلسلة صغيرة ثابتة؛ الأرقام ليست أحجام بحث مسترجعة من Google.",
+    "Root Cause": "كل كلمة تُرسل في payload منفصل بمقياس peak خاص بها، ثم تقارن متوسطات المقاييس كأنها على محور مشترك. الاستنتاج المنهجي يستند إلى شرح Google الرسمي للتطبيع.",
+    "Impact": "استنتاج اتجاه/فرصة أوسع قد يكون معكوساً. المؤشر مفيد داخل تعريفه لكنه ليس حجماً مطلقاً.",
+    "Production Risk": "متوسط عندما يُستعمل fallback broadening في تقرير أو توصية سوق.",
+    "Recommended Fix": "استخدم طلباً مشتركاً أو anchor مع معايرة موثقة؛ افصل مؤشر الاتجاه عن مستوى الاهتمام ولا تسمه حجماً/تفوقاً عند تعذر المقارنة.",
+    "Required Regression Test": "series ذات قمم وتوزيعات مختلفة، جغرافيات وفترات مختلفة؛ يُحظر استنتاج حجم نسبي من scales غير مشتركة.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-018",
+    "Severity": "P1",
+    "Title": "حساب SOM يفترض أن السعة الشهرية بالكيلوغرام",
+    "Component": "MarketSize / product economics / frontend contract",
+    "References": [
+      [
+        "silk_research.py",
+        468,
+        "MarketSizeAgent._research SOM"
+      ],
+      [
+        "web/platform.html",
+        2277,
+        "Monthly capacity units/month"
+      ],
+      [
+        "silk_platform/engine_bridge.py",
+        772,
+        "product card unit"
+      ]
+    ],
+    "Evidence": "Direct reproduction F18: monthly_capacity=1000 وunit=bottle وborder price=2 USD/kg؛ خرج SOM=24000 USD من capacity×12×price، دون معرفة كتلة الزجاجة.",
+    "Reproduction": "proof_capacity_units يحاكي حجم التجارة وسعر الحدود ويستدعي MarketSizeAgent؛ output.som_usd يثبت الخلط البعدي.",
+    "Root Cause": "قيمة السعة وصلت من UI مع وحدة عامة لكن الصيغة تجاهلت unit وافترضت كتلة ضمنياً.",
+    "Impact": "تقدير فرصة الإيراد/السوق الممكن خدمته خاطئ وربما أكبر/أصغر بمراتب؛ لا يجوز مساواة unit value حدودي بسعر بيع محلي أيضاً دون تعريف.",
+    "Production Risk": "مرتفع للمنتجات المباعة بقطع/زجاجات/صناديق. لا تتأثر كل المنتجات بالتساوي؛ كيلوغرام صريح قد يجعل الوحدة متوافقة.",
+    "Recommended Fix": "ProductCard بوحدات صريحة للسعة والسعر والتكلفة، mass_per_unit عند الحاجة ومصدره. غياب التحويل يعني SOM غير محسوب مع فجوة، لا تخمين.",
+    "Required Regression Test": "kg مقابل bottle/carton، تحويل معروف/مجهول، صفر حقيقي، وتطابق الوحدة عبر UI → API → bridge → agent → report.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-019",
+    "Severity": "P2",
+    "Title": "الإلغاء المتأخر لا يُفحص قبل إنهاء نتيجة جوهرية بالنجاح",
+    "Component": "Study lifecycle / cancellation race",
+    "References": [
+      [
+        "silk_platform/engine_bridge.py",
+        1405,
+        "_thread_body"
+      ],
+      [
+        "silk_platform/engine_bridge.py",
+        1519,
+        "_finish_success after substantive result"
+      ]
+    ],
+    "Evidence": "Direct reproduction F19: ضبط run.cancel قبل رجوع المحرك بنتيجة جوهرية؛ استُدعي success finalizer مرة ولم يُستدعَ finalizer للإلغاء. الفحص موجود لفروع فشل/نتيجة غير جوهرية، وليس لهذا الفرع النهائي.",
+    "Reproduction": "proof_late_cancellation يضبط Event داخل المحرك المحاكى قبل return، ويضع spies على finalizers. لا يدعي أن كل توقيت supervisor يسمح بcommit نجاح؛ fencing لاحق قد يمنع بعض السباقات.",
+    "Root Cause": "غياب قرار نهائي متسق بين accepted cancellation وsuccessful completion على نفس حد المعاملة/الرمز.",
+    "Impact": "طلب إلغاء مقبول قد يبدو متبوعاً باكتمال، أو يُفقد سبب التوقف حسب من يفوز بين supervisor وcompletion.",
+    "Production Risk": "متوسط ونافذته ضيقة؛ اختبارات الإلغاء أثناء انتظار طويل خضراء ولا تغطي هذه اللحظة.",
+    "Recommended Fix": "حدد semantics واضحة: إلغاء مقبول قبل completion commit يفوز؛ اجعل الانتقال مشروطاً ذرياً بعدم الإلغاء مع run_token/state. احتفظ بالأجزاء المفيدة دون وسمها نتيجة مكتملة.",
+    "Required Regression Test": "حاجز بين رجوع المحرك وcommit؛ أرسل HTTP cancel قبله وبعده، واختبر نتيجة وحصة/إشعار واحداً لكل ترتيب.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-020",
+    "Severity": "P2",
+    "Title": "سعر Sonnet 5 في تقدير الكلفة أعلى من السعر الرسمي الحالي",
+    "Component": "Pricing / budget reconciliation",
+    "References": [
+      [
+        "silk_pricing.py",
+        15,
+        "MODEL_PRICING claude-sonnet-5"
+      ]
+    ],
+    "Evidence": "Direct reproduction F20 + official pricing lookup في 2026-09-07 UTC: 1M input +1M output يعطي في الكود $18، بينما السعر القياسي الحالي $2/$10 يعطي $12؛ زيادة تقديرية 50% لهذا المثال. الزيادة المجدولة إلى $3/$15 ألغيت وفق الصفحة الرسمية.",
+    "Reproduction": "proof_price_catalog مع snapshot معلن للسعر؛ عند إعادة التدقيق مستقبلاً يجب تحديث تاريخ/مصدر المقارنة، لا اعتبار التعرفة ثابتة للأبد.",
+    "Root Cause": "تعرفة مستقبلية مفترضة ثُبتت دون تاريخ نفاذ/انتهاء أو تحديث بعد تغير قرار المزود؛ هامش التحفظ خُلط بالتكلفة المقدرة.",
+    "Impact": "واجهة/ledger تقديري أعلى، وسقف ميزانية قد يغلق مبكراً. لا تعني هذه النتيجة أن Anthropic اقتطعت زيادة أو أن العميل دُفع منه مبلغ مضاعف.",
+    "Production Risk": "متوسط للدقة التشغيلية وتخطيط التكلفة، متفاوت مع نسب الرموز والكاش والنموذج.",
+    "Recommended Fix": "Catalog مؤرخ بمصدر، افصل budget headroom عن estimated actual، وحافظ على complete/unpriced_models. طابق عينات usage مع بيان المزود عند توفره.",
+    "Required Regression Test": "السعر الحالي لكل نموذج والكاش والتواريخ ومعرفات مؤرخة ونموذج مجهول؛ يظل الاحتياط قابلاً للتمييز عن المصروف.",
+    "Estimated Complexity": "S",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-021",
+    "Severity": "P2",
+    "Title": "التأكيد اليدوي يتجاوز صلاحية رمز HS الأساسية",
+    "Component": "HS pipeline / input validation",
+    "References": [
+      [
+        "silk_hs_pipeline.py",
+        272,
+        "_valid_hs6"
+      ],
+      [
+        "silk_hs_pipeline.py",
+        396,
+        "_decide human confirmation"
+      ],
+      [
+        "silk_hs_confirm.py",
+        903,
+        "preflight_block"
+      ],
+      [
+        "api.py",
+        880,
+        "classification input"
+      ]
+    ],
+    "Evidence": "Direct reproduction F21: Dates و000000 وhs_confirmed=True → approved، final_hs_code=000000، confidence=0، وصف رسمي فارغ، وتناقض الفصل 00 محفوظ. preflight_block يعيد None بسبب التأكيد.",
+    "Reproduction": "proof_hs_reference_override؛ لا نستخدم 999999 كشاهد لأنه يوجد في بيانات التجارة كبند متبقٍ، بينما 000000 غير صالح لهذا المسار.",
+    "Root Cause": "قرار المالك بأن الإنسان آخر مؤكد طُبق قبل التحقق من صلاحية الرمز الأساسية، مع فحص شكل من ستة أرقام فقط.",
+    "Impact": "طلبات مصرح بها قد تبدأ بحثاً على رمز غير صالح وتستهلك وقتاً أو تكلفة وتعطي فجوات مضللة. الثقة لم ترتفع كذباً إلى 1؛ العيب قبول الرمز، لا إخفاء confidence.",
+    "Production Risk": "متوسط في طلبات API اليدوية؛ واجهة اختيار مرجع قد لا تعرض هذا الرمز لكنها ليست حد تحقق للخادم.",
+    "Recommended Fix": "افحص الشكل والمرجع/النطاق المعتمد قبل human override. احتفظ بحق المستخدم في حسم الالتباس بين رموز صالحة، وثق override/confidence دون اختلاق يقين.",
+    "Required Regression Test": "000000، حروف/طول خاطئ، رمز صالح متناقض دلالياً مع تأكيد واضح، Arabic/English product وdecimal digits؛ لا يبدأ عمل خارجي للرمز الباطل.",
+    "Estimated Complexity": "S",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-022",
+    "Severity": "P2",
+    "Title": "اتصال مخزن التحليلات لا يفعّل القيد الأجنبي المعلن",
+    "Component": "Database / analysis integrity",
+    "References": [
+      [
+        "silk_storage.py",
+        157,
+        "_connect"
+      ],
+      [
+        "silk_storage.py",
+        167,
+        "init_db market_scores"
+      ],
+      [
+        "silk_sqlite.py",
+        101,
+        "connect foreign_keys default"
+      ]
+    ],
+    "Evidence": "Direct reproduction F22: market_scores يعلن FK إلى analyses، لكن PRAGMA foreign_keys=0 على اتصال silk_storage. إدخال مقصود لanalysis_id غير موجود في قاعدة اختبار نجح وظهر في foreign_key_check.",
+    "Reproduction": "proof_analysis_foreign_keys يستعمل schema والموصل الحقيقيين وقاعدة مؤقتة؛ schema الصحيحة قبل الحقن اجتازت integrity_check/foreign_key_check.",
+    "Root Cause": "الموصل المشترك يجعل foreign_keys=False افتراضياً؛ مخزن المنصة والمتجر يطلبان True، ومخزن التحليلات لا يطلبه رغم وجود قيد.",
+    "Impact": "قاعدة البيانات لا تحمي هذا الرابط إذا أخطأ importer/مسار كتابة أو أداة إدارية. لا يثبت الشاهد أن save_analysis المعتاد ينشئ يتيماً، ولا أن بيانات الإنتاج تحوي أيتاماً.",
+    "Production Risk": "متوسط كخلل إنفاذ سلامة معلن؛ يجب فحص البيانات الموجودة قبل تفعيل القيد، دون حذفها تلقائياً.",
+    "Recommended Fix": "فعّل FK لكل اتصال يحتاجها بعد inventory للأيتام ونسخة احتياطية واختبار import/save. قرر سياسة الروابط الأخرى/checkpoints بصورة صريحة؛ لا تعتمد على PRAGMA مرة واحدة عند الإقلاع.",
+    "Required Regression Test": "إدخال يتيم يرفض، المعاملة الصحيحة تلتزم، كل موصل يفرض القيد، وترقية نسخة ذات orphan تسجل تعارضاً قابلاً للمراجعة دون إسقاط بيانات.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-023",
+    "Severity": "P3",
+    "Title": "وحدات مركزية كبيرة وشبكة اعتماد كثيفة تصعّبان عزل التغيير",
+    "Component": "Architecture / maintainability",
+    "References": [
+      [
+        "silk_reports.py",
+        1,
+        "179 functions / 6086 lines"
+      ],
+      [
+        "api.py",
+        542,
+        "create_app; module 4274 lines"
+      ],
+      [
+        "silk_platform/api.py",
+        1,
+        "107 functions / 3436 lines"
+      ],
+      [
+        "silk_research_gateway.py",
+        25,
+        "process-global registered callbacks"
+      ]
+    ],
+    "Evidence": "Static code review: silk_reports.py=6086 سطراً و179 دالة، api.py=4274 سطراً و117 دالة، platform/api.py=3436 سطراً و107 دوال. تحليل imports اكتشف SCCs بأحجام 54 و4 و2، تشمل imports كسولة. gateway يزيل import مباشر من الجسر لكنه يبقي تسجيل callbacks عاماً للعملية.",
+    "Reproduction": "راجع inventory.json وrepository-analysis.json، وأعد AST function/import inventory على SHA المثبت. SCC دليل coupling ساكن، لا استثناء circular import مثبت في الإقلاع.",
+    "Root Cause": "تراكم واجهات العرض والتصدير والحراس والتوافق القديم في وحدات جامعة وعقود منسوخة؛ الربط singleton يفترض عملية تطبيق واحدة.",
+    "Impact": "اتساع سطح مراجعة أي تغيير وصعوبة امتلاك عقد مستقل بين المحرك وHTTP. لا ننسب نسبة بطء تشغيل إلى عدد الأسطر، ولا نوصي بإعادة كتابة شاملة.",
+    "Production Risk": "منخفض حالياً؛ يزيد خطر الانحدار عند فصل worker أو إضافة نسخ/واجهات جديدة. التشغيل الحالي الفعلي اجتاز startup والاختبارات المحددة.",
+    "Recommended Fix": "بعد إصلاح correctness، استخرج تدريجياً عقود evidence/run/report ثم service مستقلة وrenderer adapters. حافظ على gateway المتوافق حتى اكتمال نقل المستدعين، وحدد حدود imports قابلة للفحص.",
+    "Required Regression Test": "اختبارات contract للمداخل والمخرجات، الاستيراد دون provider side effects، real-server export/RTL بعد كل فصل؛ لا اختبارات أسلوب تكرر شكل التنفيذ فقط.",
+    "Estimated Complexity": "L",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-024",
+    "Severity": "P2",
+    "Title": "آثار البحث الكاملة تُحفظ افتراضياً بلا نافذة احتفاظ",
+    "Component": "Observability / persistent storage cost",
+    "References": [
+      [
+        "silk_missions.py",
+        873,
+        "deep_research trace_context"
+      ],
+      [
+        "silk_trace.py",
+        91,
+        "_write_event"
+      ],
+      [
+        "silk_janitor.py",
+        38,
+        "_days"
+      ]
+    ],
+    "Evidence": "Direct reproduction F24 + static path: البحث الكامل يدخل trace_context، والأثر يسجل prompts/tool I/O/raw responses. دون متغيرات retention تعيد _days('traces') صفراً، وبقي ملف اختبار عمره سنة بعد الكنس. cache له افتراض مختلف: 30 يوماً.",
+    "Reproduction": "proof_trace_retention يكتب fixture في مجلد مؤقت ويجعل mtime قديماً ثم يطبق سياسة الاحتفاظ الافتراضية؛ لا يمس آثار مستخدم أو أي DB.",
+    "Root Cause": "إنتاج مستمر لآثار كاملة مع تنظيف مشروط بإعداد غير إلزامي، دون سقف إجمالي بالحجم في الكاتب نفسه.",
+    "Impact": "نمو volume وتكلفة التخزين وزمن النسخ/chown، واحتمال فشل حفظ دراسة عند امتلاء القرص إن تركت الإعدادات الافتراضية. مقدار النمو bytes/study لم يقس على دراسة AI حية.",
+    "Production Risk": "متوسط ومشروط بغياب override في Railway؛ لا يوجد وصول يثبت أن الإنتاج ترك retention صفراً. السجلات العملياتية الأخرى لها ring caps فلا تعمم النتيجة عليها.",
+    "Recommended Fix": "سياسة احتفاظ معلنة حسب نوع الأثر، حدود حجم وalerts، واختزال/أرشفة الأدلة الضرورية قبل تدوير trace الكامل. حافظ على التحليلات ودفاتر المحاسبة؛ لا تحذفها بكنس عام.",
+    "Required Regression Test": "آثار قديمة/حديثة، إعداد غائب/صفر/قيمة مشوهة، quota حجم، وحماية ملفات DB/WAL؛ إظهار السياسة الفعالة في readiness/admin دون أسرار.",
+    "Estimated Complexity": "M",
+    "Confidence": "High"
+  },
+  {
+    "ID": "SILK-AUDIT-025",
+    "Severity": "P1",
+    "Title": "تكرار إنشاء البحث لا يملك عقد idempotency يمنع تشغيل دراسة ثانية",
+    "Component": "Root Research API / request replay",
+    "References": [
+      [
+        "api.py",
+        2346,
+        "_research_impl"
+      ],
+      [
+        "api.py",
+        2910,
+        "_research_impl_after_admission"
+      ],
+      [
+        "silk_storage.py",
+        351,
+        "create_research_run"
+      ]
+    ],
+    "Evidence": "Direct reproduction F25: طلبا POST /research بنفس الجسم وبنفس Idempotency-Key أنشآ معرفَي تحليل مختلفين ودخلا المحرك مرتين. لا يحمل نموذج الطلب/طبقة التخزين عقد idempotency للإنشاء الجديد.",
+    "Reproduction": "proof_new_request_replay يوقف كل تنفيذ عند بداية المحرك بsentinel مقصود؛ ردا 500 في الشاهد بسبب الحارس التجريبي، وprovider_calls=0. إعادة نفس الطلب لم تُعد analysis_id الأول. استئناف تحليل موجود وإطلاق دراسة منصة واحدة مساران مختلفان ولهما حماية أقوى.",
+    "Root Cause": "المعرف يُنشأ بعد كل admission، دون مفتاح طلب محفوظ وبصمة جسم قبل حجز الميزانية. وجود header لدى العميل وحده لا يجعله مدعوماً بالخادم.",
+    "Impact": "إذا فُقد الرد بعد بدء البحث ثم أعاد العميل/المستخدم الطلب، يمكن تشغيل دراستين منطقيتين متطابقتين ودفع تكلفة كل منهما؛ هذا احتمال مدعوم بمسار التنفيذ، لا فاتورة مضاعفة رصدت فعلياً.",
+    "Production Risk": "مرتفع لاعتمادية إنشاء البحث المباشر. الشاهد يثبت تعدد التشغيلات الجديدة لا تكرار claim للrun_token نفسه، لذلك لا نصنفه حادثة P0/double billing مثبتة.",
+    "Recommended Fix": "عقد Idempotency-Key معلن لكل principal وعملية، unique constraint ومعاملة تحفظ request fingerprint وanalysis_id قبل أي نداء. نفس المفتاح/الجسم يعيد الحالة السابقة؛ جسم مختلف يرفض؛ إعادة المحاولة المقصودة تستعمل resume أو مفتاحاً جديداً.",
+    "Required Regression Test": "أرسل طلبين متزامنين ثم محاكاة ضياع 202/انقطاع العميل؛ تحليل وحجز واحدان وprovider execution واحد. اختلاف payload مع نفس المفتاح=409، ولا تتداخل namespaces بين الهويات.",
+    "Estimated Complexity": "L",
+    "Confidence": "High"
+  }
+]

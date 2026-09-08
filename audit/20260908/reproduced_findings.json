@@ -1,0 +1,272 @@
+{
+  "commit": "8143125ea37660986d616007ca1df355ad332b80",
+  "findings": [
+    {
+      "id": "F01",
+      "observed": {
+        "allowed": [
+          "comtrade_imports"
+        ],
+        "executed": "web_search",
+        "count": 1
+      }
+    },
+    {
+      "id": "F02",
+      "observed": {
+        "mission_limit": 1,
+        "run_limit": 1,
+        "executed": 3,
+        "counted": 3
+      }
+    },
+    {
+      "id": "F03",
+      "observed": {
+        "source_value": 10000,
+        "accepted_claim_value": 999999,
+        "eval": {
+          "score": 100,
+          "violations": [],
+          "checked": 1,
+          "known_pool": 1,
+          "formula_grounded": []
+        }
+      }
+    },
+    {
+      "id": "F04",
+      "observed": {
+        "review_returned": null,
+        "report_returned": true,
+        "unresolved_notes": [],
+        "review_cycles": 1
+      }
+    },
+    {
+      "id": "F05",
+      "observed": {
+        "missing_sections": 10,
+        "incomplete_flag": null,
+        "partial_checkpoint": false
+      }
+    },
+    {
+      "id": "F06",
+      "observed": {
+        "reviewer_enabled": false,
+        "provider_calls": 1,
+        "custom_instruction_forwarded": false
+      }
+    },
+    {
+      "id": "F07",
+      "observed": {
+        "rerun_agents": [
+          "LLMMissionAgent:trade_flow"
+        ],
+        "new_trade": true,
+        "opportunity_result": "old opportunity_gaps"
+      }
+    },
+    {
+      "id": "F08",
+      "observed": {
+        "returned_success": false,
+        "findings_on_return": 0,
+        "findings_after_timeout_return": 1
+      }
+    },
+    {
+      "id": "F09",
+      "observed": {
+        "dropped_fields": [
+          "unit",
+          "url",
+          "data_year",
+          "reference_period",
+          "source_ids",
+          "evidence_ids",
+          "retrieval_method"
+        ]
+      }
+    },
+    {
+      "id": "F10",
+      "observed": {
+        "EOF_without_message_stop": true,
+        "error": null,
+        "stop_reason": null,
+        "usage": {
+          "input_tokens": 100
+        }
+      }
+    },
+    {
+      "id": "F11",
+      "observed": {
+        "inputs": [
+          {
+            "price": 10,
+            "currency": "USD",
+            "pack_size": "1 kg"
+          },
+          {
+            "price": 100,
+            "currency": "JPY",
+            "pack_size": "10 kg"
+          }
+        ],
+        "comparison": {
+          "your_price": 20,
+          "listings_count": 2,
+          "market_min": 10.0,
+          "market_max": 100.0,
+          "market_avg": 55.0,
+          "cheaper_than_pct": 50.0,
+          "verdict": "تنافسي — أرخص من 50.0% من القوائم المرصودة",
+          "note": "مقارنة مبدئية على القوائم المرصودة فقط، ليست شاملة كل السوق — preliminary, over observed listings only."
+        }
+      }
+    },
+    {
+      "id": "F12",
+      "observed": {
+        "missing_inputs": [
+          "tariff_pct",
+          "shipping_per_unit"
+        ],
+        "landed_cost_floor": 50.0,
+        "margin_at_min_pct": 50.0,
+        "note": "توصية مبدئية على القوائم المرصودة فقط — ليست شاملة كل السوق",
+        "reachability": "utility only; no production caller found"
+      }
+    },
+    {
+      "id": "F13",
+      "observed": {
+        "original": {
+          "product": "Milk",
+          "hs_code": "040120"
+        },
+        "resumed": {
+          "product": "Dates",
+          "hs_code": "080410"
+        },
+        "reused_evidence": "OLD MILK EVIDENCE",
+        "response_after_audit_sentinel": 500
+      }
+    },
+    {
+      "id": "F14",
+      "observed": {
+        "failed_mission_told_to_judge": false,
+        "tail_visible": false,
+        "expected_sections_in_eval_prompt": 15,
+        "actual_report_sections": 11
+      }
+    },
+    {
+      "id": "F16",
+      "observed": {
+        "subgroup_value": 40,
+        "total_value": 100,
+        "returned_as_population_count": 40.0,
+        "query_parameters": {
+          "geo": "NL",
+          "c_birth": "FOR",
+          "time": "2025"
+        }
+      }
+    },
+    {
+      "id": "F17",
+      "observed": {
+        "fixture_only": true,
+        "exact_total": 21900,
+        "broad_total": 1200,
+        "exact_separate_index_mean": 1.825,
+        "broad_separate_index_mean": 100.0,
+        "broader_claim_emitted": "مصطلح أعمّ 'broad' متوسط اهتمامه 100.0/100 — الطلب على الفئة موجود؛ الصفة الدقيقة 'exact' غير مبحوثة"
+      }
+    },
+    {
+      "id": "F18",
+      "observed": {
+        "capacity_unit": "bottle",
+        "monthly_capacity": 1000,
+        "border_price_unit": "USD/kg",
+        "border_price": 2,
+        "som_emitted_usd": 24000,
+        "mass_per_bottle_known": false
+      }
+    },
+    {
+      "id": "F19",
+      "observed": {
+        "cancel_set_before_engine_return": true,
+        "success_finalizer_calls": 1,
+        "cancel_finalizer_calls": 0
+      }
+    },
+    {
+      "id": "F20",
+      "observed": {
+        "code_estimate_usd": 18.0,
+        "official_snapshot_utc_date": "2026-09-07",
+        "official_cost_usd": 12,
+        "overestimate_percent": 50,
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+      }
+    },
+    {
+      "id": "F21",
+      "observed": {
+        "product": "Dates",
+        "approved_hs": "000000",
+        "confidence": 0.0,
+        "reference_description": "",
+        "contradictions": [
+          "فصلُ الرمز 00 غير موجود في بنية WCO"
+        ],
+        "downstream_preflight_block": null
+      }
+    },
+    {
+      "id": "F22",
+      "observed": {
+        "foreign_keys_enabled": 0,
+        "declared_constraint": "market_scores.analysis_id -> analyses.id",
+        "orphan_insert_committed": true,
+        "foreign_key_violations": 1,
+        "scope": "deliberate invalid insert into an isolated database; no production corruption established"
+      }
+    },
+    {
+      "id": "F24",
+      "observed": {
+        "default_trace_retention_days": 0.0,
+        "one_year_old_trace_retained": true,
+        "default_cache_retention_days": 30.0,
+        "scope": "default configuration only; deployed Railway override unknown"
+      }
+    },
+    {
+      "id": "F25",
+      "observed": {
+        "same_body_and_idempotency_header": true,
+        "created_analysis_ids": [
+          1,
+          2
+        ],
+        "engine_entries": 2,
+        "statuses_after_intentional_sentinel": [
+          500,
+          500
+        ],
+        "provider_calls": 0,
+        "scope": "new root research POST, not platform launch or resume"
+      }
+    }
+  ]
+}

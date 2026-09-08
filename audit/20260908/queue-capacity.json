@@ -1,0 +1,101 @@
+{
+  "scope": "real dispatcher and SQLite; 20ms simulated work; no real study pipeline, HTTP admission, quota, model, PDF or external call",
+  "results": [
+    {
+      "offered_jobs": 1,
+      "worker_cap": 3,
+      "peak_payload_workers": 1,
+      "completed_unique": 1,
+      "states": {
+        "completed": 1
+      },
+      "integrity": "ok",
+      "elapsed_s": 0.067,
+      "cpu_s": 0.047,
+      "queue_wait_p50_s": 0.046,
+      "queue_wait_p95_s": 0.046,
+      "work_plus_finish_mean_s": 0.0211,
+      "process_max_rss_mib": 27.46
+    },
+    {
+      "offered_jobs": 10,
+      "worker_cap": 3,
+      "peak_payload_workers": 3,
+      "completed_unique": 10,
+      "states": {
+        "completed": 10
+      },
+      "integrity": "ok",
+      "elapsed_s": 0.094,
+      "cpu_s": 0.03,
+      "queue_wait_p50_s": 0.029,
+      "queue_wait_p95_s": 0.073,
+      "work_plus_finish_mean_s": 0.0214,
+      "process_max_rss_mib": 29.34
+    },
+    {
+      "offered_jobs": 50,
+      "worker_cap": 3,
+      "peak_payload_workers": 3,
+      "completed_unique": 50,
+      "states": {
+        "completed": 50
+      },
+      "integrity": "ok",
+      "elapsed_s": 0.392,
+      "cpu_s": 0.126,
+      "queue_wait_p50_s": 0.187,
+      "queue_wait_p95_s": 0.349,
+      "work_plus_finish_mean_s": 0.0213,
+      "process_max_rss_mib": 30.2
+    },
+    {
+      "offered_jobs": 100,
+      "worker_cap": 3,
+      "peak_payload_workers": 3,
+      "completed_unique": 100,
+      "states": {
+        "completed": 100
+      },
+      "integrity": "ok",
+      "elapsed_s": 0.773,
+      "cpu_s": 0.247,
+      "queue_wait_p50_s": 0.374,
+      "queue_wait_p95_s": 0.718,
+      "work_plus_finish_mean_s": 0.0212,
+      "process_max_rss_mib": 31.2
+    },
+    {
+      "offered_jobs": 500,
+      "worker_cap": 3,
+      "peak_payload_workers": 3,
+      "completed_unique": 500,
+      "states": {
+        "completed": 500
+      },
+      "integrity": "ok",
+      "elapsed_s": 3.865,
+      "cpu_s": 1.392,
+      "queue_wait_p50_s": 1.924,
+      "queue_wait_p95_s": 3.662,
+      "work_plus_finish_mean_s": 0.0213,
+      "process_max_rss_mib": 33.95
+    },
+    {
+      "offered_jobs": 1000,
+      "worker_cap": 3,
+      "peak_payload_workers": 3,
+      "completed_unique": 1000,
+      "states": {
+        "completed": 1000
+      },
+      "integrity": "ok",
+      "elapsed_s": 7.704,
+      "cpu_s": 2.703,
+      "queue_wait_p50_s": 3.862,
+      "queue_wait_p95_s": 7.322,
+      "work_plus_finish_mean_s": 0.0213,
+      "process_max_rss_mib": 38.67
+    }
+  ]
+}

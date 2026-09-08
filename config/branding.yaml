@@ -1,0 +1,44 @@
+# هوية سِلك البصرية — قابلة للتعديل من المالك بلا كود (الموجة ١١، §11.1).
+#
+# صيغة مبسّطة عمداً (key: value مسطّح فقط، بلا تعشيش/قوائم) — تُقرأ بمحلّل
+# stdlib خفيف (`silk_reports._load_branding`) لا PyYAML: المشروع يلتزم
+# "stdlib-first، بلا أطر ثقيلة" (`.claude/settings.json`، إضافة ponytail؛
+# راجع CLAUDE.md قسم "Misc") وPyYAML ليست ضمن requirements.txt المثبَّتة.
+# عدّل القيم أدناه مباشرة — لا حاجة لإعادة نشر كود.
+
+# مسار شعار سِلك (PNG/SVG) — فارغ = عنصر نائب نصي "[شعار سِلك]" على الغلاف.
+logo_path:
+
+# الألوان الأساسية (Hex بلا #) — تُستخدم لشارة الحكم وعناوين الأقسام
+# ورؤوس الجداول والأشرطة المتناوبة.
+primary_color: 1B3B6F
+secondary_color: C9A227
+
+# لوحة صفحات المنصّة/الهبوط (قرار مالك 2026-08-18: استبدال الأزرق بحياد
+# داكن «نفس مكوّنات MagicUI/shadcn» — يعدّل قرار الأزرق الفاتح 2026-08-17) —
+# تقارير Word/PDF تبقى على primary_color الكحلي أعلاه، وحارس
+# tests/test_platform_cost_visibility.py يطابق الفصلين ميكانيكياً.
+platform_primary_color: 18181B
+platform_primary_dark: 09090B
+platform_accent_color: 3F3F46
+
+# لوحة **داشبورد** المنصّة — أزرق سِلك (قرار مالك 2026-08-20 ينسخ قرار «نمط
+# Stripe» 2026-08-18). السابقة: اللوحة كانت ألوان Stripe الحرفية (635BFF
+# نيلي + 1A1F36 حبر + E3E8EE حدود) — هوية شركة أخرى شُحنت في منتجنا ومرّت من
+# كل الحرّاس لأن الحارس طابَق ملف الهوية لا **مصدر** قيمه.
+# السلّم كامل هنا عمداً: الهوية تُعدَّل من هذا الملف بلا كود (§11.1)، وحارس
+# tests/test_platform_cost_visibility.py يطابق كل درجة ميكانيكياً.
+# تخصّ web/platform.html وحدها؛ الهبوط/الدفع/إعادة التعيين على platform_*
+# أعلاه، وتقارير Word/PDF على primary_color الكحلي — فصل ثلاثي بالاتجاهين.
+dashboard_primary_color: 2563EB
+dashboard_primary_dark: 1D4ED8
+dashboard_primary_active: 1E40AF
+dashboard_primary_soft: EFF6FF
+dashboard_primary_light: DBEAFE
+dashboard_ink_color: 111827
+dashboard_muted_color: 64748B
+dashboard_line_color: E2E8F0
+dashboard_bg_color: F8FAFC
+
+# سطر التذييل/التواصل — يظهر أسفل كل صفحة وعلى الغلاف.
+contact_footer: سِلك لذكاء الأسواق — منصة تحليل أسواق التصدير السعودية

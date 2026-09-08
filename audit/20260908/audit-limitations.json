@@ -1,0 +1,25 @@
+{
+  "observed_at_utc": "2026-09-07T22:36:54.164987+00:00",
+  "browser": {
+    "local_loopback": "ERR_BLOCKED_BY_CLIENT",
+    "visual_console_keyboard_verified_locally": false,
+    "independent_github_e2e_pass": true
+  },
+  "railway_live_account_read": false,
+  "production_db_read": false,
+  "paid_provider_calls": 0,
+  "live_ai_load_test": false,
+  "local_git_history": "shallow: two commits",
+  "dependency_local_scanner": {
+    "exit_code": 0,
+    "dependencies_in_result": 0,
+    "accepted_as_vulnerability_audit": false
+  },
+  "formatter_check": {
+    "exit_code": 1,
+    "classification": "style-only",
+    "would_reformat": 547,
+    "already_formatted": 73
+  },
+  "changes": "audit report and evidence only; no application fixes, commit, push, deploy, settings change, user-data deletion"
+}

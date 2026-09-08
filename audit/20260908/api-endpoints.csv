@@ -1,0 +1,100 @@
+file,line,method,route,symbol,async,guards
+api.py,999,get,'/health',health,True,
+api.py,1006,get,'/ready',ready,False,_rate_limit
+api.py,1193,get,'/resolve/{name}',resolve,False,_rate_limit
+api.py,1202,get,'/config',config,False,_rate_limit;_require_hs6
+api.py,1233,post,'/products/intake',products_intake,False,_rate_limit;_require_key
+api.py,1300,post,'/classify_hs',classify_hs,False,_rate_limit;_require_key
+api.py,1324,get,'/index',index,False,_rate_limit
+api.py,1333,get,'/markets',markets_reference,False,_rate_limit
+api.py,1586,post,'/analyze',analyze,False,_rate_limit;_require_key
+api.py,1759,get,'/settings/agents',get_agent_settings,False,_rate_limit;_require_key
+api.py,1778,post,'/settings/agents',set_agent_settings,False,_rate_limit;_require_key
+api.py,1796,post,'/settings/keys',set_keys,False,_rate_limit;_require_key
+api.py,1822,post,'/deepen',deepen,False,_guard_paid;_rate_limit;_require_key
+api.py,2314,get,'/research/readiness',research_readiness,False,_rate_limit;_require_key
+api.py,3128,post,'/research',research,False,_rate_limit;_require_key
+api.py,3201,post,'/research/{analysis_id}/cancel',research_cancel,False,_rate_limit;_require_key
+api.py,3228,get,'/research/{analysis_id}/status',research_status,False,_rate_limit;_require_key
+api.py,3312,post,'/discover',discover,False,_rate_limit;_require_key
+api.py,3335,post,'/trend',trend,False,_rate_limit;_require_key
+api.py,3356,get,'/diagnostics',diagnostics,False,_rate_limit;_require_key
+api.py,3400,get,'/ops/last-errors',ops_last_errors,False,_rate_limit;_require_key
+api.py,3417,get,'/ops/backup',ops_backup,False,_rate_limit;_require_key
+api.py,3431,get,'/ops/backup/{store_name}',ops_backup_download,False,_rate_limit;_require_key
+api.py,3456,get,'/watchdog',watchdog,False,_rate_limit;_require_key
+api.py,3472,get,'/watchdog/report.md',watchdog_report_md,False,_rate_limit;_require_key
+api.py,3483,get,'/sources',sources,False,_rate_limit
+api.py,3519,get,'/analyses',analyses,False,(request.query_params.get('limit') or '').strip;_rate_limit;_require_key
+api.py,3543,get,'/analyses/{analysis_id}',analysis,False,_rate_limit;_require_key
+api.py,3621,get,'/analyses/{analysis_id}/brief',brief,False,_rate_limit;_require_key
+api.py,3638,get,'/analyses/{analysis_id}/report.docx',report_docx,False,_rate_limit;_require_key
+api.py,3731,get,'/analyses/{analysis_id}/report.pdf',report_pdf,False,_rate_limit;_require_key
+api.py,3803,get,'/analyses/{analysis_id}/report.md',report_md,False,_rate_limit;_require_key
+api.py,3834,get,'/analyses/{analysis_id}/writer-diagnostics',writer_diagnostics,False,_rate_limit;_require_key
+api.py,3877,post,'/analyses/{analysis_id}/report',regenerate_report,False,_rate_limit;_require_key
+api.py,4048,post,'/analyses/{analysis_id}/enrich-leads',enrich_leads,False,_rate_limit;_require_key
+api.py,4147,post,'/analyses/{analysis_id}/ask',ask_analysis,False,_rate_limit;_require_key
+api.py,4198,patch,'/analyses/{analysis_id}/outcome',set_outcome,False,_rate_limit;_require_key
+api.py,1029,get,'/_test/slow',_test_slow,False,
+silk_platform/api.py,448,get,_PREFIX,platform_root,False,
+silk_platform/api.py,473,get,_PREFIX + '/pricing',public_pricing,False,
+silk_platform/api.py,529,post,_PREFIX + '/billing/checkout',billing_checkout,False,throttle.named_limits
+silk_platform/api.py,628,get,'/checkout',checkout_page,False,
+silk_platform/api.py,637,get,'/reset-password',reset_password_page,False,
+silk_platform/api.py,657,post,_PREFIX + '/auth/login',login,False,auth.authenticate;auth.create_session;throttle.named_limits
+silk_platform/api.py,712,post,_PREFIX + '/auth/logout',logout,False,_ctx;auth.destroy_session
+silk_platform/api.py,725,get,_PREFIX + '/me',me,False,_ctx
+silk_platform/api.py,763,patch,_PREFIX + '/account/language',set_factory_language,False,_require
+silk_platform/api.py,795,patch,_PREFIX + '/me/language',set_my_language,False,_require;auth.now_iso
+silk_platform/api.py,825,patch,_PREFIX + '/me',patch_me,False,_require;auth.now_iso
+silk_platform/api.py,862,post,_PREFIX + '/me/password',change_my_password,False,_require;auth.change_password
+silk_platform/api.py,968,post,_PREFIX + '/auth/password-reset/request',reset_request,False,auth.issue_reset_token;auth.user_language_by_email;throttle.named_limits
+silk_platform/api.py,1016,post,_PREFIX + '/auth/password-reset/confirm',reset_confirm,False,auth.consume_reset_token;throttle.named_limits
+silk_platform/api.py,1165,get,_PREFIX + '/unit-hint',unit_hint,False,_require
+silk_platform/api.py,1175,get,_PREFIX + '/products',list_products,False,_require
+silk_platform/api.py,1192,post,_PREFIX + '/products',create_product,False,_require
+silk_platform/api.py,1220,post,_PREFIX + '/products/{product_id}/classify-image',classify_product_image,False,_require;auth.now_iso;throttle.named_limits
+silk_platform/api.py,1338,patch,_PREFIX + '/products/{product_id}',patch_product,False,_require
+silk_platform/api.py,1368,delete,_PREFIX + '/products/{product_id}',delete_product,False,_require;auth.now_iso
+silk_platform/api.py,1392,get,_PREFIX + '/overview',factory_overview,False,"_require;conn.execute(""SELECT id, product, market_pref, analysis_id, completed_at FROM studies WHERE owner_id = ? AND state = 'completed' AND analysis_id IS NOT NULL ORDER BY id DESC LIMIT 200"", (ctx.account_id,)).fetchall;conn.execute('SELECT id, product, market_pref, state, completed_at, run_error FROM studies WHERE owner_id = ? ORDER BY id DESC LIMIT 5', (ctx.account_id,)).fetchall"
+silk_platform/api.py,1466,get,_PREFIX + '/studies',list_studies,False,_require
+silk_platform/api.py,1614,post,_PREFIX + '/studies',create_study,False,_require
+silk_platform/api.py,1639,get,_PREFIX + '/studies/{study_id}',get_study,False,
+silk_platform/api.py,1675,patch,_PREFIX + '/studies/{study_id}',patch_study,False,_require;auth.now_iso
+silk_platform/api.py,1794,delete,_PREFIX + '/studies/{study_id}',delete_study,False,"_require;conn.execute(""SELECT 1 FROM study_runs WHERE study_id = ? AND state IN ('queued','running') AND study_id IN (SELECT id FROM studies WHERE owner_id = ?) LIMIT 1"", (study_id, ctx.account_id)).fetchone"
+silk_platform/api.py,1973,post,_PREFIX + '/studies/{study_id}/launch',launch_study,False,_require;auth.now_iso
+silk_platform/api.py,2278,get,_PREFIX + '/studies/{study_id}/report',study_report,False,
+silk_platform/api.py,2306,get,_PREFIX + '/studies/{study_id}/report.docx',study_report_docx,False,
+silk_platform/api.py,2345,get,_PREFIX + '/studies/{study_id}/report.pdf',study_report_pdf,False,throttle.named_limits
+silk_platform/api.py,2408,post,_PREFIX + '/classify-image',classify_image,False,_require;throttle.named_limits
+silk_platform/api.py,2478,post,_PREFIX + '/studies/{study_id}/complete',complete_study_ep,False,
+silk_platform/api.py,2488,post,_PREFIX + '/studies/{study_id}/archive',archive_study_ep,False,
+silk_platform/api.py,2498,post,_PREFIX + '/studies/{study_id}/cancel',cancel_study_ep,False,_require
+silk_platform/api.py,2527,get,_PREFIX + '/images',list_images,False,_require
+silk_platform/api.py,2539,post,_PREFIX + '/images',create_image,False,_require;storage.validate_extension;throttle.named_limits
+silk_platform/api.py,2628,delete,_PREFIX + '/images/{image_id}',delete_image,False,_require
+silk_platform/api.py,2662,get,_PREFIX + '/images/{image_id}/signed-url',image_signed_url,False,
+silk_platform/api.py,2680,get,'/files/{storage_key:path}',serve_file,False,
+silk_platform/api.py,2698,get,_PREFIX + '/wallet',get_wallet_ep,False,_ctx
+silk_platform/api.py,2714,get,_PREFIX + '/wallet/ledger',get_ledger_ep,False,_ctx
+silk_platform/api.py,2731,get,_PREFIX + '/audit',factory_audit,False,_require
+silk_platform/api.py,2749,get,_PREFIX + '/notifications',list_notifications,False,_require
+silk_platform/api.py,2764,post,_PREFIX + '/notifications/read',read_notifications,False,_require
+silk_platform/api.py,2796,get,_PREFIX + '/entitlements',get_entitlements,False,_require
+silk_platform/api.py,2813,get,_PREFIX + '/admin/metrics',admin_metrics,False,"_require;conn.execute('SELECT substr(created_at, 1, 7) AS m, COUNT(*) AS c FROM audit_log WHERE action = ? GROUP BY m ORDER BY m DESC LIMIT 12', (action,)).fetchall"
+silk_platform/api.py,2902,post,_PREFIX + '/admin/fund',admin_fund,False,_require
+silk_platform/api.py,2934,get,_PREFIX + '/admin/audit',admin_audit,False,_require
+silk_platform/api.py,2946,patch,_PREFIX + '/admin/accounts/{account_id}',admin_rename_account,False,_require;auth.now_iso
+silk_platform/api.py,2976,get,_PREFIX + '/admin/accounts',admin_list_accounts,False,"_require;conn.execute(""SELECT id, name, tier, is_active, created_at, per_user_monthly_studies FROM accounts WHERE kind = 'factory' ORDER BY id LIMIT ?"", (limit,)).fetchall"
+silk_platform/api.py,3005,get,_PREFIX + '/admin/studies',admin_all_studies,False,"_require;conn.execute(""SELECT s.id, a.name AS account_name, a.tier, s.product, s.market_pref, s.hs_code, s.state, s.launched_at, s.launched_by_user_id, s.run_started_at, s.run_finished_at, s.run_error, s.analysis_id, s.created_at, s.run_stats FROM studies s JOIN accounts a ON a.id = s.owner_id WHERE a.kind = 'factory' ORDER BY s.id DESC LIMIT ?"", (limit,)).fetchall"
+silk_platform/api.py,3040,post,_PREFIX + '/admin/diagnostics',admin_diagnostics,False,_require;throttle.named_limits
+silk_platform/api.py,3040,get,_PREFIX + '/admin/diagnostics',admin_diagnostics,False,_require;throttle.named_limits
+silk_platform/api.py,3111,post,_PREFIX + '/admin/accounts/{account_id}/tier',admin_set_tier,False,_require;_require_fields
+silk_platform/api.py,3137,post,_PREFIX + '/admin/accounts/{account_id}/quota',admin_set_per_user_quota,False,_require
+silk_platform/api.py,3167,post,_PREFIX + '/admin/accounts/{account_id}/reset-quota',admin_reset_quota,False,_require
+silk_platform/api.py,3195,post,_PREFIX + '/admin/tiers/{tier}',admin_set_tier_settings,False,_require
+silk_platform/api.py,3232,post,_PREFIX + '/admin/users/{user_id}/reset',admin_issue_reset,False,_require;auth.issue_reset_token_for_user;auth.user_reset_state
+silk_platform/api.py,3300,post,_PREFIX + '/admin/users/{user_id}/unlock-login',admin_unlock_login,False,_require
+silk_platform/api.py,3320,post,_PREFIX + '/admin/users/{user_id}/deactivate',admin_deactivate_user,False,_require;auth.now_iso
+silk_platform/api.py,3357,get,_PREFIX + '/analyst/aggregates',analyst_aggregates,False,"_require;conn.execute('SELECT substr(hs_code, 1, 2) AS chapter, COUNT(*) AS c FROM studies WHERE hs_code IS NOT NULL AND length(hs_code) >= 2 GROUP BY chapter ORDER BY c DESC, chapter LIMIT 10').fetchall"

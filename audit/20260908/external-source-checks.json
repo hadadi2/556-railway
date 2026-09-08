@@ -1,0 +1,32 @@
+{
+  "observed_at_utc": "2026-09-07T22:36:54.164987+00:00",
+  "sources": [
+    {
+      "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "facts": {
+        "sonnet_5_usd_per_million_input": 2,
+        "sonnet_5_usd_per_million_output": 10,
+        "haiku_4_5_input": 1,
+        "haiku_4_5_output": 5,
+        "scheduled_september_price_increase_cancelled": true
+      }
+    },
+    {
+      "url": "https://railway.com/pricing",
+      "facts": {
+        "memory_GB_second_usd": 3.86e-06,
+        "cpu_vcpu_second_usd": 7.72e-06,
+        "volume_GB_second_usd": 6e-08,
+        "egress_GB_usd": 0.05
+      }
+    },
+    {
+      "url": "https://newsinitiative.withgoogle.com/resources/trainings/google-trends-understanding-the-data/",
+      "facts": "Relative normalization 0-100; comparison critique uses our mathematical fixture and source semantics."
+    },
+    {
+      "url": "https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table?lang=en",
+      "facts": "Population dataset includes age group, sex and country of birth; no live population number retrieved."
+    }
+  ]
+}

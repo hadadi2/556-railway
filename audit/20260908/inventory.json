@@ -1,0 +1,4525 @@
+{
+  "commit": "8143125ea37660986d616007ca1df355ad332b80",
+  "files": [
+    ".claude/agents/test-fixer.md",
+    ".claude/hooks/suite-green-stop.sh",
+    ".claude/hooks/writing-style-reminder.sh",
+    ".claude/settings.json",
+    ".claude/skills/README.md",
+    ".claude/skills/analyze-pipeline-debugging/SKILL.md",
+    ".claude/skills/architecture-map/SKILL.md",
+    ".claude/skills/change-rules/SKILL.md",
+    ".claude/skills/credit-economics/SKILL.md",
+    ".claude/skills/dashboard-design/SKILL.md",
+    ".claude/skills/failure-stories/SKILL.md",
+    ".claude/skills/mission-tuning-and-evals/SKILL.md",
+    ".claude/skills/operator-intent-fidelity/SKILL.md",
+    ".claude/skills/pr-and-wave-discipline/SKILL.md",
+    ".claude/skills/railway-operations/SKILL.md",
+    ".claude/skills/render-view-and-reports/SKILL.md",
+    ".claude/skills/research-debugging/SKILL.md",
+    ".claude/skills/research-report-quality/SKILL.md",
+    ".claude/skills/silk-operations/SKILL.md",
+    ".claude/skills/testing-discipline/SKILL.md",
+    ".claude/skills/writer-timeout-open-case/SKILL.md",
+    ".dockerignore",
+    ".env.example",
+    ".github/pull_request_template.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/e2e-live-shape.yml",
+    ".github/workflows/live-smoke.yml",
+    ".github/workflows/nightly-shuffle.yml",
+    ".github/workflows/post-deploy-smoke.yml",
+    ".gitignore",
+    ".gitleaksignore",
+    ".python-version",
+    "AUDIT.md",
+    "CLAUDE.md",
+    "Dockerfile",
+    "PROGRESS.md",
+    "README.md",
+    "api.py",
+    "config/branding.yaml",
+    "config/pricing.yaml",
+    "correlation.py",
+    "data/agreements_l1.csv",
+    "data/backtest_cases.csv",
+    "data/cert_fees_l1.csv",
+    "data/countries.csv",
+    "data/default_sources_by_family.csv",
+    "data/demographics_l1.csv",
+    "data/freight_lanes_l1.csv",
+    "data/hs_codes.csv",
+    "data/hs_reference.csv",
+    "data/hscodes_full.csv",
+    "data/market_locale.csv",
+    "data/market_profiles.json",
+    "data/measurement_dimensions.csv",
+    "data/muslim_share.csv",
+    "data/ports_l1.csv",
+    "data/product_profiles.json",
+    "data/requirements_l1.csv",
+    "data/restricted_markets.csv",
+    "data/worldbank_seed.csv",
+    "docker/entrypoint.sh",
+    "docker/fonts.sha256",
+    "docs/ACCEPTANCE_R1.md",
+    "docs/ANALYSIS.md",
+    "docs/APPROVED_INTERFACES.md",
+    "docs/ARCHITECTURAL_AUDIT_2026-07-24.md",
+    "docs/ARCHITECTURE.md",
+    "docs/ASSESSMENT_2026-08-19.md",
+    "docs/AUDIT_STATUS.md",
+    "docs/BASELINE-2026-07-16.md",
+    "docs/BASELINE-post-BC.md",
+    "docs/DECISIONS.md",
+    "docs/DEEP_RESEARCH_DECISIONS.md",
+    "docs/DEPLOY_RAILWAY.md",
+    "docs/DEPLOY_SCRAPER.md",
+    "docs/DESIGN_A2_SUPPLIER_PLAUSIBILITY.md",
+    "docs/DESIGN_E_SECTION_SUBSTRUCTURE.md",
+    "docs/END_TO_END_AUDIT_2026-07-27.md",
+    "docs/ENGINE_AUDIT.md",
+    "docs/EXECUTION_PLAN.md",
+    "docs/EXTERNAL_SERVICES_FAILURE_AUDIT.md",
+    "docs/FINAL_STATUS_2026-07-19.md",
+    "docs/FULL_AUDIT_2026-07-15.md",
+    "docs/FULL_AUDIT_2026-07-20.md",
+    "docs/GENERICNESS_AUDIT.md",
+    "docs/HS_CLASSIFICATION.md",
+    "docs/LESSONS.md",
+    "docs/LIVE_PROOF_RUNBOOK.md",
+    "docs/OWNER_COMPLETION_2026-09-07_AR.md",
+    "docs/OWNER_FOLLOWUP_2026-09-07_AR.md",
+    "docs/OWNER_NEXT_STEPS.md",
+    "docs/PLATFORM_ANALYSIS.md",
+    "docs/PLATFORM_PR1.md",
+    "docs/PLATFORM_PR2.md",
+    "docs/PLATFORM_PR3.md",
+    "docs/PLATFORM_PR4.md",
+    "docs/PLATFORM_PR7.md",
+    "docs/PLATFORM_ROADMAP.md",
+    "docs/PROJECT_REPORT.md",
+    "docs/PROPOSAL_comprehensive_studies.md",
+    "docs/REBUILD_PLAN.md",
+    "docs/RELEASE_NOTES_v1.md",
+    "docs/REPAIR_REPORT_2026-09-07_AR.md",
+    "docs/SOURCE_AUDIT.md",
+    "docs/SPEC-v2.md",
+    "docs/TUNING.md",
+    "docs/UI_AUDIT_2026-07-15.md",
+    "docs/VISION.md",
+    "docs/WAVE_Z_AUDIT.md",
+    "docs/WS_RECONCILIATION_2026-07-23.md",
+    "docs/mockups/silk_prototype.html",
+    "docs/redesign/PLATFORM_STRATEGY.md",
+    "docs/redesign/enterprise-preview.html",
+    "docs/superpowers/plans/2026-08-22-research-pipeline-resilience.md",
+    "evals/golden_cases.json",
+    "evals/golden_cases.schema.json",
+    "evals/golden_set/germany_dates.json",
+    "evals/golden_set/japan_honey.json",
+    "evals/golden_set/kuwait_peanut_butter.json",
+    "evals/golden_set/nadec_yemen_dairy.json",
+    "evals/golden_set/netherlands_dates.json",
+    "evals/hs_golden_set.csv",
+    "evals/scores.json",
+    "fix_agent.py",
+    "migrations/001_core.sql",
+    "migrations/002_settings.sql",
+    "migrations/003_agent_runs.sql",
+    "migrations/004_hs_classify_cache.sql",
+    "migrations/005_collection_runs_index.sql",
+    "migrations/platform/001_platform_core.sql",
+    "migrations/platform/002_login_attempts.sql",
+    "migrations/platform/003_email_queue_claim_tracking.sql",
+    "migrations/platform/004_funnel_selection_columns.sql",
+    "migrations/platform/005_per_user_study_quota.sql",
+    "migrations/platform/006_market_study_pivot.sql",
+    "migrations/platform/007_run_stats.sql",
+    "migrations/platform/008_language_chosen.sql",
+    "migrations/platform/009_notifications.sql",
+    "migrations/platform/010_products.sql",
+    "migrations/platform/011_hs_candidates.sql",
+    "migrations/platform/012_tier_settings.sql",
+    "migrations/platform/013_factory_language.sql",
+    "migrations/platform/014_product_economics.sql",
+    "migrations/platform/015_study_production_cost.sql",
+    "migrations/platform/016_quota_reset_watermark.sql",
+    "migrations/platform/017_hs_classification_provenance.sql",
+    "migrations/platform/018_study_runs.sql",
+    "migrations/platform/019_study_advisories_ack.sql",
+    "migrations/platform/020_indexes.sql",
+    "migrations/platform/021_study_hs_source.sql",
+    "railway.json",
+    "requirements-ci.txt",
+    "requirements-dev.txt",
+    "requirements-nightly.txt",
+    "requirements.txt",
+    "samples/README.md",
+    "samples/academic_report_latest.docx",
+    "samples/analysis_latest.json",
+    "samples/brief_latest.txt",
+    "samples/client_report_latest.docx",
+    "samples/client_report_latest_en.docx",
+    "samples/kuwait_peanut_butter_research_report.docx",
+    "samples/kuwait_peanut_butter_research_report.md",
+    "samples/report_full_latest.docx",
+    "samples/report_full_latest.md",
+    "samples/research_report_latest.docx",
+    "samples/research_report_latest.md",
+    "silk_agents.py",
+    "silk_ai_judge.py",
+    "silk_backup.py",
+    "silk_blocs.py",
+    "silk_cache.py",
+    "silk_channels_agent.py",
+    "silk_charter.py",
+    "silk_circuit.py",
+    "silk_collectors.py",
+    "silk_competitors_agent.py",
+    "silk_consistency.py",
+    "silk_context.py",
+    "silk_contradiction.py",
+    "silk_data_layer.py",
+    "silk_data_layer_v2.py",
+    "silk_decision.py",
+    "silk_deep_pillars.py",
+    "silk_diagnostics.py",
+    "silk_discovery.py",
+    "silk_dynamics_agent.py",
+    "silk_economics.py",
+    "silk_engine.py",
+    "silk_eurostat_agent.py",
+    "silk_evals.py",
+    "silk_explee_agent.py",
+    "silk_export_gate.py",
+    "silk_fact_records.py",
+    "silk_faostat_agent.py",
+    "silk_gap_recovery.py",
+    "silk_gdelt_agent.py",
+    "silk_gmaps.py",
+    "silk_google_news_agent.py",
+    "silk_hs_attributes.py",
+    "silk_hs_classifier.py",
+    "silk_hs_confirm.py",
+    "silk_hs_dialog.py",
+    "silk_hs_from_image.py",
+    "silk_hs_norm.py",
+    "silk_hs_pipeline.py",
+    "silk_hs_reference.py",
+    "silk_hs_resolver.py",
+    "silk_i18n.py",
+    "silk_imf_agent.py",
+    "silk_importers_agent.py",
+    "silk_inference.py",
+    "silk_janitor.py",
+    "silk_json.py",
+    "silk_judge_abstain.py",
+    "silk_llm_provider.py",
+    "silk_llm_runtime.py",
+    "silk_localprice_agent.py",
+    "silk_maps_agent.py",
+    "silk_market_analyst.py",
+    "silk_market_ranker.py",
+    "silk_market_resolver.py",
+    "silk_missions.py",
+    "silk_narrative.py",
+    "silk_openalex_agent.py",
+    "silk_ops_log.py",
+    "silk_pdf_textlayer.py",
+    "silk_platform/__init__.py",
+    "silk_platform/api.py",
+    "silk_platform/audit.py",
+    "silk_platform/auth.py",
+    "silk_platform/billing.py",
+    "silk_platform/bootstrap.py",
+    "silk_platform/db.py",
+    "silk_platform/engine_bridge.py",
+    "silk_platform/entitlements.py",
+    "silk_platform/factory_settings.py",
+    "silk_platform/jobs.py",
+    "silk_platform/lifecycle.py",
+    "silk_platform/models.py",
+    "silk_platform/notifications.py",
+    "silk_platform/passwords.py",
+    "silk_platform/payments.py",
+    "silk_platform/pricing.py",
+    "silk_platform/quota.py",
+    "silk_platform/repository.py",
+    "silk_platform/scheduler.py",
+    "silk_platform/seed.py",
+    "silk_platform/smtp_transport.py",
+    "silk_platform/storage.py",
+    "silk_platform/study_runtime.py",
+    "silk_platform/throttle.py",
+    "silk_platform/tier_config.py",
+    "silk_platform/tokens.py",
+    "silk_platform/wallet.py",
+    "silk_plausibility.py",
+    "silk_prerun.py",
+    "silk_pricing.py",
+    "silk_product_intake.py",
+    "silk_profiles.py",
+    "silk_prose_meter.py",
+    "silk_quality.py",
+    "silk_quality_gate.py",
+    "silk_render.py",
+    "silk_reports.py",
+    "silk_requirements_agent.py",
+    "silk_research.py",
+    "silk_research_gateway.py",
+    "silk_research_pipeline.py",
+    "silk_research_runtime.py",
+    "silk_seed_data.py",
+    "silk_source_coverage.py",
+    "silk_sqlite.py",
+    "silk_staleness.py",
+    "silk_storage.py",
+    "silk_store.py",
+    "silk_style_contract.py",
+    "silk_synthesis.py",
+    "silk_tariffs_agent.py",
+    "silk_trace.py",
+    "silk_trend.py",
+    "silk_trends_agent.py",
+    "silk_usage.py",
+    "silk_vision.py",
+    "silk_volza_agent.py",
+    "silk_watchdog.py",
+    "silk_websearch_agent.py",
+    "silk_wto_tariff.py",
+    "tests/api_source.py",
+    "tests/baselines/verdict_score_baseline.json",
+    "tests/conftest.py",
+    "tests/e2e/hs_candidates_flow.cjs",
+    "tests/e2e/hs_dialog_official_flow.cjs",
+    "tests/e2e/hs_tier_family_flow.cjs",
+    "tests/e2e/live_shape_flow.cjs",
+    "tests/e2e/platform_flow.cjs",
+    "tests/e2e/platform_language_flow.cjs",
+    "tests/e2e/prerun_flow.cjs",
+    "tests/e2e/readiness_flow.cjs",
+    "tests/pdf_gate.py",
+    "tests/platform_helpers.py",
+    "tests/test_a2_supplier_plausibility.py",
+    "tests/test_academic_report_style.py",
+    "tests/test_academic_writer_default.py",
+    "tests/test_acceptance_tooling.py",
+    "tests/test_agent_settings_panel.py",
+    "tests/test_analysis20_duplicate_section_dedup.py",
+    "tests/test_analysis20_incomplete_delivery.py",
+    "tests/test_analysis20_join_overlap_trim.py",
+    "tests/test_analysis20_resume_from_partial.py",
+    "tests/test_analysis20_trailing_fragment.py",
+    "tests/test_analysis_history_storage.py",
+    "tests/test_analyst_intersections_diagnostics_b2.py",
+    "tests/test_analyst_synonym_rescue_d2.py",
+    "tests/test_analyze_persistence_and_glyph.py",
+    "tests/test_approved_silk_interfaces.py",
+    "tests/test_audit_2026_08_27_fixes.py",
+    "tests/test_audit_2026_09_01_ext.py",
+    "tests/test_audit_2026_09_01_p0.py",
+    "tests/test_audit_2026_09_01_p3.py",
+    "tests/test_audit_2026_09_01_r0.py",
+    "tests/test_audit_2026_09_01_r2b.py",
+    "tests/test_audit_2026_09_01_r3.py",
+    "tests/test_audit_2026_09_01_r4.py",
+    "tests/test_audit_2026_09_01_r5.py",
+    "tests/test_audit_2026_09_01_r6.py",
+    "tests/test_audit_2026_09_01_r7.py",
+    "tests/test_audit_2026_09_01_r8.py",
+    "tests/test_audit_2026_09_01_r9.py",
+    "tests/test_audit_high_fixes.py",
+    "tests/test_auto_enrich_pipeline_item1.py",
+    "tests/test_backup_and_alerts.py",
+    "tests/test_benchmark_battery_part2.py",
+    "tests/test_bloc_lists_single_source.py",
+    "tests/test_catalog_hs_provenance_gate.py",
+    "tests/test_client_docx_mission_morphology_leak.py",
+    "tests/test_client_export_redact_not_refuse.py",
+    "tests/test_client_report_export.py",
+    "tests/test_client_report_proposals.py",
+    "tests/test_client_sanitizer_covers_guard.py",
+    "tests/test_closure_package.py",
+    "tests/test_command6_regression_budget_and_pricing.py",
+    "tests/test_committed_samples_current.py",
+    "tests/test_confidence_is_measured.py",
+    "tests/test_consumer_culture_extraction.py",
+    "tests/test_contract_coherence.py",
+    "tests/test_cost_metering_honesty.py",
+    "tests/test_cost_speed_e.py",
+    "tests/test_cross_market_leak_guard.py",
+    "tests/test_data_economics.py",
+    "tests/test_deep_decision_engine.py",
+    "tests/test_deferred_s58_fixes.py",
+    "tests/test_diagnostics.py",
+    "tests/test_download_gate_block.py",
+    "tests/test_dza_quality_gate_fixes.py",
+    "tests/test_e_section_substructure.py",
+    "tests/test_early_halt_reason_text.py",
+    "tests/test_economics_gates_awake.py",
+    "tests/test_enrich_leads_item2.py",
+    "tests/test_entity_price_extraction.py",
+    "tests/test_env_documented.py",
+    "tests/test_evidence_provenance.py",
+    "tests/test_evidence_rank_and_estimate_tag.py",
+    "tests/test_factory_report_language.py",
+    "tests/test_find_all_gaps_s58_review.py",
+    "tests/test_fix_pack_v2_1.py",
+    "tests/test_g41_domestic_production_plausibility.py",
+    "tests/test_gap_recovery.py",
+    "tests/test_gap_recovery_revival.py",
+    "tests/test_gap_recovery_taxonomy.py",
+    "tests/test_gap_sweep2.py",
+    "tests/test_gap_sweep3.py",
+    "tests/test_gap_sweep3_gate.py",
+    "tests/test_gap_sweep3_meta.py",
+    "tests/test_gap_sweep3_surfaces.py",
+    "tests/test_gate_client_reasons.py",
+    "tests/test_gate_dead_guards_revival.py",
+    "tests/test_gate_language_parity.py",
+    "tests/test_gate_regression_locks_analysis7.py",
+    "tests/test_gmaps_integration_c2345.py",
+    "tests/test_gmaps_scraper_c1.py",
+    "tests/test_goal1_competition_unit_and_direction.py",
+    "tests/test_goal2_min_pillars.py",
+    "tests/test_goal3_pillar_narrative_sync.py",
+    "tests/test_goal4_hs_recommendation_match.py",
+    "tests/test_goal5_derived_number_inputs.py",
+    "tests/test_goal6_pricing_contradiction.py",
+    "tests/test_goal7_verdict_evidence_direction.py",
+    "tests/test_goal8_counter_case_two_pillars.py",
+    "tests/test_goal9_10_hs_reference_and_label.py",
+    "tests/test_goal_cost_input_wave2.py",
+    "tests/test_goal_cost_wave8.py",
+    "tests/test_goal_estimation_wave7.py",
+    "tests/test_goal_full_report_zero_hits.py",
+    "tests/test_goal_inference_wave6.py",
+    "tests/test_goal_p2_text_checks.py",
+    "tests/test_goal_prose_wave5.py",
+    "tests/test_goal_summary_wave4.py",
+    "tests/test_goal_units_wave1.py",
+    "tests/test_goal_vocab_wave3.py",
+    "tests/test_golden_deep_research_contract.py",
+    "tests/test_golden_set.py",
+    "tests/test_hf_attribution_truncation_plausibility.py",
+    "tests/test_history_sidebar_server_backed.py",
+    "tests/test_hs_attribute_autoresolve.py",
+    "tests/test_hs_attribute_gate_wiring.py",
+    "tests/test_hs_axis_disambiguation.py",
+    "tests/test_hs_butter_family_resolution.py",
+    "tests/test_hs_catalog_revalidation.py",
+    "tests/test_hs_dialog_official_source.py",
+    "tests/test_hs_from_image.py",
+    "tests/test_hs_gate_verdict_and_error_transparency.py",
+    "tests/test_hs_general_classifier.py",
+    "tests/test_hs_generic_term_granularity.py",
+    "tests/test_hs_golden_set.py",
+    "tests/test_hs_halva_brandname_gap.py",
+    "tests/test_hs_llm_fallback.py",
+    "tests/test_hs_no_wrong_auto_approval.py",
+    "tests/test_hs_processed_vs_raw.py",
+    "tests/test_hs_selfreview_gaps.py",
+    "tests/test_hs_substring_false_positives.py",
+    "tests/test_imf_wto_deep_research_wiring.py",
+    "tests/test_importer_leads_render_c5.py",
+    "tests/test_item3_analyze_screen_button.py",
+    "tests/test_layer_valves.py",
+    "tests/test_lessons_enforcement.py",
+    "tests/test_limits_reconciliation_b1.py",
+    "tests/test_live_report_findings.py",
+    "tests/test_live_report_findings2.py",
+    "tests/test_live_smoke.py",
+    "tests/test_llm_provider_retry.py",
+    "tests/test_m0_hotfixes.py",
+    "tests/test_m1_store.py",
+    "tests/test_m2_pipeline.py",
+    "tests/test_mandated_literals_cross_reference.py",
+    "tests/test_manual_hs_code_passthrough.py",
+    "tests/test_market_sizing_boundaries.py",
+    "tests/test_marketing_revision.py",
+    "tests/test_master_prompt_part2_numeric_consistency.py",
+    "tests/test_master_prompt_part2_source_coverage.py",
+    "tests/test_master_prompt_part2_verdict.py",
+    "tests/test_merchant_language_b3.py",
+    "tests/test_mission_cost_attribution.py",
+    "tests/test_money_path_day_bucket.py",
+    "tests/test_narrative_binding_and_timeline.py",
+    "tests/test_narrative_grounding_and_corpus.py",
+    "tests/test_no_ellipsis_build_rule.py",
+    "tests/test_one_economics_path.py",
+    "tests/test_one_gap_channel_and_denominators.py",
+    "tests/test_ops_observability.py",
+    "tests/test_out_of_coverage_guard.py",
+    "tests/test_owner_followup_2026_09_07.py",
+    "tests/test_owner_hs_provenance.py",
+    "tests/test_p0_wiring_and_confidence.py",
+    "tests/test_p1_narrative.py",
+    "tests/test_p1_suggest_price.py",
+    "tests/test_p2_dynamics_agent.py",
+    "tests/test_p2_report_structure.py",
+    "tests/test_p2_scope_and_dynamic_markets.py",
+    "tests/test_p3_prefs_and_chat.py",
+    "tests/test_p4_contextual_chat.py",
+    "tests/test_p4_resilient_fetch.py",
+    "tests/test_p5_judge_and_reach.py",
+    "tests/test_part_b_writing_standard.py",
+    "tests/test_pdf_textlayer.py",
+    "tests/test_persistent_volume.py",
+    "tests/test_phase2b_mission_depth.py",
+    "tests/test_phase2c_a_mirror_statistics.py",
+    "tests/test_phase2c_b_eurostat.py",
+    "tests/test_pillar_paidcap_review_fixes.py",
+    "tests/test_plain_language_reports.py",
+    "tests/test_platform_admin_overview.py",
+    "tests/test_platform_audit_fixes.py",
+    "tests/test_platform_auth.py",
+    "tests/test_platform_billing.py",
+    "tests/test_platform_bootstrap.py",
+    "tests/test_platform_capacity_2026_09_07.py",
+    "tests/test_platform_checkout.py",
+    "tests/test_platform_concurrency.py",
+    "tests/test_platform_cost_visibility.py",
+    "tests/test_platform_deep_mode.py",
+    "tests/test_platform_deep_real_path.py",
+    "tests/test_platform_engine_honesty.py",
+    "tests/test_platform_fake_seam_shape.py",
+    "tests/test_platform_hs_two_paths.py",
+    "tests/test_platform_i18n.py",
+    "tests/test_platform_isolation.py",
+    "tests/test_platform_isolation_ast_guard.py",
+    "tests/test_platform_landing_page.py",
+    "tests/test_platform_lifecycle.py",
+    "tests/test_platform_notifications.py",
+    "tests/test_platform_paid_cap_coverage.py",
+    "tests/test_platform_pivot_bridge.py",
+    "tests/test_platform_pivot_deletion_guard.py",
+    "tests/test_platform_pricing.py",
+    "tests/test_platform_products_profile_overview.py",
+    "tests/test_platform_quota_and_wallet.py",
+    "tests/test_platform_review_hardening.py",
+    "tests/test_platform_roles.py",
+    "tests/test_platform_seats_deletion_guard.py",
+    "tests/test_platform_smtp_transport.py",
+    "tests/test_platform_storage.py",
+    "tests/test_platform_study_runtime.py",
+    "tests/test_platform_tier_settings.py",
+    "tests/test_platform_tiers_seats.py",
+    "tests/test_platform_ui_page.py",
+    "tests/test_platform_user_quota.py",
+    "tests/test_pr147_review_fixes.py",
+    "tests/test_pr254_review_fixes.py",
+    "tests/test_price_level_normalization.py",
+    "tests/test_product_card_economics.py",
+    "tests/test_product_intake_featureB.py",
+    "tests/test_profiles_g1_g2.py",
+    "tests/test_project_review_fixes.py",
+    "tests/test_quota_reset_watermark.py",
+    "tests/test_r1a_market_locale.py",
+    "tests/test_r1b_competing_products.py",
+    "tests/test_r1c_prose_pass.py",
+    "tests/test_r2_chat_grounding.py",
+    "tests/test_r3_trends_context.py",
+    "tests/test_recover_tool_gate_override.py",
+    "tests/test_regression_registry.py",
+    "tests/test_regulatory_hard_gates.py",
+    "tests/test_repo_repair_2026_09_06.py",
+    "tests/test_report_output_overhaul.py",
+    "tests/test_report_plumbing_leaks.py",
+    "tests/test_report_professional_tables.py",
+    "tests/test_report_quality_scoping_pr_a.py",
+    "tests/test_report_quality_scoping_pr_b.py",
+    "tests/test_report_quality_upgrade.py",
+    "tests/test_research_export_from_view.py",
+    "tests/test_research_live_progress.py",
+    "tests/test_research_report_quality.py",
+    "tests/test_resume_completed_run_with_failed_mission.py",
+    "tests/test_resume_retries_failed_missions.py",
+    "tests/test_rf_positioning_confidence.py",
+    "tests/test_risk_pillar_and_logistics.py",
+    "tests/test_rung2_factory_language_flow.py",
+    "tests/test_rung2_real_server.py",
+    "tests/test_rung2_restart_drill.py",
+    "tests/test_rung3_playwright_e2e.py",
+    "tests/test_rung4_platform_real_bridge.py",
+    "tests/test_s58_security_fixes.py",
+    "tests/test_scheduled_refresh.py",
+    "tests/test_self_review_gate.py",
+    "tests/test_selfhosted_fonts.py",
+    "tests/test_shopping_prices.py",
+    "tests/test_sidebar_reopen_analysis.py",
+    "tests/test_silk_portable_preview.py",
+    "tests/test_smoke.py",
+    "tests/test_sqlite_connection_hygiene.py",
+    "tests/test_stage2a.py",
+    "tests/test_stage2b.py",
+    "tests/test_stage3_phase2_triangulation.py",
+    "tests/test_stage3_research.py",
+    "tests/test_stage3_triangulation.py",
+    "tests/test_stage4_decision.py",
+    "tests/test_stage5_report.py",
+    "tests/test_stage5_review_fixes.py",
+    "tests/test_staleness_and_divergence.py",
+    "tests/test_staleness_policy.py",
+    "tests/test_stitch_gaps.py",
+    "tests/test_store_first_routing.py",
+    "tests/test_study12_live_defects.py",
+    "tests/test_study13_live_defects.py",
+    "tests/test_study14_live_defects.py",
+    "tests/test_target_markets.py",
+    "tests/test_tariff_gcc_documented_fallback.py",
+    "tests/test_technical_mission_failures_item2.py",
+    "tests/test_thinking_block_stream_assembly.py",
+    "tests/test_throttle_hardening.py",
+    "tests/test_trends_429_retry_and_polish.py",
+    "tests/test_ui_action_buttons_have_purpose.py",
+    "tests/test_ui_audit_high_fixes.py",
+    "tests/test_ui_med_stale_product_and_empty_markets.py",
+    "tests/test_usability_fixes_aug17.py",
+    "tests/test_vendor_name_leak_item1.py",
+    "tests/test_verdict_score_baseline.py",
+    "tests/test_watchdog.py",
+    "tests/test_wave0_security.py",
+    "tests/test_wave10_quality_and_structure.py",
+    "tests/test_wave11_identity_and_hardening.py",
+    "tests/test_wave12_architecture_audit.py",
+    "tests/test_wave13_resilience.py",
+    "tests/test_wave1_cleanups.py",
+    "tests/test_wave1_hs_classifier.py",
+    "tests/test_wave1_source_contract.py",
+    "tests/test_wave1p5_prerun_advisories.py",
+    "tests/test_wave1p5_service_failure_ops.py",
+    "tests/test_wave2_first_pdf_cluster.py",
+    "tests/test_wave2_gate_parity.py",
+    "tests/test_wave2_med_fixes.py",
+    "tests/test_wave2_structure.py",
+    "tests/test_wave2a_economics_arithmetic.py",
+    "tests/test_wave3_agents.py",
+    "tests/test_wave3_economics_engine.py",
+    "tests/test_wave3_evidence_urls.py",
+    "tests/test_wave3_low_fixes.py",
+    "tests/test_wave3_style_gate_tiers.py",
+    "tests/test_wave3_typography.py",
+    "tests/test_wave3_writer_confidentiality.py",
+    "tests/test_wave4_classification_lock.py",
+    "tests/test_wave4_correlation.py",
+    "tests/test_wave5_verdict_structure.py",
+    "tests/test_wave5a_discovery.py",
+    "tests/test_wave5b_compliance.py",
+    "tests/test_wave5c_reports.py",
+    "tests/test_wave6_deep_research_export.py",
+    "tests/test_wave6_deep_research_view.py",
+    "tests/test_wave6_evals.py",
+    "tests/test_wave6_gdelt.py",
+    "tests/test_wave6_llm_runtime.py",
+    "tests/test_wave6_market_analyst.py",
+    "tests/test_wave6_market_resolver.py",
+    "tests/test_wave6_missions.py",
+    "tests/test_wave6_post_entry_monitoring.py",
+    "tests/test_wave6_reference_csvs.py",
+    "tests/test_wave6_register_discipline.py",
+    "tests/test_wave6_report_writer.py",
+    "tests/test_wave6_research_api.py",
+    "tests/test_wave6_trace.py",
+    "tests/test_wave6_trend.py",
+    "tests/test_wave6_web_deep_research.py",
+    "tests/test_wave7_agent_panel_fallback.py",
+    "tests/test_wave7_directive_audit.py",
+    "tests/test_wave7_live_incident_fixes.py",
+    "tests/test_wave7_security_p0.py",
+    "tests/test_wave8_live_tuning.py",
+    "tests/test_wave8_perf.py",
+    "tests/test_wave9_enrichment_report.py",
+    "tests/test_wave9_sellable_report.py",
+    "tests/test_wave_b_barriers.py",
+    "tests/test_wave_datasources_integration.py",
+    "tests/test_wave_market_study_engine_core_rules.py",
+    "tests/test_wave_p0_prompt_caching.py",
+    "tests/test_wave_p1_ai_timeout_and_failure_reasons.py",
+    "tests/test_wave_p2_writer_trace_regen_sanitize.py",
+    "tests/test_wave_p3_writer_diagnostics_and_json_leak.py",
+    "tests/test_wave_p4_source_outages.py",
+    "tests/test_wave_p5_writer_max_tokens_and_leaks.py",
+    "tests/test_wave_p6_pipeline_resilience.py",
+    "tests/test_wave_p6_platform_bridge.py",
+    "tests/test_wave_p6_review_fixes.py",
+    "tests/test_wave_p6_streaming_provider.py",
+    "tests/test_wave_p6_writer_continuation.py",
+    "tests/test_wave_z_followups.py",
+    "tests/test_wave_z_one_verdict.py",
+    "tests/test_wgi_governance_augment_d3.py",
+    "tests/test_world_coverage_tierA.py",
+    "tests/test_wp1_verdict_determinism.py",
+    "tests/test_wp2_client_output_hygiene.py",
+    "tests/test_wp3_evidence_integrity.py",
+    "tests/test_wp4_gaps_consistency.py",
+    "tests/test_wp5_rtl_brackets.py",
+    "tests/test_wp6_injector_hardening.py",
+    "tests/test_wp7_delivery_gate_hardening.py",
+    "tests/test_writer_gate_polish_analysis7.py",
+    "tests/test_ws10_deterministic_no_evidence_columns.py",
+    "tests/test_ws10_golden_case.py",
+    "tests/test_ws10_writer_prompt_no_evidence_columns.py",
+    "tests/test_ws4_ws11_resilience.py",
+    "tests/test_ws8_news_fallback_chain.py",
+    "tests/test_year_fallback.py",
+    "tests/test_yemen_dairy_mirror_probe.py",
+    "tests/test_zero_confidence_finding_gap.py",
+    "tests/test_zz_phase2_final_gate.py",
+    "tools/acceptance_run.py",
+    "tools/audit_call_probe.py",
+    "tools/audit_stored_hs.py",
+    "tools/audit_unit_gaps.py",
+    "tools/backtest.py",
+    "tools/canonical_dza_peanut_butter.py",
+    "tools/canonical_fettuccine.py",
+    "tools/canonical_germany_dates.py",
+    "tools/canonical_japan_honey.py",
+    "tools/canonical_jordan_milk.py",
+    "tools/canonical_kuwait_peanut_butter.py",
+    "tools/canonical_nadec_yemen_dairy.py",
+    "tools/canonical_netherlands.py",
+    "tools/canonical_qatar_peanut_butter.py",
+    "tools/canonical_yemen.py",
+    "tools/check_self_review_gate.py",
+    "tools/dev_console.py",
+    "tools/export_captured.py",
+    "tools/export_silk_preview.py",
+    "tools/fetch_agreements.py",
+    "tools/fetch_countries.py",
+    "tools/fetch_demographics.py",
+    "tools/fetch_ports.py",
+    "tools/gen_academic_sample.py",
+    "tools/gen_analyze_samples.py",
+    "tools/gen_client_report_sample.py",
+    "tools/gen_kuwait_battery_sample.py",
+    "tools/gen_research_sample.py",
+    "tools/gen_verdict_baseline.py",
+    "tools/golden_set.py",
+    "tools/hs_before_after.py",
+    "tools/hs_delta.py",
+    "tools/import_legacy.py",
+    "tools/inference_audit.py",
+    "tools/live_shape_server.py",
+    "tools/migrate_hs_keywords.py",
+    "tools/post_deploy_smoke.py",
+    "tools/probe_yemen_dairy_mirror.py",
+    "tools/prompt_size_report.py",
+    "tools/prose_report.py",
+    "tools/recover_and_verify.py",
+    "tools/refresh.py",
+    "tools/rtl_calibration.py",
+    "tools/stage2c_proof.py",
+    "tools/verify_backup.py",
+    "tools/wave1_charter_adapter_validation.py",
+    "tools/wave_b_audit.py",
+    "tools/wave_c_audit.py",
+    "tools/wave_d_audit.py",
+    "tools/wave_z_audit.py",
+    "web/checkout.html",
+    "web/fonts/Cairo-var-arabic.woff2",
+    "web/fonts/Cairo-var-latin-ext.woff2",
+    "web/fonts/Cairo-var-latin.woff2",
+    "web/fonts/IBMPlexMono-500-latin-ext.woff2",
+    "web/fonts/IBMPlexMono-500-latin.woff2",
+    "web/fonts/IBMPlexMono-600-latin-ext.woff2",
+    "web/fonts/IBMPlexMono-600-latin.woff2",
+    "web/fonts/IBMPlexSansArabic-400-arabic.woff2",
+    "web/fonts/IBMPlexSansArabic-400-latin-ext.woff2",
+    "web/fonts/IBMPlexSansArabic-400-latin.woff2",
+    "web/fonts/IBMPlexSansArabic-500-arabic.woff2",
+    "web/fonts/IBMPlexSansArabic-500-latin-ext.woff2",
+    "web/fonts/IBMPlexSansArabic-500-latin.woff2",
+    "web/fonts/IBMPlexSansArabic-600-arabic.woff2",
+    "web/fonts/IBMPlexSansArabic-600-latin-ext.woff2",
+    "web/fonts/IBMPlexSansArabic-600-latin.woff2",
+    "web/fonts/IBMPlexSansArabic-700-arabic.woff2",
+    "web/fonts/IBMPlexSansArabic-700-latin-ext.woff2",
+    "web/fonts/IBMPlexSansArabic-700-latin.woff2",
+    "web/fonts/MarkaziText-600-arabic.woff2",
+    "web/fonts/MarkaziText-600-latin-ext.woff2",
+    "web/fonts/MarkaziText-600-latin.woff2",
+    "web/fonts/MarkaziText-700-arabic.woff2",
+    "web/fonts/MarkaziText-700-latin-ext.woff2",
+    "web/fonts/MarkaziText-700-latin.woff2",
+    "web/fonts/fonts.css",
+    "web/index.html",
+    "web/marketing.js",
+    "web/platform-landing.html",
+    "web/platform.html",
+    "web/pricing.html",
+    "web/research-motion.css",
+    "web/reset-password.html",
+    "web/silk-approved-preview.png",
+    "web/silk-logo.png"
+  ],
+  "python_modules": [
+    {
+      "file": "api.py",
+      "lines": 4274,
+      "functions": [
+        "_to_jsonable",
+        "_rmtree_bg",
+        "_index_search",
+        "_platform_db_path",
+        "_truthy_env",
+        "_persist_guard_on",
+        "_body_limit_bytes",
+        "_health_probe",
+        "refresh_health_snapshot",
+        "_health_snapshot",
+        "_health_max_age_s",
+        "_health_refresh_hung",
+        "_kick_health_refresh",
+        "_refresh_all_health_snapshots",
+        "_storage_alarm",
+        "_running_version",
+        "_detect_version",
+        "_platform_readiness",
+        "_cors_origins",
+        "_hsts_enabled",
+        "_redact_text",
+        "_key_matches",
+        "_api_key_expected",
+        "_unprotected_paid_keys",
+        "_apply_production_cost",
+        "_early_halt_enabled",
+        "_explicit_code_only_contract",
+        "_hs_explicitly_settled",
+        "create_app"
+      ],
+      "classes": [
+        {
+          "name": "_BodyLimitMiddleware",
+          "line": 122,
+          "bases": []
+        },
+        {
+          "name": "_QueryTokenFilter",
+          "line": 364,
+          "bases": [
+            "logging.Filter"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "correlation.py",
+      "lines": 271,
+      "functions": [
+        "_value",
+        "_tokens",
+        "_match_listing",
+        "_listings",
+        "_channel_candidates",
+        "_supplier_names",
+        "_contacts",
+        "_tariff_pct",
+        "_margin_pct",
+        "correlate"
+      ],
+      "classes": []
+    },
+    {
+      "file": "fix_agent.py",
+      "lines": 177,
+      "functions": [
+        "build_options",
+        "_print_block",
+        "_short",
+        "run",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_agents.py",
+      "lines": 537,
+      "functions": [
+        "register_agents",
+        "default_agent_settings",
+        "_real"
+      ],
+      "classes": [
+        {
+          "name": "AgentReport",
+          "line": 28,
+          "bases": []
+        },
+        {
+          "name": "Agent",
+          "line": 101,
+          "bases": [
+            "ABC"
+          ]
+        },
+        {
+          "name": "BaseAgent",
+          "line": 118,
+          "bases": [
+            "Agent"
+          ]
+        },
+        {
+          "name": "TradeFlowAgent",
+          "line": 188,
+          "bases": [
+            "BaseAgent"
+          ]
+        },
+        {
+          "name": "EconomicAgent",
+          "line": 305,
+          "bases": [
+            "BaseAgent"
+          ]
+        },
+        {
+          "name": "CompetitionAgent",
+          "line": 329,
+          "bases": [
+            "BaseAgent"
+          ]
+        },
+        {
+          "name": "ResearchManager",
+          "line": 424,
+          "bases": []
+        },
+        {
+          "name": "JuryCommittee",
+          "line": 461,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_ai_judge.py",
+      "lines": 2654,
+      "functions": [
+        "_writer_continuations",
+        "_principle",
+        "_isolate",
+        "available",
+        "failure_reason",
+        "_extract_json",
+        "_accepts_kwarg",
+        "_stream_kw",
+        "_call",
+        "_call_vision",
+        "_rephrase_max_sections",
+        "_rephrase_expected_usd",
+        "_call_tools",
+        "_facts",
+        "_headline_lines",
+        "_user_steer",
+        "consumer_culture",
+        "_ref_lines",
+        "extract_companies",
+        "extract_prices",
+        "classify_dynamics",
+        "answer_about_analysis",
+        "ai_report",
+        "report_sections",
+        "_academic_closer",
+        "_voice_lead",
+        "_traced_call",
+        "_mission_declared_gaps",
+        "_summarize_verdict",
+        "_product_category",
+        "rephrase_client_sections",
+        "deep_report",
+        "_writer_incomplete",
+        "_dedupe_duplicate_sections",
+        "_finalize_trailing_fragment",
+        "_missing_sections",
+        "_continue_truncated_report",
+        "_find_join_overlap",
+        "_trim_join_overlap",
+        "_trim_join_stutter",
+        "_section_order_issues",
+        "_substructure_check_enabled",
+        "_section_window",
+        "_section_substructure_issues",
+        "_alarmist_issues",
+        "_repeated_key_figure_issues",
+        "review_report",
+        "_max_review_cycles",
+        "write_reviewed_report"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_backup.py",
+      "lines": 321,
+      "functions": [
+        "_targets",
+        "backup_dir",
+        "_keep_days",
+        "run_backup",
+        "_integrity",
+        "_uploads_dir",
+        "_backup_uploads",
+        "restore",
+        "_rotate",
+        "latest_backup",
+        "start_scheduler"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_blocs.py",
+      "lines": 44,
+      "functions": [],
+      "classes": []
+    },
+    {
+      "file": "silk_cache.py",
+      "lines": 147,
+      "functions": [
+        "_cache_dir",
+        "_count",
+        "_key",
+        "cached_get"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_channels_agent.py",
+      "lines": 81,
+      "functions": [],
+      "classes": [
+        {
+          "name": "DistributionChannelsAgent",
+          "line": 31,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_charter.py",
+      "lines": 191,
+      "functions": [
+        "charter_enforce_enabled",
+        "_simple_tokens",
+        "determine_transport_mode",
+        "check_attribute_exclusion",
+        "build_charter"
+      ],
+      "classes": [
+        {
+          "name": "Charter",
+          "line": 131,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_circuit.py",
+      "lines": 100,
+      "functions": [],
+      "classes": [
+        {
+          "name": "CircuitOpen",
+          "line": 28,
+          "bases": [
+            "ConnectionError"
+          ]
+        },
+        {
+          "name": "CircuitBreaker",
+          "line": 34,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_collectors.py",
+      "lines": 465,
+      "functions": [
+        "_today_year",
+        "_run_start",
+        "_run_finish",
+        "comtrade_budget_left",
+        "collect_worldbank",
+        "_seed_fallback",
+        "collect_comtrade",
+        "_priority_targets",
+        "_recent_hs_codes",
+        "refresh",
+        "_entered_deep_research_analyses",
+        "_stored_tariff_pct",
+        "check_post_entry",
+        "start_scheduler"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_competitors_agent.py",
+      "lines": 72,
+      "functions": [],
+      "classes": [
+        {
+          "name": "NamedCompetitorsAgent",
+          "line": 28,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_consistency.py",
+      "lines": 150,
+      "functions": [
+        "verdict_rank",
+        "_findings_of",
+        "_fv",
+        "evidence_stats",
+        "direction_check",
+        "check_against_history"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_context.py",
+      "lines": 345,
+      "functions": [
+        "deepen_active",
+        "deepen_context",
+        "ai_extras_blocked",
+        "block_ai_extras",
+        "agent_pref",
+        "agent_command",
+        "agent_enabled",
+        "agent_prefs_context",
+        "mission_context",
+        "current_mission",
+        "begin_data_counter",
+        "count_data",
+        "record_llm_usage",
+        "data_counter",
+        "snapshot_research_progress",
+        "deadline_context",
+        "remaining_s",
+        "cancel_context",
+        "cancel_requested",
+        "check_cancelled",
+        "submit_with_context",
+        "map_with_context"
+      ],
+      "classes": [
+        {
+          "name": "RunCancelled",
+          "line": 298,
+          "bases": [
+            "Exception"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_contradiction.py",
+      "lines": 147,
+      "functions": [
+        "detect_mirror_gap",
+        "import_premium_synthesis",
+        "origin_aware_trend_synthesis",
+        "build_contradiction_report"
+      ],
+      "classes": [
+        {
+          "name": "ContradictionReport",
+          "line": 107,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_data_layer.py",
+      "lines": 1023,
+      "functions": [
+        "_load_dotenv",
+        "_timeout_for",
+        "_timeout_pair_for",
+        "_comtrade_key",
+        "comtrade_auth",
+        "_redacted",
+        "_comtrade_url",
+        "_max_throttle_wait_s",
+        "_min_gap_ms",
+        "_throttle",
+        "_backoff_delay",
+        "_http_get",
+        "throttled_request",
+        "throttled_get",
+        "_record_fetch_failure_event",
+        "classify_gap_class",
+        "fact_to_datapoint",
+        "datapoint_provenance",
+        "is_atomic_source_id",
+        "atomic_source_ids",
+        "public_source_url",
+        "_today",
+        "_cached_get",
+        "_is_fetch_failed",
+        "_count_live_fetch",
+        "_normalize_m49",
+        "_country_m49_index",
+        "partner_name",
+        "primary_value",
+        "primary_qty",
+        "comtrade_trade",
+        "comtrade_trade_mirror_total",
+        "_is_lpi_indicator",
+        "_snap_lpi_year",
+        "world_bank",
+        "_wb_shape_error",
+        "_world_bank_for_year",
+        "gdp_per_capita",
+        "population"
+      ],
+      "classes": [
+        {
+          "name": "ThrottleBacklog",
+          "line": 136,
+          "bases": [
+            "ConnectionError"
+          ]
+        },
+        {
+          "name": "DataPoint",
+          "line": 350,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_data_layer_v2.py",
+      "lines": 516,
+      "functions": [
+        "mirror_saudi_export",
+        "_swr_begin",
+        "_swr_done",
+        "_refresh_mirror_in_background",
+        "_warn_once",
+        "_mirror_live",
+        "ppp_per_capita",
+        "_competitor_dp",
+        "market_imports",
+        "market_competitors",
+        "market_competitors_status",
+        "market_competitors_mirror",
+        "_write_through_market",
+        "_swr_refresh",
+        "_refresh_in_background",
+        "market_imports_cached"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_decision.py",
+      "lines": 649,
+      "functions": [
+        "_min_scored_pillars",
+        "_parts_ar",
+        "pillar_label",
+        "part_labels",
+        "pillar_strength",
+        "_pct",
+        "_clip",
+        "_conf_phrase",
+        "_mean_available",
+        "_pillar_market",
+        "_pillar_competition",
+        "_pillar_regulatory",
+        "_pillar_profit",
+        "_pillar_risk",
+        "_risk_register",
+        "decide",
+        "_first_steps",
+        "decision_rule_text",
+        "counter_case"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_deep_pillars.py",
+      "lines": 748,
+      "functions": [
+        "_num_to_float",
+        "_magnitude_scale",
+        "_is_mass_tail",
+        "_findings",
+        "_fv",
+        "_fnote",
+        "_fact_year",
+        "_numeric",
+        "_numeric_with_source",
+        "_scaled_hhi",
+        "_structured_competition",
+        "_numeric_value_only",
+        "_named_companies",
+        "build_pillar_inputs",
+        "_saudi_share_from_competitors",
+        "build_components",
+        "coverage_of",
+        "decide_for_deep",
+        "promote_engine_verdict"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_diagnostics.py",
+      "lines": 233,
+      "functions": [
+        "_redact",
+        "_timed",
+        "_probe_comtrade",
+        "_hint_comtrade",
+        "_probe_worldbank",
+        "_probe_serper",
+        "_probe_maps",
+        "_probe_anthropic",
+        "run_diagnostics"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_discovery.py",
+      "lines": 237,
+      "functions": [
+        "_hs_names",
+        "_totals_by_hs",
+        "growth_signal",
+        "saudi_gap_signal",
+        "_seasonality_signal",
+        "rank_opportunities",
+        "discover"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_dynamics_agent.py",
+      "lines": 84,
+      "functions": [],
+      "classes": [
+        {
+          "name": "DynamicsAgent",
+          "line": 23,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_economics.py",
+      "lines": 1181,
+      "functions": [
+        "hhi",
+        "hhi_from_fractions",
+        "hhi_is_high",
+        "landed_cost",
+        "registry_category",
+        "_has_solid_form_qualifier",
+        "market_unit",
+        "convert_amount",
+        "normalize_price",
+        "_item",
+        "margin_waterfall",
+        "reverse_solve_max_exw",
+        "_findings_of",
+        "_fv",
+        "_fsource",
+        "_fnote",
+        "_num_to_float_eu",
+        "_mission_numeric",
+        "_parse_pack_from_note",
+        "price_numbers_in_text",
+        "detect_price_level",
+        "_round_clean",
+        "_mk_estimate",
+        "_perishable",
+        "estimate_trial_shipment",
+        "_lane_rate",
+        "estimate_freight_per_unit",
+        "build_decision_numbers",
+        "economics_view"
+      ],
+      "classes": [
+        {
+          "name": "NormalizedPrice",
+          "line": 198,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_engine.py",
+      "lines": 760,
+      "functions": [
+        "_default_year",
+        "analyze",
+        "_economics",
+        "_ai_report",
+        "_enrich_error_dp",
+        "_enrich_risk",
+        "_enrich_research",
+        "_enrich_trends",
+        "_enrich_tariffs",
+        "_enrich_faostat",
+        "_enrich_maps",
+        "_enrich_localprice",
+        "_enrich_volza",
+        "_enrich_explee",
+        "_enrich_named",
+        "_enrich_trend",
+        "_enrich_requirements",
+        "_websearch",
+        "_consumer_culture",
+        "_annotate_quality",
+        "_persist",
+        "_recommend",
+        "format_result"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_eurostat_agent.py",
+      "lines": 201,
+      "functions": [
+        "_eligible",
+        "_geo_code",
+        "_not_eligible_dp",
+        "_fetch_jsonstat",
+        "_first_value",
+        "_time_params",
+        "household_food_expenditure_share",
+        "foreign_born_population_count"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_evals.py",
+      "lines": 766,
+      "functions": [
+        "_extract_numbers",
+        "_report_fields",
+        "_finding_text",
+        "_known_numbers",
+        "_num_literal",
+        "_num_value",
+        "_apply_op",
+        "_num_close",
+        "_nearby_has_assumption",
+        "formula_grounded_numbers",
+        "citation_correctness_score",
+        "_judge_prompt",
+        "evaluate_report",
+        "validate_case",
+        "load_golden_cases",
+        "load_scores",
+        "save_scores",
+        "compare_to_last_score",
+        "run_case",
+        "_rendered_client_body",
+        "gap_rate",
+        "structural_checks",
+        "_references_integrity",
+        "_listed_reference_names",
+        "_truncation_hits",
+        "_plausibility_reconciled",
+        "_has_key",
+        "aggregate_gap_rates",
+        "run_suite",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_explee_agent.py",
+      "lines": 191,
+      "functions": [
+        "discover_buyers",
+        "_parse_companies",
+        "_first_contact"
+      ],
+      "classes": [
+        {
+          "name": "ExpleeAgent",
+          "line": 147,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_export_gate.py",
+      "lines": 533,
+      "functions": [
+        "client_prose_needed",
+        "prepare_fallback_prose",
+        "evaluate",
+        "_fail_drivers",
+        "is_blocked",
+        "override_authorized",
+        "record_override",
+        "record_block",
+        "client_reason",
+        "client_reasons",
+        "factory_message",
+        "operator_detail",
+        "factory_detail",
+        "client_quality_summary"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_fact_records.py",
+      "lines": 306,
+      "functions": [
+        "_has_marker",
+        "classify_tier",
+        "effective_confidence",
+        "report_confidence",
+        "matches_charter",
+        "flags_growth_without_base",
+        "flags_regulation_without_number",
+        "flags_named_partner_without_registry",
+        "_normalize_finding",
+        "fact_record_from_finding",
+        "build_fact_records_from_missions"
+      ],
+      "classes": [
+        {
+          "name": "FactRecord",
+          "line": 140,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_faostat_agent.py",
+      "lines": 199,
+      "functions": [
+        "reset_auth_block",
+        "_disabled_note",
+        "per_capita_supply"
+      ],
+      "classes": [
+        {
+          "name": "FaostatAgent",
+          "line": 167,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_gap_recovery.py",
+      "lines": 759,
+      "functions": [
+        "enabled",
+        "_cap",
+        "recoverer_enabled",
+        "mark_recovered",
+        "_load_producer_needles",
+        "classify",
+        "priority",
+        "_gap_clauses",
+        "_drop_clause",
+        "_append_finding",
+        "_raw_failed_findings",
+        "_summary_get",
+        "_summary_set",
+        "_recover_wgi",
+        "_recover_tariff",
+        "_recover_seasonality",
+        "_recover_distributors",
+        "_recover_partner_shares",
+        "_recover_per_capita",
+        "_retry_backoff",
+        "_web_search_recover",
+        "_normalize",
+        "recover"
+      ],
+      "classes": [
+        {
+          "name": "GapItem",
+          "line": 205,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_gdelt_agent.py",
+      "lines": 117,
+      "functions": [
+        "gdelt_news"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_gmaps.py",
+      "lines": 521,
+      "functions": [
+        "scraper_url",
+        "enabled",
+        "health_status",
+        "stop_all",
+        "maps_disclaimer",
+        "_market_lang",
+        "localized_queries",
+        "submit_scrape",
+        "_fetch_job",
+        "poll_leads",
+        "_s",
+        "_parse_lead",
+        "_dedupe",
+        "_lead_richness",
+        "parse_and_rank",
+        "_cache_path",
+        "cache_get",
+        "cache_put",
+        "places_fallback",
+        "looks_like_name",
+        "extract_web_candidates",
+        "_merge_web_candidates",
+        "submit_scrape_async",
+        "finalize_leads"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_google_news_agent.py",
+      "lines": 198,
+      "functions": [
+        "_rss_ceid",
+        "_domain_of",
+        "google_news_rss",
+        "_has_headline",
+        "news_with_fallback"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_attributes.py",
+      "lines": 896,
+      "functions": [
+        "enabled",
+        "load_dimensions",
+        "dimension_terms",
+        "unit_basis",
+        "band_basis",
+        "cross_basis_conflict",
+        "near_any_edge",
+        "_unit_family",
+        "_events",
+        "_dimension_from_text",
+        "_residual_axis",
+        "band_of",
+        "_candidate_codes",
+        "discriminator",
+        "_contains",
+        "select_by_value",
+        "_fmt",
+        "range_ar",
+        "_norm_ar",
+        "value_from_label",
+        "_web_search",
+        "_search_configured",
+        "_cache_read",
+        "_cache_write",
+        "_product_tokens",
+        "_value_near",
+        "probe_web",
+        "_report",
+        "_base",
+        "_readings_agree",
+        "resolve_by_attribute"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_classifier.py",
+      "lines": 610,
+      "functions": [
+        "enabled",
+        "_candidates",
+        "_best_confident",
+        "needs_classifier",
+        "_proposal",
+        "_alt",
+        "_candidate_rows",
+        "_deterministic_proposal",
+        "manual",
+        "classify",
+        "_grounding_lines",
+        "_claude_classify",
+        "_clean_code",
+        "_valid_ref_codes",
+        "_validate",
+        "_clean_hs6",
+        "_validated_candidate",
+        "_rank_key",
+        "_deterministic_validated_candidates",
+        "_dedupe_candidates",
+        "classify_general",
+        "_public_candidates",
+        "_reserve_llm_call",
+        "_cached_general",
+        "_store_general_cache",
+        "_claude_classify_general"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_confirm.py",
+      "lines": 1101,
+      "functions": [
+        "_min_overlap",
+        "min_confidence",
+        "confidence_gate_enabled",
+        "_warn_superseded_valve",
+        "gate_enabled",
+        "_norm",
+        "_tokens",
+        "_covered",
+        "_keywords_ar_list",
+        "_code_terms",
+        "_code_desc",
+        "_rows_by_code",
+        "_find_row",
+        "describes_by_exclusion",
+        "_negated_terms",
+        "_word_in",
+        "_marker_present",
+        "_process_state_conflict",
+        "_negation_conflict",
+        "_overlap_stats",
+        "confirm_against_description",
+        "confirm_hs",
+        "is_flagged",
+        "flagged_conf_cap",
+        "cap_confidence_for_flagged_hs",
+        "axis_disambiguation_needed",
+        "deterministic_candidates",
+        "confidence_block",
+        "revalidate",
+        "seed_coverage",
+        "_norm_hs6",
+        "_code_in_candidates",
+        "_contract_settlement",
+        "_settled_probe",
+        "preflight_block",
+        "_probe_public",
+        "resolve_or_probe",
+        "preflight_resolve"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_dialog.py",
+      "lines": 277,
+      "functions": [
+        "official_text",
+        "in_official_reference",
+        "_seed_codes",
+        "is_a_real_code",
+        "_heading_index",
+        "axis_siblings",
+        "band_text_ar",
+        "_country_terms",
+        "_matches_banned",
+        "sanitize_prose",
+        "build_candidates"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_from_image.py",
+      "lines": 97,
+      "functions": [
+        "_manual",
+        "classify_from_image",
+        "classify_extraction"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_norm.py",
+      "lines": 130,
+      "functions": [
+        "normalize",
+        "tokens",
+        "token_set",
+        "is_arabic",
+        "same_token"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_pipeline.py",
+      "lines": 846,
+      "functions": [
+        "_env_float",
+        "min_confidence",
+        "min_separation",
+        "candidate_floor",
+        "_official_description",
+        "_contradictions",
+        "_evaluate",
+        "_contract",
+        "_valid_hs6",
+        "classify",
+        "_decide",
+        "_axis_candidates",
+        "_catalog_lexical",
+        "_probe_axis",
+        "_llm_fallback",
+        "_ask_reason",
+        "result_summary",
+        "diagnostics"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_reference.py",
+      "lines": 113,
+      "functions": [
+        "_digits",
+        "definition",
+        "definition_line"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_hs_resolver.py",
+      "lines": 545,
+      "functions": [
+        "chapter_of",
+        "chapter_valid",
+        "exclusion_note",
+        "_abspath",
+        "load_hs_codes",
+        "_row_desc",
+        "_norm",
+        "_keywords",
+        "_score_keys",
+        "_fuzzy_score",
+        "_row_keys",
+        "_fuzzy_keys",
+        "_score",
+        "_index",
+        "retrieve",
+        "resolve",
+        "resolve_all",
+        "load_hs_reference",
+        "official_description",
+        "extend_from_comtrade_rows"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_i18n.py",
+      "lines": 1077,
+      "functions": [
+        "report_language_enabled",
+        "normalize",
+        "is_rtl",
+        "t",
+        "terms_missing_language",
+        "_strip_structural",
+        "_split_segments",
+        "foreign_prose_spans",
+        "has_foreign_prose",
+        "entity_allowlist"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_imf_agent.py",
+      "lines": 152,
+      "functions": [
+        "available_indicators",
+        "_pick_year",
+        "imf_indicator",
+        "_record_failure"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_importers_agent.py",
+      "lines": 68,
+      "functions": [],
+      "classes": [
+        {
+          "name": "ImportersAgent",
+          "line": 26,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_inference.py",
+      "lines": 368,
+      "functions": [
+        "_field",
+        "_findings",
+        "_texts",
+        "_yearly_series",
+        "_yoy_moves",
+        "_hyp",
+        "_p_channel_redirection",
+        "_p_wrong_heading",
+        "_p_unserved_niche",
+        "_p_volatility",
+        "_p_no_seasonal",
+        "_p_currency_stable",
+        "derive_hypotheses"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_janitor.py",
+      "lines": 148,
+      "functions": [
+        "_days",
+        "_protected",
+        "_sweep_dir",
+        "_sweep_rows",
+        "sweep"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_json.py",
+      "lines": 59,
+      "functions": [
+        "candidates",
+        "extract"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_judge_abstain.py",
+      "lines": 111,
+      "functions": [
+        "check_pillar_eligibility",
+        "would_abstain"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_llm_provider.py",
+      "lines": 854,
+      "functions": [
+        "last_error",
+        "last_stop_reason",
+        "_stream_idle_s",
+        "_stream_total_s",
+        "_no_sampling_params_prefixes",
+        "_supports_sampling_params",
+        "_scrub_sampling_params",
+        "_production_signal",
+        "get_provider",
+        "reset_provider"
+      ],
+      "classes": [
+        {
+          "name": "StreamTotalTimeout",
+          "line": 95,
+          "bases": [
+            "Exception"
+          ]
+        },
+        {
+          "name": "LLMProvider",
+          "line": 175,
+          "bases": [
+            "ABC"
+          ]
+        },
+        {
+          "name": "AnthropicProvider",
+          "line": 200,
+          "bases": [
+            "LLMProvider"
+          ]
+        },
+        {
+          "name": "FakeProvider",
+          "line": 784,
+          "bases": [
+            "LLMProvider"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_llm_runtime.py",
+      "lines": 1585,
+      "functions": [
+        "_today",
+        "_recent_years",
+        "_load_csv",
+        "_market_locale",
+        "_locale_gl",
+        "_locale_hl",
+        "_tool_comtrade_imports",
+        "_tool_comtrade_competitors",
+        "competition_summary_findings",
+        "_tool_worldbank_indicator",
+        "_tool_wits_tariff",
+        "_tool_imf_indicator",
+        "_tool_trends_interest",
+        "_tool_trends_context",
+        "_tool_faostat_supply",
+        "_preferred_domains",
+        "_tool_web_search",
+        "_tool_gdelt_news",
+        "_tool_openalex_search",
+        "_tool_channels_importers",
+        "_tool_eurostat_eu_signals",
+        "_tool_lookup_reference",
+        "_isolate_external",
+        "_execute_tool",
+        "_gaps_blob",
+        "_truncate_at_word",
+        "_json_candidates",
+        "_looks_like_final_answer",
+        "_parse_output",
+        "_cited_contract_fields",
+        "_mark_cache_boundary",
+        "_accepts_kwarg",
+        "_accepts_stream",
+        "_replayable_content",
+        "_run_loop",
+        "run_llm_agent"
+      ],
+      "classes": [
+        {
+          "name": "LLMMissionAgent",
+          "line": 1541,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_localprice_agent.py",
+      "lines": 333,
+      "functions": [
+        "_is_bestseller",
+        "_extract",
+        "retail_prices",
+        "compare_own_price",
+        "suggest_price"
+      ],
+      "classes": [
+        {
+          "name": "LocalPriceAgent",
+          "line": 296,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_maps_agent.py",
+      "lines": 135,
+      "functions": [
+        "find_places"
+      ],
+      "classes": [
+        {
+          "name": "MapsAgent",
+          "line": 99,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_market_analyst.py",
+      "lines": 346,
+      "functions": [
+        "_comprehensive_digest",
+        "_tag_source_reports",
+        "analyze_market",
+        "to_synthesis_input"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_market_ranker.py",
+      "lines": 801,
+      "functions": [
+        "_dyear",
+        "world_import_totals",
+        "top_import_markets",
+        "world_export_totals",
+        "_producer_advisory_topn",
+        "top_world_exporters",
+        "is_top_world_exporter",
+        "_a2_plausibility_enabled",
+        "_a2_params",
+        "supplier_plausibility",
+        "_world_markets_enabled",
+        "_comtrade_budget_left",
+        "_tier2_gather_row",
+        "_market_size_component",
+        "_competitor_list",
+        "_saudi_position_component",
+        "_income_dp",
+        "_demand_capacity_component",
+        "_imports_with_fallback",
+        "_gather_row",
+        "_top_competitor",
+        "_competition_component",
+        "_normalize",
+        "coverage_year_ladder",
+        "world_import_totals_resolved",
+        "rank_markets",
+        "_name"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_market_resolver.py",
+      "lines": 111,
+      "functions": [
+        "_abspath",
+        "_load",
+        "_norm",
+        "_candidates",
+        "_to_ref",
+        "resolve_market"
+      ],
+      "classes": [
+        {
+          "name": "MarketRef",
+          "line": 22,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_missions.py",
+      "lines": 901,
+      "functions": [
+        "_budget_for",
+        "_bounded_augment",
+        "_report_is_failed",
+        "_timed_out_report",
+        "_product_card_context",
+        "_checkpoint",
+        "_wgi_governance_datapoints",
+        "_augment_risk_news_wgi",
+        "_augment_risk_news_fx",
+        "_augment_competitors_structured",
+        "run_all_missions",
+        "deep_research"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_narrative.py",
+      "lines": 789,
+      "functions": [
+        "_wb_ar",
+        "_http_status_ar",
+        "_balance_parens",
+        "_word_rx",
+        "_replace_token",
+        "_humanize_note_en",
+        "humanize_technical_note",
+        "country_ar",
+        "authoritative_verdict",
+        "verdict_ar",
+        "internal_ar",
+        "fmt_money",
+        "fmt_pct",
+        "confidence_phrase",
+        "evidence_badge",
+        "is_agent_gathered",
+        "evidence_badge_for",
+        "competition_phrase",
+        "growth_phrase",
+        "translate_gaps",
+        "market_component_lines",
+        "exec_summary",
+        "brief_lines"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_openalex_agent.py",
+      "lines": 112,
+      "functions": [
+        "_reconstruct_abstract",
+        "openalex_search"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_ops_log.py",
+      "lines": 159,
+      "functions": [
+        "_db_path",
+        "_open",
+        "_connect",
+        "record_error",
+        "record_service_failure",
+        "last_errors"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_pdf_textlayer.py",
+      "lines": 235,
+      "functions": [
+        "_is_arabic",
+        "_units",
+        "flip_cmap_bytes",
+        "cluster_score",
+        "_extract_all",
+        "normalize_arabic_text_layer"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/__init__.py",
+      "lines": 26,
+      "functions": [
+        "create_platform_app",
+        "mount"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/api.py",
+      "lines": 3436,
+      "functions": [
+        "_as_int",
+        "_require_fields",
+        "_err",
+        "_open",
+        "_bearer",
+        "_client_ip",
+        "_sweep_grace_s",
+        "boot_config_guard",
+        "_secure_cookies",
+        "create_platform_app",
+        "mount"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/audit.py",
+      "lines": 129,
+      "functions": [
+        "record",
+        "record_denied",
+        "search",
+        "_cutoff",
+        "prune",
+        "prune_checkout",
+        "scrub_checkout_pii"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/auth.py",
+      "lines": 376,
+      "functions": [
+        "session_absolute_hours",
+        "_dummy_hash",
+        "_parse",
+        "_now",
+        "_may_act",
+        "authenticate",
+        "create_session",
+        "_fmt",
+        "resolve_session",
+        "destroy_session",
+        "_user_with_account",
+        "user_reset_state",
+        "issue_reset_token_for_user",
+        "user_language_by_email",
+        "issue_reset_token",
+        "consume_reset_token",
+        "change_password",
+        "cleanup_expired_sessions",
+        "cleanup_reset_tokens"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/billing.py",
+      "lines": 112,
+      "functions": [
+        "charge_key_description",
+        "already_charged",
+        "charge_metered"
+      ],
+      "classes": [
+        {
+          "name": "BillingError",
+          "line": 35,
+          "bases": [
+            "Exception"
+          ]
+        },
+        {
+          "name": "Delinquent",
+          "line": 39,
+          "bases": [
+            "BillingError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/bootstrap.py",
+      "lines": 188,
+      "functions": [
+        "_explicit",
+        "seed_problem",
+        "is_seeded",
+        "readiness",
+        "maybe_seed"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/db.py",
+      "lines": 135,
+      "functions": [
+        "now_iso",
+        "db_path",
+        "connect",
+        "apply_migrations",
+        "_column_exists",
+        "_already_applied_alter",
+        "init_db"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/engine_bridge.py",
+      "lines": 1888,
+      "functions": [
+        "sanitize_client_brief",
+        "strip_cost_keys",
+        "wait_idle",
+        "fake_engine_enabled",
+        "_study_ai_allowed",
+        "study_mode",
+        "launch_mode",
+        "launch_stamp_json",
+        "_detail_advisories",
+        "_refusal_code",
+        "_http_detail_text",
+        "_factory_gate_reason",
+        "_catalog_candidates",
+        "_detail_candidates",
+        "_close_brackets",
+        "_empty_reason",
+        "resolve_market",
+        "market_reference_available",
+        "market_known",
+        "_target_countries",
+        "_fake_result",
+        "_fake_missions",
+        "_fake_report_text",
+        "_fake_result_deep",
+        "product_card_from_row",
+        "apply_study_cost",
+        "_runner_takes",
+        "_run_engine",
+        "_resume_matches",
+        "_runner_declares",
+        "_allocation_callback",
+        "_run_engine_deep",
+        "_dp_value",
+        "result_is_substantive",
+        "_run_stats_json",
+        "_notify_finish",
+        "_notify_safely",
+        "_notify_after_commit",
+        "_close_run_row",
+        "_finish_if_cancelled",
+        "_classification_method",
+        "_finish_success",
+        "_finish_failure",
+        "_thread_body",
+        "_parse_iso",
+        "_run_mode",
+        "eta_seconds",
+        "_orphan_grace_s",
+        "_as_utc",
+        "_orphan_analysis_verdict",
+        "sweep_orphans",
+        "_vision_allowed",
+        "classify_image_flow"
+      ],
+      "classes": [
+        {
+          "name": "DeepRunRefused",
+          "line": 204,
+          "bases": [
+            "RuntimeError"
+          ]
+        },
+        {
+          "name": "EngineInternalError",
+          "line": 245,
+          "bases": [
+            "RuntimeError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/entitlements.py",
+      "lines": 265,
+      "functions": [
+        "_tier_name",
+        "_tiers_granting",
+        "has_feature",
+        "require_feature",
+        "dashboard_level",
+        "studies_used_effective",
+        "set_account_tier",
+        "set_per_user_quota",
+        "snapshot"
+      ],
+      "classes": [
+        {
+          "name": "TierGateError",
+          "line": 29,
+          "bases": [
+            "Exception"
+          ]
+        },
+        {
+          "name": "Entitlements",
+          "line": 105,
+          "bases": []
+        },
+        {
+          "name": "TierChangeError",
+          "line": 143,
+          "bases": [
+            "ValueError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/factory_settings.py",
+      "lines": 101,
+      "functions": [
+        "valid",
+        "factory_language",
+        "factory_language_chosen",
+        "set_factory_language",
+        "study_report_language"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/jobs.py",
+      "lines": 102,
+      "functions": [
+        "run_monthly_quota_reset",
+        "run_session_cleanup",
+        "_billing_description",
+        "already_billed",
+        "run_storage_billing"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/lifecycle.py",
+      "lines": 142,
+      "functions": [
+        "_load",
+        "complete_study",
+        "archive_study"
+      ],
+      "classes": [
+        {
+          "name": "LifecycleError",
+          "line": 30,
+          "bases": [
+            "Exception"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/models.py",
+      "lines": 129,
+      "functions": [
+        "tier_limits"
+      ],
+      "classes": [
+        {
+          "name": "Role",
+          "line": 12,
+          "bases": [
+            "str",
+            "enum.Enum"
+          ]
+        },
+        {
+          "name": "Tier",
+          "line": 19,
+          "bases": [
+            "str",
+            "enum.Enum"
+          ]
+        },
+        {
+          "name": "Operation",
+          "line": 27,
+          "bases": [
+            "str",
+            "enum.Enum"
+          ]
+        },
+        {
+          "name": "TierLimits",
+          "line": 45,
+          "bases": []
+        },
+        {
+          "name": "AuthContext",
+          "line": 101,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/notifications.py",
+      "lines": 171,
+      "functions": [
+        "record",
+        "notify_study_finish",
+        "notify_study_finish_safely",
+        "prune",
+        "list_for_account",
+        "mark_read"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/passwords.py",
+      "lines": 150,
+      "functions": [
+        "bcrypt_rounds",
+        "scrypt_n",
+        "_bcrypt_input",
+        "validate_policy",
+        "hash_password",
+        "verify_password"
+      ],
+      "classes": [
+        {
+          "name": "PasswordError",
+          "line": 72,
+          "bases": [
+            "ValueError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/payments.py",
+      "lines": 93,
+      "functions": [
+        "provider_from_env"
+      ],
+      "classes": [
+        {
+          "name": "ProviderNotConfigured",
+          "line": 27,
+          "bases": [
+            "Exception"
+          ]
+        },
+        {
+          "name": "_BaseProvider",
+          "line": 37,
+          "bases": []
+        },
+        {
+          "name": "MoyasarProvider",
+          "line": 51,
+          "bases": [
+            "_BaseProvider"
+          ]
+        },
+        {
+          "name": "TapProvider",
+          "line": 58,
+          "bases": [
+            "_BaseProvider"
+          ]
+        },
+        {
+          "name": "StripeProvider",
+          "line": 65,
+          "bases": [
+            "_BaseProvider"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/pricing.py",
+      "lines": 157,
+      "functions": [
+        "load_pricing",
+        "_payment_config",
+        "public_pricing"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/quota.py",
+      "lines": 335,
+      "functions": [
+        "current_period",
+        "storage_cap_bytes",
+        "storage_used_bytes",
+        "per_user_limit",
+        "user_launches_this_period",
+        "_user_quota_check_delay",
+        "_account",
+        "_roll_period_if_needed",
+        "reserve_launch",
+        "release_launch",
+        "monthly_reset",
+        "reset_account_quota"
+      ],
+      "classes": [
+        {
+          "name": "QuotaDecision",
+          "line": 30,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/repository.py",
+      "lines": 236,
+      "functions": [
+        "_safe_order",
+        "_validate_enums",
+        "studies",
+        "images",
+        "products"
+      ],
+      "classes": [
+        {
+          "name": "TenantRepository",
+          "line": 99,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/scheduler.py",
+      "lines": 305,
+      "functions": [
+        "job_schedule",
+        "_slot",
+        "due_jobs",
+        "_env_days",
+        "run_job",
+        "run_due",
+        "sweep_pass",
+        "_cleanup_due",
+        "_mark_cleanup_done",
+        "reset_cleanup_slot_for_tests",
+        "sweeper_enabled",
+        "start_orphan_sweeper",
+        "_scheduler_tick",
+        "start"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/seed.py",
+      "lines": 183,
+      "functions": [
+        "_pw",
+        "_account",
+        "_user",
+        "_prod_signal",
+        "_demo_wanted",
+        "seed",
+        "vault_account_id",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/smtp_transport.py",
+      "lines": 179,
+      "functions": [
+        "base_url",
+        "safe_error",
+        "operator_config_from_env",
+        "message_id",
+        "_reject_header_injection",
+        "send",
+        "_pool",
+        "send_async",
+        "wait_pending"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/storage.py",
+      "lines": 107,
+      "functions": [
+        "storage_dir",
+        "validate_extension",
+        "mime_for_extension",
+        "sniff_image_kind",
+        "extension_matches_kind",
+        "max_bytes",
+        "write",
+        "delete",
+        "path_for",
+        "exists"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/study_runtime.py",
+      "lines": 727,
+      "functions": [
+        "boot_id",
+        "_env_float",
+        "max_concurrent",
+        "heartbeat_s",
+        "stale_s",
+        "supervisor_enabled",
+        "create_run",
+        "dispatch",
+        "_start_claimed",
+        "_worker",
+        "_handles",
+        "_cutoff_iso",
+        "_sweep_stale",
+        "_interrupt_run",
+        "tick",
+        "recover",
+        "start",
+        "shutdown",
+        "request_cancel",
+        "run_view",
+        "last_run_view",
+        "active_state",
+        "has_active_run",
+        "_queued_count",
+        "wait_idle",
+        "reset_for_tests"
+      ],
+      "classes": [
+        {
+          "name": "RunHandle",
+          "line": 95,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/throttle.py",
+      "lines": 144,
+      "functions": [
+        "_env_int",
+        "_limits",
+        "named_limits",
+        "identity",
+        "login_identity",
+        "login_ip_identity",
+        "login_email_identity",
+        "_cutoff",
+        "is_throttled",
+        "record_failure",
+        "clear",
+        "_max_window_s",
+        "prune"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/tier_config.py",
+      "lines": 175,
+      "functions": [
+        "_rows",
+        "_monthly_for",
+        "effective_limits",
+        "effective_pricing",
+        "_as_nonneg_int",
+        "set_tier"
+      ],
+      "classes": [
+        {
+          "name": "TierSettingsError",
+          "line": 113,
+          "bases": [
+            "ValueError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_platform/tokens.py",
+      "lines": 61,
+      "functions": [
+        "secret",
+        "_secret",
+        "new_token",
+        "hash_token",
+        "constant_time_equal",
+        "sign",
+        "verify_signature"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_platform/wallet.py",
+      "lines": 216,
+      "functions": [
+        "ensure_wallet",
+        "get_wallet",
+        "is_delinquent",
+        "overdraft_floor_cents",
+        "list_ledger",
+        "_apply",
+        "apply_entry",
+        "post_entry",
+        "fund_wallet"
+      ],
+      "classes": [
+        {
+          "name": "WalletError",
+          "line": 22,
+          "bases": [
+            "Exception"
+          ]
+        },
+        {
+          "name": "InsufficientFunds",
+          "line": 26,
+          "bases": [
+            "WalletError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_plausibility.py",
+      "lines": 447,
+      "functions": [
+        "enabled",
+        "_f_env",
+        "action",
+        "_num_usd",
+        "_iter_findings",
+        "_kw_hit",
+        "_finding_year",
+        "_anchors",
+        "_domestic_production_significant",
+        "_scan",
+        "check_magnitudes",
+        "exemptions",
+        "unverified",
+        "annotate",
+        "_mark_dropped",
+        "caveat_lines"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_prerun.py",
+      "lines": 115,
+      "functions": [
+        "origin_iso3",
+        "advisories_enabled",
+        "_load_restricted",
+        "_restricted_hits",
+        "sibling_advisories"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_pricing.py",
+      "lines": 89,
+      "functions": [
+        "_pricing_for",
+        "estimate_cost_usd"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_product_intake.py",
+      "lines": 286,
+      "functions": [
+        "enabled",
+        "_isolate",
+        "_extract_json",
+        "_sanitize",
+        "_sanitize_list",
+        "_sanitize_attributes",
+        "_decode_and_check",
+        "_vision_extract",
+        "_read_failed",
+        "intake_name",
+        "intake_image"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_profiles.py",
+      "lines": 292,
+      "functions": [
+        "_load_json",
+        "_market_registry",
+        "_product_registry",
+        "reload_profiles",
+        "cited_value",
+        "_check_cited",
+        "_check_cited_list",
+        "_enum",
+        "validate_market",
+        "_check_corridor",
+        "validate_product",
+        "validate_all",
+        "_assert_valid",
+        "market_profile",
+        "product_profile",
+        "all_market_iso3",
+        "all_product_keys"
+      ],
+      "classes": [
+        {
+          "name": "ProfileError",
+          "line": 32,
+          "bases": [
+            "ValueError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_prose_meter.py",
+      "lines": 143,
+      "functions": [
+        "_sentences",
+        "_words",
+        "analyze",
+        "report_lines"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_quality.py",
+      "lines": 120,
+      "functions": [
+        "_dp_value",
+        "validate_market_row",
+        "annotate_result"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_quality_gate.py",
+      "lines": 4547,
+      "functions": [
+        "_check_markdown_and_raw_json",
+        "_check_raw_confidence",
+        "_check_confidence_value_conflict",
+        "_check_mid_word_truncation",
+        "_check_trailing_ellipsis",
+        "_check_orphan_short_token",
+        "_check_dangling_cross_reference",
+        "_strip_ar_diacritics",
+        "_norm_ar",
+        "_dangling_cross_reference_en",
+        "_placeholder_strings",
+        "_check_gaps_closing_contradiction",
+        "_check_client_scaffold_leak",
+        "_check_placeholder_leak",
+        "_check_client_section_would_be_placeholder",
+        "_check_stray_percent_punctuation",
+        "_check_entity_near_duplicates",
+        "_check_confidence_band_label",
+        "_check_lpi_edition_year",
+        "_probe",
+        "_segment_re",
+        "_hits",
+        "_label_claimed_as_verdict",
+        "_check_recommendation_tier_label_consistency",
+        "_check_verdict_label_conflict",
+        "_check_near_duplicate_figures",
+        "_check_hhi_false_precision",
+        "_check_supplier_rank_contiguity",
+        "_check_internal_plumbing_leak",
+        "_check_english_field_and_mission_key_leak",
+        "style_digest",
+        "_style_tier",
+        "format_style_digest",
+        "_check_style",
+        "_check_confidentiality_leaks",
+        "_check_bare_partner_codes",
+        "_check_intersection_insufficiency",
+        "_check_section_structure",
+        "_mission_label",
+        "_check_agent_health",
+        "_check_analyst_layer_failure",
+        "_check_audit_coverage",
+        "_check_cagr_consistency",
+        "_check_currency_label_mismatch",
+        "_usd_amount_to_float",
+        "_iter_usd_amounts",
+        "_check_evidence_body_numeric_consistency",
+        "_marker_min_dist",
+        "_classify_market_amounts",
+        "_check_tam_below_single_country_flow",
+        "_check_mirror_divergence_contraction_narrative",
+        "_stale_years_in_view",
+        "_check_stale_year_driving_conclusion",
+        "_annual_import_series",
+        "_check_cagr_sign_flips_under_base_year",
+        "_check_trends_hollow_completion",
+        "_check_off_market_currency",
+        "_check_source_coverage",
+        "_check_language_consistency",
+        "_check_language_quality",
+        "run_client_artifact_text_gate",
+        "_open_hard_regulatory",
+        "_check_regulatory_blocker",
+        "_sizing_rows",
+        "_check_market_sizing_derivation",
+        "_asserted_in",
+        "_check_narrative_matches_the_verdict",
+        "_check_narrative_money_grounded",
+        "_check_hhi_scale",
+        "_check_cagr_endpoint_lag",
+        "_check_cagr_recompute",
+        "_check_source_contract_completeness",
+        "_check_vintage_expired_facts",
+        "_check_economics_present",
+        "_check_price_comparability",
+        "_check_generic_conversion_refusal",
+        "_check_hs_consistency_lock",
+        "_check_spec_evidence_coherence",
+        "_check_curated_reference_consulted",
+        "_check_access_timeline_presence",
+        "_check_anchor_matches_recommended_form",
+        "_report_text",
+        "_check_plain_language",
+        "_check_sufficiency_contradiction",
+        "_check_metric_value_conflict",
+        "_same_magnitude_token",
+        "_check_lpi_year_mismatch",
+        "_year_in",
+        "_check_epistemic_verb_discipline",
+        "failure_record",
+        "_view_lang",
+        "_norm_gap_tokens",
+        "_narrated_outside_gap_sentences",
+        "_check_pillar_narrative_sync",
+        "_check_hs_recommendation_match",
+        "_check_unclassified_product_attribute",
+        "_check_derived_number_has_inputs",
+        "_check_pricing_contradiction_flagged",
+        "_check_verdict_evidence_direction",
+        "_check_verdict_label_matches_content",
+        "_prose_lines",
+        "_check_repeated_span",
+        "_check_cross_universe_ratio",
+        "_check_adjacent_short_stutter",
+        "_check_table_row_stutter",
+        "_check_empty_citation",
+        "_table_cell_populated",
+        "_iter_md_tables",
+        "_check_dead_table",
+        "_check_system_language_leak",
+        "_check_absence_vocabulary",
+        "_check_caveat_repetition",
+        "_split_off_appendix",
+        "_check_decimal_precision",
+        "_check_sentence_length",
+        "_check_decision_numbers_present",
+        "_check_unit_conversion_refusal",
+        "_exec_summary_body",
+        "_check_exec_summary_recommendation_first",
+        "_check_exec_summary_constraints",
+        "_check_client_view_vocabulary",
+        "_check_uncomputed_repetition",
+        "_check_estimate_fields_complete",
+        "_check_min_pillars_scored",
+        "_competition_unit_finding",
+        "_check_competition_unit_valid",
+        "consecutive_clean_runs",
+        "run_quality_gate"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_render.py",
+      "lines": 3486,
+      "functions": [
+        "_dp",
+        "_decision",
+        "decision_basis",
+        "_competitive_position",
+        "_brief",
+        "_deep_research_brief",
+        "_completeness",
+        "_fval",
+        "_real_list",
+        "_clean_price_row_note",
+        "_hypotheses_safe",
+        "_price_row_reason",
+        "_price_row_reason_row",
+        "_prices",
+        "_named_competitors",
+        "_suppliers",
+        "_culture",
+        "_consumer_culture",
+        "_t_today",
+        "_section_dps",
+        "_walk_dps",
+        "_provenance",
+        "_merge_key",
+        "_provenance_tail",
+        "_section_coverage",
+        "_section_status",
+        "insufficient_line",
+        "_rmetric",
+        "_swot",
+        "_segments",
+        "_supplier_directory",
+        "_report_fields",
+        "_strip_stray_markdown",
+        "_ar_conf_repl",
+        "_fix_price_column_currency_label",
+        "_extract_or_gap",
+        "_neutralize_datapoint_repr",
+        "_strip_raw_json_leak",
+        "_mission_label",
+        "_map_mission_keys",
+        "_category_label",
+        "_humanize_gap_note",
+        "_strip_mission_key_prefix",
+        "_strip_internal_plumbing",
+        "_collapse_dead_tables",
+        "_sanitize_points",
+        "_sanitized_dynamics",
+        "_mission_trace_summary",
+        "_reconcile_numeric_conflicts",
+        "_cluster_year_group",
+        "_mission_gap_lines",
+        "_first_clause",
+        "_final_fact_texts",
+        "_topic_resolved",
+        "_reconcile_mission_limits",
+        "_verdict_tone",
+        "_coverage_basis_tone",
+        "_verdict_label",
+        "_fix_stray_percent_punctuation",
+        "_fix_hhi_false_precision",
+        "_fix_truncated_prefix_stutter",
+        "_ar_norm_word",
+        "_already_explained_nearby",
+        "_apply_merchant_language",
+        "_stale_years_threshold",
+        "_real_contact",
+        "_flip_conditions",
+        "_has_seasonality_gap",
+        "_year_in_growth_span",
+        "_tag_stale_years",
+        "_hs_derivation",
+        "_hs_provenance",
+        "_incomplete_banner",
+        "_deep_research_view",
+        "_public_url",
+        "layer_enabled",
+        "_clip_words",
+        "verification_gap_line",
+        "_gap_register",
+        "_economics_view_safe",
+        "_vintage_caveat_safe",
+        "_regulatory_state",
+        "build_view",
+        "render_text",
+        "analysis_context"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_reports.py",
+      "lines": 6086,
+      "functions": [
+        "_assert_production_clean",
+        "_degraded_banner_text",
+        "_stamp_degraded_banner",
+        "_fmt",
+        "_avoid_mid_number",
+        "_truncate_at_word",
+        "_clean_report_text",
+        "_first_url",
+        "_evidence_url",
+        "_clean_source_label",
+        "_trim_sentence",
+        "_client_prose",
+        "_strip_inline_markdown",
+        "_is_markdown_table_row",
+        "_is_markdown_table_separator",
+        "_view_lang",
+        "_T",
+        "_lang_safe",
+        "_lang_safe_name",
+        "_apply_direction",
+        "_finalize_direction",
+        "_load_branding",
+        "_hex_to_rgbcolor",
+        "_set_cell_shading",
+        "_set_cell_margins",
+        "_set_table_borders",
+        "_apply_typography",
+        "_set_rtl_paragraph",
+        "_set_rtl_run_fonts",
+        "_set_table_rtl",
+        "_apply_rtl",
+        "_bidi_isolate_brackets",
+        "is_arabic_majority",
+        "count_suspicious_brackets",
+        "classify_bracket_sequence",
+        "bracket_orientation_counts",
+        "_pdf_bracket_check",
+        "_finalize_rtl",
+        "_add_page_number_field",
+        "_shape_safe_ar",
+        "_stamp_report_metadata",
+        "_add_cover_wordmark",
+        "_docx_inches",
+        "_add_page_header_footer",
+        "_add_verdict_badge",
+        "_verdict_labels_for",
+        "_verdict_decl_re",
+        "_match_known_verdict_label",
+        "_resolve_vtxt",
+        "_declared_verdict_labels",
+        "_assert_verdict_consistency_doc",
+        "_declared_verdict_labels_text",
+        "_assert_verdict_consistency_text",
+        "_render_markdown_table",
+        "_narrative_exec_summary",
+        "_market_scope_paragraph",
+        "_methodology_lines",
+        "_gap_ar",
+        "_gap_list_ar",
+        "_data_year_label",
+        "_pillar_ar",
+        "_missing_ar",
+        "_research_bundle",
+        "_ragent",
+        "_rfind",
+        "_f_text",
+        "_f_src_bare",
+        "_f_srcline",
+        "_entry_text",
+        "_candidate_kind",
+        "_split_candidates",
+        "_listing_text",
+        "_req_text",
+        "_entry_decision_of",
+        "render_brief",
+        "_add_table",
+        "_docx_entry_strategy",
+        "_docx_entry_decision",
+        "_docx_market_size",
+        "_docx_competition_research",
+        "_docx_pricing_layers",
+        "_docx_swot",
+        "_docx_segments",
+        "_docx_supplier_directory",
+        "_docx_regulatory",
+        "_docx_deep_research",
+        "_docx_technical_appendix",
+        "_economics_md_lines",
+        "_docx_economics_section",
+        "_render_research_docx",
+        "_tolerant",
+        "_plain_language",
+        "_is_arabic_prose_context",
+        "_already_named_in_arabic",
+        "plain_language_enabled",
+        "_client_sanitize",
+        "_client_forbidden_for",
+        "_client_forbidden_hits",
+        "_client_redact_text",
+        "_redact_paragraph",
+        "_client_redact_residual",
+        "_client_assert_clean",
+        "_client_head_label",
+        "_client_section_for",
+        "_split_at_roadmap",
+        "_parse_writer_sections",
+        "_parse_writer_sections_numbered",
+        "_client_render_body_block",
+        "_hs_provenance_sentence",
+        "_client_methodology_paragraph",
+        "_client_confidence_section",
+        "_client_gap_inputs",
+        "_eco_term",
+        "_client_economics_section",
+        "_client_decision_numbers_table",
+        "_client_price_observations",
+        "_client_hypotheses_section",
+        "_client_hs_derivation_section",
+        "_client_gaps_section",
+        "_dp_conf",
+        "_readable_number",
+        "_client_readable_fact",
+        "_reference_row_from_finding",
+        "_client_references_section",
+        "_unverified_entity_names",
+        "_annotate_unverified_entities",
+        "_client_decision_basis",
+        "render_client_docx",
+        "_client_fallback_sources",
+        "_client_missing_narrative_heads",
+        "_dp_value",
+        "_client_body_or_fallback",
+        "pdf_busy_detail",
+        "_pdf_max_concurrent",
+        "_pdf_wait_s",
+        "_pdf_slots",
+        "_pdf_slot",
+        "_kill_soffice_group",
+        "_run_soffice",
+        "_find_soffice",
+        "has_arabic_font",
+        "has_plex_arabic_font",
+        "_pdf_diacritic_free_copy",
+        "_soffice_env",
+        "docx_to_pdf",
+        "_ar_digits",
+        "_academic_evidence_rows",
+        "_academic_headline_table_rows",
+        "_academic_summary",
+        "render_academic_docx",
+        "_pdf_via_tmp_docx",
+        "render_academic_pdf",
+        "render_client_pdf",
+        "render_research_pdf",
+        "render_docx",
+        "_md_cell",
+        "_md_glossary",
+        "_docx_glossary",
+        "_glossary_line",
+        "_leads_header",
+        "_country_names",
+        "_address_wrong_geo",
+        "_is_filler_lead",
+        "_clean_leads",
+        "_leads_data",
+        "_lead_cells",
+        "_md_leads",
+        "_docx_leads",
+        "_md_deep_research",
+        "render_markdown"
+      ],
+      "classes": [
+        {
+          "name": "ClientArtifactGateError",
+          "line": 31,
+          "bases": [
+            "RuntimeError"
+          ]
+        },
+        {
+          "name": "PdfBusy",
+          "line": 4306,
+          "bases": [
+            "RuntimeError"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_requirements_agent.py",
+      "lines": 432,
+      "functions": [
+        "codification_tier",
+        "hs_category",
+        "is_animal_origin",
+        "_load_reference",
+        "_matches",
+        "_seq",
+        "blocking_level",
+        "applies_to",
+        "regulatory_blockers",
+        "regulatory_state",
+        "open_hard_blockers",
+        "unverified_blockers",
+        "_row_dp",
+        "_live_verification",
+        "access_timeline"
+      ],
+      "classes": [
+        {
+          "name": "RequirementsAgent",
+          "line": 312,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_research.py",
+      "lines": 1464,
+      "functions": [
+        "_now_iso",
+        "_src",
+        "_dp_src",
+        "_f",
+        "_triangulate",
+        "_trends_series",
+        "_triangulate_estimate",
+        "_mirror_dp_for",
+        "_failed_output",
+        "_indicative",
+        "_growth_window_pairs",
+        "_border_unit_value",
+        "_business_hint",
+        "_qualify_entities",
+        "_entities_and_references",
+        "muslim_share",
+        "_metric_value",
+        "_incumbent_is_self",
+        "_pillar_inputs"
+      ],
+      "classes": [
+        {
+          "name": "SourceRef",
+          "line": 56,
+          "bases": [
+            "BaseModel"
+          ]
+        },
+        {
+          "name": "Finding",
+          "line": 65,
+          "bases": [
+            "BaseModel"
+          ]
+        },
+        {
+          "name": "AgentOutput",
+          "line": 87,
+          "bases": [
+            "BaseModel"
+          ]
+        },
+        {
+          "name": "ResearchAgent",
+          "line": 256,
+          "bases": [
+            "BaseAgent"
+          ]
+        },
+        {
+          "name": "MarketSizeAgent",
+          "line": 351,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "CompetitorAgent",
+          "line": 501,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "RegulatoryAgent",
+          "line": 758,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "PricingAgent",
+          "line": 802,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "RiskAgent",
+          "line": 955,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "ConsumerDemandAgent",
+          "line": 1087,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "SupplierAgent",
+          "line": 1164,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "LogisticsAgent",
+          "line": 1215,
+          "bases": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "name": "ResearchOrchestrator",
+          "line": 1298,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_research_gateway.py",
+      "lines": 52,
+      "functions": [
+        "register",
+        "runner",
+        "readiness",
+        "reset"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_research_pipeline.py",
+      "lines": 1018,
+      "functions": [
+        "build"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_research_runtime.py",
+      "lines": 269,
+      "functions": [
+        "boot_id",
+        "_hook_key",
+        "add_tick_hook",
+        "max_concurrent",
+        "_slots",
+        "try_acquire",
+        "_release_slot",
+        "register",
+        "release",
+        "handle",
+        "is_running",
+        "active_ids",
+        "cancel",
+        "cancel_requested",
+        "shutdown",
+        "reap_interval_s",
+        "tick",
+        "start_reaper",
+        "reset_for_tests"
+      ],
+      "classes": [
+        {
+          "name": "RunHandle",
+          "line": 37,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "silk_seed_data.py",
+      "lines": 87,
+      "functions": [
+        "_load",
+        "_num",
+        "available",
+        "population",
+        "gdp_per_capita",
+        "gdp_total"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_source_coverage.py",
+      "lines": 164,
+      "functions": [
+        "tag_indicative_estimate",
+        "_load_family_sources",
+        "default_sources_for_family",
+        "known_product_families",
+        "_is_backed",
+        "_mission_labels",
+        "_is_mission_label",
+        "compute_source_coverage"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_sqlite.py",
+      "lines": 114,
+      "functions": [
+        "journal_mode",
+        "_apply_journal_mode",
+        "iter_statements",
+        "connect"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_staleness.py",
+      "lines": 189,
+      "functions": [
+        "stale_years_back",
+        "stale_threshold_year",
+        "_get",
+        "fact_year",
+        "is_stale_year",
+        "stale_tag",
+        "is_stale_fact",
+        "stale_fact_years",
+        "vintage_warn_years",
+        "vintage_hard_years",
+        "vintage_tier",
+        "vintage_caveat"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_storage.py",
+      "lines": 1022,
+      "functions": [
+        "_db_path",
+        "_resolve_data_dir",
+        "_nearest_mountpoint",
+        "persistence_violation",
+        "persistence_status",
+        "_now_iso",
+        "_open",
+        "_connect",
+        "init_db",
+        "_sidebar_summary_fields",
+        "save_analysis",
+        "create_research_run",
+        "claim_research_resume",
+        "update_research_status",
+        "update_research_progress",
+        "get_research_progress",
+        "_reconcile_leaked_usd",
+        "reconcile_run_usd_final",
+        "reconcile_failed_run_usd",
+        "mark_research_failed",
+        "orphan_stale_minutes",
+        "orphan_stale_cutoff",
+        "reap_orphan_research_runs",
+        "get_research_run",
+        "save_mission_checkpoint",
+        "_agent_report_from_dict",
+        "load_mission_checkpoints",
+        "save_stage_checkpoint",
+        "load_stage_checkpoints",
+        "checkpoint_market_iso3s",
+        "mission_status_map",
+        "set_outcome",
+        "list_analyses",
+        "get_analysis",
+        "market_scores_for_analyses",
+        "_json_default"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_store.py",
+      "lines": 604,
+      "functions": [
+        "_now",
+        "_db_path",
+        "_is_postgres",
+        "_q",
+        "_open",
+        "connect",
+        "migrate",
+        "fresh_days",
+        "freshness",
+        "staleness_suffix",
+        "upsert_indicator",
+        "upsert_indicators",
+        "get_indicator",
+        "upsert_trade_flows",
+        "market_imports_from_store",
+        "save_analysis",
+        "save_decision",
+        "set_outcome",
+        "create_user",
+        "get_user_by_email",
+        "set_setting",
+        "load_settings_into_env",
+        "save_agent_settings",
+        "load_agent_settings",
+        "_normalize_product_key",
+        "cache_hs_classification",
+        "get_cached_hs_classification",
+        "get_trade_flow",
+        "record_agent_run",
+        "get_indicator_series"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_style_contract.py",
+      "lines": 542,
+      "functions": [
+        "confidence_band_label",
+        "epistemic_rule",
+        "epistemic_rule_en"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_synthesis.py",
+      "lines": 159,
+      "functions": [
+        "_stage2",
+        "synthesize"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_tariffs_agent.py",
+      "lines": 329,
+      "functions": [
+        "_wits_reporter_code",
+        "_gcc_documented_exemption",
+        "_default_year",
+        "_hs6",
+        "applied_tariff",
+        "_parse_rate",
+        "_iter_json_obs",
+        "tariff_with_fallback"
+      ],
+      "classes": [
+        {
+          "name": "TariffsAgent",
+          "line": 283,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_trace.py",
+      "lines": 141,
+      "functions": [
+        "_default_dir",
+        "active",
+        "current_trace_id",
+        "trace_context",
+        "_redacted",
+        "_write_event",
+        "record_event",
+        "append_event",
+        "read_trace"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_trend.py",
+      "lines": 124,
+      "functions": [
+        "_year_total",
+        "growth_pct",
+        "cagr_pct",
+        "import_trend"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_trends_agent.py",
+      "lines": 491,
+      "functions": [
+        "_trends_max_attempts",
+        "_trends_backoff_base_s",
+        "_is_rate_limited",
+        "_retry_429",
+        "reset_series_memo",
+        "_interest_with_series",
+        "trends_interest",
+        "_snapshot_geo",
+        "_snapshot_indicator",
+        "trends_interest_resilient",
+        "trends_series",
+        "_coerce_trend_value",
+        "trends_context",
+        "_seasonality",
+        "_weak_threshold",
+        "_broaden_max_candidates",
+        "broaden_if_weak"
+      ],
+      "classes": [
+        {
+          "name": "TrendsAgent",
+          "line": 432,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_usage.py",
+      "lines": 415,
+      "functions": [
+        "_db_path",
+        "daily_cap",
+        "_open",
+        "_connect",
+        "_today",
+        "expected_run_usd",
+        "paid_calls_today",
+        "record_paid_calls",
+        "release_paid_calls",
+        "vision_allowed",
+        "would_exceed_cap",
+        "daily_usd_cap",
+        "usd_spent_on",
+        "usd_spent_today",
+        "record_usd",
+        "would_exceed_usd_cap",
+        "try_reserve_usd",
+        "reconcile_usd",
+        "try_reserve_paid_calls",
+        "unprotected_paid_keys",
+        "free_ai_extras_allowed"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_vision.py",
+      "lines": 32,
+      "functions": [
+        "call_vision"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_volza_agent.py",
+      "lines": 173,
+      "functions": [
+        "importers_by_name",
+        "_parse_importer_names"
+      ],
+      "classes": [
+        {
+          "name": "VolzaAgent",
+          "line": 121,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_watchdog.py",
+      "lines": 849,
+      "functions": [
+        "_db_path",
+        "_connect",
+        "_store",
+        "list_records",
+        "get_record",
+        "record_blocked_export",
+        "record_override",
+        "override_records_for",
+        "_finding",
+        "_check_hs_gate",
+        "_badge_class",
+        "_check_badge_body",
+        "_check_cross_market_leak",
+        "_check_leaks",
+        "_check_stale_tags",
+        "_numeric",
+        "_check_price_sanity",
+        "_check_no_fabrication",
+        "_tariff_path",
+        "_check_services",
+        "_cost_bands",
+        "_check_economics",
+        "_check_failures",
+        "observe",
+        "_observe_unsafe",
+        "_maybe_alert_red",
+        "trend_report",
+        "overall_badge",
+        "render_report_md"
+      ],
+      "classes": []
+    },
+    {
+      "file": "silk_websearch_agent.py",
+      "lines": 436,
+      "functions": [
+        "search_key",
+        "web_search",
+        "_search_cache_ttl",
+        "_search_cache_path",
+        "_search_cache_read",
+        "_search_cache_write",
+        "_organic_to_points",
+        "_domain_of",
+        "web_search_prioritized",
+        "_first_link",
+        "_parse_price",
+        "web_search_shopping"
+      ],
+      "classes": [
+        {
+          "name": "WebSearchAgent",
+          "line": 397,
+          "bases": [
+            "BaseAgent"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "silk_wto_tariff.py",
+      "lines": 169,
+      "functions": [
+        "wto_api_key",
+        "_default_year",
+        "_parse_value",
+        "wto_applied_tariff",
+        "_record_failure"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/acceptance_run.py",
+      "lines": 292,
+      "functions": [
+        "extract_docx_text",
+        "scan_forbidden",
+        "_save",
+        "_count_missions",
+        "main"
+      ],
+      "classes": [
+        {
+          "name": "Api",
+          "line": 82,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "tools/audit_call_probe.py",
+      "lines": 360,
+      "functions": [
+        "_brief",
+        "_resolve",
+        "_install",
+        "_restore",
+        "_fake_call_tools",
+        "_fake_call",
+        "_fake_call_writer",
+        "_run_one",
+        "probe",
+        "_coverage_in",
+        "_tam_keys",
+        "main"
+      ],
+      "classes": [
+        {
+          "name": "Recorder",
+          "line": 95,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "tools/audit_stored_hs.py",
+      "lines": 193,
+      "functions": [
+        "_analyses_db",
+        "_rows",
+        "audit_analyses",
+        "audit_classify_cache",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/audit_unit_gaps.py",
+      "lines": 164,
+      "functions": [
+        "_covered",
+        "_names_conversion",
+        "offending_sentences",
+        "_texts_of",
+        "audit_blob",
+        "_db_path",
+        "audit_db",
+        "audit_blobs",
+        "_report",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/backtest.py",
+      "lines": 99,
+      "functions": [
+        "load_cases",
+        "agrees",
+        "_seed_demo_store",
+        "run"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_dza_peanut_butter.py",
+      "lines": 193,
+      "functions": [
+        "_dp",
+        "_gen_findings",
+        "dza_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_fettuccine.py",
+      "lines": 135,
+      "functions": [
+        "_dp",
+        "_leads_block",
+        "fettuccine_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_germany_dates.py",
+      "lines": 145,
+      "functions": [
+        "_dp",
+        "germany_dates_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_japan_honey.py",
+      "lines": 144,
+      "functions": [
+        "_dp",
+        "japan_honey_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_jordan_milk.py",
+      "lines": 178,
+      "functions": [
+        "_dp",
+        "jordan_milk_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_kuwait_peanut_butter.py",
+      "lines": 159,
+      "functions": [
+        "_dp",
+        "kuwait_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_nadec_yemen_dairy.py",
+      "lines": 214,
+      "functions": [
+        "_dp",
+        "nadec_yemen_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_netherlands.py",
+      "lines": 136,
+      "functions": [
+        "_dp",
+        "netherlands_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_qatar_peanut_butter.py",
+      "lines": 140,
+      "functions": [
+        "_f",
+        "_rep",
+        "qatar_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/canonical_yemen.py",
+      "lines": 173,
+      "functions": [
+        "_dp",
+        "yemen_research_blob"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/check_self_review_gate.py",
+      "lines": 117,
+      "functions": [
+        "_pr_body",
+        "check",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/dev_console.py",
+      "lines": 136,
+      "functions": [
+        "_markets_table",
+        "_render_market",
+        "render",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/export_captured.py",
+      "lines": 276,
+      "functions": [
+        "_resolve_db_path",
+        "_resolve_traces_dir",
+        "_open_readonly",
+        "_table_exists",
+        "_load_analyses",
+        "_has_real_missions",
+        "_load_research_missions",
+        "_load_trace_files",
+        "_date_range",
+        "build_summary",
+        "print_summary",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/export_silk_preview.py",
+      "lines": 170,
+      "functions": [
+        "replace_once",
+        "data_uri",
+        "pricing_snapshot",
+        "prerender_cards",
+        "build_preview",
+        "main"
+      ],
+      "classes": [
+        {
+          "name": "LocalDocument",
+          "line": 75,
+          "bases": [
+            "HTMLParser"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "tools/fetch_agreements.py",
+      "lines": 156,
+      "functions": [
+        "build",
+        "write_csv",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/fetch_countries.py",
+      "lines": 139,
+      "functions": [
+        "_arabic_name",
+        "_aliases",
+        "map_reference",
+        "fetch",
+        "write_csv",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/fetch_demographics.py",
+      "lines": 173,
+      "functions": [
+        "_fetch_religion_rows",
+        "build",
+        "write_csv",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/fetch_ports.py",
+      "lines": 242,
+      "functions": [
+        "_fetch_ports",
+        "_depth_field_count",
+        "build",
+        "write_csv",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/gen_academic_sample.py",
+      "lines": 142,
+      "functions": [
+        "_f",
+        "academic_sample_blob",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/gen_analyze_samples.py",
+      "lines": 202,
+      "functions": [
+        "_block_network",
+        "_seed_store",
+        "build_sample_result",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/gen_client_report_sample.py",
+      "lines": 483,
+      "functions": [
+        "_f",
+        "_rep",
+        "build_sample_view"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/gen_kuwait_battery_sample.py",
+      "lines": 42,
+      "functions": [],
+      "classes": []
+    },
+    {
+      "file": "tools/gen_research_sample.py",
+      "lines": 340,
+      "functions": [
+        "_mkreport",
+        "_finding"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/gen_verdict_baseline.py",
+      "lines": 108,
+      "functions": [
+        "_round",
+        "load_blob",
+        "fingerprint",
+        "collect_baseline",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/golden_set.py",
+      "lines": 254,
+      "functions": [
+        "_blob",
+        "_numbers_in",
+        "_walk_numbers",
+        "_report_text",
+        "_key_figures",
+        "snapshot",
+        "_verification_items",
+        "compare_case",
+        "archive",
+        "compare"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/hs_before_after.py",
+      "lines": 114,
+      "functions": [
+        "_golden",
+        "_decide",
+        "main",
+        "_has_pipeline"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/hs_delta.py",
+      "lines": 144,
+      "functions": [
+        "_fmt",
+        "probe",
+        "verdict_for",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/import_legacy.py",
+      "lines": 51,
+      "functions": [
+        "import_legacy"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/inference_audit.py",
+      "lines": 82,
+      "functions": [
+        "_audit",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/live_shape_server.py",
+      "lines": 393,
+      "functions": [
+        "_free_port",
+        "seed_db",
+        "seed_producer_export_cache",
+        "main"
+      ],
+      "classes": [
+        {
+          "name": "LiveShapeServer",
+          "line": 114,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "tools/migrate_hs_keywords.py",
+      "lines": 114,
+      "functions": [
+        "_load",
+        "build_keywords_ar",
+        "migrate",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/post_deploy_smoke.py",
+      "lines": 413,
+      "functions": [
+        "_get",
+        "_post",
+        "_platform_req",
+        "_check_exports",
+        "_json_dict",
+        "_check_platform",
+        "_finish",
+        "_build_parser",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/probe_yemen_dairy_mirror.py",
+      "lines": 107,
+      "functions": [
+        "_saudi_export_to_yemen",
+        "_world_export_to_yemen",
+        "_cell",
+        "_table",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/prompt_size_report.py",
+      "lines": 226,
+      "functions": [
+        "_blob",
+        "measure_prompts",
+        "cost_map",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/prose_report.py",
+      "lines": 84,
+      "functions": [
+        "_report_text",
+        "_print",
+        "_db_text",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/recover_and_verify.py",
+      "lines": 180,
+      "functions": [
+        "_req",
+        "_blocked_checks",
+        "_cost_line",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/refresh.py",
+      "lines": 16,
+      "functions": [],
+      "classes": []
+    },
+    {
+      "file": "tools/rtl_calibration.py",
+      "lines": 346,
+      "functions": [
+        "_is_arabic_letter",
+        "is_arabic_majority",
+        "build_fixture",
+        "build_bracket_fixture",
+        "bracket_suspicious_count",
+        "to_pdf",
+        "measure_lines",
+        "classify",
+        "format_digest",
+        "_lo_version",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/stage2c_proof.py",
+      "lines": 241,
+      "functions": [
+        "_facts_by_source",
+        "_seed_hermetic_store",
+        "run_case",
+        "main"
+      ],
+      "classes": [
+        {
+          "name": "_HermeticHTTP",
+          "line": 91,
+          "bases": []
+        }
+      ]
+    },
+    {
+      "file": "tools/verify_backup.py",
+      "lines": 141,
+      "functions": [
+        "_default_dir",
+        "_latest",
+        "_check",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/wave1_charter_adapter_validation.py",
+      "lines": 155,
+      "functions": [
+        "run",
+        "main"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/wave_b_audit.py",
+      "lines": 79,
+      "functions": [
+        "chk"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/wave_c_audit.py",
+      "lines": 263,
+      "functions": [
+        "chk",
+        "_src",
+        "_pr"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/wave_d_audit.py",
+      "lines": 139,
+      "functions": [
+        "chk",
+        "_src"
+      ],
+      "classes": []
+    },
+    {
+      "file": "tools/wave_z_audit.py",
+      "lines": 368,
+      "functions": [
+        "chk",
+        "_jury",
+        "_view",
+        "_lines",
+        "_bundle",
+        "_vintages"
+      ],
+      "classes": []
+    }
+  ]
+}

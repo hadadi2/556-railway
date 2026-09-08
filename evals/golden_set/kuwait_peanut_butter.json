@@ -1,0 +1,20 @@
+{
+  "case": "kuwait_peanut_butter",
+  "confidence": 0.5,
+  "key_figures": {
+    "decision.confidence": null,
+    "decision.verdict": null,
+    "dr.confidence": 0.5,
+    "dr.verdict": "WATCH"
+  },
+  "section_count": 11,
+  "unsupported_report_numbers": [
+    2500.0
+  ],
+  "verdict": "WATCH",
+  "verification_items": {
+    "claims_none": false,
+    "count": 3,
+    "sufficiency_present": false
+  }
+}

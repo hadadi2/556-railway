@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # سقف زمني صريح: الافتراضي بلا ضبط ٣٦٠ دقيقة (٦ ساعات)، فأيّ تعليق حقيقي
+    # (قفل قاعدة، انتظار شبكة) كان سيحرق رصيد Actions صامتاً حتى ينتبه أحدٌ
+    # يدوياً. الحزمة الهرمتية تكتمل في ~٦–٨ دقائق، فـ٢٠ هامشٌ واسع يقتل التعليق
+    # سريعاً دون إسقاط تشغيلة سليمة بطيئة.
+    # Explicit cap: the 360-minute default would burn CI budget on a real hang.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        # أدوات الاختبار مثبَّتة الإصدار كاعتماديات الإنتاج (تدقيق البند ١٦) —
+        # `requirements-ci.txt`. غير مثبَّتة، كان إصدار pytest جديد يستطيع تحمير
+        # هذه الوظيفة بصفر تغيير في الريبو. Pinned test tooling, like production.
+        run: pip install -r requirements.txt -r requirements-ci.txt
+      # الموجة p6: اختبارٌ واحد (test_wave_p2::test_research_endpoint_traces_
+      # analyst_and_writer_calls) سقط مرّةً في تسلسلٍ طويل ونجح منفرداً ومع كلّ
+      # تركيبةٍ مستهدَفة — بلا دليلٍ على آلية. فبدل التخمين تُشحَن **أداةُ قياس**:
+      # إعادةُ تشغيل الفاشلات وحدها تُسمّي المتقلّب بالاسم. الوظيفةُ تفشل في
+      # الحالتين — تقلُّبُ الترتيب عيبٌ حقيقيّ (حالةٌ متسرّبة بين الاختبارات)،
+      # لا ضجيجٌ يُعاد حتى يخضرّ. A rerun that NAMES the flake; never a silently
+      # green retry.
+      # R0 (تدقيق 2026-09-01، CI-1): بوّابة سريعة **قبل** الحزمة — `ruff` يلتقط
+      # الأسماء غير المعرَّفة والأخطاء النحوية وحدها (E9,F63,F7,F82؛ لا أسلوب ولا
+      # ملفّ ضبط)، و`pip-audit -r requirements.txt` يفحص **الإغلاق المتعدّي كاملاً**
+      # لاعتماديات الإنتاج كما يُحَلّ وقتَ التشغيل (منه ما لا يثبّته الملفّ مثل
+      # starlette) — بحلٍّ جافّ في بيئةٍ مؤقّتة، لا البيئةَ المثبَّتة (تلك تُدخِل
+      # pip/setuptools المشغّل نفسه فتتقلّب بلا تغييرٍ في الريبو). تعطّل PyPI أو
+      # ثغرةٌ جديدة في اعتماديةٍ متعدّية يُحمِّران الوظيفة عمداً — هذا هو الحارس.
+      # الاستثناءات المؤرَّخة أدناه ثغراتٌ معروفة في تثبيتٍ قائم يصل سطحاً حيّاً
+      # (`silk_platform/api.py::create_image` يفكّ multipart برفع صور المصانع) —
+      # ترقيةُ التثبيت تغييرٌ في اعتماديات الإنتاج = قرارُ مالك لا خطوةَ CI
+      # صامتة؛ القفل `test_pip_audit_ignore_list_is_tethered_to_the_multipart_pin`
+      # يُسقط القائمة حين يُرفَع التثبيت. Fast gate before pytest; the ignore
+      # list is tethered to the exact vulnerable pin.
+      - name: Syntax gate (ruff E9,F63,F7,F82) + dependency audit (pip-audit)
+        env:
+          # `requirements.txt` يحمل شروحاً عربية — قارئ pip-audit يفتحه بترميز
+          # الموضع؛ UTF-8 صراحةً كي لا يختلف السلوك بين المشغّلات.
+          PYTHONUTF8: "1"
+        run: |
+          ruff check --select E9,F63,F7,F82 --no-cache .
+          # pin upgrade pending owner approval (R0, 2026-09-02).
+          pip-audit -r requirements.txt --strict --progress-spinner off
+      - name: Run tests
+        env:
+          # الوظيفة الهرمتية **لا تشحن LibreOffice عمداً** (خفّتها شرطُ وجودها)،
+          # فاختبارُ دليل الـPDF فيها كان يفشل بـ«محوّل الـPDF (soffice) غائب» —
+          # وهو حكمٌ صحيح في بيئةٍ يُفترَض أن تحمل المحوّل، وخاطئٌ هنا. الدليل
+          # يُؤخَذ في `e2e-live-shape` التي تشحن `libreoffice-writer` فعلاً
+          # (أُضيف الملفّ لخطوتها) — لا يسقط، ينتقل لبيئته الصحيحة.
+          # The hermetic job deliberately ships no LibreOffice; the PDF proof
+          # is taken in e2e-live-shape, which does.
+          SILK_PDF_LOCAL_SKIP: "1"
+        run: |
+          set -o pipefail
+          if python -m pytest tests/ -q; then
+            exit 0
+          fi
+          echo "::group::rerun of the first-pass failures only (--last-failed)"
+          python -m pytest tests/ --last-failed -v 2>&1 | tee rerun.log || true
+          echo "::endgroup::"
+          # التصنيف **لكل اختبار** لا لنتيجة الإعادة ككلّ (مراجعة §58، الثغرة
+          # #17): اختبارٌ يسقط في الحزمة **ويسقط منفرداً** انحدارٌ صلب ولا يجوز
+          # أن يلبس لافتةَ التقلّب أبداً؛ والذي يسقط في الحزمة وينجح منفرداً
+          # تبعيةُ ترتيب/حالة — عيبٌ حقيقيّ أيضاً. الوظيفةُ تفشل في الحالتين.
+          hard=$(grep -E "^tests/[^ ]+ +(FAILED|ERROR)" rerun.log | awk '{print $1}' | sort -u)
+          flaky=$(grep -E "^tests/[^ ]+ +PASSED" rerun.log | awk '{print $1}' | sort -u)
+          if [ -n "$hard" ]; then
+            echo "$hard" | sed 's/^/HARD-FAILURE: /'
+            echo "::error::HARD FAILURES: the tests above failed in the suite AND alone. These are regressions, never flakes."
+          fi
+          if [ -n "$flaky" ]; then
+            echo "$flaky" | sed 's/^/FLAKY-CANDIDATE: /'
+            echo "::error::FLAKY: the tests above failed in the full-suite pass and PASSED when rerun alone — order/state dependence (leaked contextvar/env/db between tests). Fix the leak; a green rerun is NOT a pass."
+          fi
+          if [ -z "$hard" ] && [ -z "$flaky" ]; then
+            echo "::error::the suite failed but the rerun produced no per-test verdict — read rerun.log"
+          fi
+          exit 1
+      # بوّابة §58: متن الـPR يجب أن يصرّح بنتيجة المراجعة الذاتية والملاحظات
+      # العالية. كانت القاعدة تعتمد على تذكّر شخص؛ صارت فحصاً. تعمل على أحداث
+      # pull_request فقط (تتخطّى push بنجاح). §58 self-review declaration gate.
+      - name: Self-review gate (CLAUDE.md §58)
+        run: python tools/check_self_review_gate.py
+      # CI-6 (تدقيق 2026-09-01): مسحٌ أمنيّ **تقريريّ** — قواعدُ `ruff` الأمنية ليست
+      # بوّابةً (إيجابياتٌ كاذبة كثيرة على شيفرةٍ قائمة)، لكنّ غيابَها كان يعني ألّا
+      # يرى أحدٌ نمطاً خطراً جديداً إطلاقاً. `continue-on-error` = تقريرٌ لا حُمرة.
+      - name: Security sweep (report-only)
+        continue-on-error: true
+        run: ruff check --select S102,S301,S307,S324,S506,S608 --no-cache . || true
+
+  secret-scan:
+    # CI-6: كشفُ الأسرار المسرَّبة — الفعلُ مثبَّتٌ على SHA (لا وسمٌ متحرّك يُشغّل
+    # شيفرةً جديدة في مستودعنا)، قراءةٌ فقط بلا أسرارٍ ممنوحة.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # قراءة إيداعات PR مطلوبة للفاحص؛ لا صلاحية كتابة تعليقات أو محتوى.
+    # List PR commits with least privilege; results stay in the job log.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (pinned)
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7   # = tag v2 (تُحقّق منه 2026-09-06)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  test-production-switches:
+    # TEST-6 (تدقيق 2026-09-01): الحزمةُ تُشغَّل مرّةً بصمّاماتِ الإنتاج **مفعّلة** —
+    # `conftest` يطفئها للسرعة (مشرف/كانس/حدّ معدّل/وقفٌ مبكر)، فبقيت مساراتُها
+    # غيرَ مُنفَّذة في أيّ بوّابة. مجموعةٌ مستهدفة كي تبقى الوظيفةُ دقائقَ لا ساعة.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-ci.txt
+      - name: Run the platform + audit locks with production switches on
+        env:
+          SILK_PLATFORM_ORPHAN_SWEEP: "1"
+          SILK_PLATFORM_RUN_SUPERVISOR: "1"
+          SILK_RATE_LIMIT: "120"
+          SILK_EARLY_HALT: "1"
+          SILK_PDF_LOCAL_SKIP: "1"
+        run: |
+          python -m pytest tests/test_platform_*.py \
+            tests/test_audit_2026_09_01_r*.py tests/test_audit_2026_09_01_ext.py tests/test_audit_2026_09_01_p3.py \
+            tests/test_wave7_security_p0.py tests/test_wave8_*.py \
+            tests/test_repo_repair_2026_09_06.py -q

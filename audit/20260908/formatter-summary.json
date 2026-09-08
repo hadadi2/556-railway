@@ -1,0 +1,10 @@
+{
+  "command": "python3 -m ruff format --check --no-cache .",
+  "exit_code": 1,
+  "would_reformat": 547,
+  "already_formatted": 73,
+  "scope": "formatter default discovery includes Markdown code blocks as well as Python",
+  "classification": "style-only; no formatter edits applied",
+  "raw_log_bytes": 8018586,
+  "tail": "547 files would be reformatted, 73 files already formatted"
+}

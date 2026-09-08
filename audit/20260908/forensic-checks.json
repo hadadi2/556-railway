@@ -1,0 +1,5682 @@
+{
+  "commit": "8143125ea37660986d616007ca1df355ad332b80",
+  "migrations": {
+    "platform_first": [
+      "001",
+      "002",
+      "003",
+      "004",
+      "005",
+      "006",
+      "007",
+      "008",
+      "009",
+      "010",
+      "011",
+      "012",
+      "013",
+      "014",
+      "015",
+      "016",
+      "017",
+      "018",
+      "019",
+      "020",
+      "021"
+    ],
+    "platform_second": [],
+    "store_first": [
+      "001",
+      "002",
+      "003",
+      "004",
+      "005"
+    ],
+    "store_second": []
+  },
+  "migration_files": [
+    {
+      "file": "migrations/001_core.sql",
+      "sha256": "eaca190bd071b0cb2413df21d31dd1348c403918528775e0a68f0272917781e7"
+    },
+    {
+      "file": "migrations/002_settings.sql",
+      "sha256": "e035648f1e27167b7c939cff6093bb427852b7f342e6c36db03db39e66167877"
+    },
+    {
+      "file": "migrations/003_agent_runs.sql",
+      "sha256": "f597eccd04ccfa9701612dc8c4ac95c6bf5de3898dcb771bb5a402b9a3ced021"
+    },
+    {
+      "file": "migrations/004_hs_classify_cache.sql",
+      "sha256": "34bf063e617885961cba5eabb6dfa1cad759a7ccba5efc67d4d3b9ccf8c9c56a"
+    },
+    {
+      "file": "migrations/005_collection_runs_index.sql",
+      "sha256": "26b5d394150309a0ecf0559943b7a592cd8d947f5ee0662774b8d392aab3b65f"
+    },
+    {
+      "file": "migrations/platform/001_platform_core.sql",
+      "sha256": "cafd98081b888c8edde54c4c74f204c5335248a61929bd80bbda01de5c5c6e7a"
+    },
+    {
+      "file": "migrations/platform/002_login_attempts.sql",
+      "sha256": "ad3ef0947f8f739a5d3638bb57606227f9716e35d1147d72d5264d2444c599db"
+    },
+    {
+      "file": "migrations/platform/003_email_queue_claim_tracking.sql",
+      "sha256": "7ed8bd5f3baf368cf9613f33355face6be3defe4a81f1e2de5d035d4ddeb5bb4"
+    },
+    {
+      "file": "migrations/platform/004_funnel_selection_columns.sql",
+      "sha256": "ce32721bcf1d55d7c72e0c786a65d2b3e30f46d65851007d2ef637e68fedbf54"
+    },
+    {
+      "file": "migrations/platform/005_per_user_study_quota.sql",
+      "sha256": "668e35334135f29f6046a7db136aa0b0caffacdc2ecf81ee97e2ea4bf4432928"
+    },
+    {
+      "file": "migrations/platform/006_market_study_pivot.sql",
+      "sha256": "efd798238ecf427afe73746945452fd07f410f4d6e1289f051dee8fb1b4be5f9"
+    },
+    {
+      "file": "migrations/platform/007_run_stats.sql",
+      "sha256": "04824db8afa1c93dc1bbbcc4657088f47d627104737f57816997ad4d5eb9fe68"
+    },
+    {
+      "file": "migrations/platform/008_language_chosen.sql",
+      "sha256": "f43e95dbf250c5a89a304d782e332ef205040c7c710af0a016e6af46fa4f4f01"
+    },
+    {
+      "file": "migrations/platform/009_notifications.sql",
+      "sha256": "2f67c4f513e18451cf32ce9f311f07bec2d89834251b183dbb352f80b3867901"
+    },
+    {
+      "file": "migrations/platform/010_products.sql",
+      "sha256": "a229cceed10d9dd86c820183b942adb4f4d018d7733796ee9749d49cc81d9c8c"
+    },
+    {
+      "file": "migrations/platform/011_hs_candidates.sql",
+      "sha256": "ca74145411cd18b508e364568b590b8067e880c1f1a61f87a0c46baf24f19068"
+    },
+    {
+      "file": "migrations/platform/012_tier_settings.sql",
+      "sha256": "5506bedee548291f229d40ddec955853357a5d6f0b00a05a365afcef620216ce"
+    },
+    {
+      "file": "migrations/platform/013_factory_language.sql",
+      "sha256": "edc2c7de1f50feeca47dcefe3fa1d37cb77bb927b7108bc0ac3cfb24b49a9126"
+    },
+    {
+      "file": "migrations/platform/014_product_economics.sql",
+      "sha256": "5f92c56a3b37def4e0c5bf8e73eccf174226d147b1eb6d437858fedd33e6f383"
+    },
+    {
+      "file": "migrations/platform/015_study_production_cost.sql",
+      "sha256": "8526addae5b2cffa437df7633571c1141d7bac5a06de7aaf95eff12ff9aa594d"
+    },
+    {
+      "file": "migrations/platform/016_quota_reset_watermark.sql",
+      "sha256": "d9dad63aee1b79275e0b9e16294159062c23a1a3b8b23b516b1f4aa020f23062"
+    },
+    {
+      "file": "migrations/platform/017_hs_classification_provenance.sql",
+      "sha256": "507b1395f1365918c2554a97aeeab116466edd95f904e1ad6619862fdad9c702"
+    },
+    {
+      "file": "migrations/platform/018_study_runs.sql",
+      "sha256": "b50f95959f355e8babb8a9312cf3baf8b4e2bc2bcef70104162cf73661ab0c7a"
+    },
+    {
+      "file": "migrations/platform/019_study_advisories_ack.sql",
+      "sha256": "6a17950e9a3c79525541407df676d7f1eb2ea514e724f0013cc78e1868160495"
+    },
+    {
+      "file": "migrations/platform/020_indexes.sql",
+      "sha256": "8bbd729dc4079878ab5f1a9e8ac506ebbb548da853ab2432db229e507df3b77d"
+    },
+    {
+      "file": "migrations/platform/021_study_hs_source.sql",
+      "sha256": "8c7f3d0965b3461df9ee29f8f4f14708beb0d5ff7a01322c5d7604c0059b2bb4"
+    }
+  ],
+  "databases": {
+    "platform": {
+      "objects": [
+        {
+          "type": "index",
+          "name": "idx_platform_notifications_account",
+          "table": "platform_notifications",
+          "sql": "CREATE INDEX idx_platform_notifications_account\n    ON platform_notifications(account_id, read_at, id)"
+        },
+        {
+          "type": "index",
+          "name": "idx_products_account",
+          "table": "products",
+          "sql": "CREATE INDEX idx_products_account ON products(account_id, id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_audit_account",
+          "table": "audit_log",
+          "sql": "CREATE INDEX ix_audit_account ON audit_log(account_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_audit_action_created",
+          "table": "audit_log",
+          "sql": "CREATE INDEX ix_audit_action_created ON audit_log(action, created_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_audit_created",
+          "table": "audit_log",
+          "sql": "CREATE INDEX ix_audit_created ON audit_log(created_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_consent_account",
+          "table": "consent_registry",
+          "sql": "CREATE INDEX ix_consent_account ON consent_registry(sending_account_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_consent_email",
+          "table": "consent_registry",
+          "sql": "CREATE INDEX ix_consent_email   ON consent_registry(prospect_email)"
+        },
+        {
+          "type": "index",
+          "name": "ix_drafts_owner",
+          "table": "drafts",
+          "sql": "CREATE INDEX ix_drafts_owner ON drafts(owner_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_drafts_study",
+          "table": "drafts",
+          "sql": "CREATE INDEX ix_drafts_study ON drafts(study_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_funnels_owner",
+          "table": "comparison_funnels",
+          "sql": "CREATE INDEX ix_funnels_owner ON comparison_funnels(owner_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_images_owner",
+          "table": "images",
+          "sql": "CREATE INDEX ix_images_owner ON images(owner_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_ledger_account",
+          "table": "ledger_entries",
+          "sql": "CREATE INDEX ix_ledger_account ON ledger_entries(account_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_ledger_actor",
+          "table": "ledger_entries",
+          "sql": "CREATE INDEX ix_ledger_actor   ON ledger_entries(actor_user_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_login_attempts_created",
+          "table": "login_attempts",
+          "sql": "CREATE INDEX ix_login_attempts_created ON login_attempts(created_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_login_attempts_identity",
+          "table": "login_attempts",
+          "sql": "CREATE INDEX ix_login_attempts_identity\n    ON login_attempts(identity, created_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_notifications_account_id",
+          "table": "platform_notifications",
+          "sql": "CREATE INDEX ix_notifications_account_id ON platform_notifications(account_id, id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_prospects_owner",
+          "table": "prospects",
+          "sql": "CREATE INDEX ix_prospects_owner ON prospects(owner_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_queue_account",
+          "table": "email_queue",
+          "sql": "CREATE INDEX ix_queue_account ON email_queue(account_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_queue_order",
+          "table": "email_queue",
+          "sql": "CREATE INDEX ix_queue_order   ON email_queue(status, id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_reset_tokens_expires",
+          "table": "password_reset_tokens",
+          "sql": "CREATE INDEX ix_reset_tokens_expires ON password_reset_tokens(expires_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_reset_user",
+          "table": "password_reset_tokens",
+          "sql": "CREATE INDEX ix_reset_user ON password_reset_tokens(user_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_sessions_expires",
+          "table": "sessions",
+          "sql": "CREATE INDEX ix_sessions_expires ON sessions(expires_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_sessions_user",
+          "table": "sessions",
+          "sql": "CREATE INDEX ix_sessions_user  ON sessions(user_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_smtp_owner",
+          "table": "smtp_configs",
+          "sql": "CREATE INDEX ix_smtp_owner ON smtp_configs(owner_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_studies_launched_by",
+          "table": "studies",
+          "sql": "CREATE INDEX ix_studies_launched_by\n    ON studies(launched_by_user_id, launched_at)"
+        },
+        {
+          "type": "index",
+          "name": "ix_studies_owner",
+          "table": "studies",
+          "sql": "CREATE INDEX ix_studies_owner ON studies(owner_id)"
+        },
+        {
+          "type": "index",
+          "name": "ix_studies_state",
+          "table": "studies",
+          "sql": "CREATE INDEX ix_studies_state ON studies(state)"
+        },
+        {
+          "type": "index",
+          "name": "ix_study_runs_state",
+          "table": "study_runs",
+          "sql": "CREATE INDEX ix_study_runs_state ON study_runs(state)"
+        },
+        {
+          "type": "index",
+          "name": "ix_users_account",
+          "table": "users",
+          "sql": "CREATE INDEX ix_users_account ON users(account_id)"
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_funnel_prospects_1",
+          "table": "funnel_prospects",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_funnel_studies_1",
+          "table": "funnel_studies",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_images_1",
+          "table": "images",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_password_reset_tokens_1",
+          "table": "password_reset_tokens",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_platform_migrations_1",
+          "table": "platform_migrations",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_prospects_1",
+          "table": "prospects",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_sessions_1",
+          "table": "sessions",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_suppression_list_1",
+          "table": "suppression_list",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_system_settings_1",
+          "table": "system_settings",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_tier_settings_1",
+          "table": "tier_settings",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_users_1",
+          "table": "users",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_wallets_1",
+          "table": "wallets",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "ux_accounts_vault",
+          "table": "accounts",
+          "sql": "CREATE UNIQUE INDEX ux_accounts_vault\n    ON accounts(is_vault) WHERE is_vault = 1"
+        },
+        {
+          "type": "index",
+          "name": "ux_study_runs_active",
+          "table": "study_runs",
+          "sql": "CREATE UNIQUE INDEX ux_study_runs_active ON study_runs(study_id)\n    WHERE state IN ('queued','running')"
+        },
+        {
+          "type": "index",
+          "name": "ux_study_runs_token",
+          "table": "study_runs",
+          "sql": "CREATE UNIQUE INDEX ux_study_runs_token ON study_runs(run_token)"
+        },
+        {
+          "type": "table",
+          "name": "accounts",
+          "table": "accounts",
+          "sql": "CREATE TABLE accounts (\n    id                        INTEGER PRIMARY KEY,\n    name                      TEXT NOT NULL,\n    kind                      TEXT NOT NULL CHECK (kind IN ('silk','factory')),\n    is_vault                  INTEGER NOT NULL DEFAULT 0,\n    tier                      TEXT NOT NULL DEFAULT 'basic'\n                                  CHECK (tier IN ('basic','silver','gold','platinum')),\n    -- عدّاد الحصّة: مدى الحياة لـ Basic (لا يُصفَّر أبداً) + عدّاد شهري للبقية.\n    lifetime_study_count      INTEGER NOT NULL DEFAULT 0,\n    current_month_study_count INTEGER NOT NULL DEFAULT 0,\n    quota_period              TEXT,   -- 'YYYY-MM' الذي يخصّه العدّاد الشهري\n    is_active                 INTEGER NOT NULL DEFAULT 1,\n    created_at                TEXT NOT NULL,\n    updated_at                TEXT NOT NULL\n, per_user_monthly_studies INTEGER, language_preference TEXT NOT NULL DEFAULT 'ar'\n    CHECK (language_preference IN ('ar','en')), language_chosen_at TEXT, quota_reset_at TEXT)"
+        },
+        {
+          "type": "table",
+          "name": "audit_log",
+          "table": "audit_log",
+          "sql": "CREATE TABLE audit_log (\n    id            INTEGER PRIMARY KEY,\n    user_id       INTEGER,\n    account_id    INTEGER,\n    action        TEXT NOT NULL,\n    resource_type TEXT,\n    resource_id   TEXT,\n    changes       TEXT,   -- JSON {before, after}\n    ip_address    TEXT,\n    created_at    TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "comparison_funnels",
+          "table": "comparison_funnels",
+          "sql": "CREATE TABLE comparison_funnels (\n    id         INTEGER PRIMARY KEY,\n    owner_id   INTEGER NOT NULL REFERENCES accounts(id),\n    state      TEXT NOT NULL DEFAULT 'compared'\n                   CHECK (state IN ('compared','selected','extracted','drafted','sent')),\n    created_at TEXT NOT NULL,\n    updated_at TEXT NOT NULL,\n    sent_at    TEXT\n, selected_study_id INTEGER REFERENCES studies(id), draft_id INTEGER REFERENCES drafts(id))"
+        },
+        {
+          "type": "table",
+          "name": "consent_registry",
+          "table": "consent_registry",
+          "sql": "CREATE TABLE consent_registry (\n    id                 INTEGER PRIMARY KEY,\n    prospect_email     TEXT NOT NULL,\n    study_id           INTEGER,\n    sending_account_id INTEGER NOT NULL REFERENCES accounts(id),\n    approving_user_id  INTEGER,\n    message_verbatim   TEXT NOT NULL,   -- exact subject + body sent\n    sent_at            TEXT,\n    consent_granted_at TEXT,\n    unsubscribed_at    TEXT,            -- set later on unsubscribe click\n    unsubscribe_reason TEXT\n)"
+        },
+        {
+          "type": "table",
+          "name": "drafts",
+          "table": "drafts",
+          "sql": "CREATE TABLE drafts (\n    id         INTEGER PRIMARY KEY,\n    owner_id   INTEGER NOT NULL REFERENCES accounts(id),\n    study_id   INTEGER REFERENCES studies(id),\n    subject_en TEXT,\n    subject_ar TEXT,\n    body_en    TEXT,\n    body_ar    TEXT,\n    version    TEXT NOT NULL DEFAULT 'A' CHECK (version IN ('A','B')),\n    created_at TEXT NOT NULL,\n    updated_at TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "email_queue",
+          "table": "email_queue",
+          "sql": "CREATE TABLE email_queue (\n    id             INTEGER PRIMARY KEY,\n    account_id     INTEGER NOT NULL REFERENCES accounts(id),\n    study_id       INTEGER REFERENCES studies(id),\n    prospect_id    INTEGER,\n    prospect_email TEXT NOT NULL,\n    draft_id       INTEGER,\n    smtp_config_id INTEGER,\n    subject        TEXT,\n    body           TEXT,\n    -- 'sending' حالة مطالبة وسيطة: العامل يطالب بالصفّ ذرّياً قبل الإرسال فلا\n    -- يرسله مرورَان متزاملان مرّتين. A claim state so two passes can't double-send.\n    status         TEXT NOT NULL DEFAULT 'queued'\n                       CHECK (status IN ('queued','sending','sent','failed','suppressed')),\n    actor_user_id  INTEGER,\n    attempts       INTEGER NOT NULL DEFAULT 0,\n    last_error     TEXT,\n    queued_at      TEXT NOT NULL,\n    sent_at        TEXT\n, claimed_at TEXT)"
+        },
+        {
+          "type": "table",
+          "name": "funnel_prospects",
+          "table": "funnel_prospects",
+          "sql": "CREATE TABLE funnel_prospects (\n    funnel_id   INTEGER NOT NULL REFERENCES comparison_funnels(id),\n    prospect_id INTEGER NOT NULL REFERENCES prospects(id),\n    PRIMARY KEY (funnel_id, prospect_id)\n)"
+        },
+        {
+          "type": "table",
+          "name": "funnel_studies",
+          "table": "funnel_studies",
+          "sql": "CREATE TABLE funnel_studies (\n    funnel_id INTEGER NOT NULL REFERENCES comparison_funnels(id),\n    study_id  INTEGER NOT NULL REFERENCES studies(id),\n    PRIMARY KEY (funnel_id, study_id)\n)"
+        },
+        {
+          "type": "table",
+          "name": "images",
+          "table": "images",
+          "sql": "CREATE TABLE images (\n    id                 INTEGER PRIMARY KEY,\n    owner_id           INTEGER NOT NULL REFERENCES accounts(id),\n    filename           TEXT,\n    storage_key        TEXT NOT NULL UNIQUE,\n    mime_type          TEXT,\n    size_bytes         INTEGER NOT NULL DEFAULT 0,\n    uploaded_by_user_id INTEGER REFERENCES users(id),\n    alt_text_en        TEXT,\n    alt_text_ar        TEXT,\n    uploaded_at        TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "ledger_entries",
+          "table": "ledger_entries",
+          "sql": "CREATE TABLE ledger_entries (\n    id             INTEGER PRIMARY KEY,\n    account_id     INTEGER NOT NULL REFERENCES accounts(id),\n    actor_user_id  INTEGER,   -- non-null for every user-triggered op\n    operation_type TEXT NOT NULL CHECK (operation_type IN (\n                       'email_sent','report_generated','wallet_funded',\n                       'api_call','storage_charge','comparison_report','draft_email')),\n    amount         INTEGER NOT NULL,   -- cents; negative=debit, positive=credit\n    balance_after  INTEGER NOT NULL,   -- snapshot of owning account balance\n    description    TEXT,\n    metadata       TEXT,   -- JSON (study_id, prospect_id, ...)\n    created_at     TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "login_attempts",
+          "table": "login_attempts",
+          "sql": "CREATE TABLE login_attempts (\n    id         INTEGER PRIMARY KEY,\n    identity   TEXT NOT NULL,   -- بريد + IP مطبَّعان · normalized email|ip\n    created_at TEXT NOT NULL    -- ISO-8601 UTC (نافذة ثابتة تُقاس عليه)\n)"
+        },
+        {
+          "type": "table",
+          "name": "password_reset_tokens",
+          "table": "password_reset_tokens",
+          "sql": "CREATE TABLE password_reset_tokens (\n    id         INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL REFERENCES users(id),\n    token_hash TEXT NOT NULL UNIQUE,\n    created_at TEXT NOT NULL,\n    expires_at TEXT NOT NULL,\n    used_at    TEXT\n)"
+        },
+        {
+          "type": "table",
+          "name": "platform_migrations",
+          "table": "platform_migrations",
+          "sql": "CREATE TABLE platform_migrations (\n                           version TEXT PRIMARY KEY, applied_at TEXT NOT NULL)"
+        },
+        {
+          "type": "table",
+          "name": "platform_notifications",
+          "table": "platform_notifications",
+          "sql": "CREATE TABLE platform_notifications (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    account_id INTEGER NOT NULL REFERENCES accounts(id),\n    user_id INTEGER REFERENCES users(id),          -- NULL = لكل مستخدمي الحساب\n    kind TEXT NOT NULL,                            -- study_completed | study_failed | ...\n    study_id INTEGER,                              -- مرجع اختياري للدراسة\n    title TEXT NOT NULL,\n    body TEXT NOT NULL DEFAULT '',\n    created_at TEXT NOT NULL,\n    read_at TEXT                                   -- NULL = غير مقروء\n)"
+        },
+        {
+          "type": "table",
+          "name": "products",
+          "table": "products",
+          "sql": "CREATE TABLE products (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    account_id INTEGER NOT NULL REFERENCES accounts(id),\n    name TEXT NOT NULL,\n    description TEXT NOT NULL DEFAULT '',\n    hs_code TEXT,                                  -- 4–6 أرقام؛ NULL = غير محدد\n    image_id INTEGER REFERENCES images(id),\n    created_at TEXT NOT NULL,\n    updated_at TEXT NOT NULL\n, cost_per_unit REAL, cost_unit TEXT, tier TEXT, monthly_capacity REAL, shipping_per_unit REAL, certifications TEXT, hs_source TEXT NOT NULL DEFAULT 'unknown', hs_set_at TEXT)"
+        },
+        {
+          "type": "table",
+          "name": "prospects",
+          "table": "prospects",
+          "sql": "CREATE TABLE prospects (\n    id                  INTEGER PRIMARY KEY,\n    owner_id            INTEGER NOT NULL REFERENCES accounts(id),\n    email               TEXT NOT NULL,\n    first_name          TEXT,\n    last_name           TEXT,\n    company             TEXT,\n    industry            TEXT,\n    language_preference TEXT NOT NULL DEFAULT 'en' CHECK (language_preference IN ('ar','en')),\n    tags                TEXT,   -- JSON array\n    created_at          TEXT NOT NULL,\n    updated_at          TEXT NOT NULL,\n    UNIQUE (owner_id, email)\n)"
+        },
+        {
+          "type": "table",
+          "name": "sessions",
+          "table": "sessions",
+          "sql": "CREATE TABLE sessions (\n    id               INTEGER PRIMARY KEY,\n    user_id          INTEGER NOT NULL REFERENCES users(id),\n    token_hash       TEXT NOT NULL UNIQUE,   -- sha256(raw) — الخام لا يُخزَّن أبداً\n    ip_address       TEXT,\n    user_agent       TEXT,\n    created_at       TEXT NOT NULL,\n    expires_at       TEXT NOT NULL,\n    last_activity_at TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "smtp_configs",
+          "table": "smtp_configs",
+          "sql": "CREATE TABLE smtp_configs (\n    id           INTEGER PRIMARY KEY,\n    owner_id     INTEGER NOT NULL REFERENCES accounts(id),\n    label        TEXT,\n    host         TEXT NOT NULL,\n    port         INTEGER NOT NULL,\n    username_enc TEXT,   -- encrypted — NEVER plaintext\n    password_enc TEXT,   -- encrypted — NEVER plaintext\n    from_email   TEXT NOT NULL,\n    from_name    TEXT,\n    use_tls      INTEGER NOT NULL DEFAULT 1,\n    is_active    INTEGER NOT NULL DEFAULT 1,\n    created_at   TEXT NOT NULL,\n    updated_at   TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "sqlite_sequence",
+          "table": "sqlite_sequence",
+          "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+        },
+        {
+          "type": "table",
+          "name": "studies",
+          "table": "studies",
+          "sql": "CREATE TABLE studies (\n    id                 INTEGER PRIMARY KEY,\n    owner_id           INTEGER NOT NULL REFERENCES accounts(id),\n    title_en           TEXT,\n    title_ar           TEXT,\n    description_en     TEXT,\n    description_ar     TEXT,\n    state              TEXT NOT NULL DEFAULT 'draft'\n                           CHECK (state IN ('draft','in_progress','completed','archived')),\n    target_count       INTEGER NOT NULL DEFAULT 0,\n    response_count     INTEGER NOT NULL DEFAULT 0,\n    smtp_config_id     INTEGER REFERENCES smtp_configs(id),\n    created_by_user_id INTEGER REFERENCES users(id),\n    launched_at        TEXT,\n    completed_at       TEXT,\n    created_at         TEXT NOT NULL,\n    updated_at         TEXT NOT NULL\n, launched_by_user_id INTEGER REFERENCES users(id), product         TEXT, market_pref     TEXT, hs_code         TEXT, image_id        INTEGER REFERENCES images(id), analysis_id     INTEGER, run_started_at  TEXT, run_finished_at TEXT, run_error       TEXT, run_stats TEXT, product_id INTEGER REFERENCES products(id), hs_candidates TEXT, hs_confirmed INTEGER NOT NULL DEFAULT 0, run_token TEXT, report_language TEXT, factory_language_at_generation TEXT, production_cost REAL, hs_classification_method TEXT, advisories_ack_at TEXT, hs_source TEXT NOT NULL DEFAULT 'unknown'\n    CHECK (hs_source IN ('unknown', 'manual')))"
+        },
+        {
+          "type": "table",
+          "name": "study_runs",
+          "table": "study_runs",
+          "sql": "CREATE TABLE study_runs (\n    id                  INTEGER PRIMARY KEY,\n    study_id            INTEGER NOT NULL REFERENCES studies(id),\n    run_token           TEXT NOT NULL,           -- = studies.run_token لهذه المحاولة\n    state               TEXT NOT NULL\n                            CHECK (state IN ('queued','running','completed',\n                                             'failed','interrupted','cancelled')),\n    mode                TEXT NOT NULL,           -- deep | quick | fake (ختم الإطلاق)\n    boot_id             TEXT,                    -- هويّة إقلاع العملية التي طالبت بها\n    params_json         TEXT NOT NULL,           -- لقطة وسائط الإطلاق (تكفي لبدئها لاحقاً)\n    analysis_id         INTEGER,                 -- معرّف تشغيلة المحرّك لهذه المحاولة\n    created_at          TEXT NOT NULL,\n    started_at          TEXT,\n    heartbeat_at        TEXT,                    -- آخر نبضة من مشرف العملية المالكة\n    finished_at         TEXT,\n    cancel_requested_at TEXT,                    -- NULL = لم يُطلَب إلغاء\n    error_code          TEXT,                    -- رمز آلي قصير للنهاية غير الناجحة\n    error_text          TEXT                     -- نصٌّ منقَّح — نفس ما يقرؤه المصنع\n)"
+        },
+        {
+          "type": "table",
+          "name": "suppression_list",
+          "table": "suppression_list",
+          "sql": "CREATE TABLE suppression_list (\n    id         INTEGER PRIMARY KEY,\n    account_id INTEGER NOT NULL REFERENCES accounts(id),\n    email      TEXT NOT NULL,\n    reason     TEXT,\n    created_at TEXT NOT NULL,\n    UNIQUE (account_id, email)\n)"
+        },
+        {
+          "type": "table",
+          "name": "system_settings",
+          "table": "system_settings",
+          "sql": "CREATE TABLE system_settings (\n    key                TEXT PRIMARY KEY,\n    value              TEXT NOT NULL,\n    updated_at         TEXT NOT NULL,\n    updated_by_user_id INTEGER\n)"
+        },
+        {
+          "type": "table",
+          "name": "tier_settings",
+          "table": "tier_settings",
+          "sql": "CREATE TABLE tier_settings (\n    tier            TEXT PRIMARY KEY\n                    CHECK (tier IN ('basic','silver','gold','platinum')),\n    -- سعرٌ بعملة ملف التسعير (ر.س) — نفس وحدة `*_price` هناك، لا سنتات:\n    -- وحدتان لرقمٍ واحد تُنتجان انحرافاً بمقدار ١٠٠ عند أول التباس.\n    price           INTEGER NOT NULL CHECK (price >= 0),\n    price_annual    INTEGER NOT NULL CHECK (price_annual >= 0),\n    -- حصّة الدراسات الشهرية — **البوّابة** التي تفرضها `quota.py` فعلاً،\n    -- لا رقم عرض. الأساسية محكومةٌ بسقف مدى الحياة فلا يقرؤها لها أحد.\n    monthly_studies INTEGER NOT NULL CHECK (monthly_studies >= 0),\n    updated_at      TEXT    NOT NULL,\n    updated_by      INTEGER REFERENCES users(id)\n)"
+        },
+        {
+          "type": "table",
+          "name": "users",
+          "table": "users",
+          "sql": "CREATE TABLE users (\n    id                  INTEGER PRIMARY KEY,\n    account_id          INTEGER NOT NULL REFERENCES accounts(id),\n    email               TEXT NOT NULL UNIQUE,\n    password_hash       TEXT NOT NULL,          -- bcrypt($2b$12$) أو scrypt، لا نصّ صريح أبداً\n    role                TEXT NOT NULL CHECK (role IN ('silk_admin','silk_analyst','factory')),\n    first_name          TEXT,\n    last_name           TEXT,\n    language_preference TEXT NOT NULL DEFAULT 'en' CHECK (language_preference IN ('ar','en')),\n    is_active           INTEGER NOT NULL DEFAULT 1,\n    created_at          TEXT NOT NULL,\n    updated_at          TEXT NOT NULL\n, language_chosen_at TEXT)"
+        },
+        {
+          "type": "table",
+          "name": "wallets",
+          "table": "wallets",
+          "sql": "CREATE TABLE wallets (\n    id              INTEGER PRIMARY KEY,\n    account_id      INTEGER NOT NULL UNIQUE REFERENCES accounts(id),\n    balance         INTEGER NOT NULL DEFAULT 0,   -- cents\n    lifetime_funded INTEGER NOT NULL DEFAULT 0,\n    lifetime_spent  INTEGER NOT NULL DEFAULT 0,\n    created_at      TEXT NOT NULL,\n    updated_at      TEXT NOT NULL\n)"
+        },
+        {
+          "type": "trigger",
+          "name": "trg_consent_no_delete",
+          "table": "consent_registry",
+          "sql": "CREATE TRIGGER trg_consent_no_delete\n    BEFORE DELETE ON consent_registry\n    BEGIN SELECT RAISE(ABORT, 'consent_registry is append-only'); END"
+        },
+        {
+          "type": "trigger",
+          "name": "trg_ledger_no_delete",
+          "table": "ledger_entries",
+          "sql": "CREATE TRIGGER trg_ledger_no_delete\n    BEFORE DELETE ON ledger_entries\n    BEGIN SELECT RAISE(ABORT, 'ledger_entries is immutable'); END"
+        },
+        {
+          "type": "trigger",
+          "name": "trg_ledger_no_update",
+          "table": "ledger_entries",
+          "sql": "CREATE TRIGGER trg_ledger_no_update\n    BEFORE UPDATE ON ledger_entries\n    BEGIN SELECT RAISE(ABORT, 'ledger_entries is immutable'); END"
+        }
+      ],
+      "tables": {
+        "accounts": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "name",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "kind",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "is_vault",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              4,
+              "tier",
+              "TEXT",
+              1,
+              "'basic'",
+              0
+            ],
+            [
+              5,
+              "lifetime_study_count",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              6,
+              "current_month_study_count",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              7,
+              "quota_period",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "is_active",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ],
+            [
+              9,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              10,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              11,
+              "per_user_monthly_studies",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              12,
+              "language_preference",
+              "TEXT",
+              1,
+              "'ar'",
+              0
+            ],
+            [
+              13,
+              "language_chosen_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              14,
+              "quota_reset_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "ux_accounts_vault",
+              1,
+              "c",
+              1
+            ]
+          ]
+        },
+        "audit_log": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "account_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "action",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "resource_type",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "resource_id",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "changes",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "ip_address",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "ix_audit_action_created",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_audit_created",
+              0,
+              "c",
+              0
+            ],
+            [
+              2,
+              "ix_audit_account",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "comparison_funnels": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "owner_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "state",
+              "TEXT",
+              1,
+              "'compared'",
+              0
+            ],
+            [
+              3,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "sent_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "selected_study_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "draft_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "drafts",
+              "draft_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "studies",
+              "selected_study_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              2,
+              0,
+              "accounts",
+              "owner_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_funnels_owner",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "consent_registry": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "prospect_email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "study_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "sending_account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "approving_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "message_verbatim",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "sent_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "consent_granted_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "unsubscribed_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "unsubscribe_reason",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "sending_account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_consent_email",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_consent_account",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "drafts": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "owner_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "study_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "subject_en",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "subject_ar",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "body_en",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "body_ar",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "version",
+              "TEXT",
+              1,
+              "'A'",
+              0
+            ],
+            [
+              8,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              9,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "studies",
+              "study_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "accounts",
+              "owner_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_drafts_study",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_drafts_owner",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "email_queue": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "study_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "prospect_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "prospect_email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "draft_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "smtp_config_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "subject",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "body",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "status",
+              "TEXT",
+              1,
+              "'queued'",
+              0
+            ],
+            [
+              10,
+              "actor_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              11,
+              "attempts",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              12,
+              "last_error",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              13,
+              "queued_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              14,
+              "sent_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              15,
+              "claimed_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "studies",
+              "study_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_queue_order",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_queue_account",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "funnel_prospects": {
+          "columns": [
+            [
+              0,
+              "funnel_id",
+              "INTEGER",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "prospect_id",
+              "INTEGER",
+              1,
+              null,
+              2
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "prospects",
+              "prospect_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "comparison_funnels",
+              "funnel_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_funnel_prospects_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "funnel_studies": {
+          "columns": [
+            [
+              0,
+              "funnel_id",
+              "INTEGER",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "study_id",
+              "INTEGER",
+              1,
+              null,
+              2
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "studies",
+              "study_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "comparison_funnels",
+              "funnel_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_funnel_studies_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "images": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "owner_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "filename",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "storage_key",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "mime_type",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "size_bytes",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              6,
+              "uploaded_by_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "alt_text_en",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "alt_text_ar",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "uploaded_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "uploaded_by_user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "accounts",
+              "owner_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_images_owner",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_images_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "ledger_entries": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "actor_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "operation_type",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "amount",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "balance_after",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "description",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "metadata",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_ledger_actor",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_ledger_account",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "login_attempts": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "identity",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "ix_login_attempts_created",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_login_attempts_identity",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "password_reset_tokens": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "user_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "token_hash",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "expires_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "used_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_reset_tokens_expires",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_reset_user",
+              0,
+              "c",
+              0
+            ],
+            [
+              2,
+              "sqlite_autoindex_password_reset_tokens_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "platform_migrations": {
+          "columns": [
+            [
+              0,
+              "version",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "applied_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_platform_migrations_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "platform_notifications": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "kind",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "study_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "title",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "body",
+              "TEXT",
+              1,
+              "''",
+              0
+            ],
+            [
+              7,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "read_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_notifications_account_id",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "idx_platform_notifications_account",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "products": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "name",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "description",
+              "TEXT",
+              1,
+              "''",
+              0
+            ],
+            [
+              4,
+              "hs_code",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "image_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              7,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "cost_per_unit",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "cost_unit",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "tier",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              11,
+              "monthly_capacity",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              12,
+              "shipping_per_unit",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              13,
+              "certifications",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              14,
+              "hs_source",
+              "TEXT",
+              1,
+              "'unknown'",
+              0
+            ],
+            [
+              15,
+              "hs_set_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "images",
+              "image_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "idx_products_account",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "prospects": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "owner_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "first_name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "last_name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "company",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "industry",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "language_preference",
+              "TEXT",
+              1,
+              "'en'",
+              0
+            ],
+            [
+              8,
+              "tags",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              10,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "owner_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_prospects_owner",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_prospects_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "sessions": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "user_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "token_hash",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "ip_address",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "user_agent",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "expires_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              7,
+              "last_activity_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_sessions_expires",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_sessions_user",
+              0,
+              "c",
+              0
+            ],
+            [
+              2,
+              "sqlite_autoindex_sessions_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "smtp_configs": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "owner_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "label",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "host",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "port",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "username_enc",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "password_enc",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "from_email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "from_name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "use_tls",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ],
+            [
+              10,
+              "is_active",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ],
+            [
+              11,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              12,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "owner_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_smtp_owner",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "studies": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "owner_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "title_en",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "title_ar",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "description_en",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "description_ar",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "state",
+              "TEXT",
+              1,
+              "'draft'",
+              0
+            ],
+            [
+              7,
+              "target_count",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              8,
+              "response_count",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              9,
+              "smtp_config_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "created_by_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              11,
+              "launched_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              12,
+              "completed_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              13,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              14,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              15,
+              "launched_by_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              16,
+              "product",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              17,
+              "market_pref",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              18,
+              "hs_code",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              19,
+              "image_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              20,
+              "analysis_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              21,
+              "run_started_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              22,
+              "run_finished_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              23,
+              "run_error",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              24,
+              "run_stats",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              25,
+              "product_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              26,
+              "hs_candidates",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              27,
+              "hs_confirmed",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              28,
+              "run_token",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              29,
+              "report_language",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              30,
+              "factory_language_at_generation",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              31,
+              "production_cost",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              32,
+              "hs_classification_method",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              33,
+              "advisories_ack_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              34,
+              "hs_source",
+              "TEXT",
+              1,
+              "'unknown'",
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "products",
+              "product_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "images",
+              "image_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              2,
+              0,
+              "users",
+              "launched_by_user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              3,
+              0,
+              "users",
+              "created_by_user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              4,
+              0,
+              "smtp_configs",
+              "smtp_config_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              5,
+              0,
+              "accounts",
+              "owner_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_studies_launched_by",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ix_studies_state",
+              0,
+              "c",
+              0
+            ],
+            [
+              2,
+              "ix_studies_owner",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "study_runs": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "study_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "run_token",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "state",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "mode",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "boot_id",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "params_json",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              7,
+              "analysis_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              9,
+              "started_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "heartbeat_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              11,
+              "finished_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              12,
+              "cancel_requested_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              13,
+              "error_code",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              14,
+              "error_text",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "studies",
+              "study_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_study_runs_state",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "ux_study_runs_active",
+              1,
+              "c",
+              1
+            ],
+            [
+              2,
+              "ux_study_runs_token",
+              1,
+              "c",
+              0
+            ]
+          ]
+        },
+        "suppression_list": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "reason",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_suppression_list_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "system_settings": {
+          "columns": [
+            [
+              0,
+              "key",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "value",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "updated_by_user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_system_settings_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "tier_settings": {
+          "columns": [
+            [
+              0,
+              "tier",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "price",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "price_annual",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "monthly_studies",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "updated_by",
+              "INTEGER",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "updated_by",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_tier_settings_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "users": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "password_hash",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "role",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "first_name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "last_name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "language_preference",
+              "TEXT",
+              1,
+              "'en'",
+              0
+            ],
+            [
+              8,
+              "is_active",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ],
+            [
+              9,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              10,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              11,
+              "language_chosen_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "ix_users_account",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_users_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "wallets": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "account_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "balance",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              3,
+              "lifetime_funded",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              4,
+              "lifetime_spent",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              5,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "accounts",
+              "account_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_wallets_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        }
+      },
+      "journal_mode": "wal",
+      "busy_timeout_ms": 30000,
+      "foreign_keys_enabled": 1,
+      "synchronous": 1,
+      "integrity": "ok",
+      "foreign_key_check": []
+    },
+    "store": {
+      "objects": [
+        {
+          "type": "index",
+          "name": "idx_agent_runs_lookup",
+          "table": "agent_runs",
+          "sql": "CREATE INDEX idx_agent_runs_lookup ON agent_runs (agent, iso3, started_at)"
+        },
+        {
+          "type": "index",
+          "name": "idx_amarkets_analysis",
+          "table": "analysis_markets",
+          "sql": "CREATE INDEX idx_amarkets_analysis ON analysis_markets (analysis_id)"
+        },
+        {
+          "type": "index",
+          "name": "idx_analyses_created",
+          "table": "analyses",
+          "sql": "CREATE INDEX idx_analyses_created ON analyses (created_at)"
+        },
+        {
+          "type": "index",
+          "name": "idx_collection_runs_source_started",
+          "table": "collection_runs",
+          "sql": "CREATE INDEX idx_collection_runs_source_started\n    ON collection_runs(source, started_at)"
+        },
+        {
+          "type": "index",
+          "name": "idx_indicators_lookup",
+          "table": "indicators",
+          "sql": "CREATE INDEX idx_indicators_lookup ON indicators (iso3, indicator, year)"
+        },
+        {
+          "type": "index",
+          "name": "idx_trade_lookup",
+          "table": "trade_flows",
+          "sql": "CREATE INDEX idx_trade_lookup ON trade_flows (hs6, reporter_iso3, year, flow)"
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_api_keys_1",
+          "table": "api_keys",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_hs_classify_cache_1",
+          "table": "hs_classify_cache",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_indicators_1",
+          "table": "indicators",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_markets_1",
+          "table": "markets",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_schema_migrations_1",
+          "table": "schema_migrations",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_sessions_1",
+          "table": "sessions",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_settings_1",
+          "table": "settings",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_trade_flows_1",
+          "table": "trade_flows",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_users_1",
+          "table": "users",
+          "sql": null
+        },
+        {
+          "type": "table",
+          "name": "agent_runs",
+          "table": "agent_runs",
+          "sql": "CREATE TABLE agent_runs (\n    id          INTEGER PRIMARY KEY,\n    analysis_id INTEGER REFERENCES analyses(id),\n    agent       TEXT NOT NULL,\n    hs6         TEXT,\n    iso3        TEXT,\n    status      TEXT NOT NULL CHECK (status IN ('complete','partial','failed')),\n    coverage    REAL NOT NULL DEFAULT 0.0,\n    started_at  TEXT,\n    finished_at TEXT,\n    note        TEXT\n)"
+        },
+        {
+          "type": "table",
+          "name": "analyses",
+          "table": "analyses",
+          "sql": "CREATE TABLE analyses (\n    id          INTEGER PRIMARY KEY,\n    user_id     INTEGER REFERENCES users(id),\n    product     TEXT NOT NULL,\n    hs6         TEXT,\n    year_from   INTEGER,\n    year_to     INTEGER,\n    status      TEXT NOT NULL DEFAULT 'complete',\n    created_at  TEXT NOT NULL,\n    result_json TEXT NOT NULL,\n    legacy_id   INTEGER\n)"
+        },
+        {
+          "type": "table",
+          "name": "analysis_markets",
+          "table": "analysis_markets",
+          "sql": "CREATE TABLE analysis_markets (\n    id               INTEGER PRIMARY KEY,\n    analysis_id      INTEGER NOT NULL REFERENCES analyses(id),\n    iso3             TEXT,\n    rank             INTEGER,\n    total_score      REAL,\n    confidence       REAL,\n    comp_market_size REAL,\n    comp_demand      REAL,\n    comp_saudi       REAL,\n    comp_competition REAL\n)"
+        },
+        {
+          "type": "table",
+          "name": "api_keys",
+          "table": "api_keys",
+          "sql": "CREATE TABLE api_keys (\n    id          INTEGER PRIMARY KEY,\n    user_id     INTEGER REFERENCES users(id),\n    key_hash    TEXT NOT NULL UNIQUE,\n    label       TEXT,\n    created_at  TEXT NOT NULL,\n    revoked_at  TEXT\n)"
+        },
+        {
+          "type": "table",
+          "name": "collection_runs",
+          "table": "collection_runs",
+          "sql": "CREATE TABLE collection_runs (\n    id          INTEGER PRIMARY KEY,\n    source      TEXT NOT NULL,\n    started_at  TEXT NOT NULL,\n    finished_at TEXT,\n    requested   INTEGER NOT NULL DEFAULT 0,\n    fetched     INTEGER NOT NULL DEFAULT 0,\n    failed      INTEGER NOT NULL DEFAULT 0,\n    budget_left INTEGER,\n    note        TEXT\n)"
+        },
+        {
+          "type": "table",
+          "name": "decisions",
+          "table": "decisions",
+          "sql": "CREATE TABLE decisions (\n    id               INTEGER PRIMARY KEY,\n    analysis_id      INTEGER NOT NULL REFERENCES analyses(id),\n    iso3             TEXT NOT NULL,\n    verdict          TEXT NOT NULL CHECK (verdict IN ('GO','CONDITIONAL-GO','NO-GO')),\n    score            REAL,\n    confidence       REAL,\n    pillar_market    REAL,\n    pillar_competition REAL,\n    pillar_regulatory  REAL,\n    pillar_profit    REAL,\n    conditions_json  TEXT,\n    risks_json       TEXT,\n    first_steps_json TEXT,\n    created_at       TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "hs_classify_cache",
+          "table": "hs_classify_cache",
+          "sql": "CREATE TABLE hs_classify_cache (\n    product_key TEXT PRIMARY KEY,\n    payload_json TEXT NOT NULL,\n    created_at  TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "indicators",
+          "table": "indicators",
+          "sql": "CREATE TABLE indicators (\n    id           INTEGER PRIMARY KEY,\n    iso3         TEXT NOT NULL,\n    indicator    TEXT NOT NULL,\n    year         INTEGER NOT NULL,\n    value        REAL,\n    source       TEXT NOT NULL,\n    confidence   REAL NOT NULL DEFAULT 0.0,\n    note         TEXT,\n    retrieved_at TEXT NOT NULL,\n    UNIQUE (iso3, indicator, year, source)\n)"
+        },
+        {
+          "type": "table",
+          "name": "markets",
+          "table": "markets",
+          "sql": "CREATE TABLE markets (\n    iso3        TEXT PRIMARY KEY,\n    m49         TEXT,\n    name_ar     TEXT,\n    name_en     TEXT,\n    region      TEXT,\n    gcc         INTEGER NOT NULL DEFAULT 0,\n    eu          INTEGER NOT NULL DEFAULT 0\n)"
+        },
+        {
+          "type": "table",
+          "name": "outcomes",
+          "table": "outcomes",
+          "sql": "CREATE TABLE outcomes (\n    analysis_id INTEGER PRIMARY KEY REFERENCES analyses(id),\n    outcome     TEXT NOT NULL,\n    note        TEXT,\n    recorded_by INTEGER REFERENCES users(id),\n    recorded_at TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "reports",
+          "table": "reports",
+          "sql": "CREATE TABLE reports (\n    id          INTEGER PRIMARY KEY,\n    analysis_id INTEGER NOT NULL REFERENCES analyses(id),\n    kind        TEXT NOT NULL CHECK (kind IN ('full','brief')),\n    format      TEXT NOT NULL CHECK (format IN ('docx','md','pdf')),\n    path        TEXT NOT NULL,\n    created_at  TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "schema_migrations",
+          "table": "schema_migrations",
+          "sql": "CREATE TABLE schema_migrations (\n                           version TEXT PRIMARY KEY, applied_at TEXT NOT NULL)"
+        },
+        {
+          "type": "table",
+          "name": "sessions",
+          "table": "sessions",
+          "sql": "CREATE TABLE sessions (\n    id          INTEGER PRIMARY KEY,\n    user_id     INTEGER NOT NULL REFERENCES users(id),\n    token_hash  TEXT NOT NULL UNIQUE,\n    created_at  TEXT NOT NULL,\n    expires_at  TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "settings",
+          "table": "settings",
+          "sql": "CREATE TABLE settings (\n    key        TEXT PRIMARY KEY,\n    value      TEXT NOT NULL,\n    updated_at TEXT NOT NULL\n)"
+        },
+        {
+          "type": "table",
+          "name": "trade_flows",
+          "table": "trade_flows",
+          "sql": "CREATE TABLE trade_flows (\n    id            INTEGER PRIMARY KEY,\n    hs6           TEXT NOT NULL,\n    reporter_iso3 TEXT NOT NULL,\n    partner_iso3  TEXT NOT NULL,\n    year          INTEGER NOT NULL,\n    flow          TEXT NOT NULL CHECK (flow IN ('M','X')),\n    value_usd     REAL,\n    qty_kg        REAL,\n    source        TEXT NOT NULL,\n    retrieved_at  TEXT NOT NULL,\n    UNIQUE (hs6, reporter_iso3, partner_iso3, year, flow)\n)"
+        },
+        {
+          "type": "table",
+          "name": "users",
+          "table": "users",
+          "sql": "CREATE TABLE users (\n    id          INTEGER PRIMARY KEY,\n    email       TEXT NOT NULL UNIQUE,\n    name        TEXT,\n    role        TEXT NOT NULL CHECK (role IN ('admin','analyst','viewer')),\n    pw_hash     TEXT,\n    created_at  TEXT NOT NULL,\n    active      INTEGER NOT NULL DEFAULT 1\n)"
+        }
+      ],
+      "tables": {
+        "agent_runs": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "analysis_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "agent",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "hs6",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "iso3",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "status",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "coverage",
+              "REAL",
+              1,
+              "0.0",
+              0
+            ],
+            [
+              7,
+              "started_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "finished_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "note",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "analyses",
+              "analysis_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "idx_agent_runs_lookup",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "analyses": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "product",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "hs6",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "year_from",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "year_to",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "status",
+              "TEXT",
+              1,
+              "'complete'",
+              0
+            ],
+            [
+              7,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "result_json",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              9,
+              "legacy_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "idx_analyses_created",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "analysis_markets": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "analysis_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "iso3",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "rank",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "total_score",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "confidence",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "comp_market_size",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "comp_demand",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "comp_saudi",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "comp_competition",
+              "REAL",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "analyses",
+              "analysis_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "idx_amarkets_analysis",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "api_keys": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "user_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "key_hash",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "label",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "revoked_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_api_keys_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "collection_runs": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "source",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "started_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "finished_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "requested",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              5,
+              "fetched",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              6,
+              "failed",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              7,
+              "budget_left",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "note",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "idx_collection_runs_source_started",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "decisions": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "analysis_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "iso3",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "verdict",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "score",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "confidence",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "pillar_market",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "pillar_competition",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "pillar_regulatory",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "pillar_profit",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "conditions_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              11,
+              "risks_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              12,
+              "first_steps_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              13,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "analyses",
+              "analysis_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": []
+        },
+        "hs_classify_cache": {
+          "columns": [
+            [
+              0,
+              "product_key",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "payload_json",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_hs_classify_cache_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "indicators": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "iso3",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "indicator",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "year",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "value",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "source",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "confidence",
+              "REAL",
+              1,
+              "0.0",
+              0
+            ],
+            [
+              7,
+              "note",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "retrieved_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "idx_indicators_lookup",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_indicators_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "markets": {
+          "columns": [
+            [
+              0,
+              "iso3",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "m49",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "name_ar",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "name_en",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "region",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "gcc",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              6,
+              "eu",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_markets_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "outcomes": {
+          "columns": [
+            [
+              0,
+              "analysis_id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "outcome",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "note",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "recorded_by",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "recorded_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "recorded_by",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "analyses",
+              "analysis_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": []
+        },
+        "reports": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "analysis_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "kind",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "format",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "path",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "analyses",
+              "analysis_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": []
+        },
+        "schema_migrations": {
+          "columns": [
+            [
+              0,
+              "version",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "applied_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_schema_migrations_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "sessions": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "user_id",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "token_hash",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "expires_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "users",
+              "user_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_sessions_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "settings": {
+          "columns": [
+            [
+              0,
+              "key",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "value",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "updated_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_settings_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "trade_flows": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "hs6",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "reporter_iso3",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "partner_iso3",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "year",
+              "INTEGER",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "flow",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "value_usd",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "qty_kg",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "source",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              9,
+              "retrieved_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "idx_trade_lookup",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_trade_flows_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        },
+        "users": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "email",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "role",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "pw_hash",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "created_at",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "active",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_users_1",
+              1,
+              "u",
+              0
+            ]
+          ]
+        }
+      },
+      "journal_mode": "wal",
+      "busy_timeout_ms": 30000,
+      "foreign_keys_enabled": 1,
+      "synchronous": 1,
+      "integrity": "ok",
+      "foreign_key_check": []
+    },
+    "analysis": {
+      "objects": [
+        {
+          "type": "index",
+          "name": "idx_analyses_status_updated",
+          "table": "analyses",
+          "sql": "CREATE INDEX idx_analyses_status_updated ON analyses(status, updated_at)"
+        },
+        {
+          "type": "index",
+          "name": "idx_market_scores_analysis",
+          "table": "market_scores",
+          "sql": "CREATE INDEX idx_market_scores_analysis ON market_scores(analysis_id)"
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_product_snapshots_1",
+          "table": "product_snapshots",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_research_missions_1",
+          "table": "research_missions",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_research_stages_1",
+          "table": "research_stages",
+          "sql": null
+        },
+        {
+          "type": "table",
+          "name": "analyses",
+          "table": "analyses",
+          "sql": "CREATE TABLE analyses (id INTEGER PRIMARY KEY AUTOINCREMENT, product TEXT, hs_code TEXT, year INTEGER, created_at TEXT, preliminary INTEGER, json_blob TEXT, outcome TEXT, outcome_date TEXT, status TEXT, kind TEXT, request_json TEXT, updated_at TEXT, progress_json TEXT, market_name TEXT, verdict_label TEXT, cost_usd TEXT, resume_generation INTEGER NOT NULL DEFAULT 0)"
+        },
+        {
+          "type": "table",
+          "name": "market_scores",
+          "table": "market_scores",
+          "sql": "CREATE TABLE market_scores (id INTEGER PRIMARY KEY AUTOINCREMENT, analysis_id INTEGER, country TEXT, iso3 TEXT, total_score REAL, confidence REAL, FOREIGN KEY(analysis_id) REFERENCES analyses(id))"
+        },
+        {
+          "type": "table",
+          "name": "product_snapshots",
+          "table": "product_snapshots",
+          "sql": "CREATE TABLE product_snapshots (hs_code TEXT, market_iso3 TEXT, product TEXT, snapshot_json TEXT, created_at TEXT, PRIMARY KEY (hs_code, market_iso3))"
+        },
+        {
+          "type": "table",
+          "name": "research_missions",
+          "table": "research_missions",
+          "sql": "CREATE TABLE research_missions (analysis_id INTEGER, mission_key TEXT, status TEXT, report_json TEXT, completed_at TEXT, market_iso3 TEXT, PRIMARY KEY (analysis_id, mission_key))"
+        },
+        {
+          "type": "table",
+          "name": "research_stages",
+          "table": "research_stages",
+          "sql": "CREATE TABLE research_stages (analysis_id INTEGER NOT NULL, stage TEXT NOT NULL, status TEXT NOT NULL, payload_json TEXT, market_iso3 TEXT, completed_at TEXT, PRIMARY KEY (analysis_id, stage))"
+        },
+        {
+          "type": "table",
+          "name": "sqlite_sequence",
+          "table": "sqlite_sequence",
+          "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+        }
+      ],
+      "tables": {
+        "analyses": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "product",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "hs_code",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "year",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "created_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "preliminary",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "json_blob",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              7,
+              "outcome",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              8,
+              "outcome_date",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              9,
+              "status",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "kind",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              11,
+              "request_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              12,
+              "updated_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              13,
+              "progress_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              14,
+              "market_name",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              15,
+              "verdict_label",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              16,
+              "cost_usd",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              17,
+              "resume_generation",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "idx_analyses_status_updated",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "market_scores": {
+          "columns": [
+            [
+              0,
+              "id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "analysis_id",
+              "INTEGER",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "country",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "iso3",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "total_score",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "confidence",
+              "REAL",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [
+            [
+              0,
+              0,
+              "analyses",
+              "analysis_id",
+              "id",
+              "NO ACTION",
+              "NO ACTION",
+              "NONE"
+            ]
+          ],
+          "indexes": [
+            [
+              0,
+              "idx_market_scores_analysis",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "product_snapshots": {
+          "columns": [
+            [
+              0,
+              "hs_code",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "market_iso3",
+              "TEXT",
+              0,
+              null,
+              2
+            ],
+            [
+              2,
+              "product",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "snapshot_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "created_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_product_snapshots_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "research_missions": {
+          "columns": [
+            [
+              0,
+              "analysis_id",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "mission_key",
+              "TEXT",
+              0,
+              null,
+              2
+            ],
+            [
+              2,
+              "status",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "report_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "completed_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "market_iso3",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_research_missions_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "research_stages": {
+          "columns": [
+            [
+              0,
+              "analysis_id",
+              "INTEGER",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "stage",
+              "TEXT",
+              1,
+              null,
+              2
+            ],
+            [
+              2,
+              "status",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "payload_json",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "market_iso3",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "completed_at",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_research_stages_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        }
+      },
+      "journal_mode": "wal",
+      "busy_timeout_ms": 30000,
+      "foreign_keys_enabled": 0,
+      "synchronous": 1,
+      "integrity": "ok",
+      "foreign_key_check": []
+    },
+    "usage": {
+      "objects": [
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_paid_usage_1",
+          "table": "paid_usage",
+          "sql": null
+        },
+        {
+          "type": "index",
+          "name": "sqlite_autoindex_paid_usd_1",
+          "table": "paid_usd",
+          "sql": null
+        },
+        {
+          "type": "table",
+          "name": "paid_usage",
+          "table": "paid_usage",
+          "sql": "CREATE TABLE paid_usage (day TEXT PRIMARY KEY, calls INTEGER NOT NULL DEFAULT 0)"
+        },
+        {
+          "type": "table",
+          "name": "paid_usd",
+          "table": "paid_usd",
+          "sql": "CREATE TABLE paid_usd (day TEXT PRIMARY KEY, usd REAL NOT NULL DEFAULT 0)"
+        }
+      ],
+      "tables": {
+        "paid_usage": {
+          "columns": [
+            [
+              0,
+              "day",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "calls",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_paid_usage_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "paid_usd": {
+          "columns": [
+            [
+              0,
+              "day",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "usd",
+              "REAL",
+              1,
+              "0",
+              0
+            ]
+          ],
+          "foreign_keys": [],
+          "indexes": [
+            [
+              0,
+              "sqlite_autoindex_paid_usd_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        }
+      },
+      "journal_mode": "wal",
+      "busy_timeout_ms": 30000,
+      "foreign_keys_enabled": 0,
+      "synchronous": 1,
+      "integrity": "ok",
+      "foreign_key_check": []
+    }
+  },
+  "hs_cases": [
+    {
+      "input": {
+        "product": "تمر",
+        "catalog": null,
+        "confirmed": false
+      },
+      "output": {
+        "final_hs_code": "080410",
+        "classification_status": "approved",
+        "classification_method": "deterministic_exact",
+        "confidence": 1.0,
+        "contradictions": [],
+        "official_hs_description": "Fruit, edible; dates, fresh or dried",
+        "reason": "وصفُ البند يشمل صفاتِ المنتج المميّزة، ولا مرشّحَ يقاربه في الدليل."
+      }
+    },
+    {
+      "input": {
+        "product": "Dates",
+        "catalog": null,
+        "confirmed": false
+      },
+      "output": {
+        "final_hs_code": "080410",
+        "classification_status": "approved",
+        "classification_method": "deterministic_exact",
+        "confidence": 1.0,
+        "contradictions": [],
+        "official_hs_description": "Fruit, edible; dates, fresh or dried",
+        "reason": "وصفُ البند يشمل صفاتِ المنتج المميّزة، ولا مرشّحَ يقاربه في الدليل."
+      }
+    },
+    {
+      "input": {
+        "product": "حليب",
+        "catalog": null,
+        "confirmed": false
+      },
+      "output": {
+        "final_hs_code": null,
+        "classification_status": "requires_confirmation",
+        "classification_method": "unresolved",
+        "confidence": 1.0,
+        "contradictions": [],
+        "official_hs_description": "",
+        "reason": "البند 040120 داخل ترويسةٍ تنقسم بسمةٍ رقمية (نسبةُ الدهن أو حالةُ الحفظ) واسمُ المنتج لا يحدّد أيّها — اختر البند المطابق."
+      }
+    },
+    {
+      "input": {
+        "product": "Milk",
+        "catalog": null,
+        "confirmed": false
+      },
+      "output": {
+        "final_hs_code": null,
+        "classification_status": "requires_confirmation",
+        "classification_method": "unresolved",
+        "confidence": 1.0,
+        "contradictions": [],
+        "official_hs_description": "",
+        "reason": "البند 040120 داخل ترويسةٍ تنقسم بسمةٍ رقمية (نسبةُ الدهن أو حالةُ الحفظ) واسمُ المنتج لا يحدّد أيّها — اختر البند المطابق."
+      }
+    },
+    {
+      "input": {
+        "product": "",
+        "catalog": null,
+        "confirmed": false
+      },
+      "output": {
+        "final_hs_code": null,
+        "classification_status": "error",
+        "classification_method": "unresolved",
+        "confidence": 0.0,
+        "contradictions": [],
+        "official_hs_description": "",
+        "reason": "اسمُ المنتج فارغ — لا يمكن التصنيف بلا اسم. اكتب اسمَ المنتج كما هو على العبوة."
+      }
+    },
+    {
+      "input": {
+        "product": "Fixture",
+        "catalog": "12A456",
+        "confirmed": true
+      },
+      "output": {
+        "final_hs_code": null,
+        "classification_status": "requires_confirmation",
+        "classification_method": "unresolved",
+        "confidence": 0.0,
+        "contradictions": [],
+        "official_hs_description": "",
+        "reason": "رمزُ الكتالوج «12A456» ليس رمزاً جمركياً سداسيّ الأرقام — أدخل رمزاً صحيحاً أو اختر بنداً."
+      }
+    },
+    {
+      "input": {
+        "product": "Dates",
+        "catalog": "000000",
+        "confirmed": false
+      },
+      "output": {
+        "final_hs_code": null,
+        "classification_status": "requires_confirmation",
+        "classification_method": "unresolved",
+        "confidence": 0.0,
+        "contradictions": [
+          "فصلُ الرمز 00 غير موجود في بنية WCO"
+        ],
+        "official_hs_description": "",
+        "reason": "رمزُ الكتالوج 000000 لا يصلح أساساً للدراسة: فصلُ الرمز 00 غير موجود في بنية WCO"
+      }
+    },
+    {
+      "input": {
+        "product": "Dates",
+        "catalog": "000000",
+        "confirmed": true
+      },
+      "output": {
+        "final_hs_code": "000000",
+        "classification_status": "approved",
+        "classification_method": "user_confirmed",
+        "confidence": 0.0,
+        "contradictions": [
+          "فصلُ الرمز 00 غير موجود في بنية WCO"
+        ],
+        "official_hs_description": "",
+        "reason": "اعتمد المصنعُ هذا البند صراحةً."
+      }
+    },
+    {
+      "input": {
+        "product": "Dates",
+        "catalog": "080410",
+        "confirmed": true
+      },
+      "output": {
+        "final_hs_code": "080410",
+        "classification_status": "approved",
+        "classification_method": "user_confirmed",
+        "confidence": 1.0,
+        "contradictions": [],
+        "official_hs_description": "Fruit, edible; dates, fresh or dried",
+        "reason": "اعتمد المصنعُ هذا البند صراحةً."
+      }
+    },
+    {
+      "input": {
+        "product": "Dates",
+        "catalog": "٠٨٠٤١٠",
+        "confirmed": true
+      },
+      "output": {
+        "final_hs_code": null,
+        "classification_status": "requires_confirmation",
+        "classification_method": "unresolved",
+        "confidence": 0.0,
+        "contradictions": [],
+        "official_hs_description": "",
+        "reason": "رمزُ الكتالوج «٠٨٠٤١٠» ليس رمزاً جمركياً سداسيّ الأرقام — أدخل رمزاً صحيحاً أو اختر بنداً."
+      }
+    }
+  ],
+  "frontend_sources": [
+    {
+      "file": "web/checkout.html",
+      "duplicate_ids": [],
+      "missing_aria_targets_static": [],
+      "researchCaption_occurrences": 0,
+      "data_agents": [],
+      "inline_scripts": 1
+    },
+    {
+      "file": "web/index.html",
+      "duplicate_ids": [],
+      "missing_aria_targets_static": [],
+      "researchCaption_occurrences": 0,
+      "data_agents": [],
+      "inline_scripts": 1
+    },
+    {
+      "file": "web/platform-landing.html",
+      "duplicate_ids": [],
+      "missing_aria_targets_static": [],
+      "researchCaption_occurrences": 0,
+      "data_agents": [
+        "trade_flow",
+        "demand_trends",
+        "pricing_scout",
+        "competitors",
+        "consumer_culture",
+        "demographics_economy",
+        "customs_requirements",
+        "tariffs_agreements",
+        "logistics",
+        "channels_importers",
+        "risk_news",
+        "opportunity_gaps"
+      ],
+      "inline_scripts": 0
+    },
+    {
+      "file": "web/platform.html",
+      "duplicate_ids": [],
+      "missing_aria_targets_static": [],
+      "researchCaption_occurrences": 0,
+      "data_agents": [],
+      "inline_scripts": 1
+    },
+    {
+      "file": "web/pricing.html",
+      "duplicate_ids": [],
+      "missing_aria_targets_static": [],
+      "researchCaption_occurrences": 0,
+      "data_agents": [],
+      "inline_scripts": 0
+    },
+    {
+      "file": "web/reset-password.html",
+      "duplicate_ids": [],
+      "missing_aria_targets_static": [],
+      "researchCaption_occurrences": 0,
+      "data_agents": [],
+      "inline_scripts": 1
+    }
+  ],
+  "javascript_syntax": [
+    {
+      "source": "web/checkout.html:inline-1",
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "source": "web/index.html:inline-1",
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "source": "web/platform.html:inline-1",
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "source": "web/reset-password.html:inline-1",
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "source": "web/marketing.js",
+      "returncode": 0,
+      "stderr": ""
+    }
+  ],
+  "local_assets": [
+    {
+      "url": "/fonts/fonts.css",
+      "exists": true
+    },
+    {
+      "url": "/marketing.js",
+      "exists": true
+    },
+    {
+      "url": "/research-motion.css",
+      "exists": true
+    },
+    {
+      "url": "/silk-logo.png",
+      "exists": true
+    },
+    {
+      "url": "fonts/fonts.css",
+      "exists": true
+    }
+  ],
+  "researchCaption_all_web": []
+}

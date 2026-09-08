@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سِلك — إتمام الاشتراك</title>
+<!-- صفحة الدفع (قرار مالك 2026-08-17: «صفحة دفع عشان اربطها مع شركة دفع» +
+     «لم أقرر — جهّزها عامة»): ملخّص الطلب والسعر من GET /platform/pricing
+     حصراً (لا رقم مثبّت)، والإرسال إلى POST /platform/billing/checkout.
+     **لا شاشة دفع وهمية**: قبل ربط مزوّد حقيقي تعلن الصفحة بصدق أن الدفع
+     غير مفعَّل ويُسجَّل الطلب — صندوق معلوماتي سماوي، لا أخضر نجاح أبداً. -->
+<!-- أيقونة الهبوط نفسها (#202) — تُصلح 404 الأيقونة المرصود في فحص المتصفح الحي. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2318181B'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M7.5 16h17M16 7.5c3.2 2.6 3.2 14.4 0 17-3.2-2.6-3.2-14.4 0-17z' fill='none' stroke='white' stroke-width='1.4'/%3E%3Ccircle cx='23.5' cy='8.5' r='3.2' fill='%23C9A227'/%3E%3C/svg%3E">
+<link href="/fonts/fonts.css" rel="stylesheet">
+<style>
+  :root{
+    --pri:#18181B; --pri-dark:#09090B; --sky:#3F3F46; --deep:#09090B;
+    --gold:#C9A227; --ink:#101828; --ink-soft:#475467; --muted:#667085;
+    --bg:#F6F8FB; --panel:#FFFFFF; --line:#DCE3EB; --line-2:#EDF1F6;
+    --bad:#B42318; --bad-soft:#FEE4E2;
+    --r-md:8px; --r-lg:14px;
+    --shadow-sm:0 1px 2px rgba(2,32,71,.06);
+    --shadow-md:0 10px 28px rgba(2,32,71,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);line-height:1.7;min-height:100vh;
+    font-family:"Cairo","IBM Plex Sans Arabic",sans-serif;-webkit-font-smoothing:antialiased}
+  .num{font-family:"IBM Plex Mono",monospace;font-feature-settings:"tnum";
+    direction:ltr;unicode-bidi:plaintext}
+  a{color:var(--pri);text-decoration:none}
+  nav.top{background:var(--deep);color:#fff}
+  nav.top .wrap{max-width:860px;margin:0 auto;padding:12px 20px;display:flex;
+    align-items:center;gap:12px}
+  nav.top b{font-weight:700;font-size:21px;line-height:1}
+  nav.top span{font-size:11.5px;color:#A1A1AA}
+  #langBtn{margin-inline-start:auto;background:none;color:#fff;cursor:pointer;
+    border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;
+    font-size:12.5px;font-family:inherit;font-weight:600}
+  .wrap2{max-width:860px;margin:26px auto;padding:0 20px;display:grid;
+    gap:18px;grid-template-columns:1fr 1.2fr;align-items:start}
+  @media(max-width:720px){.wrap2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--r-lg);box-shadow:var(--shadow-sm);padding:22px 20px}
+  h2{font-size:17px;margin-bottom:12px}
+  .sumrow{display:flex;justify-content:space-between;font-size:13.5px;
+    padding:7px 0;border-bottom:1px dashed var(--line-2);color:var(--ink-soft)}
+  .sumrow.total{border-bottom:none;margin-top:6px;font-weight:700;
+    color:var(--ink);font-size:15px}
+  .sumrow .num{font-weight:700}
+  label{display:block;font-size:12px;color:var(--ink-soft);font-weight:600;
+    margin:12px 0 5px}
+  input,select{font-family:inherit;width:100%;padding:9px 11px;font-size:13.5px;
+    border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+  input:focus,select:focus{outline:none;border-color:var(--sky);
+    box-shadow:0 0 0 3px rgba(14,165,233,.28)}
+  .btn{width:100%;margin-top:18px;background:var(--pri);color:#fff;border:none;
+    cursor:pointer;border-radius:var(--r-md);padding:12px 16px;font-size:15px;
+    font-weight:700;font-family:inherit}
+  .btn:hover{background:var(--pri-dark)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  /* الصناديق: تنبيه ما قبل الإرسال + نتيجة معلوماتية سماوية + خطأ — لا صنف
+     «نجاح أخضر» في هذه الصفحة أصلاً (لا دفع حقيقي بعد). */
+  .note{background:#F4F4F5;color:#27272A;border:1px solid #E4E4E7;
+    border-radius:var(--r-md);padding:11px 13px;font-size:12.5px;margin-top:14px}
+  .msg{display:none;border-radius:var(--r-md);padding:12px 14px;font-size:13.5px;
+    margin-top:14px;line-height:1.7}
+  .msg.on{display:block}
+  .msg.info{background:#F4F4F5;color:#27272A;border:1px solid var(--sky)}
+  .msg.err{background:var(--bad-soft);color:var(--bad)}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:10px}
+  footer{padding:22px;text-align:center;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<nav class="top"><div class="wrap">
+  <b>سِلك</b><span data-i18n="tag">إتمام الاشتراك</span>
+  <button id="langBtn">English</button>
+</div></nav>
+
+<div class="wrap2">
+  <div class="card" id="sumCard">
+    <h2 data-i18n="sumT">ملخّص الطلب</h2>
+    <label data-i18n="planL">الباقة</label>
+    <select id="planSel"></select>
+    <div style="margin-top:14px">
+      <div class="sumrow"><span data-i18n="cycleL">الدورة</span>
+        <select id="cycleSel" style="width:auto;padding:4px 8px;font-size:12.5px">
+          <option value="monthly" data-i18n="cycM">شهرية</option>
+          <option value="annual" data-i18n="cycA">سنوية — بخصم</option>
+        </select></div>
+      <div class="sumrow"><span data-i18n="quotaL">دراسات الباقة</span>
+        <span id="sumQuota" class="num">—</span></div>
+      <div class="sumrow total"><span data-i18n="totalL">الإجمالي</span>
+        <span id="sumTotal" class="num">—</span></div>
+    </div>
+    <div class="note" data-i18n="preNote">لن يُحصَّل أي مبلغ الآن — الدفع
+      الإلكتروني قيد التفعيل، وإرسال الطلب يسجّل اهتمامك لدى فريق سِلك.</div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="formT">بيانات التواصل</h2>
+    <div id="loadMsg" class="msg err"></div>
+    <label data-i18n="nameL">الاسم</label>
+    <input id="fName" autocomplete="name">
+    <label data-i18n="factoryL">اسم المنشأة</label>
+    <input id="fFactory" autocomplete="organization">
+    <label data-i18n="emailL">البريد الإلكتروني</label>
+    <input id="fEmail" type="email" dir="ltr" autocomplete="email">
+    <label data-i18n="phoneL">الجوال</label>
+    <input id="fPhone" dir="ltr" autocomplete="tel" placeholder="+9665…">
+    <button class="btn" id="sendBtn" data-i18n="send">إرسال طلب الاشتراك</button>
+    <div id="outMsg" class="msg"></div>
+    <!-- §58 M3: لا data-i18n على سلفٍ يحوي data-i18n — كتابة نصّ الأب كانت
+         تقتلع الرابط الابن من الـDOM نهائياً عند التبديل. -->
+    <p class="hint"><a href="/platform" data-i18n="backA">→
+      العودة لصفحة الباقات</a></p>
+  </div>
+</div>
+
+<footer><b style="color:var(--pri)">سِلك لذكاء الأسواق</b> —
+  <span data-i18n="foot">منصة تحليل أسواق التصدير السعودية</span></footer>
+
+<script>
+"use strict";
+var L_EN = {
+  tag: "Complete your subscription",
+  sumT: "Order summary", planL: "Plan", cycleL: "Billing cycle",
+  cycM: "Monthly", cycA: "Annual — discounted",
+  quotaL: "Plan studies",
+  totalL: "Total",
+  preNote: "No amount will be charged now — online payment is being " +
+           "enabled; submitting registers your interest with the Silk team.",
+  formT: "Contact details", nameL: "Name", factoryL: "Organisation name",
+  emailL: "Email", phoneL: "Mobile", send: "Send subscription request",
+  backA: "← Back to plans",
+  foot: "Saudi export market analysis platform",
+  free: "Free", perMonth: "SAR/mo", perYear: "SAR/yr",
+  monthly: function (n) { return n + " / month"; },
+  lifetime: function (n) { return n + " trial (lifetime)"; },
+  unlimited: "Unlimited",
+  loadFail: "Could not load plans right now — try again shortly.",
+  needEmail: "A valid email is required.",
+  sendFail: "Could not send the request: ",
+  names: {basic: "Basic", silver: "Silver", gold: "Gold", platinum: "Platinum"},
+};
+var L_AR = {
+  free: "مجاناً", perMonth: "ر.س/شهر", perYear: "ر.س/سنة",
+  monthly: function (n) { return n + " / شهرياً"; },
+  lifetime: function (n) { return n + " تجريبية (مدى الحياة)"; },
+  unlimited: "بلا حدّ",
+  loadFail: "تعذّر تحميل الباقات الآن — أعد المحاولة بعد قليل.",
+  needEmail: "أدخل بريداً إلكترونياً صحيحاً.",
+  sendFail: "تعذّر إرسال الطلب: ",
+  names: {basic: "أساسية", silver: "فضية", gold: "ذهبية", platinum: "بلاتينية"},
+};
+var LANG = "ar";
+var AR_ORIG = {};
+document.querySelectorAll("[data-i18n]").forEach(function (el) {
+  AR_ORIG[el.getAttribute("data-i18n")] = el.textContent;
+});
+function T() { return LANG === "en" ? L_EN : L_AR; }
+function applyLang(lang) {
+  LANG = lang === "en" ? "en" : "ar";
+  try { localStorage.setItem("silk_lang", LANG); } catch (e) { /* خصوصية */ }
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "en" ? "ltr" : "rtl";
+  document.querySelectorAll("[data-i18n]").forEach(function (el) {
+    var k = el.getAttribute("data-i18n");
+    var v = LANG === "en" ? L_EN[k] : AR_ORIG[k];
+    if (v != null) el.textContent = v;
+  });
+  document.getElementById("langBtn").textContent =
+    LANG === "en" ? "العربية" : "English";
+  if (PRICING) fillPlans(); else renderSummary();   // أسماء الخيارات تتبع اللغة
+}
+document.getElementById("langBtn").onclick = function () {
+  applyLang(LANG === "en" ? "ar" : "en");
+};
+
+var PRICING = null;
+var $id = function (x) { return document.getElementById(x); };
+if (new URLSearchParams(location.search).get("cycle") === "annual") {
+  $id("cycleSel").value = "annual";
+}
+function currentCycle() { return $id("cycleSel").value; }
+// الدورة الفعلية التي عرضها الملخّص — هي وحدها التي تُرسل: باقة بلا سعر
+// سنوي يسقط ملخّصها لشهري، فلا يُرسَل «سنوي» لم يُعرَض إجماليه.
+var _effCycle = "monthly";
+
+function currentTier() {
+  if (!PRICING) return null;
+  var key = $id("planSel").value;
+  for (var i = 0; i < PRICING.tiers.length; i++)
+    if (PRICING.tiers[i].key === key) return PRICING.tiers[i];
+  return null;
+}
+function renderSummary() {
+  var t = currentTier();
+  if (!t) return;
+  var Tx = T();
+  $id("sumQuota").textContent = t.monthly_studies > 0
+    ? Tx.monthly(t.monthly_studies)
+    : Tx.lifetime(t.lifetime_studies);
+  var annual = currentCycle() === "annual" && t.price_annual > 0;
+  _effCycle = annual ? "annual" : "monthly";
+  $id("sumTotal").textContent = t.price > 0
+    ? (annual ? Number(t.price_annual).toLocaleString("en") + " " + Tx.perYear
+              : Number(t.price).toLocaleString("en") + " " + Tx.perMonth)
+    : Tx.free;
+}
+function fillPlans() {
+  var sel = $id("planSel");
+  var want = sel.value ||
+    new URLSearchParams(location.search).get("plan") || "gold";
+  sel.textContent = "";
+  var annual = currentCycle() === "annual";
+  PRICING.tiers.forEach(function (t) {
+    var o = document.createElement("option");
+    o.value = t.key;
+    var priced = annual && t.price_annual > 0
+      ? Number(t.price_annual).toLocaleString("en") + " " + T().perYear
+      : Number(t.price).toLocaleString("en") + " " + T().perMonth;
+    o.textContent = (T().names[t.key] || t.key) + " — " +
+      (t.price > 0 ? priced : T().free);
+    if (t.key === want) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.onchange = renderSummary;
+  renderSummary();
+}
+$id("cycleSel").onchange = function () { if (PRICING) fillPlans(); };
+fetch("/platform/pricing").then(function (r) {
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}).then(function (d) { PRICING = d; fillPlans(); })
+  .catch(function () {
+    var m = $id("loadMsg");
+    m.classList.add("on");
+    m.textContent = T().loadFail;
+    $id("sendBtn").disabled = true;
+  });
+
+$id("sendBtn").onclick = function () {
+  var email = $id("fEmail").value.trim();
+  var out = $id("outMsg");
+  out.className = "msg";
+  if (!email || email.indexOf("@") < 0) {
+    out.className = "msg err on";
+    out.textContent = T().needEmail;
+    return;
+  }
+  var btn = $id("sendBtn");
+  btn.disabled = true;
+  fetch("/platform/billing/checkout", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      plan: $id("planSel").value, billing_cycle: _effCycle,
+      name: $id("fName").value.trim(), factory: $id("fFactory").value.trim(),
+      email: email, phone: $id("fPhone").value.trim()
+    })
+  }).then(function (r) {
+    return r.json().then(function (b) { return {ok: r.ok, body: b}; });
+  }).then(function (res) {
+    if (!res.ok) {
+      var d = res.body && res.body.detail;
+      throw new Error((d && (d.message || d.error)) || d || "HTTP");
+    }
+    if (res.body.configured && res.body.url) {
+      // (مستقبلاً — مزوّد مبني): التحويل لصفحة الدفع الخارجية الحقيقية.
+      location.href = res.body.url;
+      return;
+    }
+    // الحالة الصادقة اليوم: الدفع غير مفعَّل، والطلب مسجَّل — صندوق
+    // معلوماتي سماوي، **لا أخضر نجاح** (لم يُدفع شيء).
+    out.className = "msg info on";
+    out.textContent = LANG === "en"
+      ? (res.body.message_en || res.body.message_ar || "Recorded.")
+      : (res.body.message_ar || "سُجّل طلبك.");
+  }).catch(function (e) {
+    out.className = "msg err on";
+    out.textContent = T().sendFail + e.message;
+  }).finally(function () { btn.disabled = false; });
+};
+
+try {
+  if (localStorage.getItem("silk_lang") === "en") applyLang("en");
+} catch (e) { /* وضع خصوصية */ }
+</script>
+</body>
+</html>

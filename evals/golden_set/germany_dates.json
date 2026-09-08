@@ -1,0 +1,21 @@
+{
+  "case": "germany_dates",
+  "confidence": 0.65,
+  "key_figures": {
+    "decision.confidence": null,
+    "decision.verdict": null,
+    "dr.confidence": 0.65,
+    "dr.verdict": "CONDITIONAL-GO"
+  },
+  "section_count": 11,
+  "unsupported_report_numbers": [
+    1169.0,
+    2500.0
+  ],
+  "verdict": "CONDITIONAL-GO",
+  "verification_items": {
+    "claims_none": false,
+    "count": 1,
+    "sufficiency_present": false
+  }
+}

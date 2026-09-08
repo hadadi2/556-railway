@@ -1,0 +1,238 @@
+{
+  "observed_at_utc": "2026-09-07T21:55:52.055Z",
+  "runs": [
+    {
+      "jobs": [
+        {
+          "conclusion": "success",
+          "id": 101853455882,
+          "name": "test",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Set up Python 3.11"
+            },
+            {
+              "conclusion": "success",
+              "name": "Install dependencies"
+            },
+            {
+              "conclusion": "success",
+              "name": "Syntax gate (ruff E9,F63,F7,F82) + dependency audit (pip-audit)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run tests"
+            },
+            {
+              "conclusion": "success",
+              "name": "Self-review gate (CLAUDE.md §58)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Security sweep (report-only)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Set up Python 3.11"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job"
+            }
+          ]
+        },
+        {
+          "conclusion": "success",
+          "id": 101853456021,
+          "name": "test-production-switches",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Set up Python 3.11"
+            },
+            {
+              "conclusion": "success",
+              "name": "Install dependencies"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run the platform + audit locks with production switches on"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Set up Python 3.11"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job"
+            }
+          ]
+        },
+        {
+          "conclusion": "success",
+          "id": 101853456023,
+          "name": "secret-scan",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "gitleaks (pinned)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job"
+            }
+          ]
+        }
+      ],
+      "run": 34157910386
+    },
+    {
+      "jobs": [
+        {
+          "conclusion": "success",
+          "id": 101853456159,
+          "name": "e2e-live-shape",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Set up Python 3.11"
+            },
+            {
+              "conclusion": "success",
+              "name": "Install LibreOffice + Arabic fonts (PDF converter)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Install Python dependencies"
+            },
+            {
+              "conclusion": "success",
+              "name": "Set up Node 22"
+            },
+            {
+              "conclusion": "success",
+              "name": "Install Playwright + chromium"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run rungs 2-3 (real server + real browser)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Assert IBM Plex Sans Arabic is present (loud — no silent substitution)"
+            },
+            {
+              "conclusion": "success",
+              "name": "RTL measurer calibration (diagnostic 2x2 matrix)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run Wave 2 visual PDF lock (fold E) + geometry + leak sweep"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Set up Node 22"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Set up Python 3.11"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job"
+            }
+          ]
+        },
+        {
+          "conclusion": "success",
+          "id": 101853456418,
+          "name": "docker-health",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build the deploy image (same Dockerfile Railway builds)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Boot the container and hit /health inside it"
+            },
+            {
+              "conclusion": "success",
+              "name": "Assert the server runs unprivileged (R7 / SEC-8 — pid 1 uid is 10001 = silk)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Container logs (always — the evidence when the step above fails)"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@v4"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job"
+            }
+          ]
+        }
+      ],
+      "run": 34157910463
+    }
+  ]
+}

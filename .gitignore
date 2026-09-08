@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.DS_Store
+*.sqlite
+*.db
+.cache/
+data/cache/
+data/traces/
+
+# نسخةُ دفتر الاستخدام الاحتياطية (تنظيف بقايا الاختبارات، 2026-08-22) — محليّة
+data/usage.db.bak
+
+# حالة هوك بوابة السويت الأخضر (Stop hook) — محليّة لكل جهاز
+.claude/hooks/.last-green-tree
+.claude/hooks/.allow-red-stop
+*.db-shm
+*.db-wal

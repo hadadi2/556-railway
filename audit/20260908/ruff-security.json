@@ -1,0 +1,458 @@
+[
+  {
+    "cell": null,
+    "code": "S324",
+    "end_location": {
+      "column": 24,
+      "row": 56
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_cache.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 56
+    },
+    "message": "Probable use of insecure hash functions in `hashlib`: `sha1`",
+    "name": "hashlib-insecure-hash-function",
+    "noqa_row": 56,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hashlib-insecure-hash-function"
+  },
+  {
+    "cell": null,
+    "code": "S324",
+    "end_location": {
+      "column": 22,
+      "row": 325
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_gmaps.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 325
+    },
+    "message": "Probable use of insecure hash functions in `hashlib`: `sha1`",
+    "name": "hashlib-insecure-hash-function",
+    "noqa_row": 325,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hashlib-insecure-hash-function"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 64,
+      "row": 113
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_janitor.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 113
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 113,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 44,
+      "row": 363
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/api.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 362
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 362,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 66,
+      "row": 94
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/audit.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 94
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 94,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 68,
+      "row": 129
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/lifecycle.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 128
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 128,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 76,
+      "row": 164
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/notifications.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 163
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 163,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 71,
+      "row": 126
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 126
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 126,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 80,
+      "row": 144
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 144
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 144,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 55,
+      "row": 158
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 158
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 158,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 55,
+      "row": 168
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 168
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 168,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 84,
+      "row": 189
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 189
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 189,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 84,
+      "row": 210
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 210
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 210,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 78,
+      "row": 220
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/repository.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 220
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 220,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 44,
+      "row": 379
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/study_runtime.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 378
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 378,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 58,
+      "row": 392
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/study_runtime.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 391
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 391,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 44,
+      "row": 618
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/study_runtime.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 616
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 616,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 22,
+      "row": 641
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_platform/study_runtime.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 639
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 639,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 65,
+      "row": 992
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/silk_storage.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 991
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 991,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 42,
+      "row": 499
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/tests/test_audit_2026_08_27_fixes.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 499
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 499,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 74,
+      "row": 75
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/tests/test_audit_2026_09_01_r5.py",
+    "fix": null,
+    "location": {
+      "column": 44,
+      "row": 75
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 75,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 65,
+      "row": 94
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/tools/export_captured.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 94
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 94,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 74,
+      "row": 129
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/tools/export_captured.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 129
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 129,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  },
+  {
+    "cell": null,
+    "code": "S608",
+    "end_location": {
+      "column": 56,
+      "row": 86
+    },
+    "filename": "/workspace/scratch/2cce15180231/silk-audit-8143125/tools/verify_backup.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 86
+    },
+    "message": "Possible SQL injection vector through string-based query construction",
+    "name": "hardcoded-sql-expression",
+    "noqa_row": 86,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-sql-expression"
+  }
+]

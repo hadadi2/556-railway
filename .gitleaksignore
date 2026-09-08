@@ -1,0 +1,15 @@
+# Three synthetic redaction/password-policy fixtures reviewed in the import.
+# Exact historical fingerprints only: future changes and all other files remain scanned.
+# Reviewed against tests and GitHub Actions run 34128764069 on 2026-09-07.
+db417d4ae94c5adce0383217d3aea365f9bb1569:tests/test_gap_sweep3_surfaces.py:generic-api-key:235
+db417d4ae94c5adce0383217d3aea365f9bb1569:tests/test_platform_bootstrap.py:generic-api-key:98
+db417d4ae94c5adce0383217d3aea365f9bb1569:tests/test_project_review_fixes.py:generic-api-key:78
+# Verified SHA-256 file checksums, not credentials: audit verification manifests.
+# CI job 101982936683 classified the api.py dictionary key as an API key label.
+# These two exact historical lines only; no path/rule-wide allowlist.
+b2e87ec23419f2430ea5a688d15f43787a2d6276:audit/remediation-20260908/double-check-verification.json:generic-api-key:57
+b2e87ec23419f2430ea5a688d15f43787a2d6276:audit/remediation-20260908/verification.json:generic-api-key:50
+# The same reviewed checksums in squash commit a548e6a (CI job 101991777027).
+# Format v2 separates path and digest fields to prevent future false positives.
+a548e6ab8a88919015601839585044a937cc353e:audit/remediation-20260908/double-check-verification.json:generic-api-key:57
+a548e6ab8a88919015601839585044a937cc353e:audit/remediation-20260908/verification.json:generic-api-key:50

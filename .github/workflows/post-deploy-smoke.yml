@@ -1,0 +1,63 @@
+name: Post-deploy smoke (opt-in)
+
+# فحص الدخان بعد النشر — يضرب **النشر الحي** (Railway) بكل فحوص
+# tools/post_deploy_smoke.py: /health (التخزين المركب + الصمامات الحرجة) +
+# التصديرات md/docx/pdf + مسار /analyze الكامل (بوابة HS الحية).
+#
+# كان أقوى فحص في المستودع يعتمد على تذكُّر تشغيله يدوياً بعد كل نشر —
+# «الاعتماد على الذاكرة» هو بعينه ما أنتج اللوائح 13/31/35/43. هذا الـworkflow
+# يقطعه: تشغيل بنقرة من Actions بعد كل نشر (أو من الجوال).
+#
+# NEVER runs on push/pull_request — يدوي حصراً (workflow_dispatch): يضرب
+# خادماً حياً بمفاتيح حقيقية، وقرار الجدولة الدورية للمالك.
+#
+# الأسرار المطلوبة (Settings → Secrets → Actions):
+#   SILK_LIVE_BASE_URL — أصل النشر (https://<railway-host>)
+#   SILK_LIVE_API_KEY  — نفس SILK_API_KEY المضبوط على الخادم
+#   SILK_SMOKE_EMAIL / SILK_SMOKE_PASSWORD — (اختياريان، R0) حساب مصنعٍ حقيقي
+#     لمسار بوّابة المصانع للقراءة فقط: دخول ← /platform/me ← /platform/studies
+#     ← رأس تقرير PDF لأحدث دراسة مكتملة. غيابهما = المسار متخطّى معلَناً.
+#
+# خطوة /analyze الحية تستعمل مصادر مجانية فقط (Comtrade/WB العامة) — لا نداء
+# كلود ولا مزود مدفوع؛ ومع ذلك تبقى قابلة للتخطي بمدخل skip_analyze.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "أصل النشر (يفوز على السر SILK_LIVE_BASE_URL إن مُرّر)"
+        required: false
+        type: string
+      skip_analyze:
+        description: "تخطَّ مسار /analyze الحي (فحوص القراءة/التصدير فقط)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  post-deploy-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # stdlib فقط — السكربت لا يحتاج تبعيات (urllib).
+      - name: Run the live post-deploy smoke
+        env:
+          BASE_URL: ${{ inputs.base_url || secrets.SILK_LIVE_BASE_URL }}
+          # المفتاح يصل السكربت بالبيئة (`--key` يقرأ SILK_LIVE_API_KEY افتراضاً) —
+          # كان يُحقَن في `$ARGS` غير المقتبَس فيعبر argv ويتكسّر على مسافة (R0).
+          SILK_LIVE_API_KEY: ${{ secrets.SILK_LIVE_API_KEY }}
+          # R0 (تدقيق 2026-09-01، CI-6): مسار بوّابة المصانع — اختياريّ وللقراءة
+          # فقط؛ بلا السرّين يُعلَن المسار «متخطّى» ولا تحمرّ الوظيفة.
+          SILK_SMOKE_EMAIL: ${{ secrets.SILK_SMOKE_EMAIL }}
+          SILK_SMOKE_PASSWORD: ${{ secrets.SILK_SMOKE_PASSWORD }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "::error::لا أصل نشر — مرّر base_url أو اضبط سر SILK_LIVE_BASE_URL"
+            exit 1
+          fi
+          ARGS=""
+          if [ "${{ inputs.skip_analyze }}" = "true" ]; then ARGS="--skip-analyze"; fi
+          python3 tools/post_deploy_smoke.py "$BASE_URL" $ARGS

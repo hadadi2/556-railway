@@ -1,0 +1,84 @@
+# مجموعة التصنيف الذهبية — Product → HS6 classification golden set.
+#
+# كلُّ رمزٍ متوقَّعٍ هنا **مشتقٌّ من المرجع الرسمي** (data/hscodes_full.csv) لا
+# مُخترَعاً: إمّا صفٌّ يحمل المصطلحَ العربيَّ صراحةً في keywords_ar، أو لا رمزَ
+# متوقَّعاً إطلاقاً. حين يعجز المرجعُ عن حمل المنتج بالعربية، السلوكُ الصحيح هو
+# `requires_confirmation` — **لا تخمين** (البند ١٣ من أمر الموجة).
+#
+# Every expected code is derived from the authoritative reference, never invented.
+# Where the reference carries no Arabic term for a product, the expected outcome is
+# `requires_confirmation` — refusing honestly, not guessing.
+#
+# الأعمدة · columns
+#   product          اسم المنتج كما يكتبه المصنع
+#   expect_status    approved | requires_confirmation
+#   expect_hs6       الرمز المتوقَّع (فارغ حين لا يحسم المرجع)
+#   forbidden_hs6    رموزٌ يجب ألّا تُنتَج أبداً (مفصولة بـ ;) — أقفال العيوب الحيّة
+#   evidence         مصدرُ التوقُّع في المرجع
+product,expect_status,expect_hs6,forbidden_hs6,evidence
+حلاوة طحينية,approved,170490,110100;200819;120740,keywords_ar carries «حلاوة طحينية» on 170490
+حلاوه طحينيه,approved,170490,110100;200819,normalization equivalence of the row above
+حلاوة طحينية سادة,approved,170490,110100;200819,token coverage of the 170490 Arabic keyword
+طحينة,approved,200819,110100;170490,keywords_ar carries «طحينة» on 200819
+طحينه,approved,200819,110100;170490,normalization equivalence of the row above
+سمسم,requires_confirmation,,200819;170490;090700;110100,120740 (sesamum seeds) carries no Arabic keyword
+حلاوة,approved,170490,110100;200819,keywords_ar carries «حلاوة» on 170490
+زبدة الفول السوداني,approved,200811,040510,keywords_ar carries «زبدة الفول السوداني» on 200811
+زبدة,approved,040510,,keywords_ar carries «زبدة» on 040510
+فول سوداني محمص,approved,200811,040510;090121,keywords_ar carries «فول سوداني محمص» on 200811
+زيت زيتون بكر,approved,150910,071120,legacy-schema row name_ar «زيت زيتون بكر»
+تمور مجففة,approved,080410,,token coverage of «تمور طازجة أو مجففة» on 080410
+عسل,approved,040900,,keywords_ar carries «عسل» on 040900
+عسل سدر,approved,040900,,keywords_ar carries «عسل سدر» on 040900
+أرز,approved,100630,,keywords_ar carries «أرز» on 100630
+مكرونة,approved,190230,,keywords_ar carries «مكرونة» on 190230
+معكرونة,approved,190230,,keywords_ar carries «معكرونة» on 190230
+بسكويت,approved,190531,,keywords_ar carries «بسكويت» on 190531
+شوكولاتة,approved,180632,,keywords_ar carries «شوكولاتة» on 180632
+قهوة محمصة,approved,090121,090111,keywords_ar carries «قهوة محمصة» on 090121
+معجون طماطم,approved,200290,070200,keywords_ar carries «معجون طماطم» on 200290
+دجاج مجمد,approved,020714,,keywords_ar carries «دجاج مجمد» on 020714
+دجاج مفروم,requires_confirmation,,,no Arabic keyword for minced chicken; «دجاج» alone is partial cover
+عصير برتقال,requires_confirmation,,080510;080520,200911 (orange juice) carries no Arabic keyword
+شيبس بطاطس,requires_confirmation,,070190;070200,200520 (prepared potatoes) carries no Arabic keyword
+مربى فراولة,requires_confirmation,,081010,200710 (jams) carries no Arabic keyword
+حليب كامل الدسم,requires_confirmation,,040110,fat-percentage axis is numeric; 040110/040120/040150 are not separable by words
+حليب منزوع الدسم,requires_confirmation,,040150,fat-percentage axis is numeric; the same heading splits
+مناديل ورقية,requires_confirmation,,080711;110100,481820 (facial tissues) carries no Arabic keyword
+منديل ورقي,requires_confirmation,,080711,singular form of the row above
+ورق تواليت,requires_confirmation,,080711,481810 (toilet paper) carries no Arabic keyword
+صابون سائل,requires_confirmation,,040310;340111,no Arabic keyword for liquid soap
+مياه غازية,requires_confirmation,,220110,no Arabic keyword for carbonated waters
+خبز عربي,requires_confirmation,,,190590 carries no Arabic keyword for Arabic bread
+peanut butter,approved,200811,040510,keywords_ar carries the English «peanut butter» on 200811
+tahini,approved,200819,110100,keywords_ar carries «tahini» on 200819
+halva,approved,170490,110100,keywords_ar carries «halva» on 170490
+chocolate,requires_confirmation,,,«chocolate» keys 180632 and 180690 equally — the reference cannot separate them
+honey,approved,040900,,keywords_ar carries «honey» on 040900
+# ── سلّةٌ تصديرية سعودية حقيقية (توسيع 2026-08-30) ──────────────────────────
+# المنتجُ الأول مأخوذٌ من الاستعمال الفعليّ (`data/silk.db`: عشرون تشغيلة على
+# «تمور سكري»)؛ البقيةُ من فئات التصدير غير النفطي الحقيقية — بتروكيماويات
+# ولدائن وألمنيوم وأسمدة وبحريّات، لا أغذيةً وحدها. التوقّعُ من المرجع كما هو
+# الشرط، والأسماءُ **مُحدَّدة** عمداً (روبيان مجمد لا روبيان): المصطلحُ العامّ
+# على بندٍ خاصّ عائلةٌ مرصودةٌ مستقلّةً في
+# tests/test_hs_generic_term_granularity.py، لا تُبَتّ هنا.
+تمور سكري,approved,080410,,real usage: 20 stored analyses on this product
+روبيان مجمد,approved,030617,,«مجمد» names the frozen state 030617 describes
+بولي إيثيلين,approved,390120,,keywords_ar on 390120 (polyethylene in primary forms)
+بولي بروبيلين,approved,390210,,keywords_ar on 390210 (polypropylene in primary forms)
+ألمنيوم خام,approved,760110,,«خام» names the unwrought state 760110 describes
+ألواح ألمنيوم,approved,760611,,keywords_ar on 760611 (aluminium plates/sheets)
+يوريا,approved,310210,,the specific chemical named by 310210
+زيتون مخلل,approved,200570,,keywords_ar on 200570 (olives prepared/preserved)
+لبن رائب,approved,040310,,legacy-schema row for yoghurt
+حلاوة طحينية بالفستق,approved,170490,110100,a qualified spelling of the reported incident
+حليب طويل الأجل,requires_confirmation,,040110,shelf-life is not a heading axis the name settles
+أسمدة مركبة,requires_confirmation,,310210,compound fertilisers split across 3105; no Arabic term
+أسمنت بورتلاندي,requires_confirmation,,,2523 carries no Arabic keyword
+شامبو,requires_confirmation,,,3305 carries no Arabic keyword
+صابون تواليت,requires_confirmation,,,3401 carries no Arabic keyword
+عبايات,requires_confirmation,,,6211 carries no Arabic keyword
+كرتون مموج,requires_confirmation,,,4819 carries no Arabic keyword
+أنابيب بلاستيكية,requires_confirmation,,,3917 carries no Arabic keyword
+ماء معبأ,requires_confirmation,,220110,2201 carries no Arabic keyword
+قهوة عربية مطحونة,requires_confirmation,,090111,ground+roasted state is not settled by the reference

@@ -1,0 +1,227 @@
+{
+  "scope": "audit-owned real uvicorn; seeded temp databases; read-only HTTP",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "bytes": 142911,
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/health",
+      "status": 200,
+      "bytes": 2094,
+      "content_type": "application/json"
+    },
+    {
+      "path": "/ready",
+      "status": 200,
+      "bytes": 2094,
+      "content_type": "application/json"
+    },
+    {
+      "path": "/config",
+      "status": 200,
+      "bytes": 137,
+      "content_type": "application/json"
+    },
+    {
+      "path": "/markets",
+      "status": 200,
+      "bytes": 3033,
+      "content_type": "application/json"
+    },
+    {
+      "path": "/platform.html",
+      "status": 200,
+      "bytes": 289919,
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/pricing.html",
+      "status": 200,
+      "bytes": 32422,
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/checkout.html",
+      "status": 200,
+      "bytes": 14205,
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/silk-logo.png",
+      "status": 200,
+      "bytes": 107494,
+      "content_type": "image/png"
+    },
+    {
+      "path": "/fonts/fonts.css",
+      "status": 200,
+      "bytes": 11792,
+      "content_type": "text/css; charset=utf-8"
+    },
+    {
+      "path": "/research-motion.css",
+      "status": 200,
+      "bytes": 7368,
+      "content_type": "text/css; charset=utf-8"
+    },
+    {
+      "path": "/marketing.js",
+      "status": 200,
+      "bytes": 14697,
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "path": "/fonts/Cairo-var-arabic.woff2",
+      "status": 200,
+      "bytes": 30896,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/Cairo-var-latin-ext.woff2",
+      "status": 200,
+      "bytes": 16648,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/Cairo-var-latin.woff2",
+      "status": 200,
+      "bytes": 33820,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexMono-500-latin-ext.woff2",
+      "status": 200,
+      "bytes": 13432,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexMono-500-latin.woff2",
+      "status": 200,
+      "bytes": 14888,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexMono-600-latin-ext.woff2",
+      "status": 200,
+      "bytes": 14328,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexMono-600-latin.woff2",
+      "status": 200,
+      "bytes": 15620,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-400-arabic.woff2",
+      "status": 200,
+      "bytes": 42848,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-400-latin-ext.woff2",
+      "status": 200,
+      "bytes": 6656,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-400-latin.woff2",
+      "status": 200,
+      "bytes": 19164,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-500-arabic.woff2",
+      "status": 200,
+      "bytes": 45296,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-500-latin-ext.woff2",
+      "status": 200,
+      "bytes": 6540,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-500-latin.woff2",
+      "status": 200,
+      "bytes": 20088,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-600-arabic.woff2",
+      "status": 200,
+      "bytes": 45688,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-600-latin-ext.woff2",
+      "status": 200,
+      "bytes": 6680,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-600-latin.woff2",
+      "status": 200,
+      "bytes": 20500,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-700-arabic.woff2",
+      "status": 200,
+      "bytes": 44280,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-700-latin-ext.woff2",
+      "status": 200,
+      "bytes": 6564,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/IBMPlexSansArabic-700-latin.woff2",
+      "status": 200,
+      "bytes": 19504,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/MarkaziText-600-arabic.woff2",
+      "status": 200,
+      "bytes": 41320,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/MarkaziText-600-latin-ext.woff2",
+      "status": 200,
+      "bytes": 24628,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/MarkaziText-600-latin.woff2",
+      "status": 200,
+      "bytes": 25532,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/MarkaziText-700-arabic.woff2",
+      "status": 200,
+      "bytes": 41320,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/MarkaziText-700-latin-ext.woff2",
+      "status": 200,
+      "bytes": 24628,
+      "content_type": "font/woff2"
+    },
+    {
+      "path": "/fonts/MarkaziText-700-latin.woff2",
+      "status": 200,
+      "bytes": 25532,
+      "content_type": "font/woff2"
+    }
+  ]
+}

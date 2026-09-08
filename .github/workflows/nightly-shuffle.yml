@@ -1,0 +1,35 @@
+# TEST-7 (تدقيق 2026-09-01): تشغيلةٌ ليلية **عشوائيةُ الترتيب**.
+#
+# لماذا: الحزمةُ تُشغَّل دائماً بنفس الترتيب، فتسرّبُ الحالة بين الاختبارات (contextvar،
+# متغيّرُ بيئة، قاعدةٌ عامّة، قاطعُ دائرة) يبقى مخفيّاً حتى يظهر في CI بترتيبٍ مختلف —
+# وقد حدث فعلاً هذه الموجة (قاطعُ الدائرة وعَلَمُ إيقاف الخرائط). المُلحقُ **مثبَّت**
+# وخارجَ `requirements-ci.txt` عمداً: بوّابةُ الدمج تبقى حتميّةَ الترتيب.
+name: Nightly shuffle
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  shuffle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies (+ the pinned shuffle plugin)
+        run: pip install -r requirements.txt -r requirements-ci.txt -r requirements-nightly.txt
+      - name: Run the suite in a random order (seed in the summary)
+        env:
+          SILK_PDF_LOCAL_SKIP: "1"
+        run: |
+          set -o pipefail
+          python -m pytest tests/ -q -p randomly 2>&1 | tee shuffle.log
+          seed=$(grep -oE "Using --randomly-seed=[0-9]+" shuffle.log | head -1)
+          echo "### Nightly shuffle" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$seed\` — أعِد الإنتاج بـ \`pytest tests/ -p randomly $seed\`" \
+            >> "$GITHUB_STEP_SUMMARY"

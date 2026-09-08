@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الباقات والأسعار — سلك</title>
+<meta name="description" content="دراسات تساعدك على فهم السوق وتحديد فرص منتجك والتخطيط لخطوتك التصديرية التالية.">
+<!-- Approved Silk landing: centred blue hero and a smaller workspace preview.
+     Self-hosted fonts; pricing continues to load from /platform/pricing. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2318181B'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M7.5 16h17M16 7.5c3.2 2.6 3.2 14.4 0 17-3.2-2.6-3.2-14.4 0-17z' fill='none' stroke='white' stroke-width='1.4'/%3E%3Ccircle cx='23.5' cy='8.5' r='3.2' fill='%23C9A227'/%3E%3C/svg%3E">
+<link href="/fonts/fonts.css" rel="stylesheet">
+<style>
+  :root{
+    --pri:#18181B; --pri-dark:#09090B; --sky:#3F3F46; --deep:#09090B;
+    --deep-2:#18181B; --gold:#C9A227; --gold-soft:#F6F0DC; --gold-ink:#7A6114;
+    --ink:#09090B; --ink-soft:#3F3F46; --muted:#71717A;
+    --bg:#FAFAFA; --panel:#FFFFFF; --line:#E4E4E7; --line-2:#F4F4F5;
+    --sky-soft:#F4F4F5;
+    --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:24px;
+    --shadow-sm:0 1px 2px rgba(9,9,11,.06);
+    --shadow-md:0 12px 32px rgba(9,9,11,.08);
+    --shadow-lg:0 24px 60px rgba(9,9,11,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);line-height:1.7;
+    font-family:"Cairo","IBM Plex Sans Arabic",sans-serif;-webkit-font-smoothing:antialiased}
+  /* الأرقام اللاتينية من Plex Mono الجدولي؛ أي نص عربي داخل .num («مجاناً»،
+     «مجاناً») يسقط إلى Cairo لا إلى monospace النظام مكسور التشكيل. */
+  .num{font-family:"IBM Plex Mono","Cairo","IBM Plex Sans Arabic",monospace;
+    font-feature-settings:"tnum";direction:ltr;unicode-bidi:plaintext}
+  a{text-decoration:none;color:inherit}
+  img,svg{max-width:100%}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--pri);color:#fff;font-weight:700;border:none;cursor:pointer;
+    border-radius:10px;padding:12px 26px;font-size:15px;font-family:inherit;
+    transition:filter .15s ease,transform .15s ease,box-shadow .15s ease}
+  .btn:hover{background:var(--pri-dark)}
+  .btn.gold{background:var(--gold);color:#231A02;
+    box-shadow:0 8px 22px rgba(201,162,39,.28)}
+  .btn.gold:hover{filter:brightness(1.06)}
+  .btn.gh{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.gh:hover{border-color:var(--pri);color:var(--pri);background:transparent}
+  .btn.sm{padding:8px 16px;font-size:13px;border-radius:9px}
+  .btn:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;
+    font-weight:600;color:var(--pri-dark);background:var(--sky-soft);
+    border:1px solid var(--line);border-radius:999px;padding:5px 14px}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--gold)}
+  section{padding-block:84px}
+  .eyebrow{display:flex;width:fit-content;margin:0 auto 14px}
+  h2.t{text-align:center;font-size:clamp(26px,3.4vw,36px);font-weight:700;
+    line-height:1.35}
+  p.tsub{text-align:center;color:var(--muted);font-size:15px;
+    margin:10px auto 44px;max-width:62ch}
+
+  /* ═══ الشريط العلوي (header) ═══ */
+  nav.top{position:sticky;top:0;z-index:40;background:rgba(250,250,250,.85);
+    backdrop-filter:blur(10px);border-bottom:1px solid transparent;
+    transition:border-color .2s ease}
+  nav.top.scrolled{border-bottom-color:var(--line)}
+  nav.top .wrap{display:flex;align-items:center;gap:26px;padding-block:12px}
+  .brand{display:flex;align-items:baseline;gap:8px}
+  .brand b{font-weight:700;font-size:23px;line-height:1;
+    color:var(--ink)}
+  .brand span{font-size:11.5px;color:var(--pri);font-weight:600}
+  .nav-links{display:flex;gap:24px;font-size:13.5px;font-weight:600;
+    color:var(--ink-soft)}
+  .nav-links a:hover{color:var(--pri)}
+  nav.top .grow{margin-inline-start:auto;display:flex;gap:10px;align-items:center}
+  #langBtn{background:none;border:1px solid var(--line);color:var(--ink-soft);
+    border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer;
+    font-family:inherit;font-weight:600}
+  #langBtn:hover{border-color:var(--pri);color:var(--pri)}
+  #menuBtn{display:none;background:none;border:1px solid var(--line);
+    border-radius:8px;width:38px;height:38px;cursor:pointer;color:var(--ink);
+    align-items:center;justify-content:center}
+  #mobileMenu{display:none;border-bottom:1px solid var(--line);
+    background:rgba(250,250,250,.98);padding:10px 22px 18px}
+  #mobileMenu.open{display:block}
+  @media(min-width:921px){#mobileMenu.open{display:none}}
+  #mobileMenu a{display:block;padding:10px 4px;font-weight:600;font-size:14.5px;
+    color:var(--ink-soft);border-bottom:1px dashed var(--line-2)}
+  #mobileMenu a:hover{color:var(--pri)}
+  @media(max-width:920px){
+    .nav-links{display:none}
+    #menuBtn{display:inline-flex}
+    nav.top .cta-desktop{display:none}
+  }
+
+  /* ═══ البطل (hero) — تصميم المالك silkhero (2026-08-18): نصٌّ + مدار ١٢
+     وكيلاً حول كرة السوق، منقول 1:1 من نموذج React إلى ذاتيّ التضمين ═══ */
+  header.hero{position:relative;overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 78% 8%, rgba(228,228,231,.7) 0%, transparent 55%),
+      radial-gradient(100% 80% at 10% 100%, rgba(236,236,238,.7) 0%, transparent 60%),
+      var(--bg)}
+  header.hero .wrap{position:relative;display:grid;align-items:center;
+    gap:clamp(32px,5vw,72px);grid-template-columns:1.05fr .95fr;
+    padding-block:64px 44px}
+  @media(max-width:920px){header.hero .wrap{grid-template-columns:1fr}}
+  .hero-copy{display:flex;flex-direction:column;gap:26px}
+  .hero-copy h1{font-weight:600;line-height:1.42;letter-spacing:-.01em;
+    font-size:clamp(30px,4.2vw,52px);text-wrap:balance}
+  .hero-copy h1 em{font-style:normal;color:var(--pri);
+    background:linear-gradient(120deg,var(--sky),var(--pri-dark));
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent}
+  .hero-copy p.sub{max-width:52ch;font-size:clamp(15px,1.2vw,17.5px);
+    line-height:1.95;color:var(--ink-soft);text-wrap:pretty}
+  .hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn.lg{padding:15px 30px;font-size:15px;border-radius:14px}
+  .stats{display:flex;flex-wrap:wrap;gap:14px 34px;padding-top:14px;
+    border-top:1px solid var(--line)}
+  .stat{display:flex;flex-direction:column;gap:4px}
+  .stat b{font-size:25px;font-weight:600;color:var(--pri-dark)}
+  .stat span{font-size:12.5px;color:var(--muted)}
+
+  @media(prefers-reduced-motion:no-preference){
+    .hero-copy{animation:rise .7s ease both}
+    .landing-workspace{animation:rise .9s .12s ease both}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+  /* ═══ شريط المصادر (social proof) ═══ */
+  .proof{padding-block:34px;border-block:1px solid var(--line-2);background:#fff}
+  .proof p{ text-align:center;font-size:12.5px;font-weight:600;color:var(--muted);
+    letter-spacing:.02em;margin-bottom:18px}
+  .proof .marks{display:flex;gap:14px 38px;flex-wrap:wrap;justify-content:center;
+    align-items:center}
+  .proof .marks span{font-family:"IBM Plex Mono",monospace;font-weight:600;
+    font-size:16px;color:#A1A1AA;direction:ltr;unicode-bidi:plaintext}
+
+  /* ═══ شبكة المزايا (feature grid) ═══ */
+  .cards{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--r-lg);box-shadow:var(--shadow-sm);padding:26px 24px;
+    transition:transform .2s ease,box-shadow .2s ease}
+  .card:hover{box-shadow:var(--shadow-md)}
+  .fic{width:42px;height:42px;border-radius:11px;background:var(--sky-soft);
+    color:var(--pri);display:grid;place-items:center;margin-bottom:14px}
+  .fic.goldic{background:var(--gold-soft);color:var(--gold-ink)}
+  .card h3{font-size:16.5px;margin-bottom:6px}
+  .card p{font-size:13.5px;color:var(--ink-soft)}
+
+  /* ═══ كيف تعمل (خطوات بتمرير) ═══ */
+  #how{background:#fff;border-block:1px solid var(--line-2)}
+  .step{display:grid;gap:36px;align-items:center;
+    grid-template-columns:1fr 1fr;padding-block:30px}
+  @media(max-width:840px){.step{grid-template-columns:1fr}}
+  .step .stepn{width:38px;height:38px;border-radius:50%;background:var(--pri);
+    color:#fff;font-weight:700;display:flex;align-items:center;
+    justify-content:center;font-size:16px;margin-bottom:14px}
+  .step h3{font-size:21px;margin-bottom:8px}
+  .step p{font-size:14.5px;color:var(--ink-soft);max-width:48ch}
+  .mock{background:var(--bg);border:1px solid var(--line);
+    border-radius:var(--r-lg);box-shadow:var(--shadow-md);padding:18px;
+    position:relative;overflow:hidden}
+  .mock .winbar{display:flex;gap:6px;margin-bottom:14px}
+  .mock .winbar i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+  .mock .field{display:flex;align-items:center;gap:10px;background:#fff;
+    border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;
+    color:var(--muted);font-size:13.5px}
+  .mock .chip{display:inline-block;margin-top:12px;background:var(--sky-soft);
+    color:var(--pri-dark);border:1px solid var(--line);border-radius:999px;
+    font-size:12px;font-weight:600;padding:4px 12px}
+  .mock .skrow{display:flex;align-items:center;gap:10px;padding:9px 2px;
+    border-bottom:1px dashed var(--line-2);font-size:12.5px;color:var(--ink-soft)}
+  .mock .skrow .ok{color:var(--pri);font-weight:700}
+  .mock .pbar{height:8px;border-radius:6px;background:var(--line-2);
+    overflow:hidden;margin-top:14px}
+  .mock .pbar i{display:block;height:100%;width:62%;border-radius:6px;
+    background:linear-gradient(90deg,var(--sky),var(--pri))}
+  .mock .mrow{display:flex;align-items:center;gap:10px;padding:8px 2px}
+  .mock .mrow em{font-style:normal;font-size:12.5px;color:var(--ink-soft);
+    min-width:52px}
+  .mock .mrow .bar{height:10px;border-radius:6px;
+    background:linear-gradient(90deg,var(--sky),var(--pri));opacity:.85}
+  .mock .srcline{font-size:11px;color:var(--muted);padding:2px 2px 8px;
+    border-bottom:1px dashed var(--line-2)}
+  .mock .cap{margin-top:12px;font-size:11px;color:var(--muted);text-align:center}
+
+  /* ═══ داخل التقرير (ميزة مقسومة) ═══ */
+  .split{display:grid;gap:44px;align-items:center;grid-template-columns:1fr 1fr}
+  @media(max-width:840px){.split{grid-template-columns:1fr}}
+  .split h2{font-size:clamp(24px,3vw,32px);line-height:1.35;margin-bottom:8px}
+  .split p.lead{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+  .ticks{list-style:none}
+  .ticks li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;
+    font-size:14.5px;color:var(--ink-soft)}
+  .ticks li .tick{flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+    background:var(--sky-soft);color:var(--pri);display:grid;place-items:center;
+    margin-top:2px}
+  .report-mock .rhead{display:flex;align-items:center;justify-content:space-between;
+    gap:10px;padding-bottom:12px;border-bottom:2px solid var(--pri);margin-bottom:10px}
+  .report-mock .rhead b{font-size:14px}
+  .report-mock .verdict{background:var(--gold-soft);color:var(--gold-ink);
+    border-radius:999px;font-size:11.5px;font-weight:700;padding:3px 12px}
+  .report-mock .limits{margin-top:12px;background:#fff;border:1px dashed var(--line);
+    border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink-soft)}
+
+  /* ═══ الجولة (carousel) ═══ */
+  #tour{background:#fff;border-block:1px solid var(--line-2)}
+  .car{position:relative;overflow:hidden;border:1px solid var(--line);
+    border-radius:var(--r-xl);background:var(--bg);box-shadow:var(--shadow-md)}
+  .car-track{display:flex}
+  .car-slide{flex:0 0 100%;min-width:100%;display:grid;gap:30px;align-items:center;
+    grid-template-columns:1fr 1fr;padding:34px 38px}
+  @media(max-width:840px){.car-slide{grid-template-columns:1fr;padding:26px 22px}}
+  .car-slide h3{font-size:19px;margin-bottom:8px}
+  .car-slide p{font-size:14px;color:var(--ink-soft);max-width:44ch}
+  .car-slide .snum{display:inline-block;font-size:12px;font-weight:700;
+    color:var(--pri);background:var(--sky-soft);border-radius:999px;
+    padding:3px 12px;margin-bottom:12px}
+  .car-nav{display:flex;gap:10px;align-items:center;justify-content:center;
+    margin-top:20px}
+  .car-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
+    background:#fff;cursor:pointer;color:var(--ink-soft);display:grid;
+    place-items:center}
+  .car-btn:hover{border-color:var(--pri);color:var(--pri)}
+  .cdot{width:9px;height:9px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--line);padding:0}
+  .cdot.on{background:var(--pri)}
+
+  /* ═══ الباقات (pricing) ═══ */
+  /* مبدّل الدورة — النصوص والنسبة تُرسم من ردّ /platform/pricing حصراً */
+  .bill-toggle{display:flex;gap:4px;width:fit-content;margin:0 auto 26px;
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px}
+  .bill-toggle button{border:none;background:none;cursor:pointer;
+    font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);
+    border-radius:999px;padding:8px 18px}
+  .bill-toggle button.on{background:var(--pri);color:#fff}
+  .bill-toggle button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  .plan .abill{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .plans{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    align-items:stretch}
+  .plan{background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--r-lg);box-shadow:var(--shadow-sm);padding:28px 24px;
+    display:flex;flex-direction:column}
+  .plan.hot{border:2px solid var(--pri);box-shadow:var(--shadow-md);position:relative}
+  .plan.hot .flag{position:absolute;inset-block-start:-13px;
+    inset-inline-start:18px;background:var(--pri);color:#fff;font-size:11px;
+    font-weight:700;border-radius:99px;padding:3px 14px}
+  .plan h3{font-size:17px}
+  .plan .price{margin:12px 0 4px;display:flex;align-items:baseline;gap:6px}
+  .plan .price b{font-size:36px;font-family:"IBM Plex Mono",monospace;
+    font-feature-settings:"tnum"}
+  .plan .price span{font-size:12.5px;color:var(--muted)}
+  .plan ul{list-style:none;margin:16px 0 20px;flex:1}
+  .plan ul li{font-size:13px;color:var(--ink-soft);padding:6px 0;
+    border-bottom:1px dashed var(--line-2)}
+  .plan ul li::before{content:"✓";color:var(--pri);font-weight:700;
+    margin-inline-end:8px}
+  .plan .btn{text-align:center}
+  #pricingMsg{text-align:center;color:var(--ink-soft);font-size:14px;
+    padding:28px;background:#fff;border:1px solid var(--line);
+    border-radius:var(--r-lg);display:none}
+  #pricingMsg.on{display:block}
+
+  /* ═══ الأسئلة الشائعة (FAQ) ═══ */
+  #faq{background:#fff;border-block:1px solid var(--line-2)}
+  .faq-list{max-width:760px;margin:0 auto;display:grid;gap:12px}
+  .faq-list details{background:var(--bg);border:1px solid var(--line);
+    border-radius:14px;padding:0 20px}
+  .faq-list summary{cursor:pointer;list-style:none;display:flex;
+    align-items:center;gap:12px;padding:16px 0;font-weight:700;font-size:15px}
+  .faq-list summary::-webkit-details-marker{display:none}
+  .faq-list summary .plus{margin-inline-start:auto;flex:0 0 auto;
+    color:var(--pri);transition:transform .2s ease}
+  .faq-list details[open] summary .plus{transform:rotate(45deg)}
+  .faq-list details p{padding:0 0 18px;font-size:13.5px;color:var(--ink-soft);
+    max-width:60ch}
+
+  /* ═══ شريط الختام (CTA) ═══ */
+  .cta-band{position:relative;overflow:hidden;color:#fff;text-align:center;
+    padding:72px 24px;
+    background:linear-gradient(135deg,var(--deep) 0%,var(--deep-2) 55%,var(--pri-dark) 100%)}
+  .cta-band::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(520px 260px at 50% 0%,rgba(201,162,39,.16),transparent 70%)}
+  .cta-band h2{position:relative;font-weight:700;
+    font-size:clamp(24px,3.4vw,38px);line-height:1.45}
+  .cta-band p{position:relative;color:#A1A1AA;font-size:15px;margin:10px auto 26px;
+    max-width:52ch}
+  .cta-band .row{position:relative;display:flex;gap:12px;justify-content:center;
+    flex-wrap:wrap}
+  .cta-band .btn.gh{color:#fff;border-color:rgba(255,255,255,.45)}
+  .cta-band .btn.gh:hover{border-color:#fff;color:#fff}
+
+  /* ═══ التذييل (footer) ═══ */
+  footer{background:var(--bg)}
+  footer .cols{display:grid;gap:34px;grid-template-columns:1.4fr 1fr 1fr;
+    padding-block:52px 36px}
+  @media(max-width:720px){footer .cols{grid-template-columns:1fr}}
+  footer .brand b{font-size:20px}
+  footer .cols p{font-size:13px;color:var(--muted);margin-top:10px;max-width:38ch}
+  footer h4{font-size:13px;color:var(--ink);margin-bottom:12px}
+  footer .cols a{display:block;font-size:13px;color:var(--muted);padding:4px 0}
+  footer .cols a:hover{color:var(--pri)}
+  footer .base{border-top:1px solid var(--line-2);padding-block:18px;
+    text-align:center;font-size:12.5px;color:var(--muted)}
+  footer .base b{color:var(--pri)}
+
+  /* ═══ الظهور بالتمرير — يُحترم تفضيل تقليل الحركة ═══ */
+  @media (prefers-reduced-motion: no-preference){
+    html.js [data-reveal]{opacity:0;transform:translateY(18px);
+      transition:opacity .6s ease,transform .6s ease}
+    html.js [data-reveal].in{opacity:1;transform:none}
+    .car-track{transition:transform .5s ease}
+    .card:hover{transform:translateY(-3px)}
+  }
+  /* الطباعة/الالتقاط: لا محتوى مخفياً بانتظار تمرير لن يحدث. */
+  @media print{
+    html.js [data-reveal]{opacity:1;transform:none}
+  }
+  /* انقلاب الاتجاه (الإنجليزية): أسهم الجولة ترسم للعربية فتُعكس في LTR. */
+  html[dir="ltr"] .car-btn svg{transform:scaleX(-1)}
+
+  /* The white transition dips downward at the centre, behind the preview. */
+  body{background:#fff}
+  .silk-logo{width:100px;height:58px;object-fit:contain;display:block}
+  nav.top{background:rgba(173,204,253,.96);backdrop-filter:blur(12px)}
+  nav.top .wrap{padding-block:4px}
+  .brand{align-items:center}
+  .btn,.btn.lg,.btn.sm{border-radius:999px}
+  header.hero{isolation:isolate;background:#fff;overflow:hidden}
+  header.hero::before{content:"";position:absolute;z-index:-1;inset:0 0 14%;border-radius:0 0 50% 50% / 0 0 20% 20%;background:linear-gradient(transparent 31px,rgba(255,255,255,.12) 32px),linear-gradient(90deg,transparent 31px,rgba(255,255,255,.12) 32px),linear-gradient(160deg,#adccfd,#bedaff);background-size:32px 32px,32px 32px,100% 100%}
+  header.hero .wrap{display:flex;flex-direction:column;gap:52px;padding-block:64px 20px;max-width:1440px}
+  .hero-copy{align-items:center;text-align:center;gap:22px;max-width:730px}
+  .hero-copy h1{font-size:clamp(36px,4.8vw,64px);line-height:1.4;font-weight:700;letter-spacing:-.035em}
+  .hero-copy p.sub{max-width:53ch;font-size:16px;line-height:1.9}
+  .hero-cta{justify-content:center}
+  .hero-cta .btn{font-size:14px;padding:11px 24px}
+  .hero-cta .gh{border-color:rgba(9,9,11,.2)}
+  .landing-workspace{width:72%;margin:0;min-width:0}
+  .preview-shell{display:grid;grid-template-columns:132px minmax(0,1fr) 154px;min-height:394px;background:#fff;border:1px solid rgba(255,255,255,.85);border-radius:14px;box-shadow:0 26px 60px rgba(52,88,151,.16),0 2px 4px rgba(52,88,151,.06);overflow:hidden;text-align:start}
+  .preview-nav{display:flex;flex-direction:column;gap:15px;padding:12px;border-inline-end:1px solid #f0f1f3;font-size:13px}
+  .preview-nav img{object-fit:contain;align-self:center}
+  .preview-nav>span{padding:6px 10px}
+  .preview-active{background:#f1f4f9;border-radius:8px}
+  .preview-settings{margin-top:auto}
+  .preview-main{padding:24px 20px;background:#fdfdfe;min-width:0}
+  .preview-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px}
+  .preview-new{font-size:13px;background:#111;color:#fff;padding:5px 10px;border-radius:999px}
+  .preview-search{border:1px solid #eee;border-radius:6px;color:#71717a;font-size:13px;padding:5px 10px;margin:18px 0 24px;background:white}
+  .preview-folders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 12px}
+  .preview-folder{position:relative;isolation:isolate;background:#ebedf0;border-radius:12px;padding:53px 12px 14px;min-width:0;min-height:114px}
+  .preview-folder::before{content:"";position:absolute;z-index:-1;inset:10px 10px 45%;background:white;transform:rotate(-4deg);border-radius:6px;box-shadow:0 -4px 0 -1px #e3e5e9}
+  .preview-folder::after{content:"";position:absolute;z-index:-1;inset:42px 0 0;border-radius:5px 5px 12px 12px;background:linear-gradient(145deg,#fff,#eaecf0)}
+  .preview-folder.selected{background:#89b5fa}.preview-folder.selected::after{background:linear-gradient(145deg,#cce1ff,#86b6ff)}
+  .preview-folder b{display:block;font-size:13px;overflow-wrap:anywhere}
+  .preview-folder span{font-size:13px;color:#52525b}
+  .preview-info{border-inline-start:1px solid #f0f1f3;padding:24px 14px;display:flex;flex-direction:column;gap:12px;font-size:13px}
+  .preview-document{background:linear-gradient(135deg,#e8f1ff,#fafcff);border:1px solid #edf0f6;border-radius:8px;min-height:115px;padding:20px 12px;color:#315dbe;font-weight:700;margin-block:8px}
+  .preview-document span{display:block;font-weight:400;color:#52525b;margin-top:16px}
+  .preview-info small{font-size:13px;color:#71717a}.preview-rule{border-top:1px solid #eee}
+  .landing-workspace figcaption{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+  .proof{border:0;padding-block:44px 32px}.marks{opacity:.75}
+  #features .card{border-radius:18px;box-shadow:none}
+  #features .card:nth-child(1){background:#edf4ff}#features .card:nth-child(2){background:#faf8df}#features .card:nth-child(3){background:#e6f8f1}
+  .pill .dot{background:#567fd0}.fic.goldic{background:#f0f4fc;color:#18181b}
+  @media(max-width:1100px){.landing-workspace{width:90%}.preview-shell{grid-template-columns:112px minmax(0,1fr) 140px}}
+  @media(max-width:700px){header.hero .wrap{padding-top:44px;gap:36px}.landing-workspace{width:100%}.preview-shell{grid-template-columns:90px minmax(0,1fr);min-height:340px}.preview-info{display:none}.preview-main{padding:18px 12px}.preview-folders{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}.preview-folder:nth-child(n+5){display:none}.preview-new{display:none}.preview-nav{padding:8px;gap:12px}.preview-nav>span{padding-inline:4px}.hero-copy h1{font-size:38px}.hero-copy p.sub{font-size:15px}header.hero::before{bottom:18%}.hero-cta{gap:8px}.hero-cta .btn{padding:10px 16px}}
+
+  .proof-stats{justify-content:center;text-align:center;border:0;gap:24px 64px;padding-bottom:44px}
+  .proof-stats .stat b{font-size:22px}.proof-stats .stat span{font-size:13px}
+  .cta-band{margin:20px auto 64px;max-width:1076px;border-radius:28px;background:linear-gradient(135deg,#e7f1ff,#bad6ff);color:var(--ink);padding:56px 24px}
+  .cta-band::before{display:none}.cta-band p{color:var(--ink-soft)}
+  .cta-band .btn.gold{background:var(--ink);color:#fff;box-shadow:none}
+  .cta-band .btn.gh{color:var(--ink);border-color:rgba(9,9,11,.2)}
+  .cta-band .btn.gh:hover{color:var(--ink);border-color:var(--ink)}
+  @media(max-width:1100px){.cta-band{margin-inline:22px}}
+
+/* Owner correction: approved artwork and concise marketing pages. */
+.btn.gold{background:var(--pri);color:#fff;box-shadow:none}
+nav.top{background:rgba(235,245,255,.96)}
+.hero-eyebrow{font-size:16px;font-weight:600;color:#48648e}
+.hero-copy{gap:16px}.hero-more{font-size:14px;padding:10px;color:#334c78}
+header.hero .wrap{padding-top:42px;gap:38px}
+header.hero::before{bottom:14%;background:linear-gradient(transparent 31px,rgba(87,140,214,.08) 32px),linear-gradient(90deg,transparent 31px,rgba(87,140,214,.08) 32px),radial-gradient(ellipse at 50% 15%,#f7fbff,#c7e0ff 75%);background-size:32px 32px,32px 32px,100% 100%}
+.landing-workspace{width:74%;max-width:1000px}
+.approved-preview{display:block;position:relative;min-height:0;aspect-ratio:744/437;border:0;border-radius:16px;overflow:hidden}
+.approved-preview>img{position:absolute;max-width:none;width:137.6344%;height:auto;left:-19.8925%;top:-96.1098%;display:block}
+#features{padding-top:52px;padding-bottom:24px}#features h2.t,#features p.tsub{text-align:start;margin-inline:0}
+#features h2.t{font-size:clamp(26px,3.4vw,40px)}
+.approved-features{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.approved-features .card{padding:28px;min-height:220px}.approved-features h3{font-size:22px}
+.feature-symbol{display:flex;width:56px;height:56px;border-radius:14px;align-items:center;justify-content:center;background:rgba(255,255,255,.65);font-size:32px;color:#487fd3;margin-bottom:20px}
+.source-line{font-size:15px;color:#64748b;text-align:center;padding:28px 10px}
+.cta-band{display:flex;align-items:center;justify-content:space-between;gap:24px;text-align:start;padding:40px 36px;margin-bottom:28px}.cta-band h2{font-size:clamp(24px,3vw,34px)}.cta-band p{margin-bottom:0}.cta-band .btn{flex-shrink:0}
+.compact-footer{display:flex;align-items:center;gap:24px;border-top:1px solid #e2e8f0;padding-top:22px;padding-bottom:22px;font-size:13px}.compact-footer p{margin-inline-end:auto}footer{padding:0;background:#fff}
+.pricing-page #pricing{position:relative;isolation:isolate;padding-top:56px;padding-bottom:20px}
+.pricing-page #pricing::before{content:"";z-index:-1;position:absolute;inset:0 0 auto;height:330px;background:linear-gradient(transparent 31px,rgba(87,140,214,.08) 32px),linear-gradient(90deg,transparent 31px,rgba(87,140,214,.08) 32px),radial-gradient(ellipse at 50% 0%,#f6fbff,#c7e0ff);background-size:32px 32px,32px 32px,100% 100%;border-radius:0 0 50% 50% / 0 0 20% 20%}
+.pricing-page h1{font-size:clamp(32px,4vw,48px);text-align:center;line-height:1.4}
+.pricing-page .plans{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding-top:20px}
+.pricing-page .plan{padding:26px 18px 18px;border:1px solid #e6f0ff;box-shadow:0 12px 28px rgba(79,130,208,.07);border-radius:20px;min-height:440px;text-align:center}
+.pricing-page .plan.hot{background:linear-gradient(135deg,#fff,#e9f3ff);border-color:#497cff;box-shadow:0 0 0 3px #edf5ff}
+.plan-icon{width:60px;height:48px;border-radius:7px 12px 12px;background:linear-gradient(135deg,#91beff,#cfe3ff);box-shadow:-8px -8px 0 #eef4fd;margin:6px auto 24px}
+.pricing-page .plan h3{font-size:24px}.pricing-page .plan .price{flex-direction:column;align-items:center;gap:0;margin-top:22px}.pricing-page .plan .price b{font-size:38px;font-family:"Cairo","IBM Plex Sans Arabic",sans-serif;font-weight:800}
+.pricing-page .plan .price span,.pricing-page .abill{font-size:13px}.pricing-page .plan ul{border-top:1px solid #e1ebf8;padding-top:18px;text-align:start}.pricing-page .plan ul li{border:0;font-size:14px;padding:8px 0}.pricing-page .plan .btn{border-radius:12px;border-color:#18181b;color:#18181b}.pricing-page .plan.hot .btn{color:white}.pricing-page .plan.hot .flag{display:none}
+.pricing-note{background:#eaf4ff;border-radius:14px;margin-top:24px;padding:20px 24px;color:#315786;font-size:14px}.pricing-note span{display:block;margin-top:4px}
+.pricing-page #faq{padding-top:24px;padding-bottom:28px}.faq-list{max-width:none;margin-top:24px;border:1px solid #e6edf8;border-radius:14px;padding:0 20px}.faq-list details{padding:18px 0;border-bottom:1px solid #edf2f8}.faq-list details:last-child{border:0}.faq-list p{color:#64748b;font-size:14px;padding-top:10px}
+#pricingMsg{display:block}#pricingMsg:empty{display:none}
+@media(max-width:1000px){.pricing-page .plans{grid-template-columns:repeat(2,minmax(0,1fr))}.landing-workspace{width:90%}}
+@media(max-width:700px){.landing-workspace{width:100%}.approved-features{grid-template-columns:1fr}.cta-band{flex-direction:column;align-items:flex-start;padding:28px}.compact-footer{flex-wrap:wrap;gap:14px}.pricing-page .plans{grid-template-columns:1fr}.pricing-page .plan{min-height:390px}.pricing-page h1{font-size:32px}.approved-preview{border-radius:10px}.hero-copy h1{font-size:40px}}
+
+</style>
+</head>
+<body>
+<nav class="top" id="topNav">
+  <div class="wrap">
+    <div class="brand"><img class="silk-logo" src="/silk-logo.png" alt="SILK" width="100" height="58">
+      <span data-i18n="tag">للدراسات</span></div>
+    <div class="nav-links">
+      <a href="/platform-landing.html#features" data-i18n="navFeat">المزايا</a>
+      <a href="/pricing.html" data-i18n="navPricing">الباقات</a>
+    </div>
+    <div class="grow">
+      <button id="langBtn" aria-label="Switch language">English</button>
+      <a class="btn sm cta-desktop" href="/platform.html" data-i18n="cta">ابدأ الآن</a>
+      <button id="menuBtn" aria-label="القائمة" aria-expanded="false" aria-controls="mobileMenu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobileMenu">
+    <a href="/platform-landing.html#features" data-i18n="navFeat">المزايا</a>
+    <a href="/pricing.html" data-i18n="navPricing">الباقات</a>
+    <a href="/platform.html" data-i18n="cta">ابدأ الآن</a>
+  </div>
+</nav>
+
+<main class="pricing-page"><section id="pricing"><div class="wrap">
+  <h1 class="t" data-i18n="prT">الباقات والأسعار</h1>
+  <p class="tsub" data-i18n="prS">قارن عدد الدراسات والمزايا، واختر الباقة المناسبة لمصنعك.</p>
+  <div class="bill-toggle" id="billToggle"><button id="billMonthly" class="on" type="button" aria-pressed="true">شهري</button><button id="billAnnual" type="button" aria-pressed="false">سنوي</button></div>
+  <div class="plans" id="plansGrid" aria-busy="true"></div><div id="pricingMsg" role="status"></div>
+  <div class="pricing-note"><b data-i18n="activation">تفعيل الاشتراكات وترقيتها عبر إدارة سلك.</b><span data-i18n="payment">الدفع الإلكتروني قيد الربط.</span></div>
+</div></section>
+<section id="faq"><div class="wrap"><h2 class="t" data-i18n="faqT">أسئلة قبل الاشتراك</h2><div class="faq-list">
+  <details open><summary data-i18n="q1">هل الدراسة المجانية تتجدد؟</summary><p data-i18n="a1">تمنحك الباقة الأساسية دراسة تجريبية واحدة مدى الحياة.</p></details>
+  <details><summary data-i18n="q2">كيف يُحسب الاشتراك السنوي؟</summary><p data-i18n="a2">اختر «سنوي» للاطلاع على التكلفة الشهرية المكافئة وإجمالي المبلغ السنوي قبل طلب الاشتراك.</p></details>
+  <details><summary data-i18n="q3">كيف أطلب ترقية الباقة؟</summary><p data-i18n="a3">اختر الباقة المناسبة وأرسل طلب الاشتراك، ثم تتولى إدارة سلك متابعة التفعيل معك.</p></details>
+</div></div></section>
+<div class="cta-band"><div><h2 data-i18n="helpT">جرّب المنصة بدراسة مجانية.</h2><p data-i18n="helpS">تعرّف على محتوى الدراسة قبل اختيار اشتراكك.</p></div><a class="btn" href="/platform.html" data-i18n="login">تسجيل الدخول</a></div></main>
+<footer><div class="wrap compact-footer"><img class="silk-logo" src="/silk-logo.png" alt="SILK"><p data-i18n="footer">سلك · دراسات تدعم قرارك.</p><a href="/pricing.html" data-i18n="navPricing">الباقات</a><a href="/platform.html" data-i18n="login">تسجيل الدخول</a></div></footer>
+<script src="/marketing.js" defer></script>
+</body>
+</html>

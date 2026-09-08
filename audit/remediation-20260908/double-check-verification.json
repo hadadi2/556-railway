@@ -1,0 +1,273 @@
+{
+  "date": "2026-09-08",
+  "baseline_sha": "8143125ea37660986d616007ca1df355ad332b80",
+  "branch": "fix/forensic-audit-20260908",
+  "state": "local uncommitted changes; no push, merge or deploy",
+  "additional_root_causes": 5,
+  "red_cases_before_fix": 7,
+  "new_regression_tests": 9,
+  "suites": [
+    {
+      "name": "double-check-full",
+      "command": "python3 -m pytest tests/ -q",
+      "tests": 4922,
+      "passed": 4859,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 63,
+      "xfailed": 0,
+      "duration_seconds": 235.263,
+      "junit_sha256": "d766c02c2c42a2ee6e176590538404fde52df5fdd33049c75753152e77bba1c7"
+    },
+    {
+      "name": "double-check-real-server",
+      "command": "SILK_RUN_E2E=1 python3 -m pytest tests/test_rung2_real_server.py tests/test_rung2_factory_language_flow.py tests/test_rung2_restart_drill.py tests/test_rung4_platform_real_bridge.py -q",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "duration_seconds": 186.587,
+      "junit_sha256": "8bcb8044ac22926869f01811c88162b5c97409dcb08caac9f3ae27110219ccad"
+    }
+  ],
+  "static_checks": {
+    "ruff_E9_F63_F7_F82": "passed",
+    "git_diff_check": "passed",
+    "researchCaption_in_web": "absent"
+  },
+  "github_main": {
+    "protected": false,
+    "sha": "8143125ea37660986d616007ca1df355ad332b80",
+    "source": "https://api.github.com/repos/hadadi2/556/branches/main"
+  },
+  "remaining_limits": [
+    "Browser localhost previously blocked; no new browser pass claimed",
+    "Railway live deployment configuration, invoices and paid AI capacity unverified",
+    "Independent semantic gold truth coverage and large-module decomposition remain partial"
+  ],
+  "original_evidence_checksums": {
+    "checked": 37,
+    "mismatches": 0
+  },
+  "changed_files_sha256": [
+    {
+      "path": ".env.example",
+      "sha256": "fe209b7663d123ba6a36319066570af45178215fafcec55d1c5624176bf08649"
+    },
+    {
+      "path": "SILK_REMEDIATION_20260908.md",
+      "sha256": "2c568a5d2341ef850af58cdb8bb78104cf4b09b345b0aba5abbccd904468de94"
+    },
+    {
+      "path": "api.py",
+      "sha256": "d25f8536c3f4037caec04c4550021710bb293d66a8b40a576af92f894d4636d1"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "sha256": "307248b24bc3cbf414d02eed2ed4cb7c6b289790c4d55ea38f6d848a3553713e"
+    },
+    {
+      "path": "docs/DEEP_RESEARCH_DECISIONS.md",
+      "sha256": "fac09098049bab1bcd2ed7204a05990f9c00b70f9776a2e7609a657f039c6b64"
+    },
+    {
+      "path": "docs/FORENSIC_BRANCH_PROTECTION_20260908.json",
+      "sha256": "7996304d629c148b7bb6e3799070aeaa457840978b32a5678df9e5129a8f55d2"
+    },
+    {
+      "path": "docs/LESSONS.md",
+      "sha256": "5df80b6a3233d300ea1658d8c8cb8d8ef82eab9df152d2b3bf33687b115c0a43"
+    },
+    {
+      "path": "samples/analysis_latest.json",
+      "sha256": "05e6db25e5eecf7d1a3847905c3113726a77e013d9b90ed077d1963f6f0a2457"
+    },
+    {
+      "path": "samples/report_full_latest.docx",
+      "sha256": "35af07fae52ef7b4a0e7df11cbc937ecd954ccf4bef815019789d2e0691aae0b"
+    },
+    {
+      "path": "samples/report_full_latest.md",
+      "sha256": "c1ce019668f9f7f2d28b85bc637b1cc72bc8df52137a586f201a0f0670de2b4f"
+    },
+    {
+      "path": "samples/research_report_latest.docx",
+      "sha256": "4208b407a86b7cbe2409bab497714b9908496d514780a0be1c9643765ce8f98a"
+    },
+    {
+      "path": "samples/research_report_latest.md",
+      "sha256": "c861ff4de750b28d879388fc47ae9daa2d242fba1293a855cf11fbf9be36d60a"
+    },
+    {
+      "path": "silk_ai_judge.py",
+      "sha256": "1e10893f8c1965624f3236deba6638578cc4ad4d89cc6e1fed9c164cbfe4795b"
+    },
+    {
+      "path": "silk_context.py",
+      "sha256": "2628a3a3576fee0d918de96feeace48626d3c8f5539c7ac0c45be306152c897f"
+    },
+    {
+      "path": "silk_data_layer.py",
+      "sha256": "4e48c2936f1384ee1ffecc949bdfa1440d6aaebe2caf7d4b9d4f3034a3dfc191"
+    },
+    {
+      "path": "silk_eurostat_agent.py",
+      "sha256": "234eee91cb0aac68859602a86446ab63270c35f661db9732a4ac356c7ff65d80"
+    },
+    {
+      "path": "silk_evals.py",
+      "sha256": "fd47317e6a467d18f2bbb38b291d1d64cd9b82c735b2fcc591bc18ad29c69db4"
+    },
+    {
+      "path": "silk_evidence_contract.py",
+      "sha256": "0b2d3db2c57a7f68264d647961cb91dcd41a1fc8eead2197ccf0d2020d824f49"
+    },
+    {
+      "path": "silk_hs_pipeline.py",
+      "sha256": "aa823fc38566dabf7fefbdf83e42957ab73fb9016c2aa760928e8de2fbf3ed71"
+    },
+    {
+      "path": "silk_janitor.py",
+      "sha256": "87460ae9f874f076b5e4d73d5dbf41f7d7631e7966b2b8c9bf48d4d0b9cc1118"
+    },
+    {
+      "path": "silk_llm_provider.py",
+      "sha256": "92f3efc2bd7d39db882c205522193852f31c7ea69d8e1d489f160a0733b73819"
+    },
+    {
+      "path": "silk_llm_runtime.py",
+      "sha256": "b9622efa5b4aaec8fccf4d9be19028a5d5cf1cf4ecea426570398f6a20901bf0"
+    },
+    {
+      "path": "silk_localprice_agent.py",
+      "sha256": "5c448a8b3ac26e55f474cb59f7a45a3c69672dc8f428a6cc2322cb1c8cef8637"
+    },
+    {
+      "path": "silk_market_analyst.py",
+      "sha256": "6c557f102bd7175549c6a18ead848c9af04f2517dd5d000788f230431bcd1c20"
+    },
+    {
+      "path": "silk_missions.py",
+      "sha256": "51db4d440284988a70da825fef9a1b48bd03543bb40d0b2560b7dab0cd01ce72"
+    },
+    {
+      "path": "silk_platform/engine_bridge.py",
+      "sha256": "1cf92cbb8dc13fc963286dccd36d161a7b1baba12080a38593f6a3c37183c4e7"
+    },
+    {
+      "path": "silk_platform/study_runtime.py",
+      "sha256": "c8a650c9af297b2796f75b3be0b7be3411ef0ea05ca922b788274a7bc1a0f2c4"
+    },
+    {
+      "path": "silk_pricing.py",
+      "sha256": "a3f4a27e3e4cdc241f15086910154fb991efeaecd9004869c757f54e22928d73"
+    },
+    {
+      "path": "silk_request_identity.py",
+      "sha256": "7fb72d3f8edb5b69fcccfc107c7fbe4e87348daa747089da2d003ea552bfa096"
+    },
+    {
+      "path": "silk_research.py",
+      "sha256": "77f9d21023c4815f93a50f05e1d384417d14f61692fd2d6b692be00b3851f034"
+    },
+    {
+      "path": "silk_research_pipeline.py",
+      "sha256": "7a08b542edc8bd815250b9944f4e8f53cf3dd5d090621ad573634d069c675cd1"
+    },
+    {
+      "path": "silk_storage.py",
+      "sha256": "e7bf46eafb98817206efd9c4722036e97494c39b904001762886baeff4e1e62e"
+    },
+    {
+      "path": "silk_trace.py",
+      "sha256": "ddf910f6970d6ce05c209ff7cd003677dfed3729e87f041982bf769bf9a8781c"
+    },
+    {
+      "path": "silk_trends_agent.py",
+      "sha256": "7086326a8776ccb558915b449d8831a86609ecafd8a86249df4f2dd1f52db036"
+    },
+    {
+      "path": "tests/test_audit_2026_08_27_fixes.py",
+      "sha256": "3a24065fb9742187e838dc358f1aa7349664918a3d38b0cd6109452a52cd4bb5"
+    },
+    {
+      "path": "tests/test_audit_2026_09_01_ext.py",
+      "sha256": "8c702a6267611c2cf33fe34086a7182de6c0bebce04883abb9a9706ed5a55a9e"
+    },
+    {
+      "path": "tests/test_command6_regression_budget_and_pricing.py",
+      "sha256": "39245211be38d07eeff10d24697b1cbbf93004108f78a79baa452e8f17c734ed"
+    },
+    {
+      "path": "tests/test_forensic_20260908_identity.py",
+      "sha256": "9e529313381421045a350de9b7567af208be9ab48456b8096eabcaf19647f323"
+    },
+    {
+      "path": "tests/test_forensic_20260908_runtime.py",
+      "sha256": "de5c6ba323400364576577ce2f3c1ea122ecee47c1a53856ea8954bad8dd66c4"
+    },
+    {
+      "path": "tests/test_forensic_20260908_sources.py",
+      "sha256": "eb5c1e9150369b99020baf1e52fde650d843247ee4ccac01080a12dea542721a"
+    },
+    {
+      "path": "tests/test_forensic_20260908_writer.py",
+      "sha256": "4dcd404b5ad9dc803473692f4574a0d713609a9e254e93c1a5784b8138c0bc3c"
+    },
+    {
+      "path": "tests/test_forensic_double_check.py",
+      "sha256": "b38bb1eab601a5b50502c08b64018ebe5702d31e9e80fb4266dd1c42bb30bfa0"
+    },
+    {
+      "path": "tests/test_lessons_enforcement.py",
+      "sha256": "aae9cd3fa74862bf0b7eed97c2e4f4f467ac0c6628059eac9a060a354665e9b7"
+    },
+    {
+      "path": "tests/test_p1_suggest_price.py",
+      "sha256": "f8a3a2713a4d12046499e9b498a7d0d042f5b8f9b7bc61e0e2ea1c89b15e5f62"
+    },
+    {
+      "path": "tests/test_platform_deep_real_path.py",
+      "sha256": "ad4dc777d3cfd9c011e34fa1c8ee0e3bb0516aa7eb0f265d581e0bc81d23ba8a"
+    },
+    {
+      "path": "tests/test_platform_study_runtime.py",
+      "sha256": "5942ab4a2861fe0f4af43cf793e5001290e4fe726f86015ffc9b86f1a23ac1d0"
+    },
+    {
+      "path": "tests/test_regression_registry.py",
+      "sha256": "b40ddd6074f1aac2f3de27d5d69d8d4bedcd5bb057f26f260ac91ae135ce1ef8"
+    },
+    {
+      "path": "tests/test_report_quality_upgrade.py",
+      "sha256": "402613dc1bbc960be842e3dcf24a228110cb6c4ea64f9d5e9791f2cbbb157396"
+    },
+    {
+      "path": "tests/test_resume_completed_run_with_failed_mission.py",
+      "sha256": "dc6cdbeab071e46270f2409c85d54be2e60f6916e0b0fbace6f4a441dff20e3d"
+    },
+    {
+      "path": "tests/test_resume_retries_failed_missions.py",
+      "sha256": "586fd938857fef5dda87af0d980b7eca3c4dfcf94d33e8886f0b6dcd6d8219fd"
+    },
+    {
+      "path": "tests/test_smoke.py",
+      "sha256": "cfe960e1d3ff14497cd8b3920e65eb995ee93ed705da5896290d56146368672f"
+    },
+    {
+      "path": "tests/test_thinking_block_stream_assembly.py",
+      "sha256": "d5e0b9ab0beb87cf25077c423ee3921d4a0f2d95bc998106cb67ef3ad2548488"
+    },
+    {
+      "path": "tests/test_wave6_report_writer.py",
+      "sha256": "c2be54f20fe96649f489aebc1adfa8eb3d84eeec90ea99ed99bc8a1d1c0ba7ea"
+    },
+    {
+      "path": "tests/test_wave_p6_review_fixes.py",
+      "sha256": "278b2d506e4df0e4512ee86e98d83f3cc32e53e8417f153191b8d5ff272e3a93"
+    }
+  ],
+  "manifest_format_version": 2
+}

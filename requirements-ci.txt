@@ -1,0 +1,33 @@
+# أدوات CI مثبَّتة بإصدارات محدّدة — pinned CI-only tooling.
+#
+# **لماذا (تدقيق 2026-08-27، البند ١٦).** `requirements.txt` مثبَّت عمداً بإصدارات
+# محدّدة (M0) كي يكون البناء قابلاً لإعادة الإنتاج، لكن وظيفتَي CI كانتا تُثبِّتان
+# `pytest httpx pymupdf` **بلا تثبيت**: أي إصدار جديد من pytest يستطيع تحمير
+# الحزمة أو تغيير دلالاتها بصفر تغيير في هذا الريبو — عطلٌ يبدو انحداراً في
+# شيفرتنا وليس كذلك. القاعدة نفسها التي تحكم اعتماديات الإنتاج تحكم أدوات
+# التحقّق منها.
+#
+# **ليست اعتماديات إنتاج:** لا تُثبَّت في `Dockerfile` ولا تصل النشر — فقط
+# `.github/workflows/*.yml`. الترقية قرارٌ صريح كما في requirements.txt.
+#
+# CI-only, pinned like the production requirements: an unpinned pytest could
+# turn CI red (or change its semantics) with zero repo changes.
+
+# مُشغّل الحزمة الهرمتية — الإصدار المُثبَت أخضرَ عليه 3,999 اختباراً.
+pytest==9.1.1
+
+# عميل HTTP الذي يحتاجه `fastapi.testclient.TestClient` (اختبارات فقط).
+httpx==0.28.1
+
+# **`pymupdf` صارت تبعيةَ إنتاج** (تدقيق 2026-08-27): موضعُها `requirements.txt`
+# لا هنا، فوظيفةُ `test` الهرمتية تحصل عليها من هناك مثل الإنتاج تماماً. كانت
+# مستثناةً عمداً حين كانت تبعيةَ e2e وحدها؛ زال السبب حين صار حارسُ اتجاه
+# الأقواس يعمل على النشر. pymupdf now ships in requirements.txt (production).
+
+# R0 (تدقيق 2026-09-01، CI-1): بوّابتان تسبقان الحزمة الهرمتية في `ci.yml` —
+# `ruff` للأسماء غير المعرَّفة والأخطاء النحوية حصراً (E9,F63,F7,F82؛ لا أسلوب،
+# ولا ملفّ ضبط في الريبو)، و`pip-audit` لتدقيق ثغرات اعتماديات الإنتاج المثبَّتة.
+# أداتا CI لا إنتاج: لا تصلان `requirements.txt` ولا `Dockerfile`.
+# R0 (audit 2026-09-01): syntax/undefined-name gate + dependency audit, CI-only.
+ruff==0.16.5
+pip-audit==2.10.1

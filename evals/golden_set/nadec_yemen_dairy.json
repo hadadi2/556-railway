@@ -1,0 +1,23 @@
+{
+  "case": "nadec_yemen_dairy",
+  "confidence": 0.5,
+  "key_figures": {
+    "decision.confidence": null,
+    "decision.verdict": null,
+    "dr.confidence": 0.5,
+    "dr.verdict": "PRELIMINARY GO — مبدئي إيجابي"
+  },
+  "section_count": 11,
+  "unsupported_report_numbers": [
+    401.2,
+    401.4,
+    402.0,
+    2500.0
+  ],
+  "verdict": "PRELIMINARY GO — مبدئي إيجابي",
+  "verification_items": {
+    "claims_none": false,
+    "count": 3,
+    "sufficiency_present": false
+  }
+}
