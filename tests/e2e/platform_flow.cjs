@@ -628,7 +628,7 @@ async function main() {
     await page.waitForSelector(".veil .dlg", { timeout: 5000 });
     await page.click(".veil .btn.go");
     await page.waitForFunction(
-      () => /حصّتك/.test(document.getElementById("appMsg").innerText || ""),
+      () => /حصّتك/.test(document.querySelector(".veil .dialog-error")?.innerText || ""),
       { timeout: 15000 });
     ok("factory_user_quota_enforced_arabic");
     // نافذة الإطلاق تبقى مفتوحة عند الرفض (الخطأ يُعرض والحوار قائم) —

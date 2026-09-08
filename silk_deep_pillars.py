@@ -478,6 +478,10 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
     # يذكرها رقماً — حين يكون المهيمنُ سعودياً فحصتُه المُهيكلة (كومتريد،
     # نفس التشغيلة) هي الحصة السعودية بعينها؛ النثرُ احتياطٌ لا بديل.
     saudi_share = _numeric(trade, "saudi_share_pct")
+    if saudi_share is None:
+        # Same structured source used by build_components, even when the
+        # Saudi supplier is not the dominant supplier (Factory A study 1).
+        saudi_share, _ = _saudi_share_from_competitors(comp)
     _incumbent_saudi = bool(
         s_partner and not (s_partner.lower().startswith("unclassified")
                            or s_partner.isdigit())
@@ -745,4 +749,10 @@ def promote_engine_verdict(verdict: dict,
     # تحفّظَ عدمِ الاختلاق من التقرير المُسلَّم. سببُ المحرّك يُحفَظ في حقلٍ
     # خاصّ ويُعرَض في قسم أساس الحكم (مراجعةٌ ذاتية §٥٨).
     v["decision_why"] = (decision or {}).get("why") or ""
+    # Carry the canonical panel's gaps to the writer; do not recalculate them.
+    v["decision_missing_components"] = list(dict.fromkeys(
+        str(component)
+        for pillar in ((decision or {}).get("pillars") or {}).values()
+        if isinstance(pillar, dict)
+        for component in (pillar.get("missing") or [])))
     return v
