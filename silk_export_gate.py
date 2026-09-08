@@ -265,11 +265,20 @@ _FACTORY_MESSAGE_EN = (
 # ولا يُذكَر فيها اسمُ الفحص ولا مصطلحُ كود. والقفلُ يفرض التغطية: فحصٌ
 # حاجبٌ جديد بلا جملةٍ يُحمِّر السويت (`tests/test_gate_client_reasons.py`).
 _CLIENT_REASONS: dict[str, dict[str, str]] = {
+    "pillar_narrative_sync": {
+        "ar": "توجد معلومات في نص التقرير لا تتطابق مع القياسات المعتمدة "
+              "في ملخص القرار. يُغلقه: إعادة توليد التقرير؛ وإن تكرر، "
+              "أرسل رقم الدراسة للدعم لمراجعة البيانات.",
+        "en": "The report narrative does not match the measurements used "
+              "in the decision summary. Fix: regenerate the report; if this "
+              "recurs, send the study ID to support for a data review."},
     "agent_failed": {
         "ar": "أحدُ مصادر البحث تعذّر تشغيله في هذه التشغيلة، فبقيت جوانبُ "
-              "من الدراسة بلا سند. يُغلقه: إعادة التوليد.",
+              "من الدراسة بلا سند. يُغلقه: التحقق من توفر المصدر ثم إعادة "
+              "تشغيل البحث؛ إعادة تنزيل الملف وحدها لا تكمل البيانات.",
         "en": "One of the research sources failed to run, leaving parts of "
-              "the study unsupported. Fix: regenerate."},
+              "the study unsupported. Fix: check source availability and "
+              "rerun the research; downloading again cannot fill missing data."},
     "analyst_layer_failed": {
         "ar": "طبقةُ التحليل الشامل لم تكتمل، فالتقريرُ بلا الربط الذي يحوّل "
               "الأرقام إلى قرار. يُغلقه: إعادة التوليد.",

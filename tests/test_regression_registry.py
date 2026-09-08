@@ -4571,6 +4571,12 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    233: lambda: (
+        _needles("tests/test_platform_report_recovery.py",
+                 "test_writer_receives_the_same_missing_components_as_the_decision_panel",
+                 "test_real_numeric_resolver_is_used_for_ambiguous_image")(),
+        _needles("tests/e2e/platform_dialog_recovery.cjs", "scrollable", "agent_failed")(),
+        _needles("tests/test_lessons_enforcement.py", '(233, ')()),
     232: _guard_forensic_raw_evidence,
     231: lambda: (
         _needles("tests/test_platform_study_runtime.py",

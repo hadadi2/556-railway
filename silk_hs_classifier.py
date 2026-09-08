@@ -400,7 +400,8 @@ def classify_general(product: str, hs_code: str | None = None,
                      ingredients: list | None = None,
                      category: str | None = None,
                      allow_claude: bool = False,
-                     instruction: str = "") -> dict:
+                     instruction: str = "",
+                     label_attributes: list | None = None) -> dict:
     """التصنيفُ العام — عقدُ الموجة ٣: مرشّحون من معرفة النموذج الكاملة
     بنظام HS (لا بذرتنا الجزئية وحدها)، مصادَقٌ عليهم ببوابةٍ حتمية واحدة،
     بثلاث درجات نتيجة صريحة.
@@ -471,15 +472,30 @@ def classify_general(product: str, hs_code: str | None = None,
             candidates = _dedupe_candidates(candidates)
             top = _clearly_auto(candidates)
 
+    plausible = [c for c in candidates
+                if (c.get("overlap") or 0.0) >= _CANDIDATE_MIN_OVERLAP]
+    if plausible and label_attributes:
+        # Keep eligibility separate from siblings added for displaying ranges.
+        # The existing opt-in resolver uses the already metered image only.
+        import silk_hs_attributes
+        resolved = silk_hs_attributes.resolve_by_attribute(
+            product, plausible, label_attributes=label_attributes,
+            allow_web=False, band_context=_public_candidates(plausible, product))
+        if resolved.get("hs6"):
+            return {"tier": "auto", "hs6": resolved["hs6"],
+                    "confidence": resolved.get("confidence", 0.0),
+                    "candidates": _public_candidates(plausible, product),
+                    "message": "✓ صُنّف من خصائص العبوة",
+                    "source": "image_attribute", "used_llm": used_llm}
+        if resolved.get("readings"):
+            # A measured conflict cannot be overruled by a lexical match.
+            top = None
     if top is not None:
         return {"tier": "auto", "hs6": top["hs6"],
                "confidence": top.get("overlap") or 0.0,
                "candidates": _public_candidates(candidates[:3], product),
                "message": "✓ صُنّف تلقائياً", "source": top["source"],
                "used_llm": used_llm}
-
-    plausible = [c for c in candidates
-                if (c.get("overlap") or 0.0) >= _CANDIDATE_MIN_OVERLAP]
     if plausible:
         return {"tier": "candidates", "hs6": None, "confidence": 0.0,
                "candidates": _public_candidates(plausible[:3], product),

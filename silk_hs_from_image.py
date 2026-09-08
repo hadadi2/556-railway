@@ -82,11 +82,14 @@ def classify_extraction(read: dict, *, allow_claude: bool = True) -> dict:
     extraction = read.get("extraction") or {}
 
     import silk_hs_classifier as hsc
+    image_context = {}
+    if extraction.get("attributes"):
+        image_context["label_attributes"] = extraction["attributes"]
     out = hsc.classify_general(
         product,
         ingredients=extraction.get("ingredients") or None,
         category=extraction.get("category_hint") or None,
-        allow_claude=allow_claude)
+        allow_claude=allow_claude, **image_context)
 
     # **الدرجة `auto` وحدها.** `candidates`/`manual` كلاهما «غير محسوم»، وقرارُ
     # المالك أن غيرَ المحسوم يُطلَب فيه الرمز لا تُعرَض فيه قائمة.

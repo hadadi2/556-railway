@@ -77,6 +77,9 @@ jobs:
           npm install -g playwright@1.56.1
           npx --yes playwright@1.56.1 install --with-deps chromium
 
+      - name: Check platform dialogs and PDF refusal at phone and desktop sizes
+        run: NODE_PATH=$(npm root -g) node tests/e2e/platform_dialog_recovery.cjs
+
       - name: Run rungs 2-3 (real server + real browser)
         env:
           SILK_RUN_E2E: "1"

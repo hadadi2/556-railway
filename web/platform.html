@@ -463,15 +463,29 @@
 
   /* ── النوافذ · dialogs ── */
   .veil{position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:40;
-    display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;
-    overflow-y:auto}
+    display:flex;align-items:center;justify-content:center;padding:16px;
+    overflow:hidden}
   .dlg{background:var(--panel);border-radius:var(--r-lg);width:100%;
-    max-width:530px;box-shadow:0 20px 48px rgba(17,24,39,.24)}
+    max-width:530px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);
+    display:flex;flex-direction:column;min-width:0;overflow:hidden;
+    box-shadow:0 20px 48px rgba(17,24,39,.24)}
   .dlg h3{font-size:var(--fs-sect);font-weight:700;padding:var(--sp-4) var(--sp-5);
     border-bottom:1px solid var(--line);display:flex;justify-content:space-between;
-    align-items:center}
-  .dlg .bd{padding:16px 20px 20px}
-  .dlg .ft{padding:0 20px 20px;display:flex;gap:8px;justify-content:flex-start}
+    align-items:center;gap:12px;flex-shrink:0;overflow-wrap:anywhere}
+  .dlg .bd{padding:16px 20px 20px;min-height:0;overflow:auto;
+    overscroll-behavior:contain;overflow-wrap:anywhere}
+  .dlg .ft{padding:12px 20px;display:flex;gap:8px;justify-content:flex-start;
+    flex-shrink:0;flex-wrap:wrap;border-top:1px solid var(--line)}
+  .dlg .two>*{min-width:0}
+  .dlg .dialog-error{white-space:pre-line;margin-bottom:12px}
+  body.dialog-open{overflow:hidden}
+  @media(max-width:520px){
+    .veil{padding:8px}
+    .dlg{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+    .dlg .bd{padding:12px}
+    .dlg h3{padding:12px;font-size:16px}
+    .dlg .ft{padding:10px 12px}
+  }
   /* جداول داخل النوافذ تلتفّ بدل أن تُقصّ من الحافة (جولة 2026-08-17: عمود
      الثقة في نافذة التقرير كان مبتوراً) — .tbl الصفحة يبقى كما هو. */
   .dlg .tbl th{white-space:normal}
@@ -1456,12 +1470,15 @@ function dialog(title, bodyHtml, onSubmit, submitLabel, reload) {
   _titleEl.textContent = title;
   veil.querySelector(".cancel").textContent = ar_en("إلغاء", "Cancel");
   veil.querySelector(".bd").innerHTML = bodyHtml;
+  veil.querySelector(".bd").insertAdjacentHTML("afterbegin",
+    '<div class="msg err dialog-error" role="alert" tabindex="-1" hidden></div>');
   veil.querySelector(".btn.go").textContent = submitLabel || ar_en("حفظ", "Save");
   /* التركيز يعود إلى الزرّ الذي فتح النافذة عند الإغلاق — كان يسقط إلى
      أول الصفحة فيضيع موضع مستخدم لوحة المفاتيح. */
   const opener = document.activeElement;
   const close = () => {
     veil.remove();
+    if (!document.querySelector("#dlgHost .veil")) document.body.classList.remove("dialog-open");
     if (opener && document.contains(opener) && opener.focus) opener.focus();
   };
   /* يُعلَّق على العنصر كي يستدعيه مستمع Escape العام بدل `remove()` الخام —
@@ -1481,7 +1498,7 @@ function dialog(title, bodyHtml, onSubmit, submitLabel, reload) {
       if (reload === "studies") await loadStudies();
       else if (reload !== false) await loadAll();
     }
-    catch (e) { tell(e.message || ar_en("تعذّر التنفيذ", "Action failed"), "err"); go.disabled = false; }
+    catch (e) { showActionError(go, e.message || ar_en("تعذّر التنفيذ", "Action failed")); go.disabled = false; }
   };
   /* حبسُ التركيز داخل النافذة: بلا هذا يخرج Tab إلى الصفحة خلفها بينما
      الحجاب يغطّيها — تنقّلٌ في محتوى لا يراه المستخدم (WCAG 2.4.3). */
@@ -1499,6 +1516,7 @@ function dialog(title, bodyHtml, onSubmit, submitLabel, reload) {
     }
   });
   $("dlgHost").appendChild(veil);
+  document.body.classList.add("dialog-open");
   const first = veil.querySelector("input,select,textarea");
   if (first) first.focus();
   else { const b = veil.querySelector(".btn.go"); if (b) b.focus(); }
@@ -1506,6 +1524,17 @@ function dialog(title, bodyHtml, onSubmit, submitLabel, reload) {
 }
 
 let _dlgSeq = 0;
+
+function showActionError(origin, message) {
+  const veil = origin.closest(".veil");
+  const box = veil && veil.querySelector(".dialog-error");
+  if (!box || !document.contains(box)) { tell(message, "err"); return; }
+  box.textContent = message;
+  box.hidden = false;
+  box.classList.add("on");
+  box.focus();
+  box.scrollIntoView({block: "nearest"});
+}
 
 /* Escape يغلق أعلى نافذة مفتوحة — سلوك المنصّات القياسي (جولة 2026-08-17:
    كان الزر بلا أثر لأن النوافذ div.veil لا <dialog> أصلية). */
@@ -3309,8 +3338,9 @@ function viewReportBtn(s) {
          تُظهر &amp; حرفياً في اسم منتجٍ يحوي رموزاً). */
       const veil = dialog(ar_en("تقرير الدراسة ", "Study report ") +
              ltr("#" + s.id) + " — " + (s.product || ""), html,
-             async () => {}, ar_en("إغلاق", "Close"));
+             async () => {}, ar_en("إغلاق", "Close"), false);
       veil.querySelector(".dlg").classList.add("wide");
+      veil.querySelector(".ft").prepend(pdfBtn(s.id));
       /* حقن مخطط الأعمدة بعد الفتح (SVG عبر DOM — نفس مُصيِّر نظرة عامة). */
       const chartHost = veil.querySelector('[data-role="rep-chart"]');
       if (chartHost)
@@ -3357,7 +3387,7 @@ function pdfBtn(id) {
         else if (det && det.blocked_checks && det.blocked_checks.length)
           msg += " [" + ar_en("للدعم: ", "support: ") +
                  det.blocked_checks.join("، ") + "]";
-        tell(msg, "err");
+        showActionError(b, msg);
         return;
       }
       const blob = await r.blob();
@@ -3367,8 +3397,8 @@ function pdfBtn(id) {
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(u), 4000);
     } catch (e) {
-      tell(ar_en("تعذّر تنزيل التقرير: ", "Could not download the report: ") +
-           e.message, "err");
+      showActionError(b, ar_en("تعذّر تنزيل التقرير: ", "Could not download the report: ") +
+           e.message);
     } finally { b.disabled = false; }
   };
   return b;

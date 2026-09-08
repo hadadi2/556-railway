@@ -1210,6 +1210,7 @@ def create_app():
         from silk_market_ranker import _world_markets_enabled
         # أعلام Wave 1 العلنية — الواجهة تُفعّل خطوة التصنيف/الاستشارة بحسبها.
         return _json({"image_intake": intake.enabled(),
+                      "hs_image_attributes": __import__("silk_hs_attributes").enabled(),
                       "world_markets": _world_markets_enabled(),
                       "hs_classifier": hsc.enabled(),
                       "producer_advisory": _producer_advisory_enabled(),

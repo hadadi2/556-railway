@@ -745,4 +745,10 @@ def promote_engine_verdict(verdict: dict,
     # تحفّظَ عدمِ الاختلاق من التقرير المُسلَّم. سببُ المحرّك يُحفَظ في حقلٍ
     # خاصّ ويُعرَض في قسم أساس الحكم (مراجعةٌ ذاتية §٥٨).
     v["decision_why"] = (decision or {}).get("why") or ""
+    # Carry the canonical panel's gaps to the writer; do not recalculate them.
+    v["decision_missing_components"] = list(dict.fromkeys(
+        str(component)
+        for pillar in ((decision or {}).get("pillars") or {}).values()
+        if isinstance(pillar, dict)
+        for component in (pillar.get("missing") or [])))
     return v

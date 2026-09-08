@@ -3131,6 +3131,8 @@ _GAP_SENTENCE_TOKENS = ("غير مرصود", "غير مرصودة", "لم يُر
                         "لم تُرصَد", "لم ترصد", "غير متاح", "غير محسوب",
                         "غير محسوبة", "لم يُحدَّد", "لم يحدد", "لم يحدَّد",
                         "يتعذر الحساب", "يتعذّر الحساب",
+                        "لا يمكن حساب", "لعدم رصد", "قبل رصد",
+                        "المعطى الناقص:",
                         # موجة سدّ الفجوات الثانية: مرايا إنجليزية — جملة
                         # فجوةٍ إنجليزية صادقة كانت تُفشِل الفحص زوراً.
                         "not available", "not calculated", "not computed",
@@ -3151,7 +3153,12 @@ def _narrated_outside_gap_sentences(text: str, needles: tuple) -> bool:
     مرصود» جملةً واحدة. المطابقة عبر المُطبِّع الواحد `_norm_ar`."""
     n_needles = tuple(_norm_ar(n) for n in needles)
     gaps = _norm_gap_tokens()
-    for seg in re.split(r"[.\n؟!؛]", _norm_ar(text)):
+    # A decimal point is not a sentence boundary; headings name an indicator
+    # without asserting that it was measured. Keep observed prose checked.
+    for seg in re.split(r"(?<!\d)\.|\.(?!\d)|[\n؟!؛]", _norm_ar(text)):
+        heading = seg.strip().strip("#* :|").strip()
+        if heading in n_needles:
+            continue
         if (any(n in seg for n in n_needles)
                 and not any(g in seg for g in gaps)):
             return True

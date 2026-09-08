@@ -1021,6 +1021,14 @@ def _summarize_verdict(verdict: dict, gap_sources: list | None = None) -> str:
         f"عدد المؤشرات المرصودة المساهمة: {len(v.get('contributing_findings') or [])}",
         f"الفجوات المعلنة: {gaps}",
     ]
+    if v.get("decision_why"):
+        parts.append(f"أساس قرار المحرك: {v['decision_why']}")
+    if v.get("decision_missing_components"):
+        from silk_decision import _parts_ar
+        parts.append("قياسات لم يعتمدها محرك القرار: " +
+                     _parts_ar(v["decision_missing_components"]) +
+                     "؛ لا تصفها في المتن بأنها مرصودة أو محسوبة، "
+                     "ولا تستنتج قيماً لها من مسودة المحلل")
     if ai.get("reasoning"):
         parts.append(f"تعليل التوليف: {ai['reasoning']}")
     return " | ".join(parts)
