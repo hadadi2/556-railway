@@ -478,6 +478,10 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
     # يذكرها رقماً — حين يكون المهيمنُ سعودياً فحصتُه المُهيكلة (كومتريد،
     # نفس التشغيلة) هي الحصة السعودية بعينها؛ النثرُ احتياطٌ لا بديل.
     saudi_share = _numeric(trade, "saudi_share_pct")
+    if saudi_share is None:
+        # Same structured source used by build_components, even when the
+        # Saudi supplier is not the dominant supplier (Factory A study 1).
+        saudi_share, _ = _saudi_share_from_competitors(comp)
     _incumbent_saudi = bool(
         s_partner and not (s_partner.lower().startswith("unclassified")
                            or s_partner.isdigit())

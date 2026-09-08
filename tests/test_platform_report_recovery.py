@@ -2,6 +2,29 @@
 import pytest
 
 
+def test_saudi_share_matches_between_panel_and_components_when_saudi_is_not_dominant():
+    import silk_deep_pillars as dp
+    dr = {"missions": {"trade_flow": {"failed": True, "findings": []},
+        "competitors": {"failed": False, "findings": [{
+            "value": {"year": 2025, "hhi": 3207, "top_suppliers": [
+                {"partner": "Turkey", "share": 40.85},
+                {"partner": "Saudi Arabia", "share": 1.4}]},
+            "source": "UN Comtrade (mirror)", "confidence": 0.6, "note": ""}]}}}
+    shown = dp.build_components(dr)["saudi_position"]
+    inputs = dp.build_pillar_inputs(dr)["market_attractiveness"]
+    assert shown["value"] == 1.4
+    assert inputs["saudi_share_pct"] == shown["value"]
+
+
+def test_missing_saudi_row_does_not_become_a_zero_share():
+    import silk_deep_pillars as dp
+    dr = {"missions": {"competitors": {"findings": [{"value": {
+        "year": 2025, "hhi": 3207, "top_suppliers": [
+            {"partner": "Turkey", "share": 40.85}]},
+        "source": "UN Comtrade", "confidence": 0.9, "note": ""}]}}}
+    assert dp.build_pillar_inputs(dr)["market_attractiveness"]["saudi_share_pct"] is None
+
+
 def test_writer_receives_the_same_missing_components_as_the_decision_panel():
     import silk_ai_judge as writer
     import silk_deep_pillars as pillars
