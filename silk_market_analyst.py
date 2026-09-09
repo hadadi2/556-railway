@@ -219,7 +219,8 @@ def analyze_market(market: MarketRef, product: str,
     """
     from silk_missions import _product_card_context
 
-    tagged = _tag_source_reports(mission_reports)
+    from silk_search_index_evidence import normalized_reports
+    tagged = _tag_source_reports(normalized_reports(mission_reports))
     ctx_parts = []
     if correlation_threads:
         ctx_parts.append(json.dumps(correlation_threads, ensure_ascii=False,

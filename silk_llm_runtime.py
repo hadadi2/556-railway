@@ -374,7 +374,10 @@ def _tool_trends_context(args: dict, ctx: dict) -> list[DataPoint]:
     for it in data.get("regions", []):
         dps.append(DataPoint({"region": it["label"], "interest": it["value"]},
                              "Google Trends", conf,
-                             f"توزيع إقليمي لاهتمام '{term}' (geo={geo_txt})", _today()))
+                             f"مؤشر اهتمام بحث نسبي لـ'{term}' (geo={geo_txt})؛ "
+                             "100 هو أعلى اهتمام نسبي، وليس نسبة من البحث أو المشترين. "
+                             "غياب مناطق أخرى لا يثبت غياب البحث أو الطلب فيها.",
+                             _today(), unit="relative_search_interest_index_0_100"))
     if not dps:
         return [DataPoint(None, "Google Trends", 0.0,
                           data.get("note") or "لا سياق اتجاهات مرتبط", _today())]

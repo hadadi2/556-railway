@@ -2363,12 +2363,16 @@ def _tag_stale_years(text: "str | None",
         if _era_end > end and (_era_end >= len(s) or not s[_era_end].isalpha()):
             end = _era_end
         # لا تُكرِّر إن كان الوسم مكتوباً أصلاً بعد السنة (نافذة ٤٠ محرفاً).
-        if _STALE_TAG in s[end:end + 40]:
+        if (_STALE_TAG in s[end:end + 80] or
+                re.search(r"أحدث\s+(?:نسخة|بيانات)\s+متاحة", s[end:end + 80])):
             tagged.add(yr)
             continue
         tagged.add(yr)
         out.append(s[last:end])
-        out.append(f" — بيانات {yr} ({_STALE_TAG})")
+        if re.search(rf"بيانات\s+{yr}[مهـ]*$", s[max(0, start - 20):end]):
+            out.append(f" ({_STALE_TAG})")
+        else:
+            out.append(f" — بيانات {yr} ({_STALE_TAG})")
         last = end
     out.append(s[last:])
     return "".join(out)
@@ -3089,6 +3093,7 @@ def build_view(result: dict, lang: str = "ar") -> dict:
     import silk_i18n
     lang = silk_i18n.normalize(lang)
     markets = result.get("markets") or []
+    from silk_narrative import internal_ar
     top = markets[0] if markets else None
     decision = _decision(top)
     # حكم واحد لا حكمان (إصلاح مراجعة Stage 5): عند وجود قرار المحرك الموزون
@@ -3148,7 +3153,8 @@ def build_view(result: dict, lang: str = "ar") -> dict:
             # §10.3: سطر مصدر تحت كل رقم — مبني في القالب نفسه فيستحيل
             # بنيوياً ظهور رقم بلا نسب في أي مشتق (docx/نص/لوحة).
             "components_detail": [
-                {"name": name, "value": d.get("value"),
+                {"name": name, "display_name": internal_ar(name) if lang == "ar" else name.replace("_", " "),
+                 "value": d.get("value"),
                  "source": d.get("source"),
                  "confidence": d.get("confidence"),
                  "retrieved_at": d.get("retrieved_at", ""),

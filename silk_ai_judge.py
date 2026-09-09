@@ -1154,7 +1154,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                 lang: str = "ar",
                 product_card: dict | None = None,
                 on_attempt: "Callable[[], None] | None" = None,
-                seed_draft: str | None = None) -> str | None:
+                seed_draft: str | None = None,
+                revision_draft: str | None = None) -> str | None:
     """اكتب تقرير البحث العميق — the 11-section international-structure report
     (وكيل الكتابة، الموجة ١٠ — أسلوب Euromonitor/ESOMAR).
 
@@ -1937,6 +1938,13 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         _review_tail = ("\n\nملاحظات المراجع من دورة سابقة — عالجها في هذه "
                         "المسوّدة:\n"
                         + _isolate("\n".join(f"- {n}" for n in review_notes)))
+        if revision_draft:
+            _review_tail += ("\nهذه هي المسودة التي تخصها الملاحظات. نقّحها هي، "
+                "ولا تبدأ تقريراً آخر من الصفر. احتفظ بالأقسام والجداول الصحيحة. "
+                "احذف تكرار الأرقام والأسباب، وقسّم الجمل الطويلة. اجعل الخلاصة "
+                "قراراً وسبباً وخطوة تالية، والشروط إجراءات محددة، والمخاطر أثراً "
+                "وطريقة لتقليله. أعد التقرير الكامل المنقح فقط.\n" +
+                _isolate(revision_draft))
     user = _stable_user + _review_tail
     # حارس `_call` يقيس startswith على هذه البادئة — نداءات المسوّدة
     # والتصعيد والإكمال والتنقيح كلها تبدأ بها فتُكاش؛ غيرها لا يتأثر.
@@ -2736,7 +2744,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             trace_id=trace_id, hs_code=hs_code,
                             hs_confirmation=hs_confirmation, style=style,
                             lang=lang, product_card=product_card,
-                            on_attempt=lambda: _stage("writer"))
+                            on_attempt=lambda: _stage("writer"),
+                            revision_draft=draft)
         if fixed:
             if _writer_incomplete(fixed, lang):
                 notes = list(notes) + ["لم يكتمل التنقيح؛ حُفظت المسوّدة الكاملة السابقة بملاحظاتها."]
