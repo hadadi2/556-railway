@@ -405,7 +405,8 @@ class AnthropicProvider(LLMProvider):
     def complete(self, system, user, max_tokens, model, timeout,
                  stream: bool = False,
                  cache_prefix_chars: "int | None" = None,
-                 effort: "str | None" = None, thinking_disabled: bool = False):
+                 effort: "str | None" = None, thinking_disabled: bool = False,
+                 response_schema: "dict | None" = None):
         _last_error.set(None)       # نظافة الحالة من أول سطر — لا تسريب بين نداءات
         _last_stop_reason.set(None)
         key = self._key()
@@ -446,6 +447,10 @@ class AnthropicProvider(LLMProvider):
                     payload["output_config"] = {"effort": effort}
                 if thinking_disabled:
                     payload["thinking"] = {"type": "disabled"}
+            if response_schema is not None and str(model).lower().startswith(
+                    ("claude-haiku-4-5", "claude-sonnet-5")):
+                payload.setdefault("output_config", {})["format"] = {
+                    "type": "json_schema", "schema": response_schema}
             if _supports_sampling_params(model):
                 payload["temperature"] = 0
             abort_err = None

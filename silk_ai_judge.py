@@ -257,7 +257,8 @@ def _writer_call_kw(thinking_disabled: bool = False) -> dict:
 def _call(system: str, user: str, max_tokens: int = 1600,
           model: str | None = None, timeout: float | None = None,
           stream: bool = False, effort: str | None = None,
-          thinking_disabled: bool = False) -> str | None:
+          thinking_disabled: bool = False,
+          response_schema: dict | None = None) -> str | None:
     """نداء Messages API — one Claude call; None on missing key / any failure.
 
     model/timeout اختياريان: للمهام الخفيفة (فلترة الكيانات) مرّر _FAST_MODEL
@@ -282,6 +283,8 @@ def _call(system: str, user: str, max_tokens: int = 1600,
         _kw["effort"] = effort
     if thinking_disabled and _accepts_kwarg(_prov.complete, "thinking_disabled"):
         _kw["thinking_disabled"] = True
+    if response_schema is not None and _accepts_kwarg(_prov.complete, "response_schema"):
+        _kw["response_schema"] = response_schema
     if stream and _accepts_kwarg(_prov.complete, "stream"):
         _kw["stream"] = True
     _pref = _cache_prefix_text.get()
@@ -972,6 +975,9 @@ def _traced_call(trace_id: str | None, stage: str, timeout: float,
         import silk_trace
         event = {"kind": "report_call", "stage": stage, "timeout": timeout,
                  "elapsed_ms": elapsed_ms, "success": bool(result)}
+        from silk_llm_provider import last_stop_reason
+        event["stop_reason"] = last_stop_reason()
+        event["output_chars"] = len(result) if isinstance(result, str) else 0
         if err:
             event["error_type"] = err.get("type")
             event["error_message"] = err.get("message")
@@ -2579,10 +2585,16 @@ def review_report(draft: str, mission_reports: dict,
              "قدّم التناقضات والأرقام غير المسندة على الملاحظات الأسلوبية؛ "
              "لا تقتبس فقرات طويلة ولا تعِد كتابة التقرير في الرد.\n")
     user += _user_steer("reviewer")
+    schema = {"type": "object", "properties": {
+        "approved": {"type": "boolean"},
+        "issues": {"type": "array", "items": {"type": "string"}},
+        "blocking": {"type": "array", "items": {"type": "string"}}},
+        "required": ["approved", "issues", "blocking"], "additionalProperties": False}
+    review_kw = {"response_schema": schema} if _accepts_kwarg(_call, "response_schema") else {}
     raw = _traced_call(
         trace_id, "review", 90,
         lambda: _call(_principle(lang), user, max_tokens=4000,
-                     model=_FAST_MODEL, timeout=90))
+                     model=_FAST_MODEL, timeout=90, **review_kw))
     if not raw:
         _fb = (structural_issues + tone_issues + keyfig_issues
                + substructure_issues)
@@ -2592,6 +2604,9 @@ def review_report(draft: str, mission_reports: dict,
     if (not isinstance(obj, dict) or not isinstance(obj.get("approved"), bool)
             or not isinstance(obj.get("issues"), list)
             or not isinstance(obj.get("blocking", []), list)):
+        from silk_llm_provider import last_stop_reason
+        log.warning("review JSON validation failed: stop_reason=%s chars=%d parsed_type=%s",
+                    last_stop_reason(), len(raw), type(obj).__name__)
         _fb = (structural_issues + tone_issues + keyfig_issues
                + substructure_issues)
         return {"issues": _fb + ["تعذّر تفسير ردّ المراجع؛ لا توجد موافقة مراجعة."],

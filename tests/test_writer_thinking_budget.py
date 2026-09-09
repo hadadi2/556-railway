@@ -51,3 +51,21 @@ def test_other_models_and_nonwriter_calls_keep_their_policy(monkeypatch):
                    effort="medium", thinking_disabled=True)
         p.complete("s", "u", 100, "claude-sonnet-5", 5)
     assert all("output_config" not in x and "thinking" not in x for x in sent)
+
+
+def test_reviewer_requests_a_schema_and_rejects_invalid_approval(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setenv("SILK_API_KEY", "test-key")
+    monkeypatch.setattr(judge, "_FAST_MODEL", "claude-haiku-4-5")
+    sent = []
+
+    def post(url, **kw):
+        sent.append(kw["json"])
+        return Response([{"type": "text", "text": '{"approved":"yes","issues":[]}'}])
+
+    with patch("requests.post", side_effect=post):
+        review = judge.review_report("A report.", {})
+    schema = sent[0]["output_config"]["format"]["schema"]
+    assert schema["properties"]["approved"] == {"type": "boolean"}
+    assert schema["required"] == ["approved", "issues", "blocking"]
+    assert not review["approved"] and review["review_status"] == "error"
