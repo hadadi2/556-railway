@@ -4036,7 +4036,7 @@ def create_app():
             found.get("product", ""), market_name, trace_id=trace_id,
             hs_code=found.get("hs_code"), hs_confirmation=hs_conf_regen,
             style=regen_style, seed_draft=_seed_regen,
-            importer_leads=dr.get("importer_leads"))
+            importer_leads=dr.get("importer_leads"), product_card=found.get("product_card"))
         if (dr.get("trend_refresh") or {}).get("status") == "failed":
             report_out.setdefault("unresolved_notes", []).append(
                 "تعذر تحديث بيانات الاتجاهات؛ احتُفظ بالأدلة السابقة وفجواتها.")

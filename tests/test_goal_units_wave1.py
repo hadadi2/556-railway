@@ -27,11 +27,21 @@ def test_market_unit_liquids_are_litre():
         assert code == "litre" and label == "لتر", name
 
 
-def test_market_unit_solids_and_unknown_default_kg():
+def test_market_unit_known_solids_use_kg():
     from silk_economics import market_unit
-    for name in ("تمور", "عسل", "زبدة الفول السوداني", "منتج مجهول", ""):
+    for name in ("تمور", "عسل", "زبدة الفول السوداني"):
         code, label = market_unit(name)
         assert code == "kg" and label == "كجم", name
+
+
+def test_unknown_product_does_not_invent_a_mass_unit_or_shipment_quantity():
+    from silk_economics import market_unit, estimate_trial_shipment
+    assert market_unit('منتج مجهول') == ('unit', 'وحدة')
+    assert market_unit('') == ('unit', 'وحدة')
+    assert estimate_trial_shipment('منتج مجهول') is None
+    assert market_unit('منتج مجهول', 'ml') == ('litre', 'لتر')
+    assert market_unit('قمصان') == ('piece', 'قطعة')
+    assert estimate_trial_shipment('قمصان') is None
 
 
 def test_every_litre_family_has_a_registered_density():
