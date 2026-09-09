@@ -3192,7 +3192,7 @@ function viewReportBtn(s) {
          سطر مُهرَّب على حدة (ملاحظة §58: String(array) كان يدمجها بفواصل). */
       const briefLines = Array.isArray(v.brief) ? v.brief
         : (v.brief ? [v.brief] : []);
-      if (briefLines.length)
+      if (briefLines.length && !(dr && dr.report && dr.report.text))
         html += '<pre style="white-space:pre-wrap;font-family:inherit;' +
                 'line-height:1.8;margin:0 0 10px">' +
                 briefLines.map(esc).join("\n") + "</pre>";
@@ -3289,7 +3289,7 @@ function viewReportBtn(s) {
             const unit = c.value != null && c.unit
               ? ' <span style="color:var(--ink-soft)">' + esc(c.unit) +
                 "</span>" : "";
-            html += "<tr><td>" + esc(c.name || "—") + "</td>" +
+            html += "<tr><td>" + esc(c.display_name || c.name || "—") + "</td>" +
               '<td><span class="num">' + esc(val) + "</span>" + unit + "</td>" +
               '<td><div class="meter" style="min-width:64px"><i style="width:' +
               (conf != null ? conf : 0) + '%"></i></div><span class="num" ' +

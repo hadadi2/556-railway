@@ -244,9 +244,21 @@ def _stream_kw() -> dict:
     return {}
 
 
+def _writer_call_kw(thinking_disabled: bool = False) -> dict:
+    """Explicit writing effort; retain compatibility with alternate call wrappers."""
+    result = _stream_kw()
+    if _accepts_kwarg(_call, "effort"):
+        result["effort"] = "medium"
+    if thinking_disabled and _accepts_kwarg(_call, "thinking_disabled"):
+        result["thinking_disabled"] = True
+    return result
+
+
 def _call(system: str, user: str, max_tokens: int = 1600,
           model: str | None = None, timeout: float | None = None,
-          stream: bool = False) -> str | None:
+          stream: bool = False, effort: str | None = None,
+          thinking_disabled: bool = False,
+          response_schema: dict | None = None) -> str | None:
     """نداء Messages API — one Claude call; None on missing key / any failure.
 
     model/timeout اختياريان: للمهام الخفيفة (فلترة الكيانات) مرّر _FAST_MODEL
@@ -267,6 +279,12 @@ def _call(system: str, user: str, max_tokens: int = 1600,
     # حرفياً بالبادئة المضبوطة في `_cache_prefix_text` ولمزوّد يدعم المعامل
     # (نفس نمط توافقية stream)؛ غير ذلك = السلوك القديم حرفياً.
     _kw = {}
+    if effort is not None and _accepts_kwarg(_prov.complete, "effort"):
+        _kw["effort"] = effort
+    if thinking_disabled and _accepts_kwarg(_prov.complete, "thinking_disabled"):
+        _kw["thinking_disabled"] = True
+    if response_schema is not None and _accepts_kwarg(_prov.complete, "response_schema"):
+        _kw["response_schema"] = response_schema
     if stream and _accepts_kwarg(_prov.complete, "stream"):
         _kw["stream"] = True
     _pref = _cache_prefix_text.get()
@@ -957,6 +975,9 @@ def _traced_call(trace_id: str | None, stage: str, timeout: float,
         import silk_trace
         event = {"kind": "report_call", "stage": stage, "timeout": timeout,
                  "elapsed_ms": elapsed_ms, "success": bool(result)}
+        from silk_llm_provider import last_stop_reason
+        event["stop_reason"] = last_stop_reason()
+        event["output_chars"] = len(result) if isinstance(result, str) else 0
         if err:
             event["error_type"] = err.get("type")
             event["error_message"] = err.get("message")
@@ -1139,7 +1160,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                 lang: str = "ar",
                 product_card: dict | None = None,
                 on_attempt: "Callable[[], None] | None" = None,
-                seed_draft: str | None = None) -> str | None:
+                seed_draft: str | None = None,
+                revision_draft: str | None = None) -> str | None:
     """اكتب تقرير البحث العميق — the 11-section international-structure report
     (وكيل الكتابة، الموجة ١٠ — أسلوب Euromonitor/ESOMAR).
 
@@ -1196,6 +1218,11 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     parts = [
         f"المنتج: {_isolate(product)}. السوق: {_isolate(market_name)}.",
         contract,
+        "قارن أسعار عروض تطابق نوع المنتج وشكله الفعلي فقط. لا تغيّر اسم "
+        "منتج في المصدر لكي يبدو مطابقاً: الطحينة ليست الحلاوة الطحينية، "
+        "والحليب السائل ليس مسحوق الحليب. اعتمد عروض بعثة التسعير المقبولة؛ "
+        "العرض الموسوم بأنه مستبعد لا يعود صالحاً بسبب ظهوره في نص صفحة "
+        "خام تضم منتجات متعددة. عند الشك اذكر نقص المقارنة بدلاً من خلط المنتجات.",
         "ضمن قسم التوصيات، أضف عنواناً فرعياً للعملاء المحتملين إذا احتوت "
         "حقائق contact_enrichment على جهات اتصال. اذكر أهم الجهات وطريقة "
         "التواصل المتاحة، ولا تقل إن قائمة العملاء غير موجودة حين تكون "
@@ -1922,12 +1949,20 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         _review_tail = ("\n\nملاحظات المراجع من دورة سابقة — عالجها في هذه "
                         "المسوّدة:\n"
                         + _isolate("\n".join(f"- {n}" for n in review_notes)))
+        if revision_draft:
+            _review_tail += ("\nهذه هي المسودة التي تخصها الملاحظات. نقّحها هي، "
+                "ولا تبدأ تقريراً آخر من الصفر. احتفظ بالأقسام والجداول الصحيحة. "
+                "احذف تكرار الأرقام والأسباب، وقسّم الجمل الطويلة. اجعل الخلاصة "
+                "قراراً وسبباً وخطوة تالية، والشروط إجراءات محددة، والمخاطر أثراً "
+                "وطريقة لتقليله. أعد التقرير الكامل المنقح فقط.\n" +
+                _isolate(revision_draft))
     user = _stable_user + _review_tail
     # حارس `_call` يقيس startswith على هذه البادئة — نداءات المسوّدة
     # والتصعيد والإكمال والتنقيح كلها تبدأ بها فتُكاش؛ غيرها لا يتأثر.
     _cache_prefix_text.set(_stable_user)
     stage = "revision" if review_notes else "draft"
     effective_max = _WRITER_MAX_TOKENS
+    thinking_disabled = False
     best = ""
     truncated = False
     _last_partial_draft.set(None)
@@ -1975,7 +2010,7 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
             lambda cap=effective_max: _call(_principle(lang), user,
                                             max_tokens=cap,
                                             timeout=_LONG_TIMEOUT,
-                                            **_stream_kw()))
+                                            **_writer_call_kw(thinking_disabled)))
         if out and len(out) > len(best):
             best = out
         if last_stop_reason() not in _TRUNCATED:
@@ -1991,6 +2026,9 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
             log.warning("writer stream aborted with no text — not escalating "
                         "the token ceiling (a timeout is not a budget problem)")
             break
+        # No text + exhausted output is different from an incomplete text draft.
+        # On Sonnet 5 the bounded retry reserves its allowance for report text.
+        thinking_disabled = True
         # صفر نصّ (content=[]، القضية المغلقة p5): لا شيء يُكمَل — التصعيد
         # المقيَّد القائم كما هو (caps [base, ceiling] = [24000, 32000] ثم فجوة).
         if effective_max >= _MAX_TOKENS_CEILING:
@@ -2210,7 +2248,7 @@ def _continue_truncated_report(trace_id: str, user: str, draft: str,
         trace_id, stage_name, _LONG_TIMEOUT,
         lambda: _call(_principle(lang), cont_user,
                       max_tokens=_MAX_TOKENS_CEILING,
-                      timeout=_LONG_TIMEOUT, **_stream_kw()))
+                      timeout=_LONG_TIMEOUT, **_writer_call_kw()))
     if not out:
         return draft
     cont = out.lstrip()
@@ -2552,10 +2590,16 @@ def review_report(draft: str, mission_reports: dict,
              "قدّم التناقضات والأرقام غير المسندة على الملاحظات الأسلوبية؛ "
              "لا تقتبس فقرات طويلة ولا تعِد كتابة التقرير في الرد.\n")
     user += _user_steer("reviewer")
+    schema = {"type": "object", "properties": {
+        "approved": {"type": "boolean"},
+        "issues": {"type": "array", "items": {"type": "string"}},
+        "blocking": {"type": "array", "items": {"type": "string"}}},
+        "required": ["approved", "issues", "blocking"], "additionalProperties": False}
+    review_kw = {"response_schema": schema} if _accepts_kwarg(_call, "response_schema") else {}
     raw = _traced_call(
         trace_id, "review", 90,
         lambda: _call(_principle(lang), user, max_tokens=4000,
-                     model=_FAST_MODEL, timeout=90))
+                     model=_FAST_MODEL, timeout=90, **review_kw))
     if not raw:
         _fb = (structural_issues + tone_issues + keyfig_issues
                + substructure_issues)
@@ -2565,6 +2609,9 @@ def review_report(draft: str, mission_reports: dict,
     if (not isinstance(obj, dict) or not isinstance(obj.get("approved"), bool)
             or not isinstance(obj.get("issues"), list)
             or not isinstance(obj.get("blocking", []), list)):
+        from silk_llm_provider import last_stop_reason
+        log.warning("review JSON validation failed: stop_reason=%s chars=%d parsed_type=%s",
+                    last_stop_reason(), len(raw), type(obj).__name__)
         _fb = (structural_issues + tone_issues + keyfig_issues
                + substructure_issues)
         return {"issues": _fb + ["تعذّر تفسير ردّ المراجع؛ لا توجد موافقة مراجعة."],
@@ -2637,7 +2684,7 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     استثناء داخل `on_stage` لا يُسقط الكتابة (نفس مبدأ القناة الجانبية).
     """
     from silk_writer_handoff import writer_reports
-    mission_reports = writer_reports(mission_reports, importer_leads, product, lang)
+    mission_reports = writer_reports(mission_reports, importer_leads, product, lang, market_name)
     if max_cycles is None:
         max_cycles = _max_review_cycles()
     def _stage(name: str) -> None:
@@ -2717,7 +2764,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             trace_id=trace_id, hs_code=hs_code,
                             hs_confirmation=hs_confirmation, style=style,
                             lang=lang, product_card=product_card,
-                            on_attempt=lambda: _stage("writer"))
+                            on_attempt=lambda: _stage("writer"),
+                            revision_draft=draft)
         if fixed:
             if _writer_incomplete(fixed, lang):
                 notes = list(notes) + ["لم يكتمل التنقيح؛ حُفظت المسوّدة الكاملة السابقة بملاحظاتها."]
