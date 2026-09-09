@@ -15,6 +15,8 @@ def test_us_zip_address_excluded_only_for_other_markets():
 def test_saved_report_and_writer_exclude_foreign_contacts_and_fake_email():
     leads = [{"name": "Food Distributor", "address": "Washington, DC 20016",
               "phone": "+12025953505"},
+             {"name": "Food Trading Company", "address": "Shanghai, China",
+              "phone": "+862155555555"},
              {"name": "Jordan Food Company", "address": "Amman, Jordan",
               "phone": "+96264717777", "email": "email@email.com"}]
     cleaned = _clean_leads(leads, {"market": {"iso3": "JOR"}})

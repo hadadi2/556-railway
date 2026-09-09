@@ -12,8 +12,13 @@ def writer_reports(missions, importer_leads=None, product="", lang="ar", market=
     from silk_market_resolver import resolve_market
     market_ref, _ = resolve_market(market) if market else (None, None)
     target_iso3 = getattr(market_ref, "iso3", "")
+    rows = importer_leads.get("leads") or []
+    if market_ref is not None:
+        from dataclasses import asdict
+        from silk_reports import _clean_leads
+        rows = _clean_leads(rows, {"market": asdict(market_ref)})
     findings = []
-    for row in importer_leads.get("leads") or []:
+    for row in rows:
         row = clean_contact(row, target_iso3)
         if not isinstance(row, dict) or not str(row.get("name") or "").strip():
             continue
