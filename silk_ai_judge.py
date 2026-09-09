@@ -244,9 +244,20 @@ def _stream_kw() -> dict:
     return {}
 
 
+def _writer_call_kw(thinking_disabled: bool = False) -> dict:
+    """Explicit writing effort; retain compatibility with alternate call wrappers."""
+    result = _stream_kw()
+    if _accepts_kwarg(_call, "effort"):
+        result["effort"] = "medium"
+    if thinking_disabled and _accepts_kwarg(_call, "thinking_disabled"):
+        result["thinking_disabled"] = True
+    return result
+
+
 def _call(system: str, user: str, max_tokens: int = 1600,
           model: str | None = None, timeout: float | None = None,
-          stream: bool = False) -> str | None:
+          stream: bool = False, effort: str | None = None,
+          thinking_disabled: bool = False) -> str | None:
     """نداء Messages API — one Claude call; None on missing key / any failure.
 
     model/timeout اختياريان: للمهام الخفيفة (فلترة الكيانات) مرّر _FAST_MODEL
@@ -267,6 +278,10 @@ def _call(system: str, user: str, max_tokens: int = 1600,
     # حرفياً بالبادئة المضبوطة في `_cache_prefix_text` ولمزوّد يدعم المعامل
     # (نفس نمط توافقية stream)؛ غير ذلك = السلوك القديم حرفياً.
     _kw = {}
+    if effort is not None and _accepts_kwarg(_prov.complete, "effort"):
+        _kw["effort"] = effort
+    if thinking_disabled and _accepts_kwarg(_prov.complete, "thinking_disabled"):
+        _kw["thinking_disabled"] = True
     if stream and _accepts_kwarg(_prov.complete, "stream"):
         _kw["stream"] = True
     _pref = _cache_prefix_text.get()
@@ -1928,6 +1943,7 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     _cache_prefix_text.set(_stable_user)
     stage = "revision" if review_notes else "draft"
     effective_max = _WRITER_MAX_TOKENS
+    thinking_disabled = False
     best = ""
     truncated = False
     _last_partial_draft.set(None)
@@ -1975,7 +1991,7 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
             lambda cap=effective_max: _call(_principle(lang), user,
                                             max_tokens=cap,
                                             timeout=_LONG_TIMEOUT,
-                                            **_stream_kw()))
+                                            **_writer_call_kw(thinking_disabled)))
         if out and len(out) > len(best):
             best = out
         if last_stop_reason() not in _TRUNCATED:
@@ -1991,6 +2007,9 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
             log.warning("writer stream aborted with no text — not escalating "
                         "the token ceiling (a timeout is not a budget problem)")
             break
+        # No text + exhausted output is different from an incomplete text draft.
+        # On Sonnet 5 the bounded retry reserves its allowance for report text.
+        thinking_disabled = True
         # صفر نصّ (content=[]، القضية المغلقة p5): لا شيء يُكمَل — التصعيد
         # المقيَّد القائم كما هو (caps [base, ceiling] = [24000, 32000] ثم فجوة).
         if effective_max >= _MAX_TOKENS_CEILING:
@@ -2210,7 +2229,7 @@ def _continue_truncated_report(trace_id: str, user: str, draft: str,
         trace_id, stage_name, _LONG_TIMEOUT,
         lambda: _call(_principle(lang), cont_user,
                       max_tokens=_MAX_TOKENS_CEILING,
-                      timeout=_LONG_TIMEOUT, **_stream_kw()))
+                      timeout=_LONG_TIMEOUT, **_writer_call_kw()))
     if not out:
         return draft
     cont = out.lstrip()
