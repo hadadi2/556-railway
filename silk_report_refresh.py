@@ -1,6 +1,7 @@
 """Prepare a regenerated report from current checkpoints, without database writes."""
 from copy import deepcopy
 from dataclasses import asdict, is_dataclass
+from contextlib import nullcontext
 
 
 def _plain(value):
@@ -15,6 +16,17 @@ def _plain(value):
 
 def prepare(found, mission_reports, *, refresh_trends=False, refresh_prices=False,
             refresh_analysis=False):
+    import silk_trace
+    trace_id = (found.get('deep_research') or {}).get('trace_id')
+    context = (silk_trace.trace_context(trace_id) if trace_id
+               and silk_trace.current_trace_id() != trace_id else nullcontext())
+    with context:
+        return _prepare(found, mission_reports, refresh_trends=refresh_trends,
+                        refresh_prices=refresh_prices, refresh_analysis=refresh_analysis)
+
+
+def _prepare(found, mission_reports, *, refresh_trends=False, refresh_prices=False,
+             refresh_analysis=False):
     result = deepcopy(found)
     reports = dict(mission_reports) if refresh_trends or refresh_prices else mission_reports
     dr = result['deep_research']
@@ -48,6 +60,12 @@ def prepare(found, mission_reports, *, refresh_trends=False, refresh_prices=Fals
         fresh_analysis = analyze_market(ref, result.get('product', ''), reports,
             hs_code=result.get('hs_code'), product_card=result.get('product_card'))
         if fresh_analysis['report'].failed:
+            import silk_trace
+            silk_trace.record_event(kind='analysis_refresh_failed',
+                diagnostics=_plain(fresh_analysis.get('diagnostics') or {}),
+                summary=fresh_analysis['report'].summary,
+                gaps=[dp.note for dp in fresh_analysis['report'].findings
+                      if dp.value is None])
             raise ValueError('Analysis refresh failed; stored report has not been changed')
         dr['analyst'] = _plain(fresh_analysis)
         dr['analysis_refresh'] = {'status': 'completed',
