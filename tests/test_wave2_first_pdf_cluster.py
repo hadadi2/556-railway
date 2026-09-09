@@ -283,8 +283,8 @@ def test_visual_pdf_lock_no_reversed_glyph_tokens():
                              "utf-8", "replace")
     flat = txt.replace("\n", "")
     assert "مؤشر" in flat, "الكلمة الهدف «مؤشر» غائبة — تحقّق من محتوى المدوّنة"
-    assert "شرط" in flat, "الكلمة الهدف «شرط» غائبة — تحقّق من محتوى المدوّنة"
-    for reversed_token in ("مؤرش", "رشط", "أكرث", "مرسد", "السوداين", "$M"):
+    assert "شروط" in flat, "الكلمة الهدف «شروط» غائبة — تحقّق من محتوى المدوّنة"
+    for reversed_token in ("مؤرش", "رشط", "رشوط", "أكرث", "مرسد", "السوداين", "$M"):
         assert reversed_token not in flat, (
             f"محرفٌ مقلوب الترتيب في استخراج PDF: «{reversed_token}» — "
             "أثر انقلاب اتجاه غير مُصلَح في تحويل docx→PDF")
