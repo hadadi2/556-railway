@@ -669,9 +669,9 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "موقعك السعري الدقيق مقابل المنافسين",
         "en": "your precise price position against competitors"},
     "gap_how_price_competitiveness": {
-        "ar": "سعر المصنع للكيلوغرام (تكلفتك) وخدمة رصد أسعار مدفوعة",
-        "en": "your ex-factory price per kilogram and a paid "
-              "price-tracking service"},
+        "ar": "سعر المصنع بوحدة المنتج وأسعار منافسين موثقة بنفس العملة ووحدة المقارنة",
+        "en": "your ex-factory price and documented competitor prices in "
+              "matching currencies and product units"},
     "gap_what_entry_door": {
         "ar": "قائمة موزّعين/مستوردين مؤكَّدين بالاسم",
         "en": "a named, confirmed list of distributors and importers"},
@@ -712,10 +712,9 @@ TERMS: dict[str, dict[str, str]] = {
     "price_obs_heading": {"ar": "الأسعار المرصودة على الرف",
                           "en": "Observed shelf prices"},
     "price_unlock": {
-        "ar": "لحساب موقعك السعري الدقيق: سعر المصنع للكيلوغرام "
-              "(التكلفة/كجم) هو المعطى الناقص الوحيد.",
-        "en": "To compute your exact price position, your ex-factory "
-              "price per kilogram is the only missing input."},
+        "ar": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+        "en": "Price comparison requires your factory price and competitor prices "
+              "in matching currencies and units, with documented pack sizes and conversions."},
     "concentration_context_line": {
         "ar": "أرقام تركّز السوق في هذا التقرير تُقرأ سياقاً عاماً للفئة لا "
               "قياساً مباشراً لهذا المنتج (الرمز الجمركي مُعلَّم).",

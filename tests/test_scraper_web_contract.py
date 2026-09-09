@@ -14,6 +14,7 @@ def test_submit_uses_web_server_required_fields(monkeypatch):
         assert maps.submit_scrape(["food distributor"]) == "job"
     body = post.call_args.kwargs["json"]
     assert isinstance(body["max_time"], int) and body["max_time"] > 0
+    assert body['max_time'] < maps._HARD_TIMEOUT_S
     assert len(body["lang"]) == 2
 
 
@@ -39,3 +40,21 @@ def test_completed_web_job_downloads_csv_and_normalizes_numbers(monkeypatch):
 def test_invalid_numeric_fields_stay_missing(value):
     row = maps._parse_lead({"title": "Example", "review_rating": value, "review_count": value})
     assert row["rating"] is None and row["review_count"] is None
+
+
+def test_completed_job_recovery_requires_same_queries_and_recent_date(monkeypatch):
+    from datetime import datetime, timezone, timedelta
+    monkeypatch.setenv(maps.ENV_VAR, 'http://scraper:8080')
+    now = datetime.now(timezone.utc)
+    def job(id, keywords, date):
+        return {'ID': id, 'Status': 'ok', 'Data': {'keywords': keywords}, 'Date': date.isoformat()}
+    response = SimpleNamespace(raise_for_status=lambda: None, json=lambda: [
+        job('wrong-market', ['food UAE'], now),
+        job('old', ['food Jordan'], now - timedelta(days=8)),
+        job('matching', ['food Jordan'], now - timedelta(minutes=5))])
+    with patch('requests.get', return_value=response):
+        assert maps._completed_job(['food Jordan']) == 'matching'
+
+
+def test_scraper_activity_is_preserved():
+    assert maps._parse_lead({'title': 'Business', 'category': 'Wholesaler'})['category'] == 'Wholesaler'

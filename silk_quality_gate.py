@@ -1890,6 +1890,7 @@ def _check_source_coverage(dr: dict) -> list[dict]:
 # أهدأ من فشل بنيوي حقيقي (section_structure/agent_failed). ثابتٌ على مستوى
 # الوحدة كي تُثبِّته الاختبارات (عقد تصعيد §8: …_excess داخله، WARN خارجه).
 _REGRESSION_GUARD_FIRED = {"min_pillars_scored", "competition_unit_valid",
+                           "retail_unit_mismatch", "retail_price_presence_conflict",
                            "pillar_narrative_sync",
                            "hs_recommendation_match",
                            "derived_number_has_inputs",
@@ -4319,6 +4320,8 @@ def run_quality_gate(view: dict) -> dict:
     # العرض (تطوي/تصحح فعلاً)، والتحذيرية جودة نثر حتى معايرة Part B.
     findings += _check_repeated_span(text)
     findings += _check_adjacent_short_stutter(text)
+    from silk_price_units import report_price_issues
+    findings += report_price_issues(text)
     findings += _check_cross_universe_ratio(text)
     findings += _check_table_row_stutter(text)
     findings += _check_empty_citation(text)

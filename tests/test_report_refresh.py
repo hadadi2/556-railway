@@ -61,3 +61,16 @@ def test_refresh_reaches_real_runtime_with_bounded_tool_budget():
         prepare(saved(), reports(), refresh_trends=True)
     assert loop.call_count == 1
     assert loop.call_args.args[2]['tool_calls'] == 6
+
+
+def test_price_refresh_runs_only_pricing_and_preserves_other_checkpoints():
+    old = reports()
+    fresh = AgentReport('prices', [DataPoint('Product 300 g: 1.25 JOD',
+                                           'Store', .65)], False, 'priced listing')
+    with patch('silk_llm_runtime.LLMMissionAgent.run', return_value=fresh) as run:
+        result, current = prepare(saved(), old, refresh_prices=True)
+    assert run.call_count == 1
+    assert run.call_args.args[0]['budget'] == {'tool_calls': 8}
+    assert current['pricing_scout'] is fresh
+    assert current['demand_trends'] is old['demand_trends']
+    assert result['deep_research']['price_refresh']['status'] == 'completed'

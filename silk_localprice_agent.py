@@ -83,11 +83,13 @@ def _extract(payload: dict) -> list[dict]:
             "title": it.get("title") or it.get("name"),
             "price": price,
             "currency": it.get("currency"),
+            "pack_size": it.get("pack_size"),
             "store": it.get("source") or it.get("store") or it.get("seller"),
             "link": it.get("link") or it.get("product_link"),
             "is_best_seller": _is_bestseller(it),
         })
-    return out
+    from silk_price_units import normalize_listing
+    return [normalize_listing(row) for row in out]
 
 
 def retail_prices(query: str, market: str | None = None) -> list[DataPoint]:

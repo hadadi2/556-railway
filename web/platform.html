@@ -3319,6 +3319,7 @@ function viewReportBtn(s) {
                "The narrative could not be generated for this run — the numbers and verdict above come from deterministic synthesis.") +
             "</p>";
         }
+        html += potentialClientsHTML(dr);
         const lims = Array.isArray(dr.limits) ? dr.limits : [];
         if (lims.length) {
           html += '<div class="rlimits"><b>' +
@@ -3354,6 +3355,32 @@ function viewReportBtn(s) {
     b.disabled = false;
   };
   return b;
+}
+
+function potentialClientsHTML(dr) {
+  const rows = dr && dr.importer_leads && Array.isArray(dr.importer_leads.leads)
+    ? dr.importer_leads.leads.filter((r) => r && r.name) : [];
+  let html = '<section data-role="potential-clients"><h3>' +
+    ar_en("العملاء المحتملون ووسائل التواصل", "Potential customers and contacts") + '</h3>';
+  if (!rows.length) return html + '<p class="hint">' +
+    ar_en("لم تتوفر جهات اتصال موثقة في هذه الدراسة.", "No documented contacts are available for this study.") + '</p></section>';
+  const link = (value) => /^https?:\/\//i.test(String(value || ''))
+    ? '<a href="' + esc(value) + '" target="_blank" rel="noopener noreferrer">' +
+      ar_en("فتح الرابط", "Open link") + '</a>' : '—';
+  const headings = [ar_en("المنشأة", "Business"), ar_en("النشاط", "Activity"),
+    ar_en("العنوان", "Address"), ar_en("الهاتف", "Phone"), ar_en("البريد", "Email"),
+    ar_en("الموقع", "Website"), ar_en("الخرائط", "Maps")];
+  html += '<div class="table-wrap" style="overflow-x:auto"><table><thead><tr>' +
+    headings.map((h) => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>';
+  rows.forEach((r) => {
+    html += '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.category || '—') +
+      '</td><td>' + esc(r.address || '—') + '</td><td dir="ltr">' + esc(r.phone || '—') +
+      '</td><td dir="ltr">' + esc(r.email || '—') + '</td><td>' + link(r.website) +
+      '</td><td>' + link(r.maps_link) + '</td></tr>';
+  });
+  return html + '</tbody></table></div><p class="hint">' +
+    ar_en("هذه جهات محتملة للتواصل. وجودها في الخرائط لا يؤكد أنها تستورد المنتج أو ترغب في شرائه.",
+      "These are potential contacts. A Maps listing does not confirm that they import this product or intend to buy it.") + '</p></section>';
 }
 
 function pdfBtn(id) {

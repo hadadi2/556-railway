@@ -221,7 +221,7 @@ def _competitive_position(top: dict | None) -> dict:
                 # #13: «بطاقة منتجك (product_card)» لغة مدخلات نظام — يُطلب
                 # المعطى نفسه بلغة الزائر (نفس سابقة تنقية الموجّه).
                 "note": (cp or {}).get("error")
-                or ("أدخل سعر المصنع للكيلوغرام (التكلفة/كجم) للحصول على "
+                or ("أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد "
                     "موقعك التنافسي")}
     feas = cp.get("feasibility_threads") or []
     best = max(feas, key=lambda f: f.get("margin_at_match_pct", -9e9),
@@ -416,8 +416,8 @@ _CURRENCY_RE = re.compile(r"€|\$|£|دولار|يورو|ريال|درهم|\d")
 _WEIGHT_RE = re.compile(
     r"\d+\s*(?:غ|جم|جرام|غرام|كجم|كيلو|كغ|kg|g|مل|لتر|ml|l|أونصة|oz)")
 
-PRICE_UNLOCK_LINE = ("لحساب موقعك السعري الدقيق: سعر المصنع للكيلوغرام "
-                     "(التكلفة/كجم) هو المعطى الناقص الوحيد.")
+PRICE_UNLOCK_LINE = ("تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة "
+                     "ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.")
 
 
 # #13 ص14 — سقالة استشهاد البعثة وصلت رفَّ أسعار العميل حرفياً: وسمٌ مقوّس
@@ -494,6 +494,14 @@ def _prices(row: dict) -> list:
             out.append({"title": v.get("title"), "price": v.get("price"),
                         "currency": v.get("currency"), "store": v.get("store")})
     return out
+
+
+def _client_leads(bundle, market):
+    # The browser and document exports must show the same validated contact rows.
+    from silk_reports import _clean_leads
+    result = dict(bundle or {"leads": [], "path": "gap"})
+    result["leads"] = _clean_leads(result.get("leads") or [], {"market": market or {}})
+    return result
 
 
 def _named_competitors(row: dict) -> list:
@@ -938,7 +946,7 @@ def _swot(research: dict | None) -> dict:
     for g in (research.get("agents", {}).get("pricing", {}).get("gaps") or []):
         if "بطاقة" in g or "margin" in g:
             W.append({"text": "الهامش غير محسوب — الناقص: سعر المصنع "
-                              "للكيلوغرام (التكلفة/كجم)",
+                              "بوحدة المنتج مع توثيق بقية عناصر التكلفة",
                       # صيد ٣: القصّ بعد الترجمة وعند حدّ كلمة معلناً — الشريحة
                       # الخام كانت تبتر وسط الكلمة قبل أن يترجمها المُءَنسِن.
                       "evidence": _clip_words(_humanize_gap_note(g), 120)})
@@ -2871,7 +2879,7 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
         "glossary": _glossary,
         # C5 (SPEC-v2): قائمة مستوردين/موزعين قابلين للتواصل — بنية يعرضها
         # كل مُصدِّر كجدول في قسم الدخول (خرائط قوقل/Places + مرشّحو ويب).
-        "importer_leads": dr.get("importer_leads") or {"leads": [], "path": "gap"},
+        "importer_leads": _client_leads(dr.get("importer_leads"), result.get("market")),
         # مصدرُ الرمز حين حُسِم آلياً — يصل **عرضَ البحث العميق** لا الحدودَ
         # وحدها: تقريرُ العميل (المُسلَّم الفعليّ) يبني أقسامَه من
         # `deep_research` لا من `limits`، فوضعُه في الحدود وحدها أخرجه من
