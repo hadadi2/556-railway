@@ -5432,12 +5432,16 @@ def _clean_leads(leads: list, dr: dict) -> list:
     النثر (كِيانُ اسمٍ مطلوب)، والجغرافيا الخاطئة (دولة ≠ السوق)، وصفوف الحشو
     (اسمٌ بلا أيّ اتصال). يعمل على المدوّنة المخزَّنة أيضًا (لا مسار الكشط وحده)."""
     from silk_gmaps import looks_like_name
+    from silk_contact_quality import clean_contact
     market = dr.get("market") or {}
     iso3 = (market.get("iso3") or "").upper()
     tnames = {(market.get("name_en") or "").strip().lower(),
               (market.get("name_ar") or "").strip().lower()}
     out = []
     for lead in leads or []:
+        lead = clean_contact(lead, iso3)
+        if lead is None:
+            continue
         nm = (lead.get("name") or "").strip()
         if not nm or not looks_like_name(nm):          # البند ٥: نثر/بلا اسم
             continue

@@ -2637,7 +2637,7 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     استثناء داخل `on_stage` لا يُسقط الكتابة (نفس مبدأ القناة الجانبية).
     """
     from silk_writer_handoff import writer_reports
-    mission_reports = writer_reports(mission_reports, importer_leads, product, lang)
+    mission_reports = writer_reports(mission_reports, importer_leads, product, lang, market_name)
     if max_cycles is None:
         max_cycles = _max_review_cycles()
     def _stage(name: str) -> None:

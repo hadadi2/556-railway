@@ -4,12 +4,17 @@ from silk_data_layer import DataPoint
 from silk_gmaps import maps_disclaimer
 
 
-def writer_reports(missions, importer_leads=None, product="", lang="ar"):
+def writer_reports(missions, importer_leads=None, product="", lang="ar", market=""):
     reports = dict(missions or {})
     if not isinstance(importer_leads, dict):
         return reports
+    from silk_contact_quality import clean_contact
+    from silk_market_resolver import resolve_market
+    market_ref, _ = resolve_market(market) if market else (None, None)
+    target_iso3 = getattr(market_ref, "iso3", "")
     findings = []
     for row in importer_leads.get("leads") or []:
+        row = clean_contact(row, target_iso3)
         if not isinstance(row, dict) or not str(row.get("name") or "").strip():
             continue
         # Carry only collected fields; a directory listing is not proof of imports.
