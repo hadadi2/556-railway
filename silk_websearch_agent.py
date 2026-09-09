@@ -8,8 +8,9 @@ fabricates titles, snippets, or links (founding principle).
 
 Env:
   SEARCH_API_KEY   — required API key (e.g. a Serper.dev key).
-  SEARCH_PROVIDER  — optional; 'serper' (default) is the only implemented
-                     provider. Others are documented TODO and degrade to failed.
+  SEARCH_PROVIDER — serper (default), agent_reach, or tavily.
+  SEARCH_FALLBACK_PROVIDER — optional tavily fallback on missing primary results.
+  TAVILY_API_KEY — required only when Tavily is used.
 """
 from __future__ import annotations
 
@@ -36,7 +37,37 @@ def search_key() -> str:
             or os.environ.get("SERPER_API_KEY", "").strip())
 
 
+def search_available() -> bool:
+    """Configuration readiness only; live availability requires a real query."""
+    provider = os.environ.get("SEARCH_PROVIDER", "serper").strip().lower() or "serper"
+    tavily_key = bool(os.environ.get("TAVILY_API_KEY", "").strip())
+    return (provider == "agent_reach" or (provider == "serper" and bool(search_key()))
+            or (provider == "tavily" and tavily_key)
+            or (os.environ.get("SEARCH_FALLBACK_PROVIDER", "").strip().lower() == "tavily"
+                and tavily_key))
+
+
 def web_search(query: str, num: int = 5,
+               gl: str | None = None, hl: str | None = None) -> list[DataPoint]:
+    """Try the configured source, then one explicitly enabled fallback."""
+    primary = _web_search_primary(query, num=num, gl=gl, hl=hl)
+    if not str(query or "").strip() or any(dp.value is not None for dp in primary):
+        return primary
+    fallback = os.environ.get("SEARCH_FALLBACK_PROVIDER", "").strip().lower()
+    provider = os.environ.get("SEARCH_PROVIDER", "serper").strip().lower() or "serper"
+    if fallback != "tavily" or provider == "tavily":
+        return primary
+    from silk_tavily_search import search
+    secondary = search(query, num=num, gl=gl, hl=hl)
+    if not any(dp.value is not None for dp in secondary):
+        return primary + secondary
+    for dp in secondary:
+        dp.note = f"بحث احتياطي بعد تعذر نتائج المصدر الأساسي ({provider}). " + dp.note
+    log.info("Web search fallback used: %s -> tavily", provider)
+    return secondary
+
+
+def _web_search_primary(query: str, num: int = 5,
                gl: str | None = None, hl: str | None = None) -> list[DataPoint]:
     """بحث ويب — organic web results as DataPoints (consumer/market signals).
 
@@ -55,6 +86,12 @@ def web_search(query: str, num: int = 5,
         return [DataPoint(None, "Web Search", 0.0, "empty query — no search", _today())]
 
     provider = os.environ.get("SEARCH_PROVIDER", "serper").strip().lower() or "serper"
+    if provider == "tavily":
+        from silk_tavily_search import search
+        return search(q, num=num, gl=gl, hl=hl)
+    if provider == "agent_reach":
+        from silk_agent_reach_search import search
+        return search(q, num=num, gl=gl, hl=hl)
     if provider != "serper":
         # TODO: implement other providers (e.g. serpapi, bing). Only 'serper' works.
         log.warning("SEARCH_PROVIDER '%s' not implemented — only 'serper' supported", provider)
@@ -99,6 +136,15 @@ def web_search(query: str, num: int = 5,
             "POST", _SERPER_URL,
             headers={"X-API-KEY": key, "Content-Type": "application/json"},
             json_body=body, timeout=_TIMEOUT)
+        if getattr(resp, "status_code", None) == 400:
+            try:
+                exhausted = str((resp.json() or {}).get("message", "")).lower() == "not enough credits"
+            except (ValueError, AttributeError, TypeError):
+                exhausted = False
+            if exhausted:
+                return [DataPoint(None, "Web Search (Serper)", 0.0,
+                                  "نفد رصيد بحث الويب لدى Serper؛ يلزم رصيد متاح للمفتاح المرتبط بالمنصة.",
+                                  _today(), status="fetch_failed")]
         resp.raise_for_status()
         payload = resp.json() or {}
         organic = payload.get("organic") or []

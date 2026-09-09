@@ -185,7 +185,7 @@ def submit_scrape(queries: list, depth: int = 1, extract_email: bool = True):
         import requests
         body = {"name": "silk-importers", "keywords": list(queries),
                 "depth": int(depth), "email": bool(extract_email),
-                "max_time": f"{_HARD_TIMEOUT_S}s"}
+                "lang": "en", "max_time": _HARD_TIMEOUT_S}
         r = requests.post(f"{url.rstrip('/')}/api/v1/jobs", json=body,
                           timeout=_SUBMIT_TIMEOUT_S)
         r.raise_for_status()
@@ -216,14 +216,20 @@ def _fetch_job(job_id: str):
                          timeout=_HTTP_TIMEOUT_S)
         r.raise_for_status()
         j = r.json() or {}
-        status = str(j.get("status") or "").lower()
+        status = str(j.get("status") or j.get("Status") or "").lower()
         results = j.get("results") or j.get("data")
         if results is None and status in ("ok", "done", "completed", "finished"):
             # بعض النسخ تُنزِّل النتائج على مسار منفصل.
             rd = requests.get(f"{url.rstrip('/')}/api/v1/jobs/{job_id}/download",
                               timeout=_HTTP_TIMEOUT_S)
             if rd.ok:
-                results = rd.json()
+                content_type = str(getattr(rd, "headers", {}).get("Content-Type", ""))
+                if "csv" in content_type.lower():
+                    import csv
+                    import io
+                    results = list(csv.DictReader(io.StringIO(rd.content.decode("utf-8-sig"))))
+                else:
+                    results = rd.json()
         return status, results
     except Exception as e:  # noqa: BLE001
         _log.warning("gmaps fetch job %s failed: %s", job_id, e)
@@ -261,6 +267,22 @@ def _s(v) -> str:
     return str(v).strip() if v is not None else ""
 
 
+def _lead_number(value, *, count=False):
+    """CSV numerics remain missing when malformed, never fabricated as zero."""
+    import math
+    try:
+        if isinstance(value, bool):
+            return None
+        number = float(value)
+        if not math.isfinite(number) or number < 0:
+            return None
+        if count:
+            return int(number) if number.is_integer() else None
+        return number if number <= 5 else None
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def _parse_lead(raw: dict) -> dict:
     """C3: طبّع صفّاً واحداً لحقول ثابتة — يتحمّل تعدّد أسماء الحقول عبر
     نسخ المكشطة. لا يخترع قيمة: الحقل الغائب يبقى ''."""
@@ -276,10 +298,9 @@ def _parse_lead(raw: dict) -> dict:
         "phone": _s(raw.get("phone") or raw.get("phone_number")),
         "email": _s(emails),
         "website": _s(raw.get("website") or raw.get("web_site")),
-        "rating": raw.get("rating") if isinstance(
-            raw.get("rating"), (int, float)) else None,
-        "review_count": (raw.get("review_count") or raw.get("reviews")
-                         or raw.get("user_ratings_total")),
+        "rating": _lead_number(raw.get("rating", raw.get("review_rating"))),
+        "review_count": _lead_number(raw.get("review_count", raw.get("reviews",
+                         raw.get("user_ratings_total"))), count=True),
         "maps_link": _s(raw.get("link") or raw.get("google_maps_url")
                         or raw.get("url")),
         "doc_level": _MAPS_DOC_LEVEL,

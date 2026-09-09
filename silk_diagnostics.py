@@ -120,6 +120,19 @@ def _probe_worldbank(year: int) -> dict:
 
 
 def _probe_serper() -> dict:
+    provider = os.environ.get("SEARCH_PROVIDER", "serper").strip().lower() or "serper"
+    if provider in ("agent_reach", "tavily"):
+        from silk_websearch_agent import web_search, search_available
+        def probe_selected():
+            rows = web_search("food distributors", num=2)
+            usable = [dp for dp in rows if dp.value is not None]
+            return {"state": OK if usable else EMPTY,
+                    "detail": (f"{len(usable)} نتيجة — {usable[0].source}" if usable
+                               else "؛ ".join(dp.note for dp in rows))}
+        out = _timed(probe_selected)
+        out.update(name="بحث الويب", key_set=search_available(),
+                   hint="فحص فعلي للمصدر المختار والاحتياط المهيأ.")
+        return out
     from silk_websearch_agent import search_key
     key = search_key()
     if not key:

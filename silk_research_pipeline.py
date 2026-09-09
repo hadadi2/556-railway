@@ -658,6 +658,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     # الموجة C (E-07): نفسُ بطاقة المنتج التي يقرؤها العرض —
                     # وإلا حسب الكاتبُ اقتصاداً وحسب العارضُ اقتصاداً آخر.
                     product_card=product_card_dict,
+                    importer_leads=importer_leads,
                     seed_draft=_seed_draft,
                     on_stage=lambda s: silk_context.snapshot_research_progress(
                         analysis_id, s)) if ai_ok else
