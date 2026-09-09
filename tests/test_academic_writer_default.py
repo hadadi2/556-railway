@@ -30,11 +30,11 @@ def test_research_request_has_report_style_field():
     assert "report_style: str | None = None" in src
 
 
-def test_default_report_style_helper_defaults_to_academic():
-    """الافتراضي المضبوط «academic» (طلب المالك) عبر SILK_REPORT_STYLE."""
+def test_default_report_style_helper_defaults_to_decision():
+    """New reports use decision language; explicit style overrides remain available."""
     src = _api_src()
     assert "def _default_report_style()" in src
-    assert 'os.environ.get("SILK_REPORT_STYLE", "academic")' in src
+    assert 'os.environ.get("SILK_REPORT_STYLE", "decision")' in src
 
 
 def test_generation_passes_style_to_the_writer():

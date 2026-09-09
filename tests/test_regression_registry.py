@@ -3977,7 +3977,7 @@ _LESSONS = {
     # tests/test_goal_*.py نفسها.
     181: lambda: (
         _needles("silk_economics.py", "MARKET_UNIT_REGISTRY",
-                 "def market_unit", "رقم واحد يفتحها كلها")(),
+                 "def market_unit", "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج")(),
         _needles("silk_quality_gate.py",
                  "def _check_unit_conversion_refusal",
                  "def _check_uncomputed_repetition")(),

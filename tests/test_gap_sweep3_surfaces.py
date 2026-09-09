@@ -94,7 +94,7 @@ def test_client_docx_renders_price_rows_and_derivation(tmp_path):
     txt = "\n".join(par.text for par in Document(p).paragraphs)
     assert "الأسعار المرصودة على الرف" in txt
     # قفل محدَّث معلن (#13 الدرس 170): سطر الفتح بلغة الزائر لا لغة المدخلات.
-    assert "سعر المصنع للكيلوغرام (التكلفة/كجم)" in txt   # سطر الفتح الوحيد
+    assert "سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين" in txt   # سطر الفتح الوحيد
     assert "كيف حُدّد الرمز الجمركي" in txt            # سجل الاشتقاق §3.1
 
 

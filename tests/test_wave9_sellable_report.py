@@ -682,7 +682,7 @@ def test_reviewer_rubric_checks_thesis_roadmap_takeaway_and_arithmetic():
     # العقد الجديد: المراجع يعدّ تكرار العبارة ويعلن مشكلة إن تجاوز مرّتين.
     assert "ماذا يعني هذا لقرارك" in src
     assert "تجاوزت مرّتين" in src
-    assert "حساب حسابي صريح" in src
+    assert "حين تتوفر مدخلاته" in src
 
 
 # قاعدة ١٠.٦ (بوابة تسليم الموجة ٩): نموذج DOCX فعلي محفوظ بالمستودع، وليس

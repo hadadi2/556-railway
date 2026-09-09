@@ -404,6 +404,11 @@ def _preferred_domains(ctx: dict) -> list[str]:
     return list(PREFERRED_DOMAINS.get(key) or [])
 
 
+def _tool_product_pages(args: dict, ctx: dict) -> list[DataPoint]:
+    from silk_product_pages import read_product_pages
+    return read_product_pages(args.get('urls') or [], ctx.get('product', ''))
+
+
 def _tool_web_search(args: dict, ctx: dict) -> list[DataPoint]:
     from silk_websearch_agent import web_search, web_search_prioritized
     query = str(args.get("query") or "").strip()
@@ -628,6 +633,16 @@ TOOLS: dict[str, dict] = {
                 "item": {"type": "string",
                          "description": "FAOSTAT item name, e.g. 'Dates'"},
                 "year": {"type": "integer"}}},
+        },
+    },
+    "read_product_pages": {
+        "fn": _tool_product_pages,
+        "spec": {
+            "name": "read_product_pages",
+            "description": "اقرأ صفحات منتجات عثرت عليها بالبحث لتوثيق السعر والعملة وحجم العبوة. حتى ثلاثة روابط في نداء واحد؛ لا يستنتج سعراً عند غيابه.",
+            "input_schema": {"type": "object", "properties": {
+                "urls": {"type": "array", "items": {"type": "string"}, "maxItems": 3}},
+                "required": ["urls"]},
         },
     },
     "web_search": {

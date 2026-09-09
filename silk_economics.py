@@ -108,6 +108,11 @@ _CATEGORY_ALIASES = {
     "water": ("ماء", "مياه", "water"),
     "vegetable_oil": ("زيت", "زيت نباتي", "زيت زيتون", "olive oil",
                       "vegetable oil", "cooking oil"),
+    "solid_food": ("تمور", "تمر", "dates", "حلاوة", "halva", "halawa", "طحينة", "طحينية",
+                   "tahini", "سكر", "sugar", "دقيق", "flour", "أرز", "rice",
+                   "زبدة الفول السوداني", "peanut butter"),
+    "piece_goods": ("قميص", "قمصان", "shirt", "shirts", "حفاضات", "diapers",
+                    "كرسي", "كراسي", "chair", "chairs", "غسالة", "washing machine"),
 }
 
 
@@ -130,16 +135,18 @@ def registry_category(raw: object) -> str:
 # الصلبة بالكيلوغرام، والقطعيّ بالقطعة (يُضاف صفّه حين تدعم المنصّة عائلة
 # قطعية). كومتريد يبلّغ بالوزن، والتحويل بين الوحدتين شأنٌ داخليّ عبر
 # `CONVERSION_REGISTRY` — لا يُعلَن فجوةً أبداً لفئةٍ ثابتُها مسجّل.
-# المفتاح مفتاحُ `registry_category` نفسه؛ فئةٌ غير مسجّلة = كجم (اصطلاح
-# التجارة) لا تخميناً.
+# الفئة غير المسجلة تبقى بوحدة غير محددة؛ لا نخلط وزن بيانات التجارة
+# مع وحدة بيع المنتج، ولا نفترض أن كل وحدة تجارية تزن كيلوغراماً.
 MARKET_UNIT_REGISTRY = {
     "milk": ("litre", "لتر"),
     "juice": ("litre", "لتر"),
     "water": ("litre", "لتر"),
     "vegetable_oil": ("litre", "لتر"),
     "honey": ("kg", "كجم"),
+    "solid_food": ("kg", "كجم"),
+    "piece_goods": ("piece", "قطعة"),
 }
-DEFAULT_MARKET_UNIT = ("kg", "كجم")
+DEFAULT_MARKET_UNIT = ("unit", "وحدة")
 
 
 # شكلٌ صلبٌ لفئةٍ سائلة (§58 find all gaps): «حليب مجفف»/«بودرة الحليب» يُطابِق
@@ -161,12 +168,19 @@ def _has_solid_form_qualifier(text: str) -> bool:
     return False
 
 
-def market_unit(category: object) -> tuple:
+def market_unit(category: object, declared_unit: object = None) -> tuple:
     """(رمز الوحدة، تسميتها العربية) لوحدة السوق التي يُسعَّر بها المنتج
     فعلاً — «حليب» ⇒ ("litre", "لتر")؛ «حليب مجفف» (شكلٌ صلب) ⇒ ("kg", "كجم")؛
-    «عصير بحبيبات» (سائل) يبقى لتراً؛ فئة غير مسجّلة ⇒ ("kg", "كجم")."""
+    «عصير بحبيبات» (سائل) يبقى لتراً؛ فئة غير مسجّلة ⇒ ("unit", "وحدة")."""
+    declared = str(declared_unit or '').strip().lower()
+    if declared in ('kg', 'g', 'كجم', 'كغ', 'كيلوغرام', 'غرام', 'جم'):
+        return ('kg', 'كجم')
+    if declared in ('l', 'ml', 'litre', 'liter', 'لتر', 'مل'):
+        return ('litre', 'لتر')
+    if declared in ('piece', 'pieces', 'pcs', 'قطعة', 'قطع'):
+        return ('piece', 'قطعة')
     if _has_solid_form_qualifier(str(category or "")):
-        return DEFAULT_MARKET_UNIT
+        return ('kg', 'كجم')
     return MARKET_UNIT_REGISTRY.get(registry_category(category),
                                     DEFAULT_MARKET_UNIT)
 
@@ -178,6 +192,7 @@ def convert_amount(value: float, from_unit: str, to_unit: str,
     قاعدة التعذر (تعديل مالك ٢): عبارة «يتعذر التحويل» العامة ممنوعة."""
     if from_unit == to_unit:
         return float(value), "بلا تحويل (نفس الوحدة)"
+    original_category = category
     category = registry_category(category)
     key = (from_unit, to_unit, category)
     if key in CONVERSION_REGISTRY:
@@ -190,7 +205,7 @@ def convert_amount(value: float, from_unit: str, to_unit: str,
     missing = ("الكثافة" if {"litre", "kg"} == {from_unit, to_unit}
                else f"معامل التحويل {from_unit}→{to_unit}")
     return None, (f"التحويل {from_unit}→{to_unit} يتطلب {missing} لفئة "
-                  f"«{category or 'غير محددة'}» — غير مسجّل في سجل الثوابت؛ "
+                  f"«{original_category or 'غير محددة'}» — غير مسجّل في سجل الثوابت؛ "
                   "أضفه بمصدره أو صرّح بالخاصية المفقودة")
 
 
@@ -683,7 +698,7 @@ def estimate_trial_shipment(category: str, unit_kg: float | None = None
     if unit_kg is None:
         if mu_code == "litre":
             unit_kg, _ = convert_amount(1.0, "litre", "kg", category)
-        else:
+        elif mu_code == "kg":
             unit_kg = 1.0
     if not unit_kg:
         return None
@@ -1002,7 +1017,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
     # هدف الدراسة الاحترافية (البند ١): أساسُ العرض وحدةُ السوق التي يشتري
     # بها الزائر — الحليب باللتر لا بالكيلوغرام ولو أبلغ كومتريد بالوزن؛
     # التحويل شأنٌ داخليّ. الفئة غير المسجّلة تبقى كجم (اصطلاح التجارة).
-    _mu_code, _mu_ar = market_unit(category)
+    _mu_code, _mu_ar = market_unit(category, (product_card or {}).get('unit'))
     reverse = None
     if anchor is not None:
         _missing: list[str] = []
@@ -1101,9 +1116,10 @@ def economics_view(dr: dict, product_card: dict | None = None,
         # العميل — تُطلب بلغة الزائر: المعطى نفسه وما الذي يكتمل به.
         # البند ١ (وحدة السوق): المعطى يُطلَب بوحدة سوق المنتج نفسها —
         # «سعر المصنع للتر» لمنتجٍ يباع باللتر، لا وحدة كومتريد.
-        _unit_word = "للتر الواحد" if _mu_code == "litre" else "للكيلوغرام"
+        _unit_word = {'litre': 'للتر الواحد', 'kg': 'للكيلوغرام',
+                      'piece': 'للقطعة الواحدة'}.get(_mu_code, 'لوحدة المنتج مع تحديدها')
         gaps.append(f"تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع "
-                    f"{_unit_word} ليكتمل حساب سلسلة التكلفة حتى الرف"
+                    f"{_unit_word} لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف"
                     + ("؛ الحل العكسي أعلاه يعطيك أقصى تكلفة قابلة للمنافسة"
                        if reverse is not None else ""))
 
@@ -1112,10 +1128,12 @@ def economics_view(dr: dict, product_card: dict | None = None,
     # واحدة بلغة الزائر تسمّي ما يفتحه رقم واحد، بوحدة سوق المنتج.
     unlock_note = None
     if not exw:
-        _unit_name = "اللتر" if _mu_code == "litre" else "الكيلوغرام"
-        unlock_note = (f"لا نعرف بعدُ هامشك عند المضاهاة ولا نقطة التعادل "
-                       f"ولا أقصى خسارة محتملة — رقم واحد يفتحها كلها: "
-                       f"تكلفة إنتاج {_unit_name} الواحد لديك")
+        _unit_name = {'litre': 'اللتر', 'kg': 'الكيلوغرام',
+                      'piece': 'القطعة'}.get(_mu_code, 'وحدة المنتج المحددة')
+        unlock_note = (f"حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج "
+                       f"تكلفة إنتاج {_unit_name}، وسعر البيع المتوقع، والشحن "
+                       f"والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة "
+                       f"إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة")
 
     # سؤال الإزاحة عند تركّز مرتفع (§5.1): HHI من بعثة المنافسين، بتطبيع
     # مقياس صريح (≤1 = كسر → ×10000 عبر hhi_from_fractions المنطق الموحّد).

@@ -14,7 +14,7 @@ def writer_reports(missions, importer_leads=None, product="", lang="ar"):
             continue
         # Carry only collected fields; a directory listing is not proof of imports.
         value = {k: row.get(k) for k in (
-            "name", "address", "phone", "email", "website", "maps_link", "doc_level")
+            "name", "category", "address", "phone", "email", "website", "maps_link", "doc_level")
                  if row.get(k) not in (None, "")}
         source = str(row.get("source") or "unverified_contact_candidate")
         findings.append(DataPoint(

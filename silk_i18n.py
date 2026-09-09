@@ -669,9 +669,9 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "موقعك السعري الدقيق مقابل المنافسين",
         "en": "your precise price position against competitors"},
     "gap_how_price_competitiveness": {
-        "ar": "سعر المصنع للكيلوغرام (تكلفتك) وخدمة رصد أسعار مدفوعة",
-        "en": "your ex-factory price per kilogram and a paid "
-              "price-tracking service"},
+        "ar": "سعر المصنع بوحدة المنتج وأسعار منافسين موثقة بنفس العملة ووحدة المقارنة",
+        "en": "your ex-factory price and documented competitor prices in "
+              "matching currencies and product units"},
     "gap_what_entry_door": {
         "ar": "قائمة موزّعين/مستوردين مؤكَّدين بالاسم",
         "en": "a named, confirmed list of distributors and importers"},
@@ -712,10 +712,9 @@ TERMS: dict[str, dict[str, str]] = {
     "price_obs_heading": {"ar": "الأسعار المرصودة على الرف",
                           "en": "Observed shelf prices"},
     "price_unlock": {
-        "ar": "لحساب موقعك السعري الدقيق: سعر المصنع للكيلوغرام "
-              "(التكلفة/كجم) هو المعطى الناقص الوحيد.",
-        "en": "To compute your exact price position, your ex-factory "
-              "price per kilogram is the only missing input."},
+        "ar": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+        "en": "Price comparison requires your factory price and competitor prices "
+              "in matching currencies and units, with documented pack sizes and conversions."},
     "concentration_context_line": {
         "ar": "أرقام تركّز السوق في هذا التقرير تُقرأ سياقاً عاماً للفئة لا "
               "قياساً مباشراً لهذا المنتج (الرمز الجمركي مُعلَّم).",
@@ -772,8 +771,8 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "التعاقد مع موزّع محلي مؤكَّد بالاسم في {market}",
         "en": "Signing a named, confirmed local distributor in {market}"},
     "flip_via_distributor": {
-        "ar": "خدمة تحقّق جهات الاتصال المدفوعة ثم عقد موزّع",
-        "en": "a paid contact-verification service, then a distributor agreement"},
+        "ar": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+        "en": "verify the company's activity and product interest, then agree distribution terms and document the contract"},
     "the_market": {"ar": "السوق", "en": "the market"},
     "degraded_banner": {
         "ar": "⚠ DEGRADED — نظام الذكاء الاصطناعي غير متاح ({reason})",
@@ -1004,6 +1003,16 @@ def entity_allowlist(view: dict) -> tuple[str, ...]:
         if 1 < len(text) <= 80:
             names.add(text)
 
+    def _add_sources(row: dict) -> None:
+        # Documents display individual source IDs, not their joined original label.
+        # Reuse that same reference-name formatting; never exempt findings or notes.
+        from silk_data_layer import atomic_source_ids
+        from silk_reports import _clean_source_label
+        for source in atomic_source_ids(row.get("source"), row.get("source_ids")):
+            _add(source)
+            label = _clean_source_label(source)
+            _add(re.split(r"\s+[—\-(]", str(label))[0].strip())
+
     if not isinstance(view, dict):
         return ()
     _add(view.get("product"))
@@ -1022,13 +1031,13 @@ def entity_allowlist(view: dict) -> tuple[str, ...]:
                 continue
             for _f in (_m.get("findings") or []):
                 if isinstance(_f, dict):
-                    _add(_f.get("source"))
+                    _add_sources(_f)
         _analyst = _dr_early.get("analyst") or {}
         if isinstance(_analyst, dict):
             for _items in (_analyst.get("by_category") or {}).values():
                 for _f in (_items or []):
                     if isinstance(_f, dict):
-                        _add(_f.get("source"))
+                        _add_sources(_f)
     for row in (view.get("markets") or []):
         if not isinstance(row, dict):
             continue

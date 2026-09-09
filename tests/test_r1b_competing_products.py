@@ -29,8 +29,9 @@ def test_pricing_scout_instructions_capture_full_product_fields():
     assert "locale" in ins                       # يبدأ بمعرفة لغة/متاجر السوق
     assert "بلد المنشأ" in ins                    # التقاط المنشأ
     assert "حجم العبوة" in ins                    # التقاط العبوة
-    assert "لكل كجم" in ins                       # تطبيع لكل كجم/وحدة
-    assert "بالدولار" in ins                      # + بالدولار
+    assert all(unit in ins for unit in ("سعر/كجم", "سعر/لتر", "سعر/قطعة"))
+    assert "عملة الرصد" in ins                    # no unsupported currency conversion
+    assert "read_product_pages" in ins
     assert "◐" in ins and "✓" in ins             # شارة الدليل
     assert "جدول المنتجات المنافسة" in ins        # الجدول هو المخرَج الأساسي
 
@@ -59,7 +60,8 @@ def test_writer_prompt_requires_competing_products_table():
     assert "المنشأ" in src and "العبوة" in src           # أعمدة الالتقاط
     # Q3 (تدقيق عملة العمود): عمود التطبيع يُعنوَن بالعملة المرصودة لا «بالدولار»
     # المفروض — لا وعدَ بتحويلٍ لم يُجرَ.
-    assert "السعر/كجم (بعملة الرصد)" in src              # عمود التطبيع بعملة الرصد
+    assert "السعر لوحدة المقارنة" in src
+    assert "لتر للحجم" in src and "قطعة للعدد" in src
     assert "السعر/كجم بالدولار" not in src               # لم يعد يفرض الدولار
     assert "لا تحوّل عملةً ولا تَعِد بتحويلٍ لم يُجرَ" in src
     # WS10 (قرار المالك): عمود الدليل (✓ مرصود/◐ مُقدَّر) ومستوى التوثيق أُزيلا

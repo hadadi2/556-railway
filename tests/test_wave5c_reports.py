@@ -64,7 +64,7 @@ def test_brief_is_a_different_product_not_a_shrunk_copy():
     assert "توصية أولية بالدخول" in brief
     assert "PRELIMINARY GO" not in brief
     assert "مليون دولار" in brief and "[UN Comtrade]" in brief  # رقم بمصدره
-    assert "أدخل سعر المصنع للكيلوغرام" in brief   # الموقع التنافسي: غياب معلن (قفل محدَّث — الدرس 170)
+    assert "أدخل سعر المصنع بوحدة المنتج" in brief   # الموقع التنافسي: غياب معلن (قفل محدَّث — الدرس 170)
     assert "https://x/y" in brief               # إحالة اللوحة
     assert "لا اختلاق" not in brief and "لا مخمّنة" not in brief  # بلا شعار
 

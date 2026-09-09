@@ -3953,9 +3953,15 @@ def create_app():
         # Explicit repair option: refresh only the trends mission, keeping the
         # other eleven checkpoints. Default regeneration still makes no searches.
         from silk_report_refresh import prepare as _prepare_report_refresh
-        found, mission_reports = _prepare_report_refresh(
-            found, mission_reports,
-            refresh_trends=request.query_params.get("refresh_trends") == "1")
+        try:
+            found, mission_reports = _prepare_report_refresh(
+                found, mission_reports,
+                refresh_trends=request.query_params.get("refresh_trends") == "1",
+                refresh_prices=request.query_params.get("refresh_prices") == "1",
+                refresh_analysis=request.query_params.get("refresh_analysis") == "1")
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=(
+                "تعذر تحديث التحليل؛ التقرير السابق محفوظ. راجع حالة مصادر البحث ثم أعد المحاولة.")) from exc
         dr = found["deep_research"]
         analyst_summary = ((dr.get("analyst") or {}).get("report") or {}) \
             .get("summary", "")
@@ -3964,7 +3970,8 @@ def create_app():
         try:
             _stage_an = (silk_storage.load_stage_checkpoints(analysis_id)
                          .get("analyst") or {})
-            if _stage_an.get("status") == "succeeded":
+            if (_stage_an.get("status") == "succeeded"
+                    and (dr.get("analysis_refresh") or {}).get("status") != "completed"):
                 _stage_summary = ((_stage_an.get("payload") or {})
                                   .get("analyst_input") or {}).get("summary")
                 if _stage_summary:
@@ -4035,10 +4042,13 @@ def create_app():
             found.get("product", ""), market_name, trace_id=trace_id,
             hs_code=found.get("hs_code"), hs_confirmation=hs_conf_regen,
             style=regen_style, seed_draft=_seed_regen,
-            importer_leads=dr.get("importer_leads"))
+            importer_leads=dr.get("importer_leads"), product_card=found.get("product_card"))
         if (dr.get("trend_refresh") or {}).get("status") == "failed":
             report_out.setdefault("unresolved_notes", []).append(
                 "تعذر تحديث بيانات الاتجاهات؛ احتُفظ بالأدلة السابقة وفجواتها.")
+        if (dr.get("price_refresh") or {}).get("status") == "failed":
+            report_out.setdefault("unresolved_notes", []).append(
+                "تعذر تحديث أسعار التجزئة؛ احتُفظ بالأدلة السابقة وفجواتها.")
         # H1 (تدقيق): إعادة التوليد كانت تطمس التقرير المخزَّن بـreport_out حتى
         # لو فشل الكاتب هذه المرة (report=None) — فيُفقَد تقرير سابق ناجح كلّفت
         # تشغيلته الكاملة، وهو بالضبط ما تُنقِذه هذه النقطة. الآن: لا نحفظ null
@@ -4089,10 +4099,17 @@ def create_app():
         found["analysis_id"] = analysis_id
         found["view"] = _view(found)
         _attach_quality_gate(found, trace_id)
-        if (dr.get("trend_refresh") or {}).get("status") == "completed":
-            silk_storage.save_mission_checkpoint(
-                analysis_id, "demand_trends", mission_reports["demand_trends"],
-                market_iso3=(found.get("market") or {}).get("iso3"))
+        for _status_key, _mission in (("trend_refresh", "demand_trends"),
+                                     ("price_refresh", "pricing_scout")):
+            if (dr.get(_status_key) or {}).get("status") == "completed":
+                silk_storage.save_mission_checkpoint(
+                    analysis_id, _mission, mission_reports[_mission],
+                    market_iso3=(found.get("market") or {}).get("iso3"))
+        if (dr.get("analysis_refresh") or {}).get("status") == "completed":
+            silk_storage.save_stage_checkpoint(analysis_id, "analyst", {
+                "analyst_out": dr["analyst"],
+                "analyst_input": dr["analysis_refresh"]["analyst_input"]},
+                status="succeeded", market_iso3=(found.get("market") or {}).get("iso3"))
         silk_storage.save_analysis(found, analysis_id=analysis_id)
         return _json(found)
 

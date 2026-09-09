@@ -205,6 +205,7 @@ def test_timeout_cap_stops_the_layer():
         b="نتائج | فجوات: سيادة القانون غير متاحة بسبب خطأ في واجهة البنك الدولي")
     with _Env(SILK_GAP_RECOVERY_ENABLED="1", SILK_GAP_TIMEOUT_S="0",
               SILK_GAP_MAX_WEB_SEARCH="0"), \
+            patch("silk_gap_recovery.time.monotonic", return_value=100.0), \
             patch("silk_data_layer.world_bank") as wb:
         out = GR.recover(reports, market_ref=_mref())
     assert not wb.called            # المهلة صفر — لا نداء واحد

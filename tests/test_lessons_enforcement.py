@@ -1489,7 +1489,7 @@ _SYMBOL_ANCHORS_EXTRA = [
     (169, "silk_render.py", ["def _clean_price_row_note"]),
     (169, "silk_reports.py", ['("citation_scaffold"', '("locale_ref"']),
     (170, "silk_reports.py", ['("product_card"']),
-    (170, "silk_render.py", ["سعر المصنع للكيلوغرام "]),
+    (170, "silk_render.py", ["PRICE_UNLOCK_LINE", "سعر المصنع وسعر المنافس"]),
     (171, "silk_reports.py", ['counts["missing"]']),
     (171, "silk_i18n.py", ['"coverage_named_sources"']),
     # 172: تصريح منطقة العمى نصاً في docstrings الفحوص الثلاثة الجديدة.
@@ -1545,7 +1545,7 @@ _SYMBOL_ANCHORS_EXTRA = [
       "def test_direct_structured_still_wins_over_direct_numeric"]),
     # هدف الدراسة الاحترافية (البنود ١–٨) — دروس 181–185
     (181, "silk_economics.py", ["MARKET_UNIT_REGISTRY", "def market_unit",
-                                "رقم واحد يفتحها كلها"]),
+                                "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج"]),
     (181, "silk_quality_gate.py", ["def _check_unit_conversion_refusal",
                                    "def _check_uncomputed_repetition"]),
     (181, "tests/test_goal_units_wave1.py",

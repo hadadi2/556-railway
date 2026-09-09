@@ -185,7 +185,9 @@ def submit_scrape(queries: list, depth: int = 1, extract_email: bool = True):
         import requests
         body = {"name": "silk-importers", "keywords": list(queries),
                 "depth": int(depth), "email": bool(extract_email),
-                "lang": "en", "max_time": _HARD_TIMEOUT_S}
+                # Leave time for the scraper to close its browser and publish CSV
+                # before our polling deadline; equal deadlines can lose the result.
+                "lang": "en", "max_time": min(180, max(1, _HARD_TIMEOUT_S - 30))}
         r = requests.post(f"{url.rstrip('/')}/api/v1/jobs", json=body,
                           timeout=_SUBMIT_TIMEOUT_S)
         r.raise_for_status()
@@ -293,6 +295,7 @@ def _parse_lead(raw: dict) -> dict:
         emails = emails[0] if emails else ""
     return {
         "name": _s(raw.get("title") or raw.get("name")),
+        "category": _s(raw.get("category")),
         "address": _s(raw.get("address") or raw.get("full_address")
                       or raw.get("formatted_address")),
         "phone": _s(raw.get("phone") or raw.get("phone_number")),
@@ -461,6 +464,35 @@ def _merge_web_candidates(leads: list, web_candidates: list) -> list:
     return merged[:_TOP_N]
 
 
+def _completed_job(queries):
+    """Recover a recent matching job after a restart or a polling timeout."""
+    try:
+        import requests
+        from datetime import datetime, timezone
+        response = requests.get(scraper_url().rstrip('/') + '/api/v1/jobs',
+                                timeout=_HTTP_TIMEOUT_S)
+        response.raise_for_status()
+        jobs = response.json()
+        if not isinstance(jobs, list):
+            return None
+        target = sorted(str(q) for q in queries)
+        for job in jobs[:100]:
+            if not isinstance(job, dict):
+                continue
+            data = job.get('Data') or job.get('data') or {}
+            if sorted(str(q) for q in data.get('keywords') or []) != target:
+                continue
+            if str(job.get('Status') or job.get('status') or '').lower() not in ('ok', 'completed', 'done', 'finished'):
+                continue
+            date = datetime.fromisoformat(str(job.get('Date') or job.get('date') or '').replace('Z', '+00:00'))
+            age = (datetime.now(timezone.utc) - date).total_seconds()
+            if 0 <= age < _LEADS_TTL_S:
+                return job.get('ID') or job.get('id')
+    except Exception:
+        return None  # Recovery is optional; normal submission keeps its own guards.
+    return None
+
+
 def submit_scrape_async(product: str, market_ref):
     """C2/D-02: قدّم الكشط مبكراً على خيط منفصل ويعيد Future — لا ينتظر.
     None إن كانت المكشطة معطّلة. يُستدعى في بدء التشغيلة (قبل البعثات)."""
@@ -476,7 +508,7 @@ def submit_scrape_async(product: str, market_ref):
         return fut
 
     def _worker():
-        jid = submit_scrape(queries)
+        jid = _completed_job(queries) or submit_scrape(queries)
         if not jid:
             return None
         deadline = _time.monotonic() + _HARD_TIMEOUT_S

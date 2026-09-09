@@ -221,7 +221,7 @@ def _competitive_position(top: dict | None) -> dict:
                 # #13: «بطاقة منتجك (product_card)» لغة مدخلات نظام — يُطلب
                 # المعطى نفسه بلغة الزائر (نفس سابقة تنقية الموجّه).
                 "note": (cp or {}).get("error")
-                or ("أدخل سعر المصنع للكيلوغرام (التكلفة/كجم) للحصول على "
+                or ("أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد "
                     "موقعك التنافسي")}
     feas = cp.get("feasibility_threads") or []
     best = max(feas, key=lambda f: f.get("margin_at_match_pct", -9e9),
@@ -416,8 +416,8 @@ _CURRENCY_RE = re.compile(r"€|\$|£|دولار|يورو|ريال|درهم|\d")
 _WEIGHT_RE = re.compile(
     r"\d+\s*(?:غ|جم|جرام|غرام|كجم|كيلو|كغ|kg|g|مل|لتر|ml|l|أونصة|oz)")
 
-PRICE_UNLOCK_LINE = ("لحساب موقعك السعري الدقيق: سعر المصنع للكيلوغرام "
-                     "(التكلفة/كجم) هو المعطى الناقص الوحيد.")
+PRICE_UNLOCK_LINE = ("تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة "
+                     "ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.")
 
 
 # #13 ص14 — سقالة استشهاد البعثة وصلت رفَّ أسعار العميل حرفياً: وسمٌ مقوّس
@@ -494,6 +494,14 @@ def _prices(row: dict) -> list:
             out.append({"title": v.get("title"), "price": v.get("price"),
                         "currency": v.get("currency"), "store": v.get("store")})
     return out
+
+
+def _client_leads(bundle, market):
+    # The browser and document exports must show the same validated contact rows.
+    from silk_reports import _clean_leads
+    result = dict(bundle or {"leads": [], "path": "gap"})
+    result["leads"] = _clean_leads(result.get("leads") or [], {"market": market or {}})
+    return result
 
 
 def _named_competitors(row: dict) -> list:
@@ -938,7 +946,7 @@ def _swot(research: dict | None) -> dict:
     for g in (research.get("agents", {}).get("pricing", {}).get("gaps") or []):
         if "بطاقة" in g or "margin" in g:
             W.append({"text": "الهامش غير محسوب — الناقص: سعر المصنع "
-                              "للكيلوغرام (التكلفة/كجم)",
+                              "بوحدة المنتج مع توثيق بقية عناصر التكلفة",
                       # صيد ٣: القصّ بعد الترجمة وعند حدّ كلمة معلناً — الشريحة
                       # الخام كانت تبتر وسط الكلمة قبل أن يترجمها المُءَنسِن.
                       "evidence": _clip_words(_humanize_gap_note(g), 120)})
@@ -2176,7 +2184,7 @@ def _stale_years_threshold() -> int:
 # موثوقة تحت الرمز الصحيح (إن كان الرمز مُعلَّماً)، وموزّع محلي مؤكَّد تعاقدياً
 # بالاسم. كل شرط يحمل خطوة الإغلاق التي تُقفله فتربطه خارطة الـ٩٠ يوماً. مبنيّ
 # على البيانات (لا قائمة منتج صلبة) — يُستهلَك في العرض/المُصدِّرات/المختصر.
-FLIP_CONDITIONS_HEADING = "شرطا قلب الحكم"
+FLIP_CONDITIONS_HEADING = "شروط إعادة تقييم القرار"
 
 
 # قيم حشو تُعامَل كغياب جهة اتصال (لا تُثبِت موزّعاً مؤكَّداً — مراجعة الشيفرة #4).
@@ -2200,7 +2208,7 @@ def _real_contact(v: object) -> bool:
 
 def _flip_conditions(verdict_tone: str, hs_flagged: bool,
                      importer_leads: dict, market_ar: str,
-                     lang: str = "ar") -> list[dict]:
+                     lang: str = "ar", missing_components=None) -> list[dict]:
     """اشتقّ شرطَي قلب الحكم المهيكلين — يُفعَّل فقط للحكم watch/conditional.
 
     كل شرط: {condition, closes_via, met}. `met=True` حين يوجد دليل مرصود
@@ -2219,16 +2227,22 @@ def _flip_conditions(verdict_tone: str, hs_flagged: bool,
             "condition": _i18n.t("flip_cond_hs", lang),
             "closes_via": _i18n.t("flip_via_hs", lang),
             "met": False})
-    leads = (importer_leads or {}).get("leads") or []
-    has_confirmed = any(
-        isinstance(l, dict)
-        and (_real_contact(l.get("phone")) or _real_contact(l.get("email")))
-        and (l.get("title") or l.get("name")) for l in leads)
     conds.append({
         "condition": _i18n.t("flip_cond_distributor", lang,
                              market=market_ar or _i18n.t("the_market", lang)),
         "closes_via": _i18n.t("flip_via_distributor", lang),
-        "met": bool(has_confirmed)})
+        # Public contact details cannot establish a signed distribution agreement.
+        "met": False})
+    from silk_decision import _parts_ar
+    for component in dict.fromkeys(missing_components or []):
+        label = _parts_ar([component]) if lang == "ar" else str(component).replace('_', ' ')
+        conds.append({
+            "condition": (f"استكمال بيانات {label} وإعادة تقييم القرار" if lang == "ar"
+                          else f"Complete the evidence for {label} and reassess the decision"),
+            "closes_via": ("توثيق المدخلات من مصدر مناسب، ثم إعادة الحساب قبل الالتزام بالبيع"
+                           if lang == "ar" else
+                           "Document the required inputs and recalculate before committing to sales"),
+            "met": False})
     return conds
 
 
@@ -2853,7 +2867,7 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
             # اسم السوق يتبع اللغة أيضاً — «الأردن» مقابل «Jordan».
             ((result.get("market") or {}).get("name_ar") if lang == "ar"
              else (result.get("market") or {}).get("name_en")) or "",
-            lang),
+            lang, (dr.get("verdict") or {}).get("decision_missing_components")),
         "report": {"text": _report_text_glossed,
                   "review_cycles": report_out.get("review_cycles", 0),
                   "unresolved_notes": clean_unresolved,
@@ -2871,7 +2885,7 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
         "glossary": _glossary,
         # C5 (SPEC-v2): قائمة مستوردين/موزعين قابلين للتواصل — بنية يعرضها
         # كل مُصدِّر كجدول في قسم الدخول (خرائط قوقل/Places + مرشّحو ويب).
-        "importer_leads": dr.get("importer_leads") or {"leads": [], "path": "gap"},
+        "importer_leads": _client_leads(dr.get("importer_leads"), result.get("market")),
         # مصدرُ الرمز حين حُسِم آلياً — يصل **عرضَ البحث العميق** لا الحدودَ
         # وحدها: تقريرُ العميل (المُسلَّم الفعليّ) يبني أقسامَه من
         # `deep_research` لا من `limits`، فوضعُه في الحدود وحدها أخرجه من
