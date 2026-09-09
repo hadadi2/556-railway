@@ -902,7 +902,12 @@ def _voice_lead(lang: str = "ar") -> str:
             "ولا تنقل أسماء الوكلاء والبعثات أو رسائل الأخطاء البرمجية "
             "إلى المتن. اجعل التوصية محددة وقابلة للتنفيذ بقدر الدليل، "
             "ولا تحوّل نقص البيانات إلى فرصة مؤكدة أو تقدير مختلق. "
-            "حافظ على بنية التقرير ومصادره وأرقامه المعتمدة.\n")
+            "حافظ على بنية التقرير ومصادره وأرقامه المعتمدة. "
+            "استهدف 1800 إلى 2200 كلمة للمتن كاملاً مع إتمام الأقسام الأحد عشر "
+            "في رد واحد؛ اختصر التكرار لا الأدلة أو الشروط. خصص لكل رقم "
+            "جدولاً أو موضعاً أساسياً، ثم أحل إليه دون إعادة سرده. "
+            "نجاح جمع معلومات من كل وكيل لا يعني اكتمال كل البيانات؛ "
+            "صرّح بحدود التغطية والموسمية والأسعار بدقة.\n")
 
 
 # مهمة → قسم التقرير الذي تغذّيه — traceability للتحقق البرمجي (المراجع).
@@ -2529,11 +2534,15 @@ def review_report(draft: str, mission_reports: dict,
            'بالكامل/اختصار استشاري عارٍ بدل معناه العربي؛ مشاكل الأسلوب '
            'والصياغة الأخرى ليست حاجبة", ...], "approved":')
         + 'true|false}. "approved":true فقط إن لم توجد مشاكل جوهرية.')
+    user += ("\nأعد JSON صالحاً ومغلقاً فقط. اجمع الملاحظات المتشابهة؛ "
+             "حد أقصى ثماني ملاحظات موجزة، لكل منها المشكلة والإصلاح. "
+             "قدّم التناقضات والأرقام غير المسندة على الملاحظات الأسلوبية؛ "
+             "لا تقتبس فقرات طويلة ولا تعِد كتابة التقرير في الرد.\n")
     user += _user_steer("reviewer")
     raw = _traced_call(
-        trace_id, "review", 30,
-        lambda: _call(_principle(lang), user, max_tokens=900,
-                     model=_FAST_MODEL, timeout=30))
+        trace_id, "review", 90,
+        lambda: _call(_principle(lang), user, max_tokens=4000,
+                     model=_FAST_MODEL, timeout=90))
     if not raw:
         _fb = (structural_issues + tone_issues + keyfig_issues
                + substructure_issues)
@@ -2558,7 +2567,9 @@ def review_report(draft: str, mission_reports: dict,
     # هذا التقرير» بدل الضياع).
     llm_blocking = [str(i) for i in (obj.get("blocking") or [])
                     if str(i).strip()]
-    blocking = structural_issues + llm_blocking
+    # Repeated key figures are also export-blocking: a revision must be able
+    # to resolve them instead of returning a draft that the export gate rejects.
+    blocking = structural_issues + keyfig_issues + llm_blocking
     return {"issues": issues, "blocking": blocking,
             "review_status": "approved" if obj.get("approved") and not issues else "rejected",
             "approved": bool(obj.get("approved")) and not issues}
