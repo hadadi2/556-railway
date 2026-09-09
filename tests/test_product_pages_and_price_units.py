@@ -41,6 +41,7 @@ def test_litres_and_pieces_cannot_be_labelled_price_per_kg():
 
 
 def test_read_pages_preserves_real_source_text_and_limits_batch(monkeypatch):
+    monkeypatch.setenv('SEARCH_PROVIDER', 'tavily')
     monkeypatch.setenv('TAVILY_API_KEY', 'test-key')
     url = 'https://store.example/product'
     response = Mock()
@@ -56,10 +57,37 @@ def test_read_pages_preserves_real_source_text_and_limits_batch(monkeypatch):
 
 
 def test_extraction_failure_never_creates_a_price(monkeypatch):
+    monkeypatch.setenv('SEARCH_PROVIDER', 'tavily')
     monkeypatch.setenv('TAVILY_API_KEY', 'test-key')
     with patch('silk_product_pages.throttled_request', side_effect=RuntimeError('unavailable')):
         row = read_product_pages(['https://store.example/product'])[0]
     assert row.value is None and row.confidence == 0
+
+
+def test_exa_reads_prices_without_a_tavily_key_and_accepts_encoded_source_urls(monkeypatch):
+    import json
+    from urllib.parse import quote
+    monkeypatch.setenv('SEARCH_PROVIDER', 'agent_reach')
+    monkeypatch.delenv('TAVILY_API_KEY', raising=False)
+    url = 'https://store.example/حلاوة'
+    encoded = 'https://store.example/' + quote('حلاوة')
+    response = Mock(text=json.dumps({'result': {'content': [{'type': 'text',
+        'text': '# Product\nURL: ' + encoded + '\n300 g — 1.25 JOD'}]}}))
+    with patch('silk_product_pages.throttled_request', return_value=response) as request:
+        rows = read_product_pages([url])
+    assert rows[0].url == encoded and '1.25' in rows[0].value['content']
+    assert request.call_args.kwargs['json_body']['params']['name'] == 'web_fetch_exa'
+
+
+def test_missing_exa_content_falls_back_to_configured_tavily(monkeypatch):
+    monkeypatch.setenv('SEARCH_PROVIDER', 'agent_reach')
+    monkeypatch.setenv('TAVILY_API_KEY', 'test-key')
+    from silk_data_layer import DataPoint
+    dp = DataPoint({'content': '300 g 1.25 JOD'}, 'Tavily', .65, url='https://store.example/p')
+    with patch('silk_product_pages._exa_pages', return_value=[]), \
+         patch('silk_product_pages._tavily_pages', return_value=[dp]) as fallback:
+        assert read_product_pages(['https://store.example/p']) == [dp]
+    fallback.assert_called_once()
 
 
 def test_price_checks_drive_export_failure():
