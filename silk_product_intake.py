@@ -153,6 +153,10 @@ _SYSTEM = (
     "أنت مُستخلِصٌ دقيق لاسم منتجٍ تجاريّ من صورة. المهمّة: اقرأ الصورة وأعِد "
     "JSON فقط، بلا أيّ نصّ خارجه. الحقول: product_name_ar (الاسم العربي، أو '')، "
     "product_name_en (الاسم الإنجليزي، أو '')، category_hint (فئة عامة أو '')، "
+    "product_type (اسم نوع المنتج بالعربية إن أمكن، دون العلامة التجارية "
+    "أو اسم الشركة أو عبارات التسويق؛ احتفظ بالمادة وطريقة التحضير والصفات "
+    "المميزة المقروءة التي تغيّر التصنيف. لا تستنتج مكوّناً أو معالجة "
+    "لا تثبتها الصورة؛ إذا لم يتضح نوع المنتج اجعل هذا الحقل '')، "
     "ingredients (قائمة نصوص المكوّنات إن كانت بطاقة مكوّنات، وإلا [])، "
     # سماتُ البطاقة الرقمية (بلاغ المُشرِف — «حليب نادك كامل الدسم؟»): بنودُ
     # الترويسة الجمركية الواحدة تتمايز بعتبةٍ رقمية (نسبة دهن/سعة/وزن)،
@@ -247,6 +251,7 @@ def intake_image(image_b64: str, media_type: str, kind: str = "product",
     name_ar = _sanitize(parsed.get("product_name_ar"))
     name_en = _sanitize(parsed.get("product_name_en"))
     category = _sanitize(parsed.get("category_hint"), 80)
+    product_type = _sanitize(parsed.get("product_type"))
     ingredients = _sanitize_list(parsed.get("ingredients"))
     attributes = _sanitize_attributes(parsed.get("attributes"))
     try:
@@ -274,6 +279,7 @@ def intake_image(image_b64: str, media_type: str, kind: str = "product",
             "product_name": product_name,
             "extraction": {"product_name_ar": name_ar,
                            "product_name_en": name_en,
+                           "product_type": product_type,
                            "category_hint": category,
                            "ingredients": ingredients,
                            # سماتُ البطاقة الرقمية تُمرَّر للأمام كما قُرئت —

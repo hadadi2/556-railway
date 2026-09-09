@@ -80,13 +80,16 @@ def classify_extraction(read: dict, *, allow_claude: bool = True) -> dict:
     if not product:
         return _manual("الرؤية لم تُعِد اسم منتج")
     extraction = read.get("extraction") or {}
+    # Brand/marketing words are not tariff characteristics. The vision reader
+    # supplies a separate evidenced type; keep the label name for display.
+    classification_product = str(extraction.get("product_type") or "").strip() or product
 
     import silk_hs_classifier as hsc
     image_context = {}
     if extraction.get("attributes"):
         image_context["label_attributes"] = extraction["attributes"]
     out = hsc.classify_general(
-        product,
+        classification_product,
         ingredients=extraction.get("ingredients") or None,
         category=extraction.get("category_hint") or None,
         allow_claude=allow_claude, **image_context)
