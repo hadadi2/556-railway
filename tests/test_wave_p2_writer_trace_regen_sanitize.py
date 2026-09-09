@@ -107,7 +107,7 @@ def test_review_report_traces_with_its_own_short_timeout(tmp_path):
     events = silk_trace.read_trace("t3", dir_path=str(tmp_path))
     assert events[0]["kind"] == "report_call"
     assert events[0]["stage"] == "review"
-    assert events[0]["timeout"] == 30
+    assert events[0]["timeout"] == 90
 
 
 def test_write_reviewed_report_traces_call_failure_with_long_timeout(tmp_path):
@@ -148,7 +148,7 @@ def test_write_reviewed_report_traces_full_writer_reviewer_cycle(tmp_path):
     stages = [e["stage"] for e in events]
     assert stages == ["draft", "review"]
     assert events[0]["timeout"] == aj._LONG_TIMEOUT
-    assert events[1]["timeout"] == 30
+    assert events[1]["timeout"] == 90
 
 
 def test_no_trace_id_means_zero_tracing_cost(tmp_path):

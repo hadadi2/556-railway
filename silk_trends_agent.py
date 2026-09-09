@@ -120,9 +120,24 @@ def trends_interest(
                              f"no interest data for '{kw}' (geo={geo or 'WW'})", _today())
         series = df[kw]
         mean = round(float(series.mean()), 1)
+        monthly_note = ""
+        # The mission needs dated observations, not only an overall mean.
+        # Reuse this response: no second request and no inferred sales volume.
+        try:
+            import pandas as pd
+            if isinstance(series.index, pd.DatetimeIndex):
+                monthly = series.resample("MS").mean().dropna().tail(60)
+                values = "; ".join(f"{date:%Y-%m}={float(value):.2f}"
+                                   for date, value in monthly.items())
+                if values:
+                    monthly_note = ("; monthly mean search interest 0-100: " + values
+                                    + "; search interest is not sales or demand volume; "
+                                    "a one-year peak does not establish recurring seasonality")
+        except (TypeError, ValueError, AttributeError):
+            pass  # Preserve the observed mean when no dated series is available.
         return DataPoint(mean, "Google Trends", 0.7,
                          f"mean interest 0-100 for '{kw}' geo={geo or 'WW'} "
-                         f"tf='{timeframe}' n={len(series)}", _today())
+                         f"tf='{timeframe}' n={len(series)}" + monthly_note, _today())
     except Exception as e:  # noqa: BLE001 — never raise to caller
         log.warning("Google Trends fetch failed ('%s', geo=%s): %s", keyword, geo, e)
         try:  # عائلة C (Wave 1.5): إعلان الفشل للمشغّل.
@@ -199,7 +214,8 @@ def trends_interest_resilient(keyword: str, geo: str | None = None,
         return DataPoint(
             row["value"], "Google Trends", capped_conf,
             f"لقطة مخزَّنة (اهتمام بحث سابق) — تعذّر التحديث الحيّ؛ رُصدت في "
-            f"{observed} (من المخزن، لا قيمة حيّة)", observed, status="stale")
+            f"{observed} (من المخزن، لا قيمة حيّة)؛ "
+            + str(row.get("note") or ""), observed, status="stale")
     # لا لقطة — تبقى الفجوة المعلنة (value=None) كما هي، لا اختلاق.
     return live
 
