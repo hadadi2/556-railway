@@ -50,3 +50,14 @@ def test_failed_refresh_keeps_prior_evidence_and_records_failure():
         result, current = prepare(saved(), old, refresh_trends=True)
     assert current['demand_trends'] is old['demand_trends']
     assert result['deep_research']['trend_refresh']['status'] == 'failed'
+
+
+def test_refresh_reaches_real_runtime_with_bounded_tool_budget():
+    # Exercise the runtime's budget merge; mocking Agent.run alone hid a
+    # scalar-vs-mapping mismatch before any search could start.
+    with patch('silk_llm_runtime.LLMMissionAgent.run', autospec=True,
+               side_effect=lambda agent, task: agent._execute(task)), \
+         patch('silk_llm_runtime._run_loop', return_value={'findings': []}) as loop:
+        prepare(saved(), reports(), refresh_trends=True)
+    assert loop.call_count == 1
+    assert loop.call_args.args[2]['tool_calls'] == 6

@@ -17,7 +17,7 @@ def prepare(found, mission_reports, *, refresh_trends=False):
             raise ValueError('Stored market cannot be resolved for trend refresh')
         fresh = LLMMissionAgent(MISSIONS['demand_trends']).run({
             'market': ref, 'product': result.get('product', ''),
-            'hs_code': result.get('hs_code'), 'budget': 6,
+            'hs_code': result.get('hs_code'), 'budget': {'tool_calls': 6},
             'wall_timeout_s': _MISSION_TIMEOUT_S,
         })
         # A failed refresh cannot erase prior evidence. Keep its failure explicit.
