@@ -2571,7 +2571,9 @@ function _durText(s) {
          يطلب دراسةً ثانية مدفوعة. الخادم يرسل `grace_s` (نافذة الكنس) **فقط**
          حين يكون الكانسُ مفعَّلاً، فالوعدُ بالتعافي لا يُقال إلا صادقاً؛
          وغيابُه يُبقي النصّ القديم حرفياً. */
-      if (s.grace_s && el > s.grace_s) {
+      // Runs with a supervisor are judged by heartbeat/boot identity, not age.
+      // The legacy orphan grace is not a maximum duration for an active run.
+      if (s.grace_s && el > s.grace_s && !s.run) {
         t += ar_en(" · تجاوزت الحدّ الأقصى — ستُعيدها المنصّة تلقائياً",
                    " · past the maximum — the platform will reset it automatically");
       } else if (s.eta_s) {
