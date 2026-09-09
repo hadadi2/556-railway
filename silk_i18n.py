@@ -1003,6 +1003,16 @@ def entity_allowlist(view: dict) -> tuple[str, ...]:
         if 1 < len(text) <= 80:
             names.add(text)
 
+    def _add_sources(row: dict) -> None:
+        # Documents display individual source IDs, not their joined original label.
+        # Reuse that same reference-name formatting; never exempt findings or notes.
+        from silk_data_layer import atomic_source_ids
+        from silk_reports import _clean_source_label
+        for source in atomic_source_ids(row.get("source"), row.get("source_ids")):
+            _add(source)
+            label = _clean_source_label(source)
+            _add(re.split(r"\s+[—\-(]", str(label))[0].strip())
+
     if not isinstance(view, dict):
         return ()
     _add(view.get("product"))
@@ -1021,13 +1031,13 @@ def entity_allowlist(view: dict) -> tuple[str, ...]:
                 continue
             for _f in (_m.get("findings") or []):
                 if isinstance(_f, dict):
-                    _add(_f.get("source"))
+                    _add_sources(_f)
         _analyst = _dr_early.get("analyst") or {}
         if isinstance(_analyst, dict):
             for _items in (_analyst.get("by_category") or {}).values():
                 for _f in (_items or []):
                     if isinstance(_f, dict):
-                        _add(_f.get("source"))
+                        _add_sources(_f)
     for row in (view.get("markets") or []):
         if not isinstance(row, dict):
             continue

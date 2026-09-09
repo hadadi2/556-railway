@@ -383,7 +383,7 @@ def test_writer_prompt_requires_narrative_intersections_and_reasoned_verdict():
     import silk_ai_judge
     src = inspect.getsource(silk_ai_judge.deep_report)
     assert "فقرة سردية" in src
-    assert "حساب حسابي صريح" in src
+    assert "وكان الناتج مفيداً للقرار" in src
     # تحديث قفل معلن (البند ٤): «أقوى الأسباب بأرقامها» — الأطروحة باقية
     # والعدد الصلب زال لصالح سقف الكلمات.
     assert "أقوى الأسباب بأرقامها" in src
