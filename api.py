@@ -3950,6 +3950,13 @@ def create_app():
         if not ai_ok:
             return _json({"report": None, "note": ai_note})
         from silk_ai_judge import write_reviewed_report
+        # Explicit repair option: refresh only the trends mission, keeping the
+        # other eleven checkpoints. Default regeneration still makes no searches.
+        from silk_report_refresh import prepare as _prepare_report_refresh
+        found, mission_reports = _prepare_report_refresh(
+            found, mission_reports,
+            refresh_trends=request.query_params.get("refresh_trends") == "1")
+        dr = found["deep_research"]
         analyst_summary = ((dr.get("analyst") or {}).get("report") or {}) \
             .get("summary", "")
         # الموجة p6 (T4): نقطة تفتيش المحلل (تُكتب فور عودته) تسبق البلوب —
@@ -4029,6 +4036,9 @@ def create_app():
             hs_code=found.get("hs_code"), hs_confirmation=hs_conf_regen,
             style=regen_style, seed_draft=_seed_regen,
             importer_leads=dr.get("importer_leads"))
+        if (dr.get("trend_refresh") or {}).get("status") == "failed":
+            report_out.setdefault("unresolved_notes", []).append(
+                "تعذر تحديث بيانات الاتجاهات؛ احتُفظ بالأدلة السابقة وفجواتها.")
         # H1 (تدقيق): إعادة التوليد كانت تطمس التقرير المخزَّن بـreport_out حتى
         # لو فشل الكاتب هذه المرة (report=None) — فيُفقَد تقرير سابق ناجح كلّفت
         # تشغيلته الكاملة، وهو بالضبط ما تُنقِذه هذه النقطة. الآن: لا نحفظ null
@@ -4079,6 +4089,10 @@ def create_app():
         found["analysis_id"] = analysis_id
         found["view"] = _view(found)
         _attach_quality_gate(found, trace_id)
+        if (dr.get("trend_refresh") or {}).get("status") == "completed":
+            silk_storage.save_mission_checkpoint(
+                analysis_id, "demand_trends", mission_reports["demand_trends"],
+                market_iso3=(found.get("market") or {}).get("iso3"))
         silk_storage.save_analysis(found, analysis_id=analysis_id)
         return _json(found)
 
