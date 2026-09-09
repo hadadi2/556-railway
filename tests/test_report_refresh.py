@@ -32,6 +32,27 @@ def test_regeneration_updates_components_without_network_or_mutating_stored_resu
     assert result['markets'][0]['components']['market_size']['data_year'] == 2023
 
 
+def test_failed_analysis_refresh_keeps_diagnostics_in_existing_trace(tmp_path, monkeypatch):
+    import silk_trace
+    monkeypatch.setenv('SILK_TRACE_DIR', str(tmp_path))
+    original = saved()
+    original['deep_research']['trace_id'] = 'refresh-diagnostics'
+    before = deepcopy(original)
+    def fail(*args, **kwargs):
+        silk_trace.record_event(kind='llm_call', stop_reason='max_tokens')
+        return {'report': AgentReport('analyst', [], True, 'incomplete response'),
+                'diagnostics': {'raw_findings': 0, 'analyst_failed': True}}
+    with patch('silk_market_analyst.analyze_market', side_effect=fail):
+        with pytest.raises(ValueError):
+            prepare(original, reports(), refresh_analysis=True)
+    events = silk_trace.read_trace('refresh-diagnostics')
+    assert any(e.get('stop_reason') == 'max_tokens' for e in events)
+    failure = next(e for e in events if e.get('kind') == 'analysis_refresh_failed')
+    assert failure['diagnostics']['analyst_failed'] is True
+    assert silk_trace.current_trace_id() is None
+    assert original == before
+
+
 def test_explicit_refresh_replaces_only_trends_with_actual_agent_result():
     old = reports()
     fresh = AgentReport('trends', [DataPoint(12, 'Google Trends', .7)], False, 'new')

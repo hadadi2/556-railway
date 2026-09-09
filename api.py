@@ -3960,8 +3960,9 @@ def create_app():
                 refresh_prices=request.query_params.get("refresh_prices") == "1",
                 refresh_analysis=request.query_params.get("refresh_analysis") == "1")
         except ValueError as exc:
+            log.warning("report refresh failed for analysis %s: %s", analysis_id, exc)
             raise HTTPException(status_code=409, detail=(
-                "تعذر تحديث التحليل؛ التقرير السابق محفوظ. راجع حالة مصادر البحث ثم أعد المحاولة.")) from exc
+                "تعذر تحديث التحليل؛ التقرير السابق محفوظ. لم تُعتمد نتيجة ناقصة.")) from exc
         dr = found["deep_research"]
         analyst_summary = ((dr.get("analyst") or {}).get("report") or {}) \
             .get("summary", "")
