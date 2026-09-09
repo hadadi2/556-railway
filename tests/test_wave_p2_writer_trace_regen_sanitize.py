@@ -283,7 +283,7 @@ def test_regenerate_report_calls_writer_once_with_reconstructed_reports():
     def fake_write_reviewed_report(mission_reports, analyst_summary, verdict,
                                    product, market_name, trace_id=None,
                                    hs_code=None, hs_confirmation=None,
-                                   style=None, seed_draft=None):
+                                   style=None, seed_draft=None, importer_leads=None):
         captured["mission_reports"] = mission_reports
         captured["analyst_summary"] = analyst_summary
         captured["verdict"] = verdict
@@ -340,7 +340,7 @@ def test_regenerate_report_seeds_writer_from_stored_partial():
 
     def fake_wrr(mission_reports, analyst_summary, verdict, product,
                  market_name, trace_id=None, hs_code=None,
-                 hs_confirmation=None, style=None, seed_draft=None):
+                 hs_confirmation=None, style=None, seed_draft=None, importer_leads=None):
         captured["seed_draft"] = seed_draft
         return {"report": "## 1. الخلاصة التنفيذية\nاكتمل من البذرة.",
                 "review_cycles": 1, "unresolved_notes": []}
@@ -377,7 +377,7 @@ def test_regenerate_report_seed_0_skips_seeding_for_reliable_fresh_draft():
 
     def fake_wrr(mission_reports, analyst_summary, verdict, product,
                  market_name, trace_id=None, hs_code=None,
-                 hs_confirmation=None, style=None, seed_draft=None):
+                 hs_confirmation=None, style=None, seed_draft=None, importer_leads=None):
         captured["seed_draft"] = seed_draft
         return {"report": "## 1. الخلاصة التنفيذية\nمن الصفر.",
                 "review_cycles": 1, "unresolved_notes": []}
