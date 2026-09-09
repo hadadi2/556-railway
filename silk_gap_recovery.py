@@ -321,7 +321,7 @@ def _recover_wgi(item: GapItem, report, market_ref, deadline: float) -> bool:
         or list(_WGI.items())
     got = 0
     for ind, label in wanted:
-        if time.monotonic() > deadline:
+        if time.monotonic() >= deadline:
             break
         dp = world_bank(market_ref.iso3, ind, year=None)
         if getattr(dp, "value", None) is not None:
@@ -335,7 +335,7 @@ def _recover_wgi(item: GapItem, report, market_ref, deadline: float) -> bool:
 def _recover_tariff(item: GapItem, report, market_ref, hs_code, year,
                     deadline: float) -> bool:
     """م٤ — التعرفة عبر سلسلة التراجع المعتمدة (WTO TTD ← WITS)."""
-    if time.monotonic() > deadline:
+    if time.monotonic() >= deadline:
         return False
     from silk_tariffs_agent import tariff_with_fallback
     dp = tariff_with_fallback(str(hs_code), market_ref.iso3, "SAU", year)
@@ -351,7 +351,7 @@ def _recover_seasonality(item: GapItem, report, product: str, market_ref,
                          deadline: float) -> bool:
     """م١ — الموسمية بعد حدّ المعدل: نفسُ وكيل الاتجاهات بإعادةِ محاولته
     المتصاعدة الداخلية. حدُّ المعدل ليس فجوةَ بيانات (§2 من الأمر)."""
-    if time.monotonic() > deadline:
+    if time.monotonic() >= deadline:
         return False
     try:
         from silk_trends_agent import trends_interest_resilient
@@ -375,7 +375,7 @@ def _recover_distributors(item: GapItem, report, market_ref, product: str,
     """§6 — الموزّعون: مساراتٌ لا تصلها الخرائط (غرفة التجارة، أدلّة الشركات،
     صفحات «موزّعونا» لدى المنافسين). يعيد **مرشّحين معلَني الحالة**: الإدراج
     يثبت الوجودَ وجهةَ الاتصال فقط، لا نشاطَ الاستيراد (عقد الطبقة)."""
-    if time.monotonic() > deadline:
+    if time.monotonic() >= deadline:
         return False
     from silk_websearch_agent import web_search
     country = (getattr(market_ref, "name_en", "") or "").strip()
@@ -383,7 +383,7 @@ def _recover_distributors(item: GapItem, report, market_ref, product: str,
     gl = (getattr(market_ref, "iso2", "") or "").lower() or None
     found = 0
     for tpl in _DISTRIBUTOR_QUERIES:
-        if time.monotonic() > deadline:
+        if time.monotonic() >= deadline:
             break
         q = tpl.format(prod=product or "", country=country,
                        country_ar=country_ar).strip()
@@ -402,7 +402,7 @@ def _recover_distributors(item: GapItem, report, market_ref, product: str,
 def _recover_partner_shares(item: GapItem, report, market_ref, hs_code, year,
                             deadline: float) -> bool:
     """م٢ — حصص الدول المورّدة والأوزان من نفس نداء Comtrade (partner='all')."""
-    if not hs_code or not year or time.monotonic() > deadline:
+    if not hs_code or not year or time.monotonic() >= deadline:
         return False
     from silk_data_layer import DataPoint, comtrade_trade, primary_value, primary_qty
     recs = comtrade_trade(hs_code, market_ref.m49, year, flow="M", partner="all")
@@ -445,7 +445,7 @@ def _recover_per_capita(item: GapItem, report, market_ref, deadline: float,
     الاشتقاق يفشل دائماً وتبقى الفجوة رغم توفّر طرفَي المعادلة (بلاغ
     الحليب–الأردن: «نصيب الفرد» ظلّ معلَناً بلا سبب).
     """
-    if time.monotonic() > deadline:
+    if time.monotonic() >= deadline:
         return False
     pool = []
     for rep in (all_reports or {}).values():
@@ -488,7 +488,7 @@ def _retry_backoff(fn, attempts: int, deadline: float,
     """م١ — إعادة محاولة متصاعدة تحت السقفين (محاولات + مهلة الطبقة)."""
     last = None
     for i in range(attempts):
-        if time.monotonic() > deadline:
+        if time.monotonic() >= deadline:
             break
         try:
             out = fn()
@@ -498,7 +498,7 @@ def _retry_backoff(fn, attempts: int, deadline: float,
             last = e
         if i < attempts - 1:
             wait = delays[min(i, len(delays) - 1)]
-            if time.monotonic() + wait > deadline:
+            if time.monotonic() + wait >= deadline:
                 break
             time.sleep(wait)
     return None
@@ -517,7 +517,7 @@ def _web_search_recover(item: GapItem, report, market_ref, product: str,
             return False
     except Exception:
         return False
-    if time.monotonic() > deadline:
+    if time.monotonic() >= deadline:
         return False
     from silk_llm_runtime import run_llm_agent
     mission = {
@@ -631,7 +631,7 @@ def recover(mission_reports: dict, *, market_ref, product: str = "",
     for item in sorted(items, key=lambda i: i.prio):
         if item.recovered or item.category in (OPS, PAID, NONE):
             continue
-        if time.monotonic() > deadline:
+        if time.monotonic() >= deadline:
             break
         report = mission_reports[item.mission_key]
         item.attempts += 1

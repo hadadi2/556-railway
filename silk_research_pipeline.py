@@ -63,8 +63,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
 
     def _default_report_style() -> str:
         """نمط الكتابة الافتراضي للتوليد — `SILK_REPORT_STYLE` (طلب المالك:
-        الافتراضي "academic"). أيّ قيمةٍ غير "academic" تعني السجل التجاري."""
-        return (os.environ.get("SILK_REPORT_STYLE", "academic") or "").strip().lower()
+        الافتراضي "decision"). يبقى الأسلوب الأكاديمي خياراً صريحاً فقط."""
+        return (os.environ.get("SILK_REPORT_STYLE", "decision") or "decision").strip().lower()
 
     def _research_budget_status(economics: dict) -> dict:
         """حالة الميزانية على مستوى التشغيلة كاملة — P1، حادثة نفاد

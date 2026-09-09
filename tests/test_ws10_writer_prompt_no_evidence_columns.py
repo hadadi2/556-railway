@@ -24,7 +24,7 @@ def test_demand_table_instruction_has_no_source_column():
     src = _writer_prompt_source()
     # الترويسة القديمة ثلاثية بعمود «المصدر» ممنوعة؛ الجديدة عمودان.
     assert "المتغيّر | القيمة | المصدر" not in src
-    assert "| المتغيّر | القيمة" in src   # الترويسة النظيفة باقية
+    assert "قياس مباشر" in src   # الترويسة النظيفة باقية
 
 
 def test_pricing_table_instruction_has_no_doc_level_column():

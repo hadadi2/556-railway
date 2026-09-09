@@ -28,3 +28,5 @@ def test_writer_receives_decision_language_without_automatic_two_condition_upgra
     assert 'إلى GO إذا <شرطان' not in prompt
     assert 'سعة الحاوية حد نقل' in prompt
     assert 'ليس نسبة مشترين' in prompt
+    assert 'لا تفترض كمية استهلاك للفرد' in prompt
+    assert 'احسب حجم الشريحة في جدول' not in prompt

@@ -41,7 +41,7 @@ def test_conditional_verdict_missing_both_flags_two_issues():
     issues = j._section_substructure_issues(draft)
     assert len(issues) == 2
     assert any("خارطة" in i for i in issues)
-    assert any("قلب الحكم" in i for i in issues)
+    assert any("شروط إعادة تقييم القرار" in i for i in issues)
 
 
 def test_go_verdict_does_not_require_flip_conditions():
@@ -61,7 +61,7 @@ def test_window_scoped_flip_in_another_section_does_not_count():
     draft = ("## 1. الخلاصة التنفيذية\nالتوصية: دخول مشروط. شرطا قلب الحكم مذكوران هنا خطأً.\n"
              + _RECS + "### خارطة طريق الدخول (٩٠ يومًا)\nخطوات.\n" + _APPENDIX)
     issues = j._section_substructure_issues(draft)
-    assert any("قلب الحكم" in i for i in issues)  # غائبٌ عن نافذة التوصيات
+    assert any("شروط إعادة تقييم القرار" in i for i in issues)  # غائبٌ عن نافذة التوصيات
 
 
 # ═══════════════ ٢) نافذة القسم ═══════════════
