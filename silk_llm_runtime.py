@@ -322,6 +322,17 @@ def _tool_wits_tariff(args: dict, ctx: dict) -> list[DataPoint]:
                                  year=int(year) if year else None)]
 
 
+def _tool_itc_market_access(args: dict, ctx: dict) -> list[DataPoint]:
+    """ITC Market Access Map: customs duty evidence, separate from VAT."""
+    from silk_itc_tariff import market_access_evidence
+    hs = ctx.get("hs_code")
+    market = ctx["market"]
+    partner = str(args.get("partner_iso3") or "SAU").upper()
+    year = args.get("year")
+    return [market_access_evidence(hs, market.iso3, partner,
+                                   int(year) if year else None)]
+
+
 def _tool_imf_indicator(args: dict, ctx: dict) -> list[DataPoint]:
     """مؤشر اقتصاد كلي من IMF WEO (نمو/تضخم/حساب جارٍ) — يثري المخاطر/الاقتصاد
     الكلي بجانب صرف البنك الدولي (الموجة: دمج مصادر جديدة). فجوة معلنة عند الفشل."""
@@ -573,6 +584,17 @@ TOOLS: dict[str, dict] = {
             "input_schema": {"type": "object", "properties": {
                 "partner_iso3": {"type": "string",
                                  "description": "default 'SAU'"},
+                "year": {"type": "integer"}}},
+        },
+    },
+    "itc_market_access": {
+        "fn": _tool_itc_market_access,
+        "spec": {
+            "name": "itc_market_access",
+            "description": "تحقق من التعرفة الجمركية العادية والتفضيلية حسب HS "
+                           "من ITC Market Access Map. لا تخلط التعرفة بضريبة القيمة المضافة.",
+            "input_schema": {"type": "object", "properties": {
+                "partner_iso3": {"type": "string", "description": "default 'SAU'"},
                 "year": {"type": "integer"}}},
         },
     },
@@ -1663,3 +1685,4 @@ if __name__ == "__main__":
           f"{report.summary}")
     for dp in report.findings:
         print(f"  - {dp.value} (ثقة {dp.confidence}) — {dp.note}")
+

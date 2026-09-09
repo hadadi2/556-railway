@@ -207,9 +207,10 @@ MISSIONS: dict[str, dict] = {
     "tariffs_agreements": {
         "key": "tariffs_agreements", "name": "التعريفات الجمركية والاتفاقيات التجارية",
         "mission": "التعريفة الجمركية المطبَّقة وأثر اتفاقيات التجارة",
-        "allowed_tools": ["wits_tariff", "lookup_reference"],
+        "allowed_tools": ["wits_tariff", "itc_market_access", "lookup_reference"],
         "instructions": (
-            "التعريفة المطبَّقة من wits_tariff، وعضوية الاتفاقيات من "
+            "التعريفة المطبَّقة من wits_tariff، مع استخدام itc_market_access "
+            "للتحقق من الرسوم العادية والتفضيلية حسب HS والسنة، وعضوية الاتفاقيات من "
             "lookup_reference جدول agreements (GAFTA/OIC/AfCFTA/GCC/WTO). "
             "إن كانت التعريفة المطبَّقة أدنى من المتوقع MFN، سمِّها "
             "'تفضيل محتمل — تحقق' لا حقيقة مؤكدة."),
@@ -934,3 +935,4 @@ if __name__ == "__main__":
     for key, report in all_reports.items():
         flag = "FAILED" if report.failed else "ok"
         print(f"  [{flag}] {key}: {report.summary}")
+

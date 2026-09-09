@@ -275,7 +275,10 @@ def tariff_with_fallback(
         return documented
     log.info("tariff path=gap HS%s %s<-%s (WTO + WITS both unavailable)",
              _hs6(hs_code), market_iso3, partner_iso3)
-    merged_note = f"{wits.note} | وWTO TTD أيضاً غير متاح: {wto.note}"
+    from silk_itc_tariff import market_access_evidence
+    itc = market_access_evidence(hs_code, market_iso3, partner_iso3, year)
+    merged_note = (f"{wits.note} | وWTO TTD أيضاً غير متاح: {wto.note} | "
+                   f"ومصدر ITC Market Access Map: {itc.note}")
     return DataPoint(None, wits.source, 0.0, merged_note, wits.retrieved_at,
                      status=wits.status)
 
@@ -327,3 +330,4 @@ if __name__ == "__main__":
     else:
         print(f"  applied tariff = {dp.value}% [{dp.source}, {dp.note}]")
     _ = ISO3_TO_M49  # imported for downstream callers / symmetry.
+
