@@ -6,7 +6,8 @@ from silk_gmaps import maps_disclaimer
 
 def writer_reports(missions, importer_leads=None, product="", lang="ar", market=""):
     from silk_search_index_evidence import normalized_reports
-    reports = normalized_reports(missions)
+    from silk_product_evidence import price_reports
+    reports = price_reports(normalized_reports(missions), product)
     if not isinstance(importer_leads, dict):
         return reports
     from silk_contact_quality import clean_contact
