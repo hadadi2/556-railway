@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 
 log = logging.getLogger("silk.deep_pillars")
 
@@ -42,7 +43,7 @@ _KW = {
     "tam_usd": ("واردات", "الواردات", "استيراد", "TAM", "imports",
                 "import value"),
     "import_cagr_pct": ("CAGR", "نمو مركّب", "معدل النمو السنوي"),
-    "gdp_per_capita_usd": ("نصيب الفرد", "دخل الفرد", "GDP per capita"),
+    "gdp_per_capita_usd": ("نصيب الفرد", "دخل الفرد", "GDP per capita", "NY.GDP.PCAP.CD"),
     # «تستحوذ السعودية على 90.61%» صيغةُ بعثات التجارة الفعلية (تقرير #10) —
     # الإبرةُ تتبع ما يُكتَب لا ما نتمنى (نفس درس «واردات ٢٠٢٣» أعلاه).
     "saudi_share_pct": ("حصة السعودية", "الحصة السعودية", "saudi share",
@@ -200,6 +201,11 @@ def _numeric(findings: list, metric: str) -> "float | None":
     return _numeric_with_source(findings, metric)[0]
 
 
+def _metric_text(text):
+    return "".join(c for c in str(text).lower()
+                   if not unicodedata.combining(c) and c != "ـ")
+
+
 def _numeric_with_source(findings: list, metric: str) -> tuple:
     """(القيمة، الاكتشافُ مصدرُها) — **أحدثُ سنةِ حقيقةٍ تفوز** بين المطابقات
     الصالحة (دراسة #12 الحيّة: البعثة تسرد السنوات من الأقدم فعرض جدولُ
@@ -235,7 +241,8 @@ def _numeric_with_source(findings: list, metric: str) -> tuple:
         if isinstance(val, bool):
             continue
         blob = f"{note} {val if isinstance(val, str) else ''}"
-        if words and not any(w.lower() in blob.lower() for w in words):
+        # Arabic vocalization must not hide a sourced metric from the decision.
+        if words and not any(_metric_text(w) in _metric_text(blob) for w in words):
             continue
         if isinstance(val, (int, float)):
             # قيمةٌ رقميّةٌ مُهيكَلة — لا نصَّ وحدةٍ ولا مقدار؛ المدى وحدَه.

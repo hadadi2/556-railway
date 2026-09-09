@@ -50,6 +50,21 @@ def unsupported_numbers(claim, points):
     normalized = _expanded_numbers(claim)
     known = source_numbers(raw_snapshots(points))
     known.update(formula_grounded_numbers(normalized, known))
+    # A decimal display may round the source at its stated precision. This is
+    # a half-last-digit bound, not a blanket percentage tolerance or rescaling.
+    display = str(claim).replace("٬", "").replace("٫", ".")
+    for token in re.finditer(r"(?<![\d.])-?\d[\d,]*\.\d+(?![\d.])", display):
+        literal = token.group().replace(",", "")
+        precision = len(literal.partition(".")[2])
+        scale_match = re.match(r"\s+(" + "|".join(sorted(_SCALE, key=len, reverse=True))
+                               + r")\b", display[token.end():], re.IGNORECASE)
+        scale = _SCALE[scale_match[1].lower()] if scale_match else 1
+        shown = float(literal) * scale
+        half_digit = 0.5 * 10 ** (-precision) * scale
+        # Reject coarse rounding near zero and never derive an uncited number.
+        if shown and half_digit / abs(shown) <= .005 and any(
+                abs(shown - k) <= half_digit + 1e-9 for k in known):
+            known.add(shown)
     # تطابق عددي دقيق؛ صيغ التحجيم لا تُخمّن من النثر.
     return [n for n in _extract_numbers(normalized)
             if not any(math.isclose(n, k, rel_tol=1e-6, abs_tol=1e-8) for k in known)]

@@ -34,6 +34,11 @@ RUN apt-get update \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Keep Agent Reach's CLI dependencies separate from the platform's environment.
+COPY requirements-agent-reach.txt /app/requirements-agent-reach.txt
+RUN python -m venv /opt/agent-reach \
+    && /opt/agent-reach/bin/pip install --no-cache-dir -r /app/requirements-agent-reach.txt
+
 COPY --chown=silk:silk . /app
 RUN chmod +x /app/docker/entrypoint.sh
 

@@ -1489,7 +1489,7 @@ def create_app():
             "with_importers": False, "with_risk": True, "with_research": True,
             "with_dynamics": True,
             "with_websearch": bool(__import__("silk_websearch_agent")
-                                   .search_key()),
+                                   .search_available()),
             "with_maps": bool(os.environ.get("GOOGLE_MAPS_API_KEY", "").strip()),
         }
 
@@ -4027,7 +4027,8 @@ def create_app():
             mission_reports, analyst_summary, verdict,
             found.get("product", ""), market_name, trace_id=trace_id,
             hs_code=found.get("hs_code"), hs_confirmation=hs_conf_regen,
-            style=regen_style, seed_draft=_seed_regen)
+            style=regen_style, seed_draft=_seed_regen,
+            importer_leads=dr.get("importer_leads"))
         # H1 (تدقيق): إعادة التوليد كانت تطمس التقرير المخزَّن بـreport_out حتى
         # لو فشل الكاتب هذه المرة (report=None) — فيُفقَد تقرير سابق ناجح كلّفت
         # تشغيلته الكاملة، وهو بالضبط ما تُنقِذه هذه النقطة. الآن: لا نحفظ null

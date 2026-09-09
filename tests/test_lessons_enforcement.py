@@ -37,6 +37,8 @@ def _exists(rel: str) -> bool:
 # كل مدخلة: (رقم الدرس، مسار المصدر، سلاسل يجب أن تكون كلها حاضرة).
 # المصادر المسمّاة هنا هي بالضبط عمود «الإنفاذ» في docs/LESSONS.md.
 _SYMBOL_ANCHORS = [
+    (233, "tests/test_writer_handoff.py", ["test_writer_and_reviewer_receive_all_missions_and_contact_evidence"]),
+    (233, "tests/test_agent_reach_search.py", ["test_mcp_sources_reach_existing_web_search_contract"]),
     (233, "tests/test_image_product_identity.py", ["test_vision_type_reaches_real_classifier_without_replacing_display_name", "test_uncertain_image_cannot_be_rescued_by_a_generic_type"]),
     (233, "tests/test_platform_report_recovery.py", ["test_writer_receives_the_same_missing_components_as_the_decision_panel", "test_label_attributes_reach_the_classifier"]),
     (233, "tests/e2e/platform_dialog_recovery.cjs", ["scrollable", "agent_failed"]),

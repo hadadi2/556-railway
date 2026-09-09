@@ -1,0 +1,2 @@
+# User-requested optional tooling, installed in a separate environment.
+agent-reach @ https://github.com/Panniantong/Agent-Reach/archive/da5044d26fc6adddb6554d5679c94ac22e76e428.zip

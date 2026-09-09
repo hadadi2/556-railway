@@ -603,8 +603,8 @@ def _web_search(query: str, num: int, gl: str | None):
 
 
 def _search_configured() -> bool:
-    from silk_websearch_agent import search_key
-    return bool(search_key())
+    from silk_websearch_agent import search_available
+    return search_available()
 
 
 def _cache_read(key: str):
