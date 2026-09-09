@@ -453,7 +453,7 @@ def test_writer_prompt_phrases_missing_product_card_correctly_not_contradictory(
     import inspect
     src = inspect.getsource(silk_ai_judge.deep_report)
     # تحديث قفل معلن (الدرس 150): يُطلب المعطى نفسه لا مدخل النظام.
-    assert "تحديد موقعك السعري يتطلب سعر المصنع" in src
+    assert "سعر المصنع بوحدة المقارنة المناسبة" in src
 
 
 def test_dashboard_shows_product_card_nudge_without_blocking_request():

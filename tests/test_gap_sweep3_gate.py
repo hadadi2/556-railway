@@ -206,14 +206,14 @@ def test_report_writer_catalog_row_states_eleven_sections():
 # ── B3: عنوان «شرطا قلب الحكم» له فرع إنجليزي ومسجَّل ───────────────────
 
 def test_verdict_flip_heading_has_english_branch_and_is_registered():
-    """الموجّه كان يفرض '### شرطا قلب الحكم' حرفياً بلا فرع لغة — على تقرير
+    """الموجّه كان يفرض '### شروط إعادة تقييم القرار' حرفياً بلا فرع لغة — على تقرير
     إنجليزي يناقض جدار اللغة ويُفشِل language_consistency (الموجّه يأمر بما
     تحجبه البوابة — عائلة الدرس 156)."""
     import silk_ai_judge as AJ
     src = open(os.path.join(_ROOT, "silk_ai_judge.py"),
                encoding="utf-8").read()
     assert "### Decision flip conditions" in src, "لا فرع إنجليزياً للعنوان"
-    for lit in ("### شرطا قلب الحكم", "### Decision flip conditions",
+    for lit in ("### شروط إعادة تقييم القرار", "### Decision flip conditions",
                 "### المنتجات المنافسة وأسعارها",
                 "### Competing products and their prices"):
         assert lit in AJ.MANDATED_OUTPUT_LITERALS, f"غير مسجَّل: {lit}"
@@ -224,7 +224,7 @@ def test_flip_heading_mandate_branches_on_lang_in_source():
     لا يُفرَض إلا خلف فرع lang — لا فرض عربياً غير مشروط على lang=en."""
     src = open(os.path.join(_ROOT, "silk_ai_judge.py"),
                encoding="utf-8").read()
-    idx = src.find("'### شرطا قلب الحكم'")
+    idx = src.find("'### شروط إعادة تقييم القرار'")
     assert idx != -1
     window = src[max(0, idx - 300):idx]
     assert 'if lang == "en"' in window, \

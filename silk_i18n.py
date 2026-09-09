@@ -771,8 +771,8 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "التعاقد مع موزّع محلي مؤكَّد بالاسم في {market}",
         "en": "Signing a named, confirmed local distributor in {market}"},
     "flip_via_distributor": {
-        "ar": "خدمة تحقّق جهات الاتصال المدفوعة ثم عقد موزّع",
-        "en": "a paid contact-verification service, then a distributor agreement"},
+        "ar": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+        "en": "verify the company's activity and product interest, then agree distribution terms and document the contract"},
     "the_market": {"ar": "السوق", "en": "the market"},
     "degraded_banner": {
         "ar": "⚠ DEGRADED — نظام الذكاء الاصطناعي غير متاح ({reason})",

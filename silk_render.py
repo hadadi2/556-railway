@@ -2184,7 +2184,7 @@ def _stale_years_threshold() -> int:
 # موثوقة تحت الرمز الصحيح (إن كان الرمز مُعلَّماً)، وموزّع محلي مؤكَّد تعاقدياً
 # بالاسم. كل شرط يحمل خطوة الإغلاق التي تُقفله فتربطه خارطة الـ٩٠ يوماً. مبنيّ
 # على البيانات (لا قائمة منتج صلبة) — يُستهلَك في العرض/المُصدِّرات/المختصر.
-FLIP_CONDITIONS_HEADING = "شرطا قلب الحكم"
+FLIP_CONDITIONS_HEADING = "شروط إعادة تقييم القرار"
 
 
 # قيم حشو تُعامَل كغياب جهة اتصال (لا تُثبِت موزّعاً مؤكَّداً — مراجعة الشيفرة #4).
@@ -2208,7 +2208,7 @@ def _real_contact(v: object) -> bool:
 
 def _flip_conditions(verdict_tone: str, hs_flagged: bool,
                      importer_leads: dict, market_ar: str,
-                     lang: str = "ar") -> list[dict]:
+                     lang: str = "ar", missing_components=None) -> list[dict]:
     """اشتقّ شرطَي قلب الحكم المهيكلين — يُفعَّل فقط للحكم watch/conditional.
 
     كل شرط: {condition, closes_via, met}. `met=True` حين يوجد دليل مرصود
@@ -2227,16 +2227,22 @@ def _flip_conditions(verdict_tone: str, hs_flagged: bool,
             "condition": _i18n.t("flip_cond_hs", lang),
             "closes_via": _i18n.t("flip_via_hs", lang),
             "met": False})
-    leads = (importer_leads or {}).get("leads") or []
-    has_confirmed = any(
-        isinstance(l, dict)
-        and (_real_contact(l.get("phone")) or _real_contact(l.get("email")))
-        and (l.get("title") or l.get("name")) for l in leads)
     conds.append({
         "condition": _i18n.t("flip_cond_distributor", lang,
                              market=market_ar or _i18n.t("the_market", lang)),
         "closes_via": _i18n.t("flip_via_distributor", lang),
-        "met": bool(has_confirmed)})
+        # Public contact details cannot establish a signed distribution agreement.
+        "met": False})
+    from silk_decision import _parts_ar
+    for component in dict.fromkeys(missing_components or []):
+        label = _parts_ar([component]) if lang == "ar" else str(component).replace('_', ' ')
+        conds.append({
+            "condition": (f"استكمال بيانات {label} وإعادة تقييم القرار" if lang == "ar"
+                          else f"Complete the evidence for {label} and reassess the decision"),
+            "closes_via": ("توثيق المدخلات من مصدر مناسب، ثم إعادة الحساب قبل الالتزام بالبيع"
+                           if lang == "ar" else
+                           "Document the required inputs and recalculate before committing to sales"),
+            "met": False})
     return conds
 
 
@@ -2861,7 +2867,7 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
             # اسم السوق يتبع اللغة أيضاً — «الأردن» مقابل «Jordan».
             ((result.get("market") or {}).get("name_ar") if lang == "ar"
              else (result.get("market") or {}).get("name_en")) or "",
-            lang),
+            lang, (dr.get("verdict") or {}).get("decision_missing_components")),
         "report": {"text": _report_text_glossed,
                   "review_cycles": report_out.get("review_cycles", 0),
                   "unresolved_notes": clean_unresolved,

@@ -52,7 +52,7 @@ def test_writer_prompt_competing_table_has_no_documentation_level_column():
     import silk_ai_judge as J
     src = inspect.getsource(J.deep_report)
     assert "مستوى التوثيق" not in src
-    assert "بسعر الكيلوغرام" in src and "للمقارنة العادلة" in src
+    assert "للوحدة المناسبة" in src and "للمقارنة العادلة" in src
     # لا كلمة هندسية «مطبَّع» في عقد الكاتب (تُطبَّع لغوياً لا رقمياً).
     assert "مُطبَّع" not in src and "مطبَّع" not in src
 

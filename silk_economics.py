@@ -192,6 +192,7 @@ def convert_amount(value: float, from_unit: str, to_unit: str,
     قاعدة التعذر (تعديل مالك ٢): عبارة «يتعذر التحويل» العامة ممنوعة."""
     if from_unit == to_unit:
         return float(value), "بلا تحويل (نفس الوحدة)"
+    original_category = category
     category = registry_category(category)
     key = (from_unit, to_unit, category)
     if key in CONVERSION_REGISTRY:
@@ -204,7 +205,7 @@ def convert_amount(value: float, from_unit: str, to_unit: str,
     missing = ("الكثافة" if {"litre", "kg"} == {from_unit, to_unit}
                else f"معامل التحويل {from_unit}→{to_unit}")
     return None, (f"التحويل {from_unit}→{to_unit} يتطلب {missing} لفئة "
-                  f"«{category or 'غير محددة'}» — غير مسجّل في سجل الثوابت؛ "
+                  f"«{original_category or 'غير محددة'}» — غير مسجّل في سجل الثوابت؛ "
                   "أضفه بمصدره أو صرّح بالخاصية المفقودة")
 
 

@@ -423,7 +423,7 @@ def test_w3_1_yemen_price_rows_carry_per_row_reason_and_single_unlock():
     assert "الوزن غير متاح" in reasons         # «علبة 5 دولار»
     assert "" in reasons                        # «6.5 دولار/كجم» قابل للحساب
     # سطر الفتح الوحيد مذكور مرة واحدة كبنية.
-    assert "سعر المصنع" in dr["price_unlock"] and "التكلفة/كجم" in dr["price_unlock"]  # قفل محدَّث معلن (الدرس 170)
+    assert "سعر المصنع" in dr["price_unlock"] and "وحدة متطابقتين" in dr["price_unlock"]  # قفل محدَّث معلن (الدرس 170)
 
 
 def test_w3_2_hhi_present_but_context_only_under_flagged_code():
@@ -615,8 +615,8 @@ def test_w6_1_flip_conditions_render_in_markdown_export():
     assert "الصحيح" in md and "موزّع" in md
 
 
-def test_w6_1_distributor_condition_met_when_confirmed_lead_exists():
-    """6.1 — لا اختلاق: وجود موزّع بجهة اتصال مؤكَّدة => شرط الموزّع محقَّق."""
+def test_w6_1_public_contact_does_not_establish_distribution_agreement():
+    """A scraped phone establishes a contact opportunity, not a signed contract."""
     import silk_render as R
     blob = yemen_research_blob()
     blob["deep_research"]["importer_leads"] = {
@@ -624,7 +624,7 @@ def test_w6_1_distributor_condition_met_when_confirmed_lead_exists():
         "path": "scraper"}
     dr = R.build_view(blob)["deep_research"]
     dist = [c for c in dr["flip_conditions"] if "موزّع" in c["condition"]][0]
-    assert dist["met"] is True
+    assert dist["met"] is False
 
 
 def test_w6_1_filler_contact_does_not_satisfy_distributor_condition():
@@ -660,7 +660,9 @@ def test_w6_2_writer_prompt_caps_exec_summary_and_requires_flip_and_risks():
         J.deep_report({}, "م", {"verdict": "WATCH"}, "زبدة الفول السوداني",
                       "اليمن", hs_code="040510")
     u = captured["u"]
-    assert "شرطا قلب الحكم" in u
+    assert "شروط إعادة تقييم القرار" in u
+    assert "لا تفرض عدد شرطين" in u
+    assert "لا تعد بتحول تلقائي إلى دخول كامل" in u
     # تحديث قفل معلن (هدف الدراسة الاحترافية، البند ٤): السقف صار «تحت
     # 150 كلمة» بقالب معيار الكتابة (توصية ← أرقام بمعانيها ← مسار ← شرط
     # حاجب) بدل «صفحة واحدة» وقوائم الثلاثات.
