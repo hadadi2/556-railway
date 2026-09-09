@@ -159,6 +159,46 @@ def _fv(f):
     return f.get("value") if isinstance(f, dict) else getattr(f, "value", None)
 
 
+def _metric_findings(missions: dict, key: str) -> list:
+    """Read original typed evidence alongside claims, without parsing prose.
+
+    Mission claims retain tool snapshots in raw_evidence. Re-querying the
+    current year cannot replace a successful historical observation stored
+    there. Keep each snapshot's own source, period, and confidence intact.
+    Only typed numbers and competition summaries enter metric extraction.
+    """
+    findings = _findings(missions, key)
+    originals = []
+    seen = set()
+    import json
+    import math
+    for finding in findings:
+        rows = (finding.get("raw_evidence") if isinstance(finding, dict)
+                else getattr(finding, "raw_evidence", ())) or ()
+        for row in rows:
+            if not isinstance(row, dict) or not row.get("source"):
+                continue
+            value = row.get("value")
+            numeric = (isinstance(value, (int, float)) and not isinstance(value, bool)
+                       and math.isfinite(value))
+            structured = (key == "competitors" and isinstance(value, dict)
+                          and "hhi" in value)
+            if not (numeric or structured):
+                continue
+            try:
+                if float(row.get("confidence") or 0) <= 0:
+                    continue
+            except (TypeError, ValueError):
+                continue
+            if row.get("status") not in (None, "", "ok"):
+                continue
+            identity = json.dumps(row, sort_keys=True, ensure_ascii=False, default=str)
+            if identity not in seen:
+                seen.add(identity)
+                originals.append(row)
+    return originals + findings
+
+
 def _fnote(f) -> str:
     return str(f.get("note") if isinstance(f, dict)
                else getattr(f, "note", "") or "")
@@ -472,11 +512,11 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
     التي كان `_pillar_regulatory` يتوقّعها ولا تصله على هذا المسار (R-03).
     """
     missions = (dr or {}).get("missions") or {}
-    trade = _findings(missions, "trade_flow")
-    comp = _findings(missions, "competitors")
-    tariffs = _findings(missions, "tariffs_agreements")
-    risk_f = _findings(missions, "risk_news") + _findings(missions, "logistics")
-    econ = _findings(missions, "demographics_economy") + trade
+    trade = _metric_findings(missions, "trade_flow")
+    comp = _metric_findings(missions, "competitors")
+    tariffs = _metric_findings(missions, "tariffs_agreements")
+    risk_f = _metric_findings(missions, "risk_news") + _metric_findings(missions, "logistics")
+    econ = _metric_findings(missions, "demographics_economy") + trade
 
     # البند 1 (أمر إصلاح المحرّك): HHI وحصةُ الأكبر من الملخّص المُهيكل
     # حصراً — الاستخراجُ النثريّ لهما هو الذي قلب الحكم 26%→84% (تقرير #11).
@@ -629,7 +669,7 @@ def build_components(dr: dict) -> dict:
     missions = (dr or {}).get("missions") or {}
     out: dict = {}
     for comp_name, mission_key, metric in _COMPONENT_SOURCES:
-        findings = _findings(missions, mission_key)
+        findings = _metric_findings(missions, mission_key)
         comp_src_f = None
         if comp_name == "competition":
             # نفس عقد البند 1: HHI من الملخّص المُهيكل — جدول «مكوّنات أفضل
@@ -647,7 +687,7 @@ def build_components(dr: dict) -> dict:
             value, comp_src_f = _numeric_with_source(findings, metric)
             if value is None:
                 value, comp_src_f = _saudi_share_from_competitors(
-                    _findings(missions, "competitors"))
+                    _metric_findings(missions, "competitors"))
         else:
             # D5 (دراسة #12): القيمة والإسناد من **النتيجة الفائزة نفسها**
             # (أحدث سنة حقيقة) — حلقةُ إعادة البحث بأول مطابقة كلمةٍ كانت
