@@ -3953,10 +3953,15 @@ def create_app():
         # Explicit repair option: refresh only the trends mission, keeping the
         # other eleven checkpoints. Default regeneration still makes no searches.
         from silk_report_refresh import prepare as _prepare_report_refresh
-        found, mission_reports = _prepare_report_refresh(
-            found, mission_reports,
-            refresh_trends=request.query_params.get("refresh_trends") == "1",
-            refresh_prices=request.query_params.get("refresh_prices") == "1")
+        try:
+            found, mission_reports = _prepare_report_refresh(
+                found, mission_reports,
+                refresh_trends=request.query_params.get("refresh_trends") == "1",
+                refresh_prices=request.query_params.get("refresh_prices") == "1",
+                refresh_analysis=request.query_params.get("refresh_analysis") == "1")
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=(
+                "تعذر تحديث التحليل؛ التقرير السابق محفوظ. راجع حالة مصادر البحث ثم أعد المحاولة.")) from exc
         dr = found["deep_research"]
         analyst_summary = ((dr.get("analyst") or {}).get("report") or {}) \
             .get("summary", "")
@@ -3965,7 +3970,8 @@ def create_app():
         try:
             _stage_an = (silk_storage.load_stage_checkpoints(analysis_id)
                          .get("analyst") or {})
-            if _stage_an.get("status") == "succeeded":
+            if (_stage_an.get("status") == "succeeded"
+                    and (dr.get("analysis_refresh") or {}).get("status") != "completed"):
                 _stage_summary = ((_stage_an.get("payload") or {})
                                   .get("analyst_input") or {}).get("summary")
                 if _stage_summary:
@@ -4099,6 +4105,11 @@ def create_app():
                 silk_storage.save_mission_checkpoint(
                     analysis_id, _mission, mission_reports[_mission],
                     market_iso3=(found.get("market") or {}).get("iso3"))
+        if (dr.get("analysis_refresh") or {}).get("status") == "completed":
+            silk_storage.save_stage_checkpoint(analysis_id, "analyst", {
+                "analyst_out": dr["analyst"],
+                "analyst_input": dr["analysis_refresh"]["analyst_input"]},
+                status="succeeded", market_iso3=(found.get("market") or {}).get("iso3"))
         silk_storage.save_analysis(found, analysis_id=analysis_id)
         return _json(found)
 

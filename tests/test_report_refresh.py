@@ -1,5 +1,6 @@
 from copy import deepcopy
 from unittest.mock import patch
+import pytest
 
 from silk_agents import AgentReport
 from silk_data_layer import DataPoint
@@ -74,3 +75,29 @@ def test_price_refresh_runs_only_pricing_and_preserves_other_checkpoints():
     assert current['pricing_scout'] is fresh
     assert current['demand_trends'] is old['demand_trends']
     assert result['deep_research']['price_refresh']['status'] == 'completed'
+
+
+def test_analysis_refresh_consumes_latest_prices_and_replaces_stored_summary():
+    original = saved()
+    original['deep_research']['analyst'] = {'report': {'summary': 'old summary'}}
+    price = AgentReport('prices', [DataPoint('1.25 JOD, 300 g', 'Store', .7)], False)
+    analysis = {'report': AgentReport('analyst', [], False, 'fresh summary'),
+                'by_category': {}, 'missing_categories': []}
+    with patch('silk_llm_runtime.LLMMissionAgent.run', return_value=price), \
+         patch('silk_market_analyst.analyze_market', return_value=analysis) as run:
+        result, current = prepare(original, reports(), refresh_prices=True,
+                                  refresh_analysis=True)
+    assert run.call_args.args[2]['pricing_scout'] is price
+    assert result['deep_research']['analyst']['report']['summary'] == 'fresh summary'
+    assert result['deep_research']['analysis_refresh']['analyst_input']['summary'] == 'fresh summary'
+    assert original['deep_research']['analyst']['report']['summary'] == 'old summary'
+
+
+def test_failed_analysis_refresh_preserves_original_report_and_evidence():
+    original = saved()
+    before = deepcopy(original)
+    with patch('silk_market_analyst.analyze_market', return_value={
+            'report': AgentReport('analyst', [], True, 'failed')}):
+        with pytest.raises(ValueError, match='stored report has not been changed'):
+            prepare(original, reports(), refresh_analysis=True)
+    assert original == before

@@ -3,11 +3,22 @@ from copy import deepcopy
 from dataclasses import asdict, is_dataclass
 
 
-def prepare(found, mission_reports, *, refresh_trends=False, refresh_prices=False):
+def _plain(value):
+    if is_dataclass(value):
+        return asdict(value)
+    if isinstance(value, dict):
+        return {key: _plain(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(item) for item in value]
+    return value
+
+
+def prepare(found, mission_reports, *, refresh_trends=False, refresh_prices=False,
+            refresh_analysis=False):
     result = deepcopy(found)
     reports = dict(mission_reports) if refresh_trends or refresh_prices else mission_reports
     dr = result['deep_research']
-    if refresh_trends or refresh_prices:
+    if refresh_trends or refresh_prices or refresh_analysis:
         from silk_market_resolver import resolve_market
         from silk_llm_runtime import LLMMissionAgent
         from silk_missions import MISSIONS, _MISSION_TIMEOUT_S
@@ -32,6 +43,15 @@ def prepare(found, mission_reports, *, refresh_trends=False, refresh_prices=Fals
                 dr[status_key] = {'status': 'completed', 'note': fresh.summary}
     dr['missions'] = {key: asdict(value) if is_dataclass(value) else deepcopy(value)
                       for key, value in reports.items()}
+    if refresh_analysis:
+        from silk_market_analyst import analyze_market, to_synthesis_input
+        fresh_analysis = analyze_market(ref, result.get('product', ''), reports,
+            hs_code=result.get('hs_code'), product_card=result.get('product_card'))
+        if fresh_analysis['report'].failed:
+            raise ValueError('Analysis refresh failed; stored report has not been changed')
+        dr['analyst'] = _plain(fresh_analysis)
+        dr['analysis_refresh'] = {'status': 'completed',
+            'analyst_input': _plain(to_synthesis_input(fresh_analysis))}
     from silk_deep_pillars import decide_for_deep, promote_engine_verdict, build_components
     rows = result.get('markets') or []
     # Reuse stored regulatory evidence, and calculate once for writer and display.
