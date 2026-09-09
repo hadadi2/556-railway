@@ -2695,6 +2695,13 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     """
     from silk_writer_handoff import writer_reports
     mission_reports = writer_reports(mission_reports, importer_leads, product, lang, market_name)
+    def _decision_language(text: str) -> str:
+        text = (text or "").replace(
+            "حجم الشحنة التجريبية الموصى به: 26730 كيلوغرام، وهو حمولة حاوية 40 قدماً القياسية عند وزن كيلوغرام واحد للوحدة. يحتاج تأكيداً عبر عرض أسعار رسمي من خط ملاحي أو وكيل شحن.",
+            "حجم الشحنة التجريبية: غير محسوب. لا توجد بيانات طلب مؤكدة أو عرض شحن رسمي يبرر كمية محددة؛ لا يُنصح بتحميل حاوية كاملة قبل اختبار البيع.")
+        return text.replace(
+            "وسيكتمل تلقائياً بمجرد إدخال تكلفة الإنتاج.",
+            "ويبقى غير محسوب حتى تضاف كلفة الشحن والرسوم والتسويق والتكاليف الثابتة وحجم الشحنة وقيمة المخزون المتبقي.")
     if max_cycles is None:
         max_cycles = _max_review_cycles()
     def _stage(name: str) -> None:
@@ -2718,6 +2725,7 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                         lang=lang, product_card=product_card,
                         on_attempt=lambda: _stage("writer"),
                         seed_draft=seed_draft)
+    draft = _decision_language(draft)
     if not draft:
         out = {"report": None, "review_cycles": 0, "unresolved_notes": [],
                "failure_reason": failure_reason()}
@@ -2777,6 +2785,7 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             on_attempt=lambda: _stage("writer"),
                             revision_draft=draft)
         if fixed:
+            fixed = _decision_language(fixed)
             if _writer_incomplete(fixed, lang):
                 notes = list(notes) + ["لم يكتمل التنقيح؛ حُفظت المسوّدة الكاملة السابقة بملاحظاتها."]
                 break
