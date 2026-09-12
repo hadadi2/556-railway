@@ -172,7 +172,9 @@ class WorkflowTests(unittest.TestCase):
         oid=self.save()
         self.assertEqual(self.request('POST',f'/{oid}/archive',json={'archived':True}).status_code,200)
         self.assertEqual(self.request('GET').json()['total'],0)
-        self.assertEqual(self.save(),oid)
+        r=self.request('POST',json={'product_id':self.pid,'market':'887','response_sha256':'verified-fixture'})
+        self.assertEqual(r.status_code,200,r.text)
+        self.assertEqual(r.json(),{'id':oid,'created':False})
         self.assertEqual(self.request('GET').json()['total'],1)
         self.assertEqual(self.request('GET','?archived=true').json()['total'],0)
 
