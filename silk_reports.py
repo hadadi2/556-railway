@@ -2826,6 +2826,43 @@ def _client_sanitize(text: object, lang: str = "ar") -> str:
     return s.strip(" \t،,؛")
 
 
+_TRENDS_NOTE_HEAD_RE = re.compile(
+    r"mean interest 0-100 for '([^']+)' geo=([^\s]+) "
+    r"tf='([^']+)' n=(\d+)", re.I)
+
+
+def _client_localize_observation(text: object, lang: str = "ar") -> str:
+    """حوّل صياغة الرصد التقنية المعروفة إلى لغة تقرير العميل.
+
+    قيم Google Trends نفسها تبقى حرفياً؛ التغيير يمس عناوين
+    الحقول والتفسير فقط. هذا يجعل الإصلاح يعمل أيضاً على
+    الدراسات المخزنة قبل الإصلاح، دون إعادة البحث أو تغيير دليله.
+    """
+    s = str(text or "")
+    if silk_i18n.normalize(lang) != "ar":
+        return s
+
+    def _head(match: re.Match) -> str:
+        keyword, geo, timeframe, count = match.groups()
+        return (
+            f"متوسط اهتمام البحث من 0 إلى 100 عن «{keyword}»؛ "
+            f"النطاق الجغرافي {geo}؛ الفترة {timeframe}؛ "
+            f"عدد الرصدات {count}")
+
+    s = _TRENDS_NOTE_HEAD_RE.sub(_head, s)
+    replacements = (
+        ("monthly mean search interest 0-100:",
+         "متوسط اهتمام البحث الشهري من 0 إلى 100:"),
+        ("search interest is not sales or demand volume",
+         "اهتمام البحث مؤشر نسبي وليس مبيعات أو حجم طلب"),
+        ("a one-year peak does not establish recurring seasonality",
+         "ولا تثبت ذروة سنة واحدة موسمية متكررة"),
+    )
+    for source, target in replacements:
+        s = re.sub(re.escape(source), target, s, flags=re.I)
+    return s
+
+
 # ── الموجة ٠: مرآة الحارس للتقرير الإنجليزي · the English client guard ──────
 #
 # **المزلق الحقيقي.** القائمة العربية أعلاه تحظر كلماتٍ إنجليزية **عارية**
@@ -3618,8 +3655,13 @@ def _client_hypotheses_section(doc, dr: dict, lang: str = "ar") -> None:
     for h in hyps[:5]:
         doc.add_heading(str(h.get("title") or ""), level=3)
         for f in h.get("facts") or []:
-            doc.add_paragraph(_client_sanitize(str(f), lang),
-                              style="List Bullet")
+            fact = _client_sanitize(
+                _client_localize_observation(f, lang), lang)
+            # الفرضية قسم تفسيري إضافي؛ لا نطبع فيها نصاً
+            # مصدرياً بلغة أخرى. الواقعة تبقى في سجل الأدلة.
+            fact = _lang_safe(fact, lang)
+            if fact:
+                doc.add_paragraph(fact, style="List Bullet")
         exps = h.get("explanations") or []
         if len(exps) >= 2:
             doc.add_paragraph(f"تفسيران مرشحان: (١) {exps[0]}؛ "
@@ -6088,3 +6130,4 @@ def render_markdown(view: dict) -> str:
         L += ["", str(view["note"])]
     L.append("")
     return "\n".join(L)
+
