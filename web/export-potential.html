@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>سِلك | فرص التصدير</title><link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/export-potential/assets/app.css"><script id="epApp" defer src="/export-potential/assets/app.js"></script>
+</head>
+<body>
+<div class="tools"><span data-t="toolTitle">سِلك · أدوات التجارة</span><button id="epLang">English</button></div>
+<header class="brandbar"><a class="brand" href="/export-potential"><span class="logo">س</span><span data-t="silk">سِلك</span><small data-t="mapTitle">خريطة فرص التصدير</small></a><nav><a href="#workspace" data-t="explore">استكشف</a><button data-dialog="source" data-t="sources">المصادر والمنهجية</button><button data-dialog="about" data-t="about">عن الوحدة</button></nav></header>
+<main class="wrap" id="workspace"><div class="heading"><h1 id="epTitle">فرص التصدير حسب السوق</h1><span id="epPeriod"></span><span class="badge" data-t="standalone">وحدة سِلك المستقلة</span></div>
+<div class="tabs" role="tablist" aria-label="Analysis axis"><button data-axis="products" role="tab" data-t="products">المنتجات</button><button data-axis="markets" role="tab" data-t="markets">الأسواق</button><button data-axis="exporters" role="tab" data-t="exporters">المصدّرون</button></div>
+<div class="work"><aside class="side">
+<label class="picker" id="exporterPicker"><span data-t="forExporter">الدولة المصدّرة</span><select id="epExporter" disabled></select></label>
+<label class="picker" id="marketPicker"><span data-t="inMarket">السوق المستهدف</span><select id="epMarket" disabled></select></label>
+<label class="picker" id="productPicker"><span data-t="inProduct">المنتج أو القطاع</span><input id="epProduct" list="epProductList" autocomplete="off" value="080410" disabled><datalist id="epProductList"></datalist><small data-t="productHelp">ابحث بالاسم أو رمز ITC</small></label>
+<div id="epGrouping" class="segmented"></div>
+<label class="top"><input id="epTopMode" type="checkbox" checked><span data-t="viewTop">عرض أفضل</span><button id="epDecrease" aria-label="Decrease">−</button><input id="epLimit" type="number" value="20" min="1" max="100"><button id="epIncrease" aria-label="Increase">+</button></label><input id="epRange" type="range" min="1" max="100" value="20" aria-label="Top results">
+<input id="epSearch" type="search" placeholder="ابحث في قائمة الاختيار"><div class="selectionbar"><span id="epSelected">—</span><button id="epSelectAll" data-t="selectAll">تحديد الكل</button><button id="epClear" data-t="clear">إلغاء الكل</button></div><div id="epOptions" class="options"></div><button id="epRetry" class="primary" data-t="refresh">تحديث من ITC</button></aside>
+<section class="results"><div class="chartpanel"><div class="modes"><button data-mode="gap" data-t="gapChart">فجوة التصدير</button><button data-mode="geo" data-t="geoMap">الخريطة الجغرافية</button><button data-mode="analyze" data-t="analyze">تحليل الفرص</button></div>
+<div class="sortbar"><span data-t="sortBy">ترتيب حسب</span><select id="epSort"><option value="potential" data-t="potential">الفرصة التصديرية</option><option value="baseline" data-t="baseline">الصادرات الأساسية</option><option value="unrealized" data-t="unrealized">غير المستغل</option><option value="demand" data-t="demand">الطلب</option><option value="ease" data-t="ease">سهولة التجارة</option></select><span class="unit">USD</span></div><div id="epStatus" role="status" aria-live="polite"></div><div id="epChart" aria-busy="true"></div><div class="chartactions"><span id="epLegend"></span><div><button id="epShare" data-t="share">مشاركة العرض</button><button id="epExport" disabled data-t="download">تنزيل الأرقام CSV</button></div></div></div>
+<div class="under"><div class="summary"><h2 data-t="selectionSummary">ملخص العناصر المحددة</h2><div id="epSummary"></div><p id="epCoverage"></p></div><div class="findings"><h2 data-t="details">تفاصيل العنصر</h2><div id="epDetails" aria-live="polite"></div><a id="epOriginal" class="cta" target="_blank" rel="noopener" data-t="compare">افتح هذا الاختيار في ITC ↗</a><p id="epSource"></p></div></div></section></div></main>
+<footer><span data-t="footer">سِلك · معلومات التجارة بلغة واضحة</span><span>© <span data-t="silk">سِلك</span> 2026</span></footer><dialog id="epDialog"><button id="epCloseDialog" class="close" aria-label="Close">×</button><h2 id="epDialogTitle"></h2><div id="epDialogBody"></div></dialog>
+</body></html>
