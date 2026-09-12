@@ -27,7 +27,8 @@ NAMED_WINDOW_DEFAULTS = {"CHECKOUT": WINDOW_S, "PWRESET": 3600,
                          "DIAG": WINDOW_S, "VISION": WINDOW_S,
                          "LOGINIP": WINDOW_S, "UPLOAD": WINDOW_S,
                          # R7 (AUTH-1/AUTH-20): عدّادا بريدٍ — ١٥ دقيقة للدخول، ساعةٌ للشراء.
-                         "LOGINEMAIL": 900, "CHECKOUTEMAIL": 3600}
+                         "LOGINEMAIL": 900, "CHECKOUTEMAIL": 3600,
+                         "EPPREVIEW": 60, "EPFUNNEL": 3600}
 
 
 def _env_int(name: str, default: int) -> int:
@@ -142,3 +143,4 @@ def prune(conn: sqlite3.Connection) -> int:
                        (_cutoff(_max_window_s()),))
     conn.commit()
     return cur.rowcount
+

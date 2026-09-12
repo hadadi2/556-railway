@@ -258,7 +258,8 @@ $id("sendBtn").onclick = function () {
     body: JSON.stringify({
       plan: $id("planSel").value, billing_cycle: _effCycle,
       name: $id("fName").value.trim(), factory: $id("fFactory").value.trim(),
-      email: email, phone: $id("fPhone").value.trim()
+      email: email, phone: $id("fPhone").value.trim(),
+      opportunity_hs: new URLSearchParams(location.search).get("opportunity_hs") || ""
     })
   }).then(function (r) {
     return r.json().then(function (b) { return {ok: r.ok, body: b}; });
@@ -290,3 +291,4 @@ try {
 </script>
 </body>
 </html>
+
