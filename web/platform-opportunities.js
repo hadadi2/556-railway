@@ -37,23 +37,23 @@ window.SilkOpportunities = (() => {
     }catch(e){if(turn===epoch)error(node,e);}
   }
   async function explore(){
-    const node=document.getElementById('oppMarkets'), pid=Number(document.getElementById('oppProduct').value), turn=epoch, search=++searchEpoch;
+    const node=document.getElementById('oppMarkets'), pid=Number(document.getElementById('oppProduct').value), turn=epoch, requestId=++searchEpoch;
     const p=products.find(x=>x.id===pid); current=null;
     if(!p||!/^\d{6}$/.test(p.hs_code||'')){error(node,new Error(text('اختر منتجًا له رمز صحيح من ستة أرقام؛ يمكنك استكماله في المنتجات.','Choose a product with a six-digit code; update it in Products.')));return;}
     const btn=document.getElementById('oppExplore');btn.disabled=true;node.innerHTML='<p role="status">'+text('جارٍ جلب بيانات ITC…','Retrieving ITC data…')+'</p>';
     try{
       const d=await call('/markets?product_id='+pid+'&exporter=682');
-      if(turn!==epoch||search!==searchEpoch||Number(document.getElementById('oppProduct').value)!==pid)return;
+      if(turn!==epoch||requestId!==searchEpoch||Number(document.getElementById('oppProduct').value)!==pid)return;
       current=d;
       const allRows=d.rows.filter(r=>r.id!=='682').sort((a,b)=>(b.potential??-1)-(a.potential??-1)), rows=allRows.slice(0,20), max=Math.max(1,...rows.map(r=>r.potential||0));
       node.innerHTML='<h3>'+text('أعلى الأسواق حسب إمكانات ITC','Top markets by ITC export potential')+'</h3><p class="epnotice">'+text('إمكانات التجارة بين الدول، وليست إيرادات متوقعة لمصنعك. الأرقام بالدولار الأمريكي.','Country-to-country trade potential, not expected factory revenue. Values in USD.')+'</p><div class="epstamp">ITC Export Potential Map · '+text('فترة التجارة: ','Trade period: ')+esc(d.period.trade_years||'—')+' · '+text('تقديرات عام ','Projection year ')+esc(d.period.target_year||'—')+' · '+text('آخر جلب: ','Retrieved: ')+esc(date(d.provenance.retrieved_at))+'</div>'+
       (rows.length?'<div class="eptable"><table><thead><tr><th>'+text('السوق','Market')+'</th><th>'+text('إمكانات التصدير','Export potential')+'</th><th>'+text('غير المستغل','Unrealized')+'</th><th></th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.item.name_ar&&LANG==='ar'?r.item.name_ar:r.item.name)+'</td><td>'+number(r.potential)+'<div class="epbar"><i style="width:'+Math.max(0,Math.min(100,(r.potential||0)/max*100))+'%"></i></div></td><td class="epgap">'+number(r.unrealized)+'</td><td><button class="btn gh sm" data-save="'+esc(r.id)+'">'+text('احفظ الفرصة','Save opportunity')+'</button></td></tr>').join('')+'</tbody></table></div>':'<p class="epempty">'+text('لا توجد نتائج لهذا المنتج لدى ITC.','ITC has no results for this product.')+'</p>')+
       '<p><a class="btn gh" href="/export-potential?axis=markets&exporter=682&product='+encodeURIComponent(d.product.hs_code)+'&market=w&to=j&what=k" target="_blank" rel="noopener">'+text('عرض الرسوم وجميع الأسواق ↗','View charts and all markets ↗')+'</a></p>';
-      const search=document.createElement('input');search.type='search';search.placeholder=text('ابحث في جميع الأسواق المسترجعة…','Search all retrieved markets…');search.setAttribute('aria-label',search.placeholder);search.className='opp-market-search';
+      const searchInput=document.createElement('input');searchInput.type='search';searchInput.placeholder=text('ابحث في جميع الأسواق المسترجعة…','Search all retrieved markets…');searchInput.setAttribute('aria-label',searchInput.placeholder);searchInput.className='opp-market-search';
       const table=node.querySelector('table');
-      if(table){table.parentElement.before(search);search.oninput=()=>{const q=search.value.trim().toLowerCase();const filtered=allRows.filter(r=>[r.id,r.item.name,r.item.name_ar].join(' ').toLowerCase().includes(q)).slice(0,20);table.querySelector('tbody').innerHTML=filtered.map(r=>'<tr><td>'+esc(LANG==='ar'&&r.item.name_ar?r.item.name_ar:r.item.name)+'</td><td>'+number(r.potential)+'</td><td>'+number(r.unrealized)+'</td><td><button class="btn gh sm" data-save="'+esc(r.id)+'">'+text('احفظ الفرصة','Save opportunity')+'</button></td></tr>').join('');table.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save(b,d));};}
+      if(table){table.parentElement.before(searchInput);searchInput.oninput=()=>{const q=searchInput.value.trim().toLowerCase();const filtered=allRows.filter(r=>[r.id,r.item.name,r.item.name_ar].join(' ').toLowerCase().includes(q)).slice(0,20);table.querySelector('tbody').innerHTML=filtered.map(r=>'<tr><td>'+esc(LANG==='ar'&&r.item.name_ar?r.item.name_ar:r.item.name)+'</td><td>'+number(r.potential)+'</td><td>'+number(r.unrealized)+'</td><td><button class="btn gh sm" data-save="'+esc(r.id)+'">'+text('احفظ الفرصة','Save opportunity')+'</button></td></tr>').join('');table.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save(b,d));};}
       node.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save(b,d));
-    }catch(e){if(turn===epoch&&search===searchEpoch)error(node,e);}finally{btn.disabled=false;}
+    }catch(e){if(turn===epoch&&requestId===searchEpoch)error(node,e);}finally{btn.disabled=false;}
   }
   async function save(btn,d){
     btn.disabled=true;const turn=epoch;
