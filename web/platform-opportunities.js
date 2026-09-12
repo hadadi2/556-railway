@@ -53,7 +53,7 @@ window.SilkOpportunities = (() => {
       const table=node.querySelector('table');
       if(table){table.parentElement.before(searchInput);searchInput.oninput=()=>{const q=searchInput.value.trim().toLowerCase();const filtered=allRows.filter(r=>[r.id,r.item.name,r.item.name_ar].join(' ').toLowerCase().includes(q)).slice(0,20);table.querySelector('tbody').innerHTML=filtered.map(r=>'<tr><td>'+esc(LANG==='ar'&&r.item.name_ar?r.item.name_ar:r.item.name)+'</td><td>'+number(r.potential)+'</td><td>'+number(r.unrealized)+'</td><td><button class="btn gh sm" data-save="'+esc(r.id)+'">'+text('احفظ الفرصة','Save opportunity')+'</button></td></tr>').join('');table.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save(b,d));};}
       node.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save(b,d));
-    }catch(e){if(turn===epoch&&requestId===searchEpoch)error(node,e);}finally{btn.disabled=false;}
+    }catch(e){if(turn===epoch&&search===searchEpoch)error(node,e);}finally{btn.disabled=false;}
   }
   async function save(btn,d){
     btn.disabled=true;const turn=epoch;
@@ -92,4 +92,3 @@ window.SilkOpportunities = (() => {
   }
   return {configure,render,reset:()=>{enabled=false;epoch++;searchEpoch++;identity=null;current=null;saved=[];products=[];page=1;archived=false;},isEnabled:()=>enabled,invalidate:()=>{epoch++;}};
 })();
-
