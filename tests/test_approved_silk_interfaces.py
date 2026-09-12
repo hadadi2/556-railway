@@ -19,6 +19,10 @@ def test_initial_navigation_uses_role_default_and_keeps_explicit_selection():
     build = page[page.index('function buildNav('):page.index('function navButton(')]
     script = r'''
 const assert=require('node:assert/strict');
+// Browser global: the optional dashboard module may be absent or loaded.
+const window={};
+let invalidations=0;
+const rendered=[];
 class E {
   constructor(){this.children=[];this.dataset={};this.className='';this.classList={toggle(){},remove(){}};}
   set textContent(v){this.children=[];this.value=v;}
@@ -34,8 +38,11 @@ const visibleSections=()=>SECTIONS.filter(x=>x.role===ME.role);
 const navButton=x=>Object.assign(new E(),{dataset:{key:x.key}});
 ''' + show + build + r'''
 buildNav();assert.equal(SECT,'studies','New factory session must open the approved studies workspace');
+window.SilkOpportunities={invalidate:()=>invalidations++,render:key=>rendered.push(key)};
 SECT='home';buildNav();assert.equal(SECT,'home','Keep a factory section selected by the user');
 ME={role:'silk_admin'};SECT=null;buildNav();assert.equal(SECT,'overview');
+assert.equal(invalidations,2,'Navigation invalidates pending opportunity requests');
+assert.deepEqual(rendered,['home','overview']);
 '''
     result=subprocess.run(['node','-'],input=script,text=True,capture_output=True,timeout=10)
     assert result.returncode==0,result.stderr
