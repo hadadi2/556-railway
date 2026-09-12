@@ -1,6 +1,6 @@
 ---
 name: silk-operations
-description: Permanent operations reference for this repo — the money path, the sanitizer chain, where the escalation loop lives, the observability endpoints, and the incident-response protocol that produced every fix in this file. Load before touching silk_usage.py/silk_context.py, before diagnosing a live production failure, or when the owner pastes evidence from a real run and asks "why did this happen."
+description: Diagnose Silk's money path, sanitizers, observability, and live incidents. Use for those production paths.
 ---
 
 # Silk operations — the permanent cycle so no future session re-learns it

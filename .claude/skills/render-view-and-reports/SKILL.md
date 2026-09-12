@@ -1,6 +1,6 @@
 ---
 name: render-view-and-reports
-description: How numbers become customer-visible output in this repo — the single canonical view-model (silk_render.build_view), the docx/brief/markdown derivatives, sanitization, verdict precedence, and the committed-samples rule. Load before touching silk_render.py, silk_reports.py, web/index.html, or when a report shows a leak, a wrong verdict, or a missing number.
+description: Preserve Silk's canonical view and report outputs. Use for render, report, export, or customer-visible number changes.
 ---
 
 # Render view and reports — one view-model, many derivatives

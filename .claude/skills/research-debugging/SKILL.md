@@ -1,6 +1,6 @@
 ---
 name: research-debugging
-description: Step-by-step playbook for debugging a bad or failed /research run in the Silk market-intelligence repo — trace-first, never guess, never re-run a full paid research to diagnose. Load whenever a /research run failed, hung on "running", produced a weak/empty report, or a mission returned "غير محسوم" or zero findings.
+description: Diagnose failed, stuck, weak, or empty /research runs from traces without repeating a paid full run.
 ---
 
 # Debugging a /research run — trace first, never guess

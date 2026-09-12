@@ -1,6 +1,6 @@
 ---
 name: operator-intent-fidelity
-description: Maps every channel through which operator intent enters the system (agent commands, mission instructions, product_card, request fields, writer prompt), where each gets structurally diluted or dropped, and how to fix "I wrote exactly what I need and it didn't execute it" complaints. Load when the owner says the system ignores, weakens, or misexecutes his written instructions.
+description: Trace operator instructions through Silk. Use when the system ignores, weakens, or misexecutes written intent.
 ---
 
 # Operator intent fidelity — where written intent enters, where it dies

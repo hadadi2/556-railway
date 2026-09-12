@@ -1,6 +1,6 @@
 ---
 name: testing-discipline
-description: The hermetic test system of the Silk repo — copy-paste idioms for network blocking, env isolation, AST architecture tests, and the no-fabrication assertion style. Load before writing or modifying anything under tests/, or before adding any new data path (which must ship its hermetic test the same day).
+description: Apply Silk's hermetic test patterns. Use when changing tests or adding a data path.
 ---
 
 # Testing discipline (hermetic suite)

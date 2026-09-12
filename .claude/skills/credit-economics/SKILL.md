@@ -1,6 +1,6 @@
 ---
 name: credit-economics
-description: How to work on this system without burning the owner's paid credits — the cost map of /research, the cheap-first iteration ladder, and the exact semantics of the daily cap and Comtrade budget. Load before ANY action that could trigger a live Claude or paid-provider call, and whenever planning a debugging or tuning session.
+description: Control paid-provider cost in Silk. Use before live Claude, Comtrade, or other paid calls.
 ---
 
 # Credit economics — the owner has already burned real money on unsatisfying runs

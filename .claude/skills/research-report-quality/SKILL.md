@@ -1,6 +1,6 @@
 ---
 name: research-report-quality
-description: Diagnoses "the report is poor / unconvincing / disconnected numbers" complaints against /research output by locating WHICH pipeline layer is at fault (missions, analyst, writer, reviewer, render sanitization, or quality gate) and fixing it there. Load whenever the owner or a client complains about report quality, empty intersections, missing narrative, leaked plumbing, or a skeleton report.
+description: Locate the pipeline layer causing weak, incomplete, or internally exposed /research reports.
 ---
 
 # Research report quality — find the guilty layer, fix it there, iterate for cents

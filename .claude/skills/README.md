@@ -22,8 +22,8 @@ operator-intent fidelity** first, code hygiene second.
 | Editing any mission/analyst/writer prompt | `mission-tuning-and-evals` |
 | An /analyze result looks wrong, empty, stale, or inconsistent | `analyze-pipeline-debugging` |
 | Touching silk_render.py / silk_reports.py / web/index.html | `render-view-and-reports` |
-| Designing or reviewing ANY change | `change-rules` |
-| A symptom feels familiar / before shipping non-trivial work | `failure-stories` |
+| Changing architecture, data contracts, paid boundaries, or settled scope | `change-rules` |
+| Diagnosing a recurring or production-like failure | `failure-stories` |
 | Writing or modifying tests | `testing-discipline` |
 | Deploying, env vars, production-only behavior | `railway-operations` |
 | Opening a PR or documenting an incident/decision | `pr-and-wave-discipline` |

@@ -1,6 +1,6 @@
 ---
 name: analyze-pipeline-debugging
-description: DataPoint-first debugging of the /analyze pipeline — reading notes and statuses instead of guessing, the Arabic note dictionary, and the symptom→cause table for empty reports, stale data, wrong years, and self-contradicting numbers. Load whenever an /analyze result looks wrong, empty, stale, or inconsistent.
+description: Debug incorrect, empty, stale, or inconsistent /analyze results from DataPoint evidence.
 ---
 
 # /analyze debugging — follow the note, never guess

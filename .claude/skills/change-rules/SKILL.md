@@ -1,6 +1,6 @@
 ---
 name: change-rules
-description: The immutable invariants, the settled owner decisions that must not be relitigated, and safe-change checklists per change type for this repo. Load before designing or reviewing ANY change — it defines what must never be touched and what every change must carry.
+description: Preserve Silk's invariants and settled owner decisions. Use when a change may alter architecture, data contracts, paid boundaries, or deleted/deferred scope.
 ---
 
 # Change rules — invariants, settled decisions, safe-change checklists
