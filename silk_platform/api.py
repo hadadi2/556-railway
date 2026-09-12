@@ -3378,6 +3378,9 @@ def mount(app) -> bool:
             conn.close()
         return out
 
+    from . import export_opportunities
+    export_opportunities.mount(app, _open, _require, _study_research_fields)
+
     # تأسيس الحسابات — opt-in بـSILK_SEED_ADMIN_PASSWORD. بلا هذا تُقلِع القاعدة
     # بجداولَ سليمة و**صفر مستخدمين**، فترفض شاشة الدخول كل شيء برسالة «بيانات
     # غير صحيحة» لا تُميَّز عن كلمة مرور خاطئة (بلاغ مالك حيّ: «ما يعمل»).

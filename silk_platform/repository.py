@@ -169,11 +169,12 @@ class TenantRepository:
         return row is not None
 
     # ── كتابة · writes (always stamped with the caller's account) ────────────
-    def create(self, account_id: int, fields: dict) -> dict:
+    def create(self, account_id: int, fields: dict, *, commit: bool = True) -> dict:
         """أنشئ صفّاً مملوكاً للحساب — insert; owner column is forced, never trusted.
 
         القيم None تُسقَط كي تُطبَّق افتراضيات الأعمدة (لا نكتب None فوق DEFAULT
         NOT NULL). Omitted (None) values are dropped so column defaults apply.
+        commit=False joins a caller-owned transaction; existing callers still commit.
         """
         clean = {k: v for k, v in fields.items()
                  if k in _WRITABLE[self.table] and v is not None}
@@ -188,7 +189,8 @@ class TenantRepository:
         cur = self.conn.execute(
             f"INSERT INTO {self.table} ({', '.join(cols)}) VALUES ({placeholders})",
             [clean[c] for c in cols])
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
         return self.get(account_id, int(cur.lastrowid))  # type: ignore[return-value]
 
     def update(self, account_id: int, row_id: int, fields: dict) -> dict | None:

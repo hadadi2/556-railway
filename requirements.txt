@@ -25,3 +25,6 @@ python-multipart==0.0.31
 # المقياسُ القديم كان يرفض المستندَ السليم، فتفعيلُه كان سيُسقِط كلّ تصدير.
 # PDF bracket-orientation guard needs pymupdf at runtime, or it silently skips.
 pymupdf==1.28.2
+
+# ITC public chart response transport.
+cryptography==50.0.1

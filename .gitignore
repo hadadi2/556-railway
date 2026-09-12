@@ -19,3 +19,10 @@ data/usage.db.bak
 .claude/hooks/.allow-red-stop
 *.db-shm
 *.db-wal
+
+# Local export-opportunity preview artifacts
+preview-data/
+preview-accounts.json
+preview_app.py
+run-preview.ps1
+local-start.*.log

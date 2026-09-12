@@ -572,6 +572,7 @@
   @media(max-width:600px){header.top{padding:16px;min-height:72px}header.top b.brand{font-size:19px}main.work>.stats,main.work>.panel,main.work>.msg{max-width:calc(100% - 32px)}.study-folders{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px}.study-folder{padding-inline:12px;min-height:195px}#adminHomePanel #kpiGrid{grid-template-columns:1fr;gap:10px}#kpiGrid>.stat{padding:16px}#kpiGrid .v{font-size:26px}.ftoolbar{flex-direction:column;align-items:stretch!important}#studySearch{max-width:none}.admin-columns{gap:0}}
 
 </style>
+<link rel="stylesheet" href="/platform-opportunities.css">
 </head>
 <body>
 
@@ -962,6 +963,8 @@
       الطلب التشغيلية فقط؛ بريد مستخدمي المصانع ومحتواهم خلف جدار الخصوصية
       كما هو.</p>
   </section>
+  <section class="panel sect epdash" id="opportunitiesPanel"></section>
+  <section class="panel sect epdash" id="opportunityMetricsPanel"></section>
   </main>
  </div>
 </div>
@@ -969,6 +972,7 @@
 <!-- ════════════════════ حاوية النوافذ ══════════════════════════════════ -->
 <div id="dlgHost"></div>
 
+<script src="/platform-opportunities.js"></script>
 <script>
 "use strict";
 /* واجهة رقيقة فوق /platform — لا إطار عمل، ولا حالة مخفيّة: كل رقم معروض يأتي
@@ -1584,6 +1588,7 @@ async function doLogin() {
 }
 
 async function doLogout() {
+  window.SilkOpportunities?.reset();
   try { await api("/auth/logout", {method: "POST"}); } catch (_e) { /* اخرج محلياً */ }
   // أوقف استطلاع الدراسات (§58): بلا هذا كان يواصل ضرب النقطة كل ٥ ثوانٍ
   // بـ401 بعد الخروج إلى أن تُغلق التبويبة.
@@ -1641,6 +1646,7 @@ const SECTIONS = [
   {key: "home",      label: "نظرة عامة",         label_en: "Overview",   panel: "homePanel",     role: "factory", group: "work"},
   {key: "products",  label: "المنتجات",          label_en: "Products",   panel: "productsPanel", role: "factory", group: "work", count: () => CACHE.products.length},
   {key: "studies",   label: "الدراسات",          label_en: "Studies",    panel: "studiesPanel",  role: "factory", group: "work", count: () => CACHE.studies.length},
+  {key:"opportunities",label:"فرص التصدير",label_en:"Export opportunities",panel:"opportunitiesPanel",role:"factory",group:"work",opportunity:true},
   {key: "plan",      label: "الاشتراك والباقة",  label_en: "Subscription", panel: "planPanel",   role: "factory", group: "account"},
   {key: "overview",  label: "نظرة عامة",         label_en: "Overview",   panel: "adminHomePanel", role: "silk_admin", group: "work"},
   {key: "accounts",  label: "حسابات المصانع",    label_en: "Factory accounts", panel: "accountsPanel", role: "silk_admin", group: "work", count: () => CACHE.accounts.length},
@@ -1649,6 +1655,7 @@ const SECTIONS = [
      ثلاثة مواضع لحقيقةٍ واحدة. القسم يجمعها في جدولٍ واحد يُقرأ ويُعدَّل. */
   {key: "tiers",     label: "الباقات",           label_en: "Plans",      panel: "tiersPanel",    role: "silk_admin", group: "work"},
   {key: "admin_studies", label: "كل الدراسات",   label_en: "All studies", panel: "adminStudiesPanel", role: "silk_admin", group: "work"},
+  {key:"opportunity_metrics",label:"أداء فرص التصدير",label_en:"Opportunity performance",panel:"opportunityMetricsPanel",role:"silk_admin",group:"work",opportunity:true},
   {key: "costs",     label: "تكاليف البحث",      label_en: "Research costs", panel: "adminCostsPanel", role: "silk_admin", group: "work"},
   {key: "aggregates", label: "المجمّعات",        label_en: "Aggregates", panel: "aggregatesPanel", role: "silk_analyst", group: "work"},
   /* «any» = القسم لكل الأدوار (البروفايل — قرار 2026-08-18): تغيير كلمة
@@ -1668,7 +1675,7 @@ function visibleSections() {
      مكسورة عملياً لدورٍ كامل. كل دورٍ يرى أقسامه هو فقط. */
   const role = ME && (ME.role === "silk_admin" || ME.role === "silk_analyst")
     ? ME.role : "factory";
-  return SECTIONS.filter((x) => x.role === role || x.role === "any");
+  return SECTIONS.filter((x) => (x.role === role || x.role === "any") && (!x.opportunity || window.SilkOpportunities?.isEnabled()));
 }
 
 function showSection(key) {
@@ -1683,6 +1690,8 @@ function showSection(key) {
     || list[0];
   if (!target) return;
   SECT = target.key;
+  window.SilkOpportunities?.invalidate();
+  window.SilkOpportunities?.render(target.key);
   SECTIONS.forEach((x) => {
     const el = $(x.panel);
     if (el) el.classList.toggle("on", x.key === target.key);
@@ -1813,6 +1822,7 @@ async function _loadAllOnce() {
     const _pricingP = CACHE.pricing ? null
       : api("/pricing").then((p) => { CACHE.pricing = p; }).catch(() => { /* بلا بطاقة مزايا */ });
     ME = await api("/me");
+    await window.SilkOpportunities?.configure();
     _startNotifPoll();                                  // R6 (FE-2)
     if (_pricingP) await _pricingP;
     /* §58 M4: تفضيل الحساب يُطبَّق — بكلا الاتجاهين — فقط إن كان **اختياراً
@@ -4734,3 +4744,4 @@ if (LANG === "en") setLang("en");   // التقط الأصل العربي وبد
 </script>
 </body>
 </html>
+
