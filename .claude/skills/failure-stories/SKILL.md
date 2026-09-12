@@ -1,6 +1,6 @@
 ---
 name: failure-stories
-description: The distilled incident ledger of this repo — thirteen real production failures, each with root cause, fix, the rule it produced, and its guard test. Load before shipping any non-trivial change, when a symptom feels familiar, or when tempted to guess a fix without evidence.
+description: Review prior Silk incidents and their guard tests. Use when diagnosing a recurring or production-like failure.
 ---
 
 # Failure stories — mistakes that cost real time and money

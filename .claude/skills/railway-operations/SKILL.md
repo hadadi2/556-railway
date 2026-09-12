@@ -1,6 +1,6 @@
 ---
 name: railway-operations
-description: Operating the live Railway deployment — one-container topology, volume/env routing, the security guard chain with paid keys active, redeploy consequences for async research runs, and the post-deploy health runbook. Load before deploying, changing env vars, or diagnosing anything that only happens in production.
+description: Operate Silk on Railway. Use for deployment, environment, volume, or production-only diagnosis.
 ---
 
 # Railway operations — one container, one volume, real paid keys

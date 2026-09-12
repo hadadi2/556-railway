@@ -1,6 +1,6 @@
 ---
 name: architecture-map
-description: The mental model of this repo — two pipelines on one spine, the naming traps that cost days (silk_research vs /research, data layer v1 vs v2, silk_storage vs silk_store), storage topology, and the governance-docs reading order. Load first when orienting on any task that spans more than one module.
+description: Map Silk's pipelines, storage, and naming boundaries. Use when a task spans multiple modules or the owning component is unclear.
 ---
 
 # Architecture map — two pipelines, one spine, four naming traps

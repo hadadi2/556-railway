@@ -1,6 +1,6 @@
 ---
 name: dashboard-design
-description: قواعد تصميم لوحة المصانع (web/platform.html) — هوية سِلك البصرية، سلّم الطباعة العربي، كثافة الجداول والبطاقات، بنية التنقّل، وحالات التحميل/الفراغ/الخطأ. استخدمها قبل أي تعديل على web/platform.html أو أي سطح واجهة في المنصّة، وقبل إضافة أي لون أو مقاس خطّ أو قسم جديد. Load before touching the factory dashboard UI.
+description: Apply Silk's visual and Arabic UI rules. Use when changing web/platform.html or another factory dashboard surface.
 ---
 
 # تصميم لوحة المصانع · Silk dashboard design

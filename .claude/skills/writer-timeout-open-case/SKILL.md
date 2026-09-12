@@ -1,6 +1,6 @@
 ---
 name: writer-timeout-open-case
-description: CLOSED case file for the deep-research report-writer failure (root cause max_tokens, found on the 4th live failure after evidence-capture PRs 69/70/71; fix shipped — escalation loop in silk_ai_judge). Load before touching writer timeouts/budgets or when a /research run again produces report=None — it holds the evidence-reading protocol, the applied fix, and the fixes deliberately rejected without evidence.
+description: Reference the resolved writer max_tokens incident. Use for writer timeout/budget changes or a new report=None failure.
 ---
 
 # CASE CLOSED: the report writer keeps failing — root cause found from evidence

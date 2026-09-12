@@ -1,6 +1,6 @@
 ---
 name: mission-tuning-and-evals
-description: The disciplined procedure for changing any deep-research prompt (missions, analyst, writer/reviewer) in this repo — trace evidence first, single-mission dry runs, then measured eval scoring. Load before editing silk_missions.py instructions, silk_market_analyst.py or silk_ai_judge.py prompts, or before diagnosing a weak /research report.
+description: Change and evaluate deep-research prompts. Use when editing mission, analyst, writer, or reviewer prompts.
 ---
 
 # Mission tuning and evals — evidence before prompt edits

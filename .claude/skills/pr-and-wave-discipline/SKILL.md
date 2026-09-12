@@ -1,6 +1,6 @@
 ---
 name: pr-and-wave-discipline
-description: How work ships in this repo — one wave per PR from fresh main, file:line-anchored PR descriptions, the committed-samples rule §10.6, owner gates, and the evidence-labeling discipline for documenting incidents and decisions. Load before opening any PR or writing any docs/DEEP_RESEARCH_DECISIONS.md entry.
+description: Prepare Silk PRs and decision records. Use when opening a PR or updating the decision ledger.
 ---
 
 # PR and wave discipline — how work ships here
