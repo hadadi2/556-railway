@@ -107,7 +107,8 @@ class WorkflowTests(unittest.TestCase):
         for forbidden in ('potential','unrealized','baseline','provenance','response_sha256','raw'):
             self.assertNotIn(forbidden,serialized)
         self.assertEqual(self.http.get('/platform/export-opportunities/preview?hs_code=08041').status_code,422)
-        self.assertEqual(self.http.get('/platform/export-opportunities/preview?hs_code=999999').status_code,404)
+        with patch('silk_platform.export_opportunities.public_products',return_value={}):
+            self.assertEqual(self.http.get('/platform/export-opportunities/preview?hs_code=080410').status_code,404)
 
     def test_public_preview_failure_has_no_fallback(self):
         from export_potential.client import SourceError
