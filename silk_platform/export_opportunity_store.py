@@ -69,6 +69,12 @@ def listing(conn, account, *, page, page_size, archived):
 def save(conn, account, product, exporter, market, iso3, snapshot):
     old = find(conn, account, product['id'], exporter, market, product['hs_code'])
     if old:
+        # Saving an archived opportunity means the factory wants it back in its
+        # active shortlist. Treat the existing row as the canonical snapshot and
+        # restore it instead of silently leaving it hidden from the dashboard.
+        if old.get('archived_at'):
+            conn.execute('UPDATE export_opportunities SET archived_at=NULL WHERE account_id=? AND id=?', (account, old['id']))
+            event(conn, account, 'saved')
         return old['id'], False
     row = snapshot['row']
     cur = conn.execute('''INSERT INTO export_opportunities

@@ -168,6 +168,16 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.request('POST',f'/{oid}/archive',json={'archived':False}).status_code,200)
         self.assertEqual(self.request('GET').json()['total'],1)
 
+    def test_saving_an_archived_opportunity_restores_it(self):
+        oid=self.save()
+        self.assertEqual(self.request('POST',f'/{oid}/archive',json={'archived':True}).status_code,200)
+        self.assertEqual(self.request('GET').json()['total'],0)
+        r=self.request('POST',json={'product_id':self.pid,'market':'887','response_sha256':'verified-fixture'})
+        self.assertEqual(r.status_code,200,r.text)
+        self.assertEqual(r.json(),{'id':oid,'created':False})
+        self.assertEqual(self.request('GET').json()['total'],1)
+        self.assertEqual(self.request('GET','?archived=true').json()['total'],0)
+
     def test_scope_change_is_excluded_from_admin_results(self):
         oid=self.save()
         with patch('silk_platform.engine_bridge.market_known',return_value=True):
