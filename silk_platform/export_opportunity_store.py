@@ -102,4 +102,3 @@ def metrics(conn, days):
     top = [dict(r) for r in conn.execute('SELECT market,market_name,COUNT(*) n FROM export_opportunities WHERE created_at>=? GROUP BY market,market_name ORDER BY n DESC,market LIMIT 8',(cutoff,))]
     source = conn.execute('SELECT last_success_at,last_failure_at,last_retrieved_at,cached FROM export_opportunity_source_status WHERE id=1').fetchone()
     return {'days':days,'active_factories':active,'events':counts,'study_states':states,'changed_study_links':changed,'top_markets':top,'source':dict(source) if source else {},'scope':'aggregate_only','generated_at':now_iso()}
-
