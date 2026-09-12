@@ -4307,6 +4307,10 @@ def create_app():
     # فتقول `platform_ready` «بلا مستخدمين» حتى أوّل دورة حاصد بعد كلّ نشرة.
     refresh_health_snapshot(app)
 
+    # Independent ITC chart module; registered before the static catch-all.
+    from export_potential.routes import mount as mount_export_potential
+    mount_export_potential(app)
+
     # الواجهة الثابتة على نفس الخدمة — serve the static frontend at "/" so one
     # Render service hosts BOTH the API and the UI (same origin, no CORS needed).
     # Registered last so the API routes above take precedence over static files.
@@ -4342,3 +4346,4 @@ if __name__ == "__main__":
         print(_PIP_HINT)
     else:
         uvicorn.run(create_app(), host="127.0.0.1", port=8000)
+
