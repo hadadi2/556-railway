@@ -1,8 +1,6 @@
 """Opt-in opportunity workflow. Existing study validation and launch remain authoritative."""
-import csv
 import json
 import os
-from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -10,19 +8,24 @@ from fastapi import Body, HTTPException, Request, Query
 from . import audit, repository, export_opportunity_store as store, throttle, tokens
 from .db import now_iso
 from .models import Role
-from export_potential import client
+from export_potential import client, hs_catalog
 
 PREFIX = '/platform/export-opportunities'
 GEO = {str(r['itcId']): r for r in json.loads((Path(__file__).resolve().parents[1] / 'export_potential/geography.json').read_text(encoding='utf-8'))}
 PUBLIC_EVENTS = {'search_started', 'signup_clicked', 'login_completed', 'subscription_clicked'}
 
 
-@lru_cache(maxsize=1)
 def public_products():
-    path = Path(__file__).resolve().parents[1] / 'data/hs_codes.csv'
-    with path.open(encoding='utf-8-sig') as source:
-        return {row['hs_code']: {'name': row['name_en'], 'name_ar': row['name_ar']}
-                for row in csv.DictReader(source) if len(row.get('hs_code', '')) == 6}
+    return hs_catalog.products()
+
+
+def itc_product(hs_code):
+    item = public_products().get(hs_code)
+    if not item:
+        raise HTTPException(404, {'code': 'hs_not_found', 'message': 'رمز HS غير موجود في جدول مطابقة ITC / HS not found in ITC correspondences'})
+    if item['excluded']:
+        raise HTTPException(422, {'code': 'itc_product_excluded', 'message': 'هذا الرمز صحيح لكن ITC يستبعده من حساب إمكانات التصدير / Valid HS code excluded from ITC export potential', 'reason': item['exclusion_reason']})
+    return item
 
 
 def enabled():
@@ -56,28 +59,26 @@ def mount(app, open_db, require, validate_study):
             raise HTTPException(404, 'Feature disabled')
         if not hs_code.isascii() or not hs_code.isdigit():
             raise HTTPException(422, 'HS code must contain six Latin digits / رمز HS يجب أن يتكون من ستة أرقام إنجليزية')
-        item = public_products().get(hs_code)
-        if not item:
-            raise HTTPException(404, 'Product code not found / رمز المنتج غير موجود')
+        item = itc_product(hs_code)
         conn = db()
         try:
             ident = 'ep-preview|' + public_identity(request)
             limits = throttle.named_limits('EPPREVIEW', 20, 60)
             if throttle.is_throttled(conn, ident, limits):
-                raise HTTPException(429, 'Too many previews / حاول بعد دقيقة', headers={'Retry-After':'60'})
+                raise HTTPException(429, 'Too many previews / تجاوزت حد البحث المؤقت', headers={'Retry-After': str(limits[1])})
             throttle.record_failure(conn, ident, limits)
         finally:
             conn.close()
         try:
             payload = client.chart(axis='markets', exporter='682', market='w',
-                                   product=hs_code, from_marker='i',
+                                   product=item['itc_code'], from_marker='i',
                                    to_marker='j', what_marker='k')
         except client.SourceError as exc:
             raise HTTPException(503, 'ITC unavailable; no substitute values / تعذر جلب ITC، لا توجد نتائج بديلة') from exc
         rows = sorted((r for r in payload['rows'] if r['id'] != '682'),
                       key=lambda r: (-(r['potential'] if r['potential'] is not None else -1), r['id']))[:3]
         if not rows:
-            raise HTTPException(404, 'ITC has no results for this product / لا توجد نتائج لهذا المنتج لدى ITC')
+            raise HTTPException(404, {'code': 'itc_no_results', 'message': 'الرمز صحيح، لكن ITC لا يعرض فرصًا للصادرات السعودية لهذا المنتج / Valid code, but ITC has no Saudi export opportunities for this product'})
         conn = db()
         try:
             public_event(conn, request, 'valid_code', hs_code)
@@ -154,7 +155,9 @@ def mount(app, open_db, require, validate_study):
         finally:
             conn.close()
         try:
-            payload = client.chart(axis='markets', exporter=exporter, market='w', product=p['hs_code'], from_marker='i', to_marker='j', what_marker='k')
+            mapped = itc_product(p['hs_code'])
+            payload = client.chart(axis='markets', exporter=exporter, market='w', product=mapped['itc_code'], from_marker='i', to_marker='j', what_marker='k')
+            payload['product_mapping'] = {'hs_code': p['hs_code'], **mapped}
         except client.SourceError as exc:
             conn = db()
             try:
@@ -220,7 +223,7 @@ def mount(app, open_db, require, validate_study):
         row = next((r for r in payload['rows'] if r['id'] == market), None)
         if row is None:
             raise HTTPException(422, 'Market absent from ITC results')
-        snapshot = {'row': row, 'provenance': payload['provenance'], 'period': client.period_info(), 'product_name': p['name']}
+        snapshot = {'row': row, 'provenance': payload['provenance'], 'period': client.period_info(), 'product_name': p['name'], 'product_mapping': payload.get('product_mapping')}
         conn = db()
         try:
             conn.execute('BEGIN IMMEDIATE')
