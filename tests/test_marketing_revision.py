@@ -57,7 +57,7 @@ def test_marketing_pages_share_runtime_and_have_complete_local_links():
     translations=set(re.findall(r'^  (\w+):',script,re.M))
     for filename in ['platform-landing.html','pricing.html']:
         text=(ROOT/'web'/filename).read_text()
-        assert text.count('src="/marketing.js"')==1
+        assert len(re.findall(r'src="/marketing\.js(?:\?[^"]*)?"', text)) == 1
         assert 'الإمارات' not in text
         assert '15 دقيقة' not in text
         keys=set(re.findall(r'data-i18n="(\w+)"',text))
