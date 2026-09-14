@@ -269,6 +269,8 @@ def test_plan_card_derives_its_feature_hint_from_pricing_flags():
     card = card[:card.index("if (next) {")]
     assert "api_access" in card and "white_label" in card
     assert "في الباقة " in card
+    assert 'dd(TIER_AR, TIER_EN, "gold")' in card
+    assert 't.key === "platinum"' not in card
 
 
 def test_research_costs_declare_their_window(monkeypatch):

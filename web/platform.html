@@ -2453,6 +2453,22 @@ function fillProfile() {
         ? ar_en(" (مدى الحياة)", " (lifetime)") : ar_en(" شهرياً", " monthly")));
   const NEXT = {basic: "silver", silver: "gold"};
   const next = NEXT[ent.tier];
+  if (ent.tier !== "gold") {
+    /* بعد حذف الباقة العليا السابقة أصبحت الذهبية أعلى باقة، وتحتفظ البطاقة بعقدها:
+       اسم الباقة التي تفتح المزايا يُشتق من أعلام `/pricing` الحية. */
+    const gold = (((CACHE.pricing || {}).tiers) || []).find((t) => t.key === "gold") || {};
+    const feats = [];
+    if (gold.export) feats.push(ar_en("تصدير التقارير", "report export"));
+    if (gold.api_access) feats.push(ar_en("وصول API", "API access"));
+    if (gold.white_label) feats.push(ar_en("العلامة البيضاء", "white-label"));
+    if (feats.length) {
+      const hint = document.createElement("p");
+      hint.className = "prov";
+      hint.textContent = feats.join(ar_en(" و", ", ")) + ar_en(" في الباقة ال", " are in the ") +
+        dd(TIER_AR, TIER_EN, "gold") + ar_en(".", " plan.");
+      bodyEl.appendChild(hint);
+    }
+  }
   if (next) {
     const a = document.createElement("a");
     a.className = "btn sm";
