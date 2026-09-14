@@ -112,7 +112,7 @@ def seed(conn: sqlite3.Connection, *, reset: bool = False,
 
     # 1) حساب سِلك = الخزنة · Silk operator account is the vault.
     vault_id = _account(conn, name="Silk (operator/vault)", kind="silk",
-                        is_vault=1, tier="platinum")
+                        is_vault=1, tier="gold")
     admin_id = _user(conn, account_id=vault_id, email=_EMAILS["admin"],
                      pw_hash=pw_hashes["admin"], role="silk_admin",
                      first="Silk", last="Admin", lang="ar")

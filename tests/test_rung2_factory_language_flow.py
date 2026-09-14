@@ -82,7 +82,7 @@ def server():
         assert st == 200, who
         st, up = _json(srv.base_url,
                        f"/platform/admin/accounts/{who['account_id']}/tier",
-                       method="POST", token=admin, body={"tier": "platinum"})
+                       method="POST", token=admin, body={"tier": "gold"})
         assert st == 200, up
         yield srv
 

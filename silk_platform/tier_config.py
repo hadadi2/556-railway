@@ -31,7 +31,7 @@ from .models import Tier, TierLimits, tier_limits
 
 log = logging.getLogger(__name__)
 
-_TIERS = ("basic", "silver", "gold", "platinum")
+_TIERS = ("basic", "silver", "gold")
 
 
 def _rows(conn: sqlite3.Connection) -> dict:

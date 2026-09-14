@@ -157,7 +157,6 @@ def test_every_tier_declares_a_storage_cap():
     assert tier_limits(Tier.BASIC).storage_bytes == 100 * 1024 * 1024
     assert tier_limits(Tier.SILVER).storage_bytes == 1024 * 1024 * 1024
     assert tier_limits(Tier.GOLD).storage_bytes == 5 * 1024 * 1024 * 1024
-    assert tier_limits(Tier.PLATINUM).storage_bytes == 20 * 1024 * 1024 * 1024
 
 
 def test_upload_past_the_tier_cap_is_refused_before_the_disk(monkeypatch):

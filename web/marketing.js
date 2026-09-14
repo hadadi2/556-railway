@@ -87,7 +87,7 @@ var L_EN = {
   monthly: function (n) { return n + (n === 1 ? " study per month" : " studies per month"); },
   savePct: function (p) { return "Save " + p + "%"; },
   billedAnnually: function (v) { return "billed annually — " + v + " SAR"; },
-  names: {basic: "Basic", silver: "Silver", gold: "Gold", platinum: "Platinum"},
+  names: {basic: "Basic", silver: "Silver", gold: "Gold"},
 };
 var L_AR = {
   perMonth: "ر.س / شهرياً",
@@ -108,7 +108,7 @@ var L_AR = {
   savePct: function (p) { return "وفّر " + p + "%"; },
   billedAnnually: function (v) { return "تُدفع سنوياً — " + v + " ر.س"; },
   prFail: "تعذّر تحميل الأسعار الآن — تواصل معنا وسنرسل لك جدول الباقات.",
-  names: {basic: "أساسية", silver: "فضية", gold: "ذهبية", platinum: "بلاتينية"},
+  names: {basic: "أساسية", silver: "فضية", gold: "ذهبية"},
 };
 
 var LANG = "ar";
@@ -437,6 +437,13 @@ function renderOpportunityPreview() {
 })();
 
 /* اختيار اللغة المحفوظ (بلا جلسة — الهبوط عامة). */
+Array.prototype.forEach.call(document.querySelectorAll("[data-home-link]"), function (link) {
+  link.addEventListener("click", function (event) {
+    event.preventDefault();
+    window.location.assign("platform-landing.html");
+  });
+});
+
 try {
   if (localStorage.getItem("silk_lang") === "en") applyLang("en");
 } catch (e) { /* وضع خصوصية */ }

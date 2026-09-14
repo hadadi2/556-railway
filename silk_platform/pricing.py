@@ -3,7 +3,7 @@
 قرار المالك الحرفي: «اضف الباقات من اقتراحك واسعار» ثم إقرار الأرقام بالريال
 السعودي شهرياً، ثم إعادة التسعير السوقية 2026-08-18 («اعد تصميم الباقات بناء
 على تسعيرة السوق وخلي فيه خصم عن الاشتراك السنوي»): أساسية مجاناً بدراسة
-تجريبية · فضية 699 · ذهبية 1,799 · بلاتينية 4,499 ر.س/شهر، والسنوي = 10
+تجريبية · فضية 699 · ذهبية 1,799 ر.س/شهر، والسنوي = 10
 أشهر (شهران مجاناً ≈ خصم 17%). المصدر ملف `config/pricing.yaml` المسطّح —
 المالك يعدّل الأرقام بلا كود — ويُدمَج مع حصص `models.TIER_LIMITS` الحقيقية
 في `public_pricing()` الذي تخدمه نقطة `GET /platform/pricing` العامة.
@@ -33,14 +33,12 @@ _DEFAULTS = {
     "basic_price": 0,
     "silver_price": 699,
     "gold_price": 1799,
-    "platinum_price": 4499,
     "basic_price_annual": 0,
     "silver_price_annual": 6990,
     "gold_price_annual": 17990,
-    "platinum_price_annual": 44990,
 }
 
-_TIER_ORDER = ("basic", "silver", "gold", "platinum")
+_TIER_ORDER = ("basic", "silver", "gold")
 
 
 def load_pricing(path: str | None = None) -> dict:

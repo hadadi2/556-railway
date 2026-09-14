@@ -43,19 +43,20 @@ def test_export_contains_readable_cards_without_js_and_does_not_rewrite_sources(
     static_markup = html.split('<script>')[0]
     document = Preview()
     document.feed(static_markup)
-    assert len(document.plans) == 4
+    assert len(document.plans) == 3
     # Before any script runs, the highlighted card must have a black button.
     plan_section = Preview()
     plan_section.feed(static_markup.split('<div class="plans" id="plansGrid"')[1].split('<div id="pricingMsg"')[0])
     plan_buttons = plan_section.buttons
-    assert len(plan_buttons) == 4
-    assert [button['class'] for button in plan_buttons] == ['btn gh', 'btn gh', 'btn', 'btn gh']
+    assert len(plan_buttons) == 3
+    assert [button['class'] for button in plan_buttons] == ['btn gh', 'btn gh', 'btn']
     for tier in pricing_snapshot()['tiers']:
         if tier['price']:
             assert f'>{tier["price"]:,}<' in static_markup
             assert f'{tier["price_annual"]:,}' in static_markup
     assert 'دراستان شهرياً' in static_markup
-    assert '15 دراسة شهرياً' in static_markup
+    assert '6 دراسات شهرياً' in static_markup
+    assert '15 دراسة شهرياً' not in static_markup
     assert '2 دراسات' not in static_markup
     assert all(src.startswith('data:image/png;base64,') for src in document.images)
     assert 'data:font/woff2;base64,' in static_markup

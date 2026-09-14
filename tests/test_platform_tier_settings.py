@@ -140,19 +140,19 @@ def test_the_override_survives_a_fresh_process_reading_the_same_db(monkeypatch):
     seed(monkeypatch)
     with client() as cl:
         atok = _admin(cl, monkeypatch)
-        assert cl.post("/platform/admin/tiers/platinum", headers=hdr(atok),
-                       json={"price": 5999, "price_annual": 59990,
-                             "monthly_studies": 20}).status_code == 200
+        assert cl.post("/platform/admin/tiers/gold", headers=hdr(atok),
+                       json={"price": 1999, "price_annual": 19990,
+                             "monthly_studies": 8}).status_code == 200
     with client() as cl2:                      # تطبيق جديد، نفس القاعدة
         row = [t for t in cl2.get("/platform/pricing").json()["tiers"]
-               if t["key"] == "platinum"][0]
-        assert row["price"] == 5999 and row["monthly_studies"] == 20
+               if t["key"] == "gold"][0]
+        assert row["price"] == 1999 and row["monthly_studies"] == 8
 
     # ولا يُكتَب شيء في ملف الأسعار المُقرّ — هو بذرةٌ لا سجلٌّ حيّ.
     import pathlib
     cfg = (pathlib.Path(__file__).resolve().parent.parent /
            "config" / "pricing.yaml").read_text(encoding="utf-8")
-    assert "5999" not in cfg, "النقطة كتبت في ملف الصورة — تتبخّر عند النشر"
+    assert "1999" not in cfg, "النقطة كتبت في ملف الصورة — تتبخّر عند النشر"
 
 
 # ═══ ٣) الحوكمة ═════════════════════════════════════════════════════════════

@@ -228,7 +228,7 @@ def test_concurrent_over_cap_launches_never_exceed_the_user_cap(monkeypatch):
     تداخل حقيقي لا تسلسل GIL عابر.
     """
     info = seed(monkeypatch)
-    f = make_factory("platinum", "uq-conc@example.com")
+    f = make_factory("gold", "uq-conc@example.com")
     mock_engine(monkeypatch)
     cl = client()
     admin = login(cl, info["admin"]["email"], info["admin"]["password"])

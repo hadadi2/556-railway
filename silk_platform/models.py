@@ -21,7 +21,6 @@ class Tier(str, enum.Enum):
     BASIC = "basic"
     SILVER = "silver"
     GOLD = "gold"
-    PLATINUM = "platinum"
 
 
 class Operation(str, enum.Enum):
@@ -72,14 +71,9 @@ TIER_LIMITS: dict[Tier, TierLimits] = {
         storage_bytes=1024 * 1024 * 1024),                               #   1 GB
     Tier.GOLD: TierLimits(
         monthly_studies=6, lifetime_studies=0,
-        dashboard="full", api_access=False,
-        white_label=False, export=False, price_cents_per_year=500_000,   # $5,000
-        storage_bytes=5 * 1024 * 1024 * 1024),                           #   5 GB
-    Tier.PLATINUM: TierLimits(
-        monthly_studies=15, lifetime_studies=0,
         dashboard="full", api_access=True,
-        white_label=True, export=True, price_cents_per_year=1_500_000,   # $15,000
-        storage_bytes=20 * 1024 * 1024 * 1024),                          #  20 GB
+        white_label=True, export=True, price_cents_per_year=500_000,    # $5,000
+        storage_bytes=5 * 1024 * 1024 * 1024),                           #   5 GB
 }
 
 

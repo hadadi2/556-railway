@@ -58,6 +58,9 @@ def test_marketing_pages_share_runtime_and_have_complete_local_links():
     for filename in ['platform-landing.html','pricing.html']:
         text=(ROOT/'web'/filename).read_text()
         assert len(re.findall(r'src="/marketing\.js(?:\?[^"]*)?"', text)) == 1
+        assert re.search(
+            r'<a class="brand" href="#topNav" data-home-link>\s*<img[^>]+alt="SILK"',
+            text)
         assert 'الإمارات' not in text
         assert '15 دقيقة' not in text
         keys=set(re.findall(r'data-i18n="(\w+)"',text))
@@ -70,6 +73,11 @@ def test_marketing_pages_share_runtime_and_have_complete_local_links():
             assert (ROOT/'web'/asset.lstrip('/')).is_file(),asset
     result=subprocess.run(['node','--check',str(ROOT/'web/marketing.js')],capture_output=True,text=True)
     assert result.returncode==0,result.stderr
+    marketing=(ROOT/'web/marketing.js').read_text()
+    assert 'querySelectorAll("[data-home-link]")' in marketing
+    assert 'window.location.assign("platform-landing.html")' in marketing
+    pricing=(ROOT/'web/pricing.html').read_text()
+    assert '.pricing-page .plans{grid-template-columns:repeat(3,' in pricing
 
 
 def test_pricing_page_and_assets_are_publicly_served(monkeypatch):
