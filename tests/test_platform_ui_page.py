@@ -333,18 +333,14 @@ def test_launch_is_a_plain_confirm_with_no_prospecting_payload(html):
 
 
 def test_the_page_never_calls_a_missing_feature_unavailable(html):
-    """«غير متاح» اختفت لصالح «في الباقة …» — بلاغُ مالك: تُقرأ «مكسور».
-
-    الطبقة silver كانت تُظهِر أربعة صفوف «غير متاح» والمصفوفة صحيحة
-    (`models.TIER_LIMITS`: الثلاثة في platinum فقط) — فالعيب عرضيٌّ: النصّ يجب
-    أن يسمّي الباقة التي تفتح الميزة لا أن يبدو عطلاً.
-    """
+    """بعد حذف البلاتينية لا تظهر دعوة ترقية إلى باقة غير موجودة."""
     # يُفحَص **ما يُعرَض** لا الشروح: الفحص الأوّل كان يُحمِّر على ذكرِ العبارة
     # داخل تعليقٍ يشرح سببَ إزالتها — إنذارٌ كاذب على شيفرةٍ سليمة.
     visible = _without_comments(html)
     assert "غير متاح" not in visible, (
         "«غير متاح» تُقرأ «مكسور» بدل «ليست في خطّتك» — سمِّ الباقة التي تفتحها")
-    assert "في الباقة " in visible, "لا نصّ ترقية يسمّي الباقة"
+    assert 'const NEXT = {basic: "silver", silver: "gold"}' in visible
+    assert "platinum" not in visible
 
 
 # ══════ القائمة الجانبية · the sidebar (بلاغ مالك: «المفروض قائمة جانبية») ════
@@ -548,8 +544,9 @@ def test_login_screen_probes_me_only_with_a_session_marker(html):
 def test_tier_badges_are_arabic(html):
     """أسماء الباقات معرّبة أمام المستخدم — silver/gold الخام رصدها المالك."""
     assert "const TIER_AR" in html
-    for name in ("أساسية", "فضية", "ذهبية", "بلاتينية"):
+    for name in ("أساسية", "فضية", "ذهبية"):
         assert name in html
+    assert "بلاتينية" not in html
     # (الموجة الثنائية: القراءة عبر dd(TIER_AR, TIER_EN, …) الموافقة للغة.)
     # الشارة انتقلت من أسفل الشريط الجانبي إلى بطاقة الحساب في «الملف
     # التعريفي» (النمط العالمي 2026-08-19) — النداء الحرفي نفسه باقٍ.

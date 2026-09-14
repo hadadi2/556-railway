@@ -28,10 +28,8 @@ billing_cycle: monthly
 basic_price: 0
 silver_price: 699
 gold_price: 1799
-platinum_price: 4499
 
 # سنوياً · annual (ر.س/سنة = 10 أشهر — شهران مجاناً)
 basic_price_annual: 0
 silver_price_annual: 6990
 gold_price_annual: 17990
-platinum_price_annual: 44990

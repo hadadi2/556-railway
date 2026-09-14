@@ -495,7 +495,7 @@ def test_rung3_factory_report_language_full_browser_flow(tmp_path):
         # المصنعُ المبذور «فضّي» (سقفٌ شهريّ حقيقيّ = دراستان) وهذا التدفّق
         # يُطلق ثلاثاً — تُرفَع الطبقة عبر **نقطة الأدمِن الحقيقية** فتبقى
         # بوّابة الحصّة فاعلةً كما في الإنتاج بدل تعطيل الحارس.
-        _raise_tier_to_platinum(srv)
+        _raise_tier_to_gold(srv)
         env = dict(
             os.environ,
             NODE_PATH=node_path or "",
@@ -536,7 +536,7 @@ def test_rung3_factory_report_language_full_browser_flow(tmp_path):
                 assert "دراسة سوق" in body, "غلافٌ ليس بلغة التقرير"
 
 
-def _raise_tier_to_platinum(srv) -> None:
+def _raise_tier_to_gold(srv) -> None:
     """ارفع طبقةَ المصنع المبذور عبر نقطة الأدمِن — لا كتابةَ مباشرةً بالقاعدة."""
     import json
     import urllib.request
@@ -563,7 +563,7 @@ def _raise_tier_to_platinum(srv) -> None:
                 {"email": srv.PLATFORM_FACTORY_EMAIL,
                  "password": srv.PLATFORM_PASSWORD})["token"]
     aid = _get("/platform/me", fac)["account_id"]
-    _post(f"/platform/admin/accounts/{aid}/tier", admin, {"tier": "platinum"})
+    _post(f"/platform/admin/accounts/{aid}/tier", admin, {"tier": "gold"})
 
 
 def _pdf_text_or_fail(pdf_path: str) -> str:

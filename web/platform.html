@@ -365,7 +365,6 @@
   .seg.t-basic{background:var(--pri-light)}
   .seg.t-silver{background:#93B4F5}
   .seg.t-gold{background:var(--gold)}
-  .seg.t-platinum{background:var(--pri-active)}
 
   /* شريط أدوات فوق الجدول: بحث يسار الشريط ورقاقات الحالة بجواره. */
   .ftoolbar{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center;
@@ -993,8 +992,7 @@ const ltr = (s) => "\u2066" + String(s == null ? "" : s) + "\u2069";
    عامّة تُخفي السبب. */
 /* أسماء الباقات معرّبة — الشارة الإنجليزية الخام (silver/gold) كانت تظهر
    للمالك كما هي (جولة 2026-08-17). المفتاح يبقى إنجليزياً في الـAPI. */
-const TIER_AR = {basic: "أساسية", silver: "فضية", gold: "ذهبية",
-                 platinum: "بلاتينية"};
+const TIER_AR = {basic: "أساسية", silver: "فضية", gold: "ذهبية"};
 
 /* أسماء الأدوار معرّبة (§58 موجة الملف التعريفي 2026-08-19): الرمز الخام
    "factory" في صفّ «الدور والباقة» رطانة — نفس عقد TIER_AR/EN، وctxLabel
@@ -1027,8 +1025,7 @@ const dd = (arMap, enMap, k) => {
   return ar_en("غير معروف", "Unknown");
 };
 const AR_ORIG = {};
-const TIER_EN = {basic: "Basic", silver: "Silver", gold: "Gold",
-                 platinum: "Platinum"};
+const TIER_EN = {basic: "Basic", silver: "Silver", gold: "Gold"};
 const ROLE_EN = {silk_admin: "Platform owner", silk_analyst: "Silk analyst",
                  factory: "Factory account"};
 /* الإنجليزية للنصوص الثابتة — الأصل العربي يُلتقط من الصفحة نفسها في AR_ORIG
@@ -2454,25 +2451,8 @@ function fillProfile() {
        ent.studies_used + " / " + ent.studies_limit +
        (ent.studies_period === "lifetime"
         ? ar_en(" (مدى الحياة)", " (lifetime)") : ar_en(" شهرياً", " monthly")));
-  const NEXT = {basic: "silver", silver: "gold", gold: "platinum"};
+  const NEXT = {basic: "silver", silver: "gold"};
   const next = NEXT[ent.tier];
-  if (ent.tier !== "platinum") {
-    /* نفس عقد «سمِّ الباقة التي تفتح الميزة» (بلاغ المالك: «غير متاح» تُقرأ «مكسور»).
-       R6 (FE-10): المزايا من أعلام `/pricing` لا من جملةٍ صلبة — لو غيّر المالكُ الأعلامَ
-       بقيت البطاقةُ صادقة؛ وبلا أعلامٍ لا جملة. */
-    const plat = (((CACHE.pricing || {}).tiers) || []).find((t) => t.key === "platinum") || {};
-    const feats = [];
-    if (plat.export) feats.push(ar_en("تصدير التقارير", "report export"));
-    if (plat.api_access) feats.push(ar_en("وصول API", "API access"));
-    if (plat.white_label) feats.push(ar_en("العلامة البيضاء", "white-label"));
-    if (feats.length) {
-      const hint = document.createElement("p");
-      hint.className = "prov";
-      hint.textContent = feats.join(ar_en(" و", ", ")) + ar_en(" في الباقة ال", " are in the ") +
-        dd(TIER_AR, TIER_EN, "platinum") + ar_en(".", " plan.");
-      bodyEl.appendChild(hint);
-    }
-  }
   if (next) {
     const a = document.createElement("a");
     a.className = "btn sm";
@@ -3852,7 +3832,7 @@ function tierSettingsDialog(t) {
    (sumi/data-visualization: موضع > طول > مساحة > لون)، والتخطيط يتكيّف مع
    العرض بلا قياسٍ يدويّ ولا نسبة أبعاد. الذهبي هنا لونُ **بيانات** لا واجهة.
    `byTier` من `/admin/metrics` ويستثني حساب الخزنة خادمياً. */
-const _TIER_ORDER = ["basic", "silver", "gold", "platinum"];
+const _TIER_ORDER = ["basic", "silver", "gold"];
 function renderTierBar(byTier) {
   const host = $("tierBar");
   host.textContent = "";
@@ -4222,7 +4202,7 @@ function accountOptions(selectedId) {
 function tierDialog(accountId, current) {
   if (!CACHE.accounts.length) { tell(ar_en("لا حسابات مصانع.",
     "No factory accounts."), "err"); return; }
-  const tiers = ["basic", "silver", "gold", "platinum"].map((t) =>
+  const tiers = ["basic", "silver", "gold"].map((t) =>
     '<option value="' + t + '"' + (t === current ? " selected" : "") + ">" +
     dd(TIER_AR, TIER_EN, t) + "</option>").join("");
   dialog(ar_en("تغيير طبقة حساب", "Change an account tier"),

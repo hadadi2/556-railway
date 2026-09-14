@@ -25,10 +25,10 @@ def test_feature_gate_allows_and_denies_per_tier():
     """البوّابة تفتح للطبقة المستحقّة وتُغلق لغيرها — both directions."""
     from silk_platform import entitlements
     # (ميزة القمع حُذفت مع التنقيب — قرار مالك 2026-08-17.)
-    # التصدير/العلامة البيضاء/الـAPI: Platinum فقط.
+    # بعد حذف البلاتينية: التصدير/العلامة البيضاء/الـAPI في الذهبية العليا.
     for feat in ("api_access", "white_label", "export"):
-        assert entitlements.has_feature("platinum", feat) is True
-        assert entitlements.has_feature("gold", feat) is False
+        assert entitlements.has_feature("gold", feat) is True
+        assert entitlements.has_feature("silver", feat) is False
 
 
 def test_require_feature_raises_with_upgrade_prompt():
@@ -42,21 +42,21 @@ def test_require_feature_raises_with_upgrade_prompt():
     assert detail["feature"] == "export"
     assert detail["tier"] == "silver"
     # الطبقات التي تمنحها فعلاً — لا رسالة عامّة.
-    assert set(detail["required_tiers"]) == {"platinum"}
+    assert set(detail["required_tiers"]) == {"gold"}
 
 
 def test_require_feature_passes_silently_when_granted():
     """الطبقة المستحقّة لا تُمنَع — the gate is not a blanket denial."""
     from silk_platform import entitlements
-    entitlements.require_feature("platinum", "export")      # must not raise
-    entitlements.require_feature("platinum", "api_access")
+    entitlements.require_feature("gold", "export")      # must not raise
+    entitlements.require_feature("gold", "api_access")
 
 
 def test_unknown_feature_raises_instead_of_silently_denying():
     """ميزة مجهولة خطأٌ صريح — a typo must not silently gate everyone out."""
     from silk_platform import entitlements
     with pytest.raises(ValueError):
-        entitlements.has_feature("platinum", "exports")     # typo
+        entitlements.has_feature("gold", "exports")     # typo
 
 
 # (حُذفت أقسام «المقاعد» و«تصعيد الصلاحية» و«عزل المستخدمين» مع حذف
@@ -75,7 +75,7 @@ def test_entitlements_endpoint_reports_limits_and_usage(monkeypatch):
     assert body["tier"] == "gold"
     assert body["studies_limit"] == 6 and body["studies_period"] == "month"
     assert body["dashboard"] == "full"
-    assert body["export"] is False and body["api_access"] is False
+    assert body["export"] is True and body["api_access"] is True
 
 
 def test_basic_entitlements_are_measured_on_the_lifetime_counter(monkeypatch):
@@ -180,7 +180,7 @@ def test_factory_cannot_change_its_own_tier(monkeypatch):
     cl = client()
     tok = login(cl, f["email"], f["password"])
     r = cl.post(f"/platform/admin/accounts/{f['account_id']}/tier",
-                headers=hdr(tok), json={"tier": "platinum"})
+                headers=hdr(tok), json={"tier": "gold"})
     assert r.status_code == 403
     assert cl.get("/platform/entitlements", headers=hdr(tok)).json()["tier"] == "basic"
 

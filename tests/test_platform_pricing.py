@@ -2,7 +2,7 @@
 
 قرار المالك (2026-08-17) ثم إعادة التسعير السوقية (2026-08-18: «اعد تصميم
 الباقات بناء على تسعيرة السوق وخلي فيه خصم عن الاشتراك السنوي»): أسعار
-ريال شهرية (0/699/1,799/4,499) وسنوية بخصم شهرين (0/6,990/17,990/44,990
+ريال شهرية (0/699/1,799) وسنوية بخصم شهرين (0/6,990/17,990
 مع annual_discount_pct)، يعدّلها من ملف إعدادات واحد بلا كود. الأقفال: الردّ يطابق الملف بايتاً ببايت،
 تعذُّر الملف = افتراضات معلَنة (الأرقام المُقرّة نفسها) لا انهيار، والحصص
 تأتي من `models.TIER_LIMITS` الحقيقية لا نسخة ثانية.
@@ -10,6 +10,9 @@
 from __future__ import annotations
 
 import pathlib
+import sqlite3
+
+import pytest
 
 from tests.platform_helpers import client, seed
 
@@ -39,7 +42,7 @@ def test_endpoint_is_public_and_matches_the_file(monkeypatch):
         assert body["source"] == "file"
         assert body["cycles"] == ["monthly", "annual"]
         tiers = {t["key"]: t for t in body["tiers"]}
-        assert list(tiers) == ["basic", "silver", "gold", "platinum"]
+        assert list(tiers) == ["basic", "silver", "gold"]
         for key in tiers:
             assert tiers[key]["price"] == int(f[f"{key}_price"]), (
                 f"سعر {key} في الردّ لا يطابق pricing.yaml")
@@ -53,11 +56,9 @@ def test_endpoint_is_public_and_matches_the_file(monkeypatch):
         assert tiers["basic"]["price"] == 0
         assert tiers["silver"]["price"] == 699
         assert tiers["gold"]["price"] == 1799
-        assert tiers["platinum"]["price"] == 4499
         assert tiers["basic"]["price_annual"] == 0
         assert tiers["silver"]["price_annual"] == 6990
         assert tiers["gold"]["price_annual"] == 17990
-        assert tiers["platinum"]["price_annual"] == 44990
 
 
 def test_quotas_come_from_the_one_tier_limits_source(monkeypatch):
@@ -78,8 +79,35 @@ def test_missing_file_falls_back_to_declared_defaults():
     from silk_platform.pricing import load_pricing
     out = load_pricing(path="/nonexistent/pricing.yaml")
     assert out["source"] == "defaults"
-    assert out["silver_price"] == 699 and out["platinum_price"] == 4499
+    assert out["silver_price"] == 699
+    assert "platinum_price" not in out
     assert out["gold_price_annual"] == 17990
+
+
+def test_platinum_is_removed_and_legacy_rows_are_migrated_to_gold():
+    """قرار 2026-09-14: لا API ولا واجهة تقبل البلاتينية، والقديم لا يتعطل."""
+    from silk_platform.models import Tier
+
+    assert [tier.value for tier in Tier] == ["basic", "silver", "gold"]
+    with pytest.raises(ValueError):
+        Tier("platinum")
+    assert "platinum" not in (_ROOT / "config" / "pricing.yaml").read_text(
+        encoding="utf-8")
+    for name in ("marketing.js", "checkout.html", "platform.html"):
+        assert "platinum" not in (_ROOT / "web" / name).read_text(encoding="utf-8")
+
+    conn = sqlite3.connect(":memory:")
+    conn.executescript("""
+        CREATE TABLE accounts (tier TEXT, updated_at TEXT);
+        CREATE TABLE tier_settings (tier TEXT);
+        INSERT INTO accounts VALUES ('platinum', 'old');
+        INSERT INTO tier_settings VALUES ('platinum');
+    """)
+    migration = (_ROOT / "migrations" / "platform" /
+                 "023_remove_platinum_tier.sql").read_text(encoding="utf-8")
+    conn.executescript(migration)
+    assert conn.execute("SELECT tier FROM accounts").fetchone()[0] == "gold"
+    assert conn.execute("SELECT COUNT(*) FROM tier_settings").fetchone()[0] == 0
 
 
 def test_malformed_price_keeps_the_declared_default(tmp_path):
