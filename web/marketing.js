@@ -437,6 +437,13 @@ function renderOpportunityPreview() {
 })();
 
 /* اختيار اللغة المحفوظ (بلا جلسة — الهبوط عامة). */
+Array.prototype.forEach.call(document.querySelectorAll("[data-home-link]"), function (link) {
+  link.addEventListener("click", function (event) {
+    event.preventDefault();
+    window.location.assign("platform-landing.html");
+  });
+});
+
 try {
   if (localStorage.getItem("silk_lang") === "en") applyLang("en");
 } catch (e) { /* وضع خصوصية */ }
