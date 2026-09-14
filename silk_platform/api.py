@@ -569,6 +569,10 @@ def mount(app) -> bool:
             "phone": str(body.get("phone") or "").strip()[:200],
             "factory": str(body.get("factory") or "").strip()[:200],
         }
+        opportunity_hs = str(body.get("opportunity_hs") or "").strip()
+        if opportunity_hs and (len(opportunity_hs) != 6 or not opportunity_hs.isascii()
+                               or not opportunity_hs.isdigit()):
+            raise _err(422, "invalid_hs_code", "رمز HS يجب أن يتكون من ستة أرقام إنجليزية")
         if not contact["email"] or "@" not in contact["email"]:
             raise _err(422, "checkout_email_required", "بريدُ تواصلٍ صالح مطلوب")
         ip = _client_ip(request)
@@ -600,7 +604,8 @@ def mount(app) -> bool:
                 audit.record(conn, action="checkout_requested",
                              resource_type="subscription",
                              changes={"plan": plan, "cycle": cycle,
-                                      "price_sar": price_sar, "contact": contact},
+                                      "price_sar": price_sar, "contact": contact,
+                                      "opportunity_hs": opportunity_hs or None},
                              ip_address=ip)
             conn.commit()
         finally:
@@ -3437,3 +3442,4 @@ def mount(app) -> bool:
     # Starlette. `app.router.add_event_handler` يعمل على الإصدارين معاً.
     app.router.add_event_handler("shutdown", study_runtime.shutdown)
     return True
+

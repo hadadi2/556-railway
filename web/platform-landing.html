@@ -386,6 +386,10 @@ header.hero::before{bottom:14%;background:linear-gradient(transparent 31px,rgba(
 .approved-features{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
 .approved-features .card{padding:28px;min-height:220px}.approved-features h3{font-size:22px}
 .feature-symbol{display:flex;width:56px;height:56px;border-radius:14px;align-items:center;justify-content:center;background:rgba(255,255,255,.65);font-size:32px;color:#487fd3;margin-bottom:20px}
+.opportunity-preview{margin-top:24px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(360px,1.15fr);gap:32px;align-items:center;background:#edf4ff;border:1px solid #d9e8ff;border-radius:24px;padding:36px;box-shadow:0 18px 44px rgba(49,93,190,.08)}
+.opportunity-copy{display:flex;flex-direction:column;align-items:flex-start;gap:12px}.opportunity-copy img{width:86px;height:auto}.opportunity-copy h3{font-size:clamp(24px,3vw,34px);line-height:1.35}.opportunity-copy p{color:#49617f;line-height:1.9}.opportunity-note{font-size:13px;color:#64748b}
+.opportunity-tool{background:#fff;border:1px solid #dfeaf9;border-radius:18px;padding:24px;min-width:0}.opportunity-tool label{display:block;font-weight:700;margin-bottom:8px}.opportunity-search{display:flex;gap:10px}.opportunity-search input{min-width:0;flex:1;border:1px solid #cad8eb;border-radius:12px;padding:12px 14px;font:inherit;color:#18181b;background:#fff}.opportunity-search input:focus{outline:3px solid rgba(73,124,255,.18);border-color:#497cff}.opportunity-search .btn{border:0;white-space:nowrap}
+.opportunity-status{min-height:24px;margin-top:10px;color:#64748b;font-size:14px}.opportunity-status.error{color:#b42318}.opportunity-result{margin-top:12px;border-top:1px solid #e8eef7;padding-top:16px}.opportunity-result[hidden]{display:none}.opportunity-product{font-size:15px;color:#334155}.opportunity-markets{list-style:none;margin:14px 0;padding:0;display:grid;gap:8px}.opportunity-markets li{display:flex;align-items:center;gap:10px;background:#f7faff;border-radius:10px;padding:10px 12px}.opportunity-rank{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:50%;background:#497cff;color:#fff;font:700 13px Arial,sans-serif}.opportunity-lock{background:#f4f8fe;border:1px dashed #b7cae8;border-radius:12px;padding:12px;color:#315786;font-size:14px}.opportunity-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.opportunity-actions .btn{font-size:14px;padding:10px 14px}.opportunity-actions .btn.gh{background:#fff}.opportunity-source{font-size:12px;color:#64748b;margin-top:12px}
 .source-line{font-size:15px;color:#64748b;text-align:center;padding:28px 10px}
 .cta-band{display:flex;align-items:center;justify-content:space-between;gap:24px;text-align:start;padding:40px 36px;margin-bottom:28px}.cta-band h2{font-size:clamp(24px,3vw,34px)}.cta-band p{margin-bottom:0}.cta-band .btn{flex-shrink:0}
 .compact-footer{display:flex;align-items:center;gap:24px;border-top:1px solid #e2e8f0;padding-top:22px;padding-bottom:22px;font-size:13px}.compact-footer p{margin-inline-end:auto}footer{padding:0;background:#fff}
@@ -402,7 +406,8 @@ header.hero::before{bottom:14%;background:linear-gradient(transparent 31px,rgba(
 .pricing-page #faq{padding-top:24px;padding-bottom:28px}.faq-list{max-width:none;margin-top:24px;border:1px solid #e6edf8;border-radius:14px;padding:0 20px}.faq-list details{padding:18px 0;border-bottom:1px solid #edf2f8}.faq-list details:last-child{border:0}.faq-list p{color:#64748b;font-size:14px;padding-top:10px}
 #pricingMsg{display:block}#pricingMsg:empty{display:none}
 @media(max-width:1000px){.pricing-page .plans{grid-template-columns:repeat(2,minmax(0,1fr))}.landing-workspace{width:90%}}
-@media(max-width:700px){.landing-workspace{width:100%}.approved-features{grid-template-columns:1fr}.cta-band{flex-direction:column;align-items:flex-start;padding:28px}.compact-footer{flex-wrap:wrap;gap:14px}.pricing-page .plans{grid-template-columns:1fr}.pricing-page .plan{min-height:390px}.pricing-page h1{font-size:32px}.approved-preview{border-radius:10px}.hero-copy h1{font-size:40px}}
+@media(max-width:800px){.opportunity-preview{grid-template-columns:1fr;padding:24px;gap:22px}.opportunity-tool{padding:18px}}
+@media(max-width:700px){.landing-workspace{width:100%}.approved-features{grid-template-columns:1fr}.cta-band{flex-direction:column;align-items:flex-start;padding:28px}.compact-footer{flex-wrap:wrap;gap:14px}.pricing-page .plans{grid-template-columns:1fr}.pricing-page .plan{min-height:390px}.pricing-page h1{font-size:32px}.approved-preview{border-radius:10px}.hero-copy h1{font-size:40px}.opportunity-search{flex-direction:column}.opportunity-search .btn{width:100%}}
 
 </style>
 <link href="/research-motion.css" rel="stylesheet">
@@ -454,9 +459,32 @@ header.hero::before{bottom:14%;background:linear-gradient(transparent 31px,rgba(
     <article class="card" data-reveal><span class="feature-symbol" aria-hidden="true">◎</span><h3 data-i18n="f2t">المنافسة والأسعار</h3><p data-i18n="f2b">افهم المنتجات المنافسة والأسعار وقنوات التوزيع.</p></article>
     <article class="card" data-reveal><span class="feature-symbol" aria-hidden="true">▤</span><h3 data-i18n="f3t">متطلبات الدخول</h3><p data-i18n="f3b">راجع الاشتراطات والرسوم والعوائق قبل التصدير.</p></article>
   </div>
+  <section class="opportunity-preview" id="opportunityPreview" data-reveal aria-labelledby="opportunityTitle">
+    <div class="opportunity-copy">
+      <img src="/silk-logo.png" alt="SILK" width="100" height="58">
+      <h3 id="opportunityTitle" data-i18n="opTitle">اكتشف أين توجد فرصة منتجك.</h3>
+      <p data-i18n="opIntro">أدخل رمز HS من 6 أرقام لنُظهر لك أفضل ثلاثة أسواق بحسب بيانات ITC، قبل أن تبدأ دراسة السوق.</p>
+      <span class="opportunity-note" data-i18n="opScope">المعاينة تعرض ترتيب الأسواق فقط. إنشاء الحساب يفتح القيم بالدولار والفجوة غير المستغلة.</span>
+    </div>
+    <div class="opportunity-tool">
+      <form id="opportunityForm" novalidate>
+        <label for="opportunityHs" data-i18n="opLabel">رمز HS للمنتج</label>
+        <div class="opportunity-search"><input id="opportunityHs" name="hs_code" dir="ltr" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="170490" aria-describedby="opportunityHint opportunityStatus"><button class="btn" id="opportunitySubmit" type="submit" data-i18n="opSearch">اعرض أفضل الأسواق</button></div>
+        <p class="opportunity-status" id="opportunityStatus" role="status" aria-live="polite"></p>
+      </form>
+      <div class="opportunity-result" id="opportunityResult" hidden>
+        <p class="opportunity-product" id="opportunityProduct"></p>
+        <ol class="opportunity-markets" id="opportunityMarkets"></ol>
+        <div class="opportunity-lock" data-i18n="opLocked">سجّل لرؤية القيم بالدولار الأمريكي والفجوة غير المستغلة.</div>
+        <div class="opportunity-actions"><a class="btn" id="opportunityLogin" href="#opportunityPreview" data-i18n="opReveal">لدي حساب — عرض الأرقام</a><a class="btn gh" id="opportunitySignup" href="#opportunityPreview" data-i18n="opNew">مستخدم جديد — اطلب حسابًا مجانيًا</a></div>
+        <p class="opportunity-source" id="opportunitySource" data-i18n="opSource">المصدر: ITC Export Potential Map · تقديرات عام 2030 · القيم بعد الدخول بالدولار الأمريكي وبأرقام إنجليزية.</p>
+      </div>
+    </div>
+  </section>
 </div></section>
 <div class="cta-band"><div><h2 data-i18n="bandT">أي سوق يناسب منتجك؟</h2><p data-i18n="bandS">حدّد المنتج والسوق المستهدف لبدء الدراسة.</p></div><a class="btn" href="/platform.html" data-i18n="firstStudy">أنشئ دراستك الأولى</a></div></main>
 <footer><div class="wrap compact-footer"><img class="silk-logo" src="/silk-logo.png" alt="SILK"><p data-i18n="footer">سلك · دراسات تدعم قرارك.</p><a href="/pricing.html" data-i18n="navPricing">الباقات</a><a href="/platform.html" data-i18n="login">تسجيل الدخول</a></div></footer>
 <script src="/marketing.js" defer></script>
 </body>
 </html>
+

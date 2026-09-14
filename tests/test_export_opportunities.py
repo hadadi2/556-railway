@@ -58,7 +58,11 @@ class WorkflowTests(unittest.TestCase):
         r=cls.http.post('/platform/products',headers=cls.headers['factory_a'],json={'name':'Dates test','hs_code':'080410','hs_source':'manual'})
         assert r.status_code==200,r.text
         cls.pid=r.json()['id']
-        cls.payload={'rows':[{'id':'887','item':{'code':'887','name':'Yemen'},'potential':100.25,'baseline':30,'unrealized':70.25,'raw':{'fixture':True}}], 'provenance':{'response_sha256':'verified-fixture','retrieved_at':'2026-09-12T10:00:00Z','source_url':'https://exportpotential.intracen.org/api/en/epis/markets','source':'ITC'},'count':1,'selection':{}}
+        cls.payload={'rows':[
+            {'id':'887','item':{'code':'887','name':'Yemen'},'potential':100.25,'baseline':30,'unrealized':70.25,'raw':{'fixture':True}},
+            {'id':'784','item':{'code':'784','name':'United Arab Emirates'},'potential':90,'baseline':20,'unrealized':70,'raw':{'fixture':True}},
+            {'id':'368','item':{'code':'368','name':'Iraq'},'potential':80,'baseline':10,'unrealized':70,'raw':{'fixture':True}},
+            {'id':'512','item':{'code':'512','name':'Oman'},'potential':70,'baseline':15,'unrealized':55,'raw':{'fixture':True}}], 'provenance':{'response_sha256':'verified-fixture','retrieved_at':'2026-09-12T10:00:00Z','source_url':'https://exportpotential.intracen.org/api/en/epis/markets','source':'ITC'},'count':4,'selection':{}}
 
     @classmethod
     def tearDownClass(cls):
@@ -92,6 +96,34 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.request('GET',who='admin').status_code,403)
         self.assertEqual(self.request('GET','/markets?product_id='+str(self.pid),who='factory_b').status_code,404)
         self.assertEqual(self.request('GET','/config',who='analyst').json(),{'enabled':False})
+
+    def test_public_preview_has_only_ranked_market_names(self):
+        r=self.http.get('/platform/export-opportunities/preview?hs_code=080410')
+        self.assertEqual(r.status_code,200,r.text)
+        body=r.json();self.assertEqual(body['product']['hs_code'],'080410')
+        self.assertEqual([m['rank'] for m in body['markets']],[1,2,3])
+        self.assertEqual([m['code'] for m in body['markets']],['887','784','368'])
+        serialized=str(body['markets'])
+        for forbidden in ('potential','unrealized','baseline','provenance','response_sha256','raw'):
+            self.assertNotIn(forbidden,serialized)
+        self.assertEqual(self.http.get('/platform/export-opportunities/preview?hs_code=08041').status_code,422)
+        with patch('silk_platform.export_opportunities.public_products',return_value={}):
+            self.assertEqual(self.http.get('/platform/export-opportunities/preview?hs_code=080410').status_code,404)
+
+    def test_public_preview_failure_has_no_fallback(self):
+        from export_potential.client import SourceError
+        with patch('silk_platform.export_opportunities.client.chart',side_effect=SourceError('offline')):
+            r=self.http.get('/platform/export-opportunities/preview?hs_code=080410')
+        self.assertEqual(r.status_code,503)
+        self.assertIn('no substitute',r.text)
+
+    def test_public_funnel_is_aggregate_in_admin_metrics(self):
+        r=self.http.post('/platform/export-opportunities/public-event',json={'kind':'search_started','hs_code':'080410'})
+        self.assertEqual(r.status_code,200,r.text)
+        self.assertEqual(self.http.post('/platform/export-opportunities/public-event',json={'kind':'invented'}).status_code,422)
+        d=self.request('GET','/admin/metrics',who='admin').json()
+        self.assertGreaterEqual(d['public_funnel']['search_started'],1)
+        self.assertNotIn('resource_id',str(d['public_funnel']))
 
     def test_02_verified_save_duplicate_and_tamper(self):
         oid=self.save();self.assertEqual(self.save(),oid)
@@ -172,9 +204,7 @@ class WorkflowTests(unittest.TestCase):
         oid=self.save()
         self.assertEqual(self.request('POST',f'/{oid}/archive',json={'archived':True}).status_code,200)
         self.assertEqual(self.request('GET').json()['total'],0)
-        r=self.request('POST',json={'product_id':self.pid,'market':'887','response_sha256':'verified-fixture'})
-        self.assertEqual(r.status_code,200,r.text)
-        self.assertEqual(r.json(),{'id':oid,'created':False})
+        self.assertEqual(self.save(),oid)
         self.assertEqual(self.request('GET').json()['total'],1)
         self.assertEqual(self.request('GET','?archived=true').json()['total'],0)
 
@@ -225,3 +255,4 @@ class WorkflowTests(unittest.TestCase):
         finally:conn.close()
 
 if __name__=='__main__':unittest.main()
+

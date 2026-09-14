@@ -1,17 +1,28 @@
 """Opt-in opportunity workflow. Existing study validation and launch remain authoritative."""
+import csv
 import json
 import os
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import Body, HTTPException, Request, Query
-from . import audit, repository, export_opportunity_store as store
+from . import audit, repository, export_opportunity_store as store, throttle, tokens
 from .db import now_iso
 from .models import Role
 from export_potential import client
 
 PREFIX = '/platform/export-opportunities'
 GEO = {str(r['itcId']): r for r in json.loads((Path(__file__).resolve().parents[1] / 'export_potential/geography.json').read_text(encoding='utf-8'))}
+PUBLIC_EVENTS = {'search_started', 'signup_clicked', 'login_completed', 'subscription_clicked'}
+
+
+@lru_cache(maxsize=1)
+def public_products():
+    path = Path(__file__).resolve().parents[1] / 'data/hs_codes.csv'
+    with path.open(encoding='utf-8-sig') as source:
+        return {row['hs_code']: {'name': row['name_en'], 'name_ar': row['name_ar']}
+                for row in csv.DictReader(source) if len(row.get('hs_code', '')) == 6}
 
 
 def enabled():
@@ -27,6 +38,82 @@ def allowed(ctx):
 
 
 def mount(app, open_db, require, validate_study):
+    def public_identity(request):
+        # A stable keyed digest supports aggregate funnel counts without storing
+        # the visitor's network address in analytics.
+        return tokens.sign('ep-preview|' + (request.client.host if request.client else '-'))
+
+    def public_event(conn, request, kind, hs_code=None):
+        audit.record(conn, action='opportunity_public_' + kind,
+                     resource_type='export_opportunity_preview',
+                     resource_id=public_identity(request),
+                     changes={'hs_code': hs_code} if hs_code else None)
+        conn.commit()
+
+    @app.get(PREFIX + '/preview')
+    def preview(request: Request, hs_code: str = Query(..., min_length=6, max_length=6)):
+        if not enabled():
+            raise HTTPException(404, 'Feature disabled')
+        if not hs_code.isascii() or not hs_code.isdigit():
+            raise HTTPException(422, 'HS code must contain six Latin digits / رمز HS يجب أن يتكون من ستة أرقام إنجليزية')
+        item = public_products().get(hs_code)
+        if not item:
+            raise HTTPException(404, 'Product code not found / رمز المنتج غير موجود')
+        conn = db()
+        try:
+            ident = 'ep-preview|' + public_identity(request)
+            limits = throttle.named_limits('EPPREVIEW', 20, 60)
+            if throttle.is_throttled(conn, ident, limits):
+                raise HTTPException(429, 'Too many previews / حاول بعد دقيقة', headers={'Retry-After':'60'})
+            throttle.record_failure(conn, ident, limits)
+        finally:
+            conn.close()
+        try:
+            payload = client.chart(axis='markets', exporter='682', market='w',
+                                   product=hs_code, from_marker='i',
+                                   to_marker='j', what_marker='k')
+        except client.SourceError as exc:
+            raise HTTPException(503, 'ITC unavailable; no substitute values / تعذر جلب ITC، لا توجد نتائج بديلة') from exc
+        rows = sorted((r for r in payload['rows'] if r['id'] != '682'),
+                      key=lambda r: (-(r['potential'] if r['potential'] is not None else -1), r['id']))[:3]
+        if not rows:
+            raise HTTPException(404, 'ITC has no results for this product / لا توجد نتائج لهذا المنتج لدى ITC')
+        conn = db()
+        try:
+            public_event(conn, request, 'valid_code', hs_code)
+            public_event(conn, request, 'preview_shown', hs_code)
+        finally:
+            conn.close()
+        period = client.period_info()
+        return {'product': {'hs_code': hs_code, **item},
+                'markets': [{'rank': rank, 'code': row['id'],
+                             'name': row['item']['name'],
+                             'name_ar': GEO.get(row['id'], {}).get('name_ar')}
+                            for rank, row in enumerate(rows, 1)],
+                'period': {'target_year': period.get('target_year')},
+                'source': 'ITC Export Potential Map', 'currency': 'USD'}
+
+    @app.post(PREFIX + '/public-event')
+    def track_public(request: Request, body: dict = Body(default=None)):
+        if not enabled():
+            raise HTTPException(404, 'Feature disabled')
+        body = body if isinstance(body, dict) else {}
+        kind = str(body.get('kind') or '')
+        hs_code = str(body.get('hs_code') or '')
+        if kind not in PUBLIC_EVENTS or (hs_code and (len(hs_code) != 6 or not hs_code.isascii() or not hs_code.isdigit())):
+            raise HTTPException(422, 'Invalid funnel event')
+        conn = db()
+        try:
+            ident = 'ep-funnel|' + public_identity(request)
+            limits = throttle.named_limits('EPFUNNEL', 120, 3600)
+            if throttle.is_throttled(conn, ident, limits):
+                raise HTTPException(429, 'Too many events', headers={'Retry-After':'3600'})
+            throttle.record_failure(conn, ident, limits)
+            public_event(conn, request, kind, hs_code or None)
+        finally:
+            conn.close()
+        return {'ok': True}
+
     def guard(request, role):
         ctx = require(request, role)
         if not enabled() or not allowed(ctx):
@@ -191,8 +278,13 @@ def mount(app, open_db, require, validate_study):
         conn = db()
         try:
             result = store.metrics(conn, days)
+            cutoff = conn.execute("SELECT strftime('%Y-%m-%dT%H:%M:%SZ','now',?)", (f'-{days} days',)).fetchone()[0]
+            result['public_funnel'] = {r['kind']: r['n'] for r in conn.execute(
+                "SELECT substr(action,20) kind,COUNT(*) n FROM audit_log "
+                "WHERE action LIKE 'opportunity_public_%' AND created_at>=? GROUP BY action", (cutoff,))}
             for row in result['top_markets']:
                 row['market_name_ar'] = GEO.get(row['market'], {}).get('name_ar')
             return result
         finally:
             conn.close()
+

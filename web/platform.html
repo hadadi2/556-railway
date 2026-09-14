@@ -1176,6 +1176,7 @@ const ERR_AR = {
   not_found: "العنصر غير موجود أو ليس ضمن حسابك.",
   admin_pii_wall: "الإدارة لا تطّلع على محتوى المصانع وبياناتهم الشخصية.",
   checkout_email_required: "أدخل بريدَ تواصلٍ صالحاً.",
+  invalid_hs_code: "رمز HS يجب أن يتكون من ستة أرقام إنجليزية.",
   checkout_throttled: "طلبات اشتراك كثيرة من هذا الجهاز — حاول بعد قليل.",
   login_throttled: "محاولات دخول فاشلة كثيرة — انتظر ربع ساعة ثم أعد.",
   password_change_throttled: "محاولات كثيرة — انتظر قليلاً ثم أعد.",
@@ -1286,6 +1287,7 @@ const ERR_EN = {
   not_found: "Not found, or not part of your account.",
   admin_pii_wall: "Admins cannot access factory content or personal data.",
   checkout_email_required: "Enter a valid contact email.",
+  invalid_hs_code: "The HS code must contain six English numerals.",
   checkout_throttled: "Too many subscription requests from this device — try again shortly.",
   login_throttled: "Too many failed sign-ins — wait fifteen minutes and retry.",
   password_change_throttled: "Too many attempts — wait a little and retry.",
@@ -1582,9 +1584,37 @@ async function doLogin() {
     $("loginView").classList.add("hide");
     $("appView").classList.remove("hide");
     await loadAll();
+    await handleOpportunityReturn();
   } catch (e) {
     say($("loginMsg"), e.message || ar_en("تعذّر الدخول", "Sign-in failed"), "err");
   } finally { btn.disabled = false; }
+}
+
+/* مسار العودة من معاينة صفحة الهبوط. لا نخزّن مبالغ في الرابط؛ الرمز فقط
+   يحدد منتج المصنع، ثم تجلب لوحة الفرص الأرقام من ITC بصلاحية الحساب. */
+async function handleOpportunityReturn() {
+  const query = new URLSearchParams(location.search);
+  const hs = query.get("opportunity_hs") || "";
+  if (!/^\d{6}$/.test(hs) || !ME || ME.role !== "factory") return;
+  const productName = (query.get("opportunity_name") || "").slice(0, 200);
+  history.replaceState({}, "", location.pathname);
+  fetch("/platform/export-opportunities/public-event", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({kind: "login_completed", hs_code: hs})
+  }).catch(() => { /* القياس لا يمنع المسار */ });
+  const products = Array.isArray(CACHE.products) ? CACHE.products : [];
+  const match = products.find((p) => String(p.hs_code || "") === hs);
+  if (match) {
+    showSection("opportunities");
+    const opened = await window.SilkOpportunities?.openProduct(match.id);
+    if (!opened) tell(ar_en("تعذر فتح الفرصة الآن — أعد المحاولة من قسم فرص التصدير.",
+                            "Could not open the opportunity; retry from Export opportunities."), "err");
+    return;
+  }
+  showSection("products");
+  productDialog({name: productName, hs_code: hs});
+  tell(ar_en("أضف المنتج إلى كتالوج مصنعك، ثم افتح «فرص التصدير» لرؤية الأرقام.",
+             "Add the product to your factory catalog, then open Export opportunities to see the values."), "good");
 }
 
 async function doLogout() {
@@ -4739,9 +4769,11 @@ if (LANG === "en") setLang("en");   // التقط الأصل العربي وبد
     $("loginView").classList.add("hide");
     $("appView").classList.remove("hide");
     await loadAll();
+    await handleOpportunityReturn();
   } catch (_e) { localStorage.removeItem("silk_has_session"); }
 })();
 </script>
 </body>
 </html>
+
 

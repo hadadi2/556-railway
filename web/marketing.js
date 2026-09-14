@@ -45,6 +45,15 @@ var L_EN = {
   f2b: "Explore competing products, prices and distribution channels.",
   f3t: "Entry requirements",
   f3b: "Review requirements, tariffs and barriers before exporting.",
+  opTitle: "Discover where your product has an opportunity.",
+  opIntro: "Enter a six-digit HS code to see the top three markets in ITC data before starting a market study.",
+  opScope: "The preview shows market rankings only. An account unlocks USD values and unrealized potential.",
+  opLabel: "Product HS code",
+  opSearch: "Show top markets",
+  opLocked: "Sign in to see USD values and unrealized potential.",
+  opReveal: "I have an account — show values",
+  opNew: "New user — request a free account",
+  opSource: "Source: ITC Export Potential Map · 2030 estimates · post-login values use USD and English numerals.",
   proofT: "Trusted sources to help you assess the opportunity before investing.",
   bandT: "Which market fits your product?",
   bandS: "Choose your product and target market to start the study.",
@@ -127,6 +136,7 @@ function applyLang(lang) {
     LANG === "en" ? "العربية" : "English";
   renderPlans(_plansCache);
   applyAria();
+  renderOpportunityPreview();
 
 }
 /* أوصاف الوصول (aria-label) خارج آلية data-i18n النصية — تُبدَّل هنا. */
@@ -297,6 +307,84 @@ fetch("/platform/pricing").then(function (r) {
   .catch(function () { _plansCache = null; renderPlans(null); });
 }
 
+/* ═══ معاينة فرص التصدير العامة — أسماء وترتيب فقط، بلا قيم خام ═══════ */
+var _opportunityPreviewData = null;
+function opText(ar, en) { return LANG === "en" ? en : ar; }
+function normalizeHs(value) {
+  return String(value || "").replace(/[٠-٩]/g, function (c) {
+    return String("٠١٢٣٤٥٦٧٨٩".indexOf(c));
+  }).replace(/[۰-۹]/g, function (c) {
+    return String("۰۱۲۳۴۵۶۷۸۹".indexOf(c));
+  }).replace(/\D/g, "").slice(0, 6);
+}
+function recordOpportunityEvent(kind, hs) {
+  fetch("/platform/export-opportunities/public-event", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({kind: kind, hs_code: hs || ""}), keepalive: true
+  }).catch(function () { /* analytics never blocks the visitor */ });
+}
+function renderOpportunityPreview() {
+  var data = _opportunityPreviewData;
+  var result = document.getElementById("opportunityResult");
+  if (!data || !result) return;
+  var product = document.getElementById("opportunityProduct");
+  var markets = document.getElementById("opportunityMarkets");
+  var name = LANG === "ar" && data.product.name_ar ? data.product.name_ar : data.product.name;
+  product.textContent = opText("المنتج: ", "Product: ") + name + " · HS " + data.product.hs_code;
+  markets.textContent = "";
+  data.markets.forEach(function (market) {
+    var li = document.createElement("li");
+    var rank = document.createElement("span"); rank.className = "opportunity-rank"; rank.textContent = String(market.rank);
+    var label = document.createElement("span"); label.textContent = LANG === "ar" && market.name_ar ? market.name_ar : market.name;
+    li.appendChild(rank); li.appendChild(label); markets.appendChild(li);
+  });
+  var query = "opportunity_hs=" + encodeURIComponent(data.product.hs_code) +
+    "&opportunity_name=" + encodeURIComponent(name);
+  document.getElementById("opportunityLogin").href = "/platform.html?" + query;
+  document.getElementById("opportunitySignup").href = "/checkout.html?plan=basic&" + query;
+  result.hidden = false;
+}
+(function opportunityExplorer() {
+  var form = document.getElementById("opportunityForm");
+  if (!form) return;
+  var input = document.getElementById("opportunityHs");
+  var status = document.getElementById("opportunityStatus");
+  var submit = document.getElementById("opportunitySubmit");
+  input.addEventListener("input", function () { input.value = normalizeHs(input.value); });
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var hs = normalizeHs(input.value); input.value = hs;
+    recordOpportunityEvent("search_started", /^\d{6}$/.test(hs) ? hs : "");
+    status.className = "opportunity-status";
+    if (!/^\d{6}$/.test(hs)) {
+      status.textContent = opText("أدخل رمز HS صحيحًا من 6 أرقام.", "Enter a valid six-digit HS code.");
+      status.classList.add("error"); input.focus(); return;
+    }
+    submit.disabled = true; status.textContent = opText("جارٍ جلب بيانات ITC…", "Retrieving ITC data…");
+    fetch("/platform/export-opportunities/preview?hs_code=" + encodeURIComponent(hs))
+      .then(function (response) {
+        if (response.ok) return response.json();
+        var messages = response.status === 404
+          ? opText("لم نجد هذا الرمز في كتالوج المنتجات أو لدى ITC.", "This code was not found in the product catalog or ITC.")
+          : response.status === 429
+            ? opText("طلبات كثيرة. انتظر دقيقة ثم أعد المحاولة.", "Too many requests. Wait a minute and try again.")
+            : opText("تعذر جلب بيانات ITC الآن، ولم نعرض بيانات بديلة.", "ITC data is unavailable, and no substitute data was shown.");
+        throw new Error(messages);
+      }).then(function (data) {
+        _opportunityPreviewData = data; status.textContent = ""; renderOpportunityPreview();
+      }).catch(function (error) {
+        _opportunityPreviewData = null; document.getElementById("opportunityResult").hidden = true;
+        status.textContent = error.message; status.classList.add("error");
+      }).finally(function () { submit.disabled = false; });
+  });
+  document.getElementById("opportunityLogin").addEventListener("click", function () {
+    recordOpportunityEvent("signup_clicked", _opportunityPreviewData && _opportunityPreviewData.product.hs_code);
+  });
+  document.getElementById("opportunitySignup").addEventListener("click", function () {
+    recordOpportunityEvent("subscription_clicked", _opportunityPreviewData && _opportunityPreviewData.product.hs_code);
+  });
+})();
+
 
 /* ═══ الظهور بالتمرير — يتعطّل كلياً مع تفضيل تقليل الحركة ═══════════════ */
 (function reveal() {
@@ -320,3 +408,4 @@ fetch("/platform/pricing").then(function (r) {
 try {
   if (localStorage.getItem("silk_lang") === "en") applyLang("en");
 } catch (e) { /* وضع خصوصية */ }
+
