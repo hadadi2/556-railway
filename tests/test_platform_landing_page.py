@@ -19,7 +19,11 @@ import pytest
 
 _ROOT = pathlib.Path(__file__).resolve().parent.parent
 _LANDING = (_ROOT / "web" / "platform-landing.html").read_text(encoding="utf-8")
-_LANDING = _LANDING.replace('<script src="/marketing.js" defer></script>', "<script>" + (_ROOT / "web/marketing.js").read_text() + "</script>")
+_LANDING = re.sub(
+    r'<script src="/marketing\.js(?:\?[^"]*)?" defer></script>',
+    lambda _: "<script>" + (_ROOT / "web/marketing.js").read_text(encoding="utf-8") + "</script>",
+    _LANDING,
+)
 _CHECKOUT_PATH = _ROOT / "web" / "checkout.html"
 
 
