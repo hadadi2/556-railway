@@ -720,7 +720,7 @@ async function main() {
     const planTxt = await page.textContent("#pfPlanCard");
     if (!/فضية/.test(planTxt || ""))
       fail("plan_card_tier", `بطاقة الباقة بلا اسم الطبقة: ${planTxt}`);
-    if (!/في الباقة البلاتينية/.test(planTxt || ""))
+    if (!/في الباقة الذهبية/.test(planTxt || ""))
       fail("plan_unlock_hint", "بطاقة الباقة لا تسمّي باقة الفتح");
     // بطاقة الاستخدام: المتبقي والتجديد — أرقامٌ من /entitlements لا مخترَعة.
     if (!(await page.isVisible("#planUsageCard")))
