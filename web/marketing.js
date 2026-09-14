@@ -331,6 +331,10 @@ function renderOpportunityPreview() {
   var markets = document.getElementById("opportunityMarkets");
   var name = LANG === "ar" && data.product.name_ar ? data.product.name_ar : data.product.name;
   product.textContent = opText("المنتج: ", "Product: ") + name + " · HS " + data.product.hs_code;
+  if (data.product.grouped) {
+    product.textContent += opText(" — يعرض ITC النتائج لمجموعة المنتجات ", " — ITC reports this product group: ") +
+      data.product.itc_code + " (" + data.product.itc_name + ")";
+  }
   markets.textContent = "";
   data.markets.forEach(function (market) {
     var li = document.createElement("li");
@@ -350,9 +354,19 @@ function renderOpportunityPreview() {
   var input = document.getElementById("opportunityHs");
   var status = document.getElementById("opportunityStatus");
   var submit = document.getElementById("opportunitySubmit");
+  var busy = false, retryAt = 0, retryTimer = null, previews = {};
+  function showRetry() {
+    var seconds = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000));
+    submit.disabled = seconds > 0 || busy;
+    status.textContent = seconds > 0
+      ? opText("بلغت حد البحث المؤقت. أعد المحاولة بعد ", "Search limit reached. Try again in ") + seconds + opText(" ثانية.", " seconds.")
+      : opText("يمكنك البحث الآن.", "You can search now.");
+    if (!seconds) { clearInterval(retryTimer); retryTimer = null; }
+  }
   input.addEventListener("input", function () { input.value = normalizeHs(input.value); });
   form.addEventListener("submit", function (event) {
     event.preventDefault();
+    if (busy || Date.now() < retryAt) return;
     var hs = normalizeHs(input.value); input.value = hs;
     recordOpportunityEvent("search_started", /^\d{6}$/.test(hs) ? hs : "");
     status.className = "opportunity-status";
@@ -360,22 +374,40 @@ function renderOpportunityPreview() {
       status.textContent = opText("أدخل رمز HS صحيحًا من 6 أرقام.", "Enter a valid six-digit HS code.");
       status.classList.add("error"); input.focus(); return;
     }
-    submit.disabled = true; status.textContent = opText("جارٍ جلب بيانات ITC…", "Retrieving ITC data…");
+    if (previews[hs] && Date.now() - previews[hs].time < 60000) {
+      _opportunityPreviewData = previews[hs].data; status.textContent = ""; renderOpportunityPreview(); return;
+    }
+    busy = true; submit.disabled = true;
+    document.getElementById("opportunityResult").hidden = true;
+    status.textContent = opText("جارٍ جلب بيانات ITC…", "Retrieving ITC data…");
     fetch("/platform/export-opportunities/preview?hs_code=" + encodeURIComponent(hs))
       .then(function (response) {
         if (response.ok) return response.json();
+        if (response.status === 429) {
+          var wait = Number(response.headers.get("Retry-After"));
+          retryAt = Date.now() + (Number.isFinite(wait) && wait > 0 ? Math.min(wait, 3600) : 60) * 1000;
+          retryTimer = setInterval(showRetry, 1000);
+        }
         var messages = response.status === 404
           ? opText("لم نجد هذا الرمز في كتالوج المنتجات أو لدى ITC.", "This code was not found in the product catalog or ITC.")
           : response.status === 429
             ? opText("طلبات كثيرة. انتظر دقيقة ثم أعد المحاولة.", "Too many requests. Wait a minute and try again.")
             : opText("تعذر جلب بيانات ITC الآن، ولم نعرض بيانات بديلة.", "ITC data is unavailable, and no substitute data was shown.");
-        throw new Error(messages);
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          var code = body.detail && body.detail.code;
+          if (code === "itc_product_excluded") messages = opText("هذا الرمز صحيح، لكن ITC يستبعده من حساب إمكانات التصدير.", "This HS code is valid, but ITC excludes it from export potential estimates.");
+          if (code === "itc_no_results") messages = opText("الرمز صحيح، لكن ITC لا يعرض فرصًا للصادرات السعودية لهذا المنتج.", "Valid HS code, but ITC has no Saudi export opportunities for this product.");
+          if (code === "hs_not_found") messages = opText("هذا الرمز غير موجود في جدول مطابقة ITC. تحقّق من رمز HS ذي الستة أرقام.", "This code is not in ITC's correspondence table. Check the six-digit HS code.");
+          throw new Error(messages);
+        });
       }).then(function (data) {
+        previews = {}; previews[hs] = {time: Date.now(), data: data};
+        if (normalizeHs(input.value) !== hs) { status.textContent = ""; return; }
         _opportunityPreviewData = data; status.textContent = ""; renderOpportunityPreview();
       }).catch(function (error) {
         _opportunityPreviewData = null; document.getElementById("opportunityResult").hidden = true;
         status.textContent = error.message; status.classList.add("error");
-      }).finally(function () { submit.disabled = false; });
+      }).finally(function () { busy = false; submit.disabled = Date.now() < retryAt; if (submit.disabled) showRetry(); });
   });
   document.getElementById("opportunityLogin").addEventListener("click", function () {
     recordOpportunityEvent("signup_clicked", _opportunityPreviewData && _opportunityPreviewData.product.hs_code);

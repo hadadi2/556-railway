@@ -117,6 +117,51 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(r.status_code,503)
         self.assertIn('no substitute',r.text)
 
+    def test_official_correspondences_cover_catalog_and_keep_leading_zeroes(self):
+        from export_potential.hs_catalog import products
+        data = products()
+        self.assertEqual(len(data), 6002)
+        self.assertEqual(data['010121']['itc_code'], '0101')
+        self.assertEqual(data['010513']['itc_code'], '0105XX')
+        self.assertFalse(data['080410']['grouped'])
+        self.assertEqual(sum(p['excluded'] for p in data.values()), 158)
+
+    def test_preview_uses_official_group_but_preserves_customer_hs(self):
+        with patch('silk_platform.export_opportunities.client.chart', return_value=copy.deepcopy(self.payload)) as chart:
+            r = self.http.get('/platform/export-opportunities/preview?hs_code=010121')
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual(chart.call_args.kwargs['product'], '0101')
+        self.assertEqual(r.json()['product']['hs_code'], '010121')
+        self.assertTrue(r.json()['product']['grouped'])
+
+    def test_excluded_valid_hs_is_not_invalid_or_fabricated(self):
+        with patch('silk_platform.export_opportunities.client.chart') as chart:
+            r = self.http.get('/platform/export-opportunities/preview?hs_code=240110')
+        self.assertEqual(r.status_code, 422)
+        self.assertEqual(r.json()['detail']['code'], 'itc_product_excluded')
+        chart.assert_not_called()
+
+    def test_pdi_only_exclusion_does_not_block_export_potential(self):
+        from export_potential.hs_catalog import products
+        self.assertFalse(products()['030111']['excluded'])
+
+    def test_empty_itc_result_is_distinct_from_unknown_hs(self):
+        with patch('silk_platform.export_opportunities.client.chart', return_value={'rows': []}):
+            r = self.http.get('/platform/export-opportunities/preview?hs_code=010121')
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.json()['detail']['code'], 'itc_no_results')
+
+    def test_factory_save_keeps_hs_and_group_provenance(self):
+        conn = self.db.connect()
+        conn.execute("UPDATE products SET hs_code='010121' WHERE id=?", (self.pid,))
+        conn.commit(); conn.close()
+        with patch('silk_platform.export_opportunities.client.chart', return_value=copy.deepcopy(self.payload)) as chart:
+            self.save()
+        self.assertEqual(chart.call_args.kwargs['product'], '0101')
+        row = self.request('GET').json()['opportunities'][0]
+        self.assertEqual(row['hs_code'], '010121')
+        self.assertEqual(row['snapshot']['product_mapping']['itc_code'], '0101')
+
     def test_public_funnel_is_aggregate_in_admin_metrics(self):
         r=self.http.post('/platform/export-opportunities/public-event',json={'kind':'search_started','hs_code':'080410'})
         self.assertEqual(r.status_code,200,r.text)

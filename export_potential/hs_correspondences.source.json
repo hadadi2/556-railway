@@ -1,0 +1,9 @@
+{
+  "source": "ITC Export Potential Map",
+  "file": "ITC_EPM-Full_correspondences_en.xlsx",
+  "sha256": "075faf07ac5da311f03ad666564274c15de88b85bfb7a61ec3354fd61c9c2ae3",
+  "sheet": "Sectors",
+  "rows": 6002,
+  "imported_on": "2026-09-14",
+  "note": "Official correspondence file supplied by the owner. Mapping only; no financial values."
+}
