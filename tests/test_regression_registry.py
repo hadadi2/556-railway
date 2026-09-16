@@ -4571,6 +4571,18 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    243: lambda: (
+        _needles("silk_narrative.py", "def fmt_derived", "def iso_currency",
+                 "DERIVED_PROVENANCE_RULE",
+                 "def derived_provenance_enabled")(),
+        _needles("silk_economics.py", "def _unit_cur", "inputs=",
+                 "unknown=")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_reference_to_nonexistent_figure",
+                 "def _check_max_loss_without_components",
+                 "def _dn_needle")(),
+        _needles("silk_ai_judge.py", "_derived_rule")(),
+        _needles("tests/test_lessons_enforcement.py", '(243, ')()),
     242: lambda: (
         _needles("silk_decision.py", "CORE_PILLARS",
                  "def confidence_band_cap", "def score_arithmetic",

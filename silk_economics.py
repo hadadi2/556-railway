@@ -663,8 +663,15 @@ def _round_clean(x: float) -> "int | float":
 
 
 def _mk_estimate(name: str, low: float, high: float, method: str,
-                 confirm: str, confirm_time: str, unit: str = "") -> dict:
-    """تقدير بحقوله الأربعة — أو إعلان «أوسع من أن يُتصرف به» فوق ±50%."""
+                 confirm: str, confirm_time: str, unit: str = "",
+                 inputs: "list | None" = None,
+                 unknown: "list | None" = None) -> dict:
+    """تقدير بحقوله الأربعة — أو إعلان «أوسع من أن يُتصرف به» فوق ±50%.
+
+    الصنف ٩ (خلف `SILK_DERIVED_PROVENANCE`): `inputs` مدخلاتُ المعادلة، كلٌّ
+    `{name, source, assumed}`؛ و`unknown` المكوّناتُ المستبعَدةُ من الجمع
+    بأسمائها. بلا الراية **لا يُضاف الحقلان** فيبقى البند حرفياً كما كان
+    (قرار المالك: لا تغييرَ سلوكٍ بلا راية)."""
     mid = (low + high) / 2.0
     width = abs(high - low) / 2.0 / mid * 100.0 if mid else 0.0
     width = round(width, 1)
@@ -679,6 +686,13 @@ def _mk_estimate(name: str, low: float, high: float, method: str,
         est["note"] = TOO_WIDE_NOTE
     else:
         est["value"] = _round_clean(mid)
+    if inputs or unknown:
+        import silk_narrative
+        if silk_narrative.derived_provenance_enabled():
+            if inputs:
+                est["inputs"] = [i for i in inputs if i]
+            if unknown:
+                est["unknown"] = [str(u) for u in unknown if str(u).strip()]
     return est
 
 
@@ -711,7 +725,11 @@ def estimate_trial_shipment(category: str, unit_kg: float | None = None
         f"حمولة حاوية 40 قدماً المنشورة ÷ وزن "
         f"{mu_ar} الواحد ({unit_kg:g} كجم)",
         "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
-        "3–5 أيام عمل", unit=mu_ar)
+        "3–5 أيام عمل", unit=mu_ar,
+        inputs=[{"name": "حمولة حاوية 40 قدماً", "source": spec["source"]},
+                {"name": f"وزن {mu_ar} الواحد ({unit_kg:g} كجم)",
+                 "source": "ثابت كثافة الفئة المسجّل" if mu_code == "litre"
+                           else "وحدة السوق كجم (بلا تحويل)"}])
     # الاستشهاد الخام (لاتيني) حقلٌ منفصل: أسطح المشغّل تعرضه، وسطح
     # العميل يبقى بلغة الزائر (سياسة «لا مصدر خام على سطح العميل»، موجة ٣).
     est["source"] = spec["source"]
@@ -777,6 +795,22 @@ def estimate_freight_per_unit(category: str, exw_per_unit: float | None,
         "3–5 أيام عمل", unit=f"لكل {market_unit(category)[1]}")
 
 
+def _unit_cur(cost_currency: str) -> str:
+    """وحدةُ المبلغ المشتقّ — رمزُ ISO حين يُعرَف (الصنف ٩، خلف رايته).
+
+    «8,900 بعملة تكلفتك» مبلغٌ غيرُ قابلٍ للتدقيق؛ و«8,900 SAR» يُدقَّق.
+    عملةٌ لا يُعرَف رمزُها تبقى بنصّها كما صرّح به المالك (لا تخمينَ رمز)،
+    وغيابُ التصريح يبقى معلَناً بالعبارة القائمة نفسها.
+    """
+    import silk_narrative
+    cur = (cost_currency or "").strip()
+    if not cur:
+        return "بعملة تكلفتك"
+    if not silk_narrative.derived_provenance_enabled():
+        return cur
+    return silk_narrative.iso_currency(cur) or cur
+
+
 def build_decision_numbers(*, category: str, market_iso3: str = "",
                            cost_per_unit: float | None = None,
                            cost_currency: str = "",
@@ -828,7 +862,23 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
             + (" + رسوم متحققة" if cert_fee_range else
                " (رسوم التسجيل غير متحققة — خارج المجموع ومعلنة)"),
             "عرض شحن رسمي + جدول رسوم الجهة التنظيمية للسوق",
-            "أسبوع عمل", unit=(cost_currency or "بعملة تكلفتك"))
+            "أسبوع عمل", unit=_unit_cur(cost_currency),
+            inputs=[
+                {"name": "تكلفة إنتاج الوحدة لديك",
+                 "source": "بطاقة المنتج التي أدخلتها"},
+                {"name": "وحدات الشحنة التجريبية",
+                 "source": "حمولة الحاوية المنشورة ÷ وزن الوحدة"}]
+            + ([{"name": "كلفة الشحن للوحدة",
+                 "source": ((freight or {}).get("source")
+                            or "سعر ممر منشور متحقق")}] if fr_known else [])
+            + ([{"name": "رسوم التسجيل والاعتماد",
+                 "source": "جدول رسوم الجهة التنظيمية للسوق"}]
+               if cert_fee_range else []),
+            unknown=([] if fr_known else
+                     ["كلفة الشحن للوحدة (بلا سعر ممر متحقق — مداها أوسع "
+                      "من ±50%)"])
+            + ([] if cert_fee_range else
+               ["رسوم التسجيل والاعتماد (غير متحققة)"]))
         out.append(entry)
     else:
         out.append({"name": "كلفة الدخول الكلية حتى أول شحنة",
@@ -885,7 +935,17 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                 "كلفة الدخول ÷ هامش الوحدة (أقصى سعر مصنع منافس − "
                 "تكلفتك)",
                 "تثبيت سعر بيع فعلي من أول مفاوضة مستورد",
-                "مع أول عرض سعر جاد", unit=mu_ar)
+                "مع أول عرض سعر جاد", unit=mu_ar,
+                inputs=[
+                    {"name": "كلفة الدخول الكلية حتى أول شحنة",
+                     "source": "بند «كلفة الدخول» في هذا الجدول"},
+                    {"name": "أقصى سعر مصنع قابل للمنافسة",
+                     "source": "هوامشُ الشحن والتوزيع من معلمات السيناريو "
+                               "المعلنة فوق أدنى سعر رف منافس مرصود",
+                     "assumed": True},
+                    {"name": "تكلفة إنتاج الوحدة لديك",
+                     "source": "بطاقة المنتج التي أدخلتها"}],
+                unknown=list(entry.get("unknown") or []))
             if monthly_capacity:
                 be["months_at_capacity"] = {
                     "low": round(lo / monthly_capacity, 1),
@@ -928,7 +988,12 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
             "كلفة الدخول كلها عرضة للفقد في أسوأ حالة (بضاعة + شحن غير "
             "مستردّين)",
             "شرط إعادة/تصريف في أول عقد يقلّص السقف فعلياً",
-            "بند تفاوضي في أول عقد", unit=(cost_currency or "بعملة تكلفتك"))
+            "بند تفاوضي في أول عقد", unit=_unit_cur(cost_currency),
+            inputs=[{"name": "كلفة الدخول الكلية حتى أول شحنة",
+                     "source": "بند «كلفة الدخول» في هذا الجدول"}],
+            # الصنف ٩: سقفُ المخاطرة يَرِث **ناقصَ** كلفة الدخول بالاسم —
+            # سقفٌ يُقرأ شاملاً وهو ناقصٌ أخطرُ من سقفٍ معلَنِ النقص.
+            unknown=list(entry.get("unknown") or []))
         out.append(ml)
     else:
         out.append({"name": "أقصى خسارة إن فشل الدخول", "tier": "gap",

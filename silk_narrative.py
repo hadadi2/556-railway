@@ -627,6 +627,115 @@ CURRENCY_AR = {
 }
 
 
+# ── الصنف ٩: إسنادُ الرقم المشتقّ · derived-figure provenance ───────────────
+# **العيبُ المرصود:** «أقصى خسارة إن فشل الدخول: 8,900» — رقمٌ مشتقٌّ يصل
+# القارئَ بلا عملته، وبلا معادلته، وبلا مصدرِ كلّ مدخلٍ فيه، وبلا تسميةِ
+# المكوّنات التي **استُبعدت** من جمعه (الشحنُ غيرُ المتحقّق، رسومُ التسجيل).
+# فيقرأ صاحبُ القرار سقفَ مخاطرةٍ يظنّه شاملاً وهو ناقص.
+#
+# **الجذر:** المحرّك يكتب المعادلةَ نثراً في `method` ويُخفي الاستبعاد داخل
+# نفس الجملة، فلا حقلَ يحمل المدخلاتِ ولا مصادرَها ولا الناقص — فلا سطحَ
+# يقدر على عرضها ولا بوابةَ تقدر على قياس غيابها.
+#
+# **الحلّ:** حقلان مهيكلان على بند الرقم المشتقّ (`inputs` و`unknown`) يبنيهما
+# `silk_economics.build_decision_numbers`، ومُنسِّقٌ واحدٌ هنا يعرضهما على كلّ
+# سطح. خلف رايةٍ مطفأةٍ افتراضياً (`SILK_DERIVED_PROVENANCE=1`): بلا الراية
+# لا حقلَ يُضاف ولا حرفَ يتغيّر في أيّ سطح.
+DERIVED_PROVENANCE_FLAG = "SILK_DERIVED_PROVENANCE"
+ASSUMPTION_TAG_AR = "افتراض"       # وسمُ المدخل غير المرصود (لا يُقدَّم رصداً)
+
+
+def derived_provenance_enabled() -> bool:
+    """هل رايةُ الصنف ٩ مفعّلة؟ — نمطُ `silk_figure_store.enabled` القائم."""
+    import os
+    return os.environ.get(DERIVED_PROVENANCE_FLAG,
+                          "").strip().lower() in ("1", "true", "yes")
+
+
+# اسمُ العملةِ العربيّ ⇄ رمزُها ISO. الاتجاهُ العكسيّ من `CURRENCY_AR` نفسه
+# (مصدرٌ واحد)، مع أسماءٍ شائعةٍ بلا تمييزٍ قُطريّ صريح تُترك **بلا** رمز:
+# «دينار» وحدَها تسعُ خمسَ دول، وتخمينُ رمزها اختلاقٌ لا ترجمة.
+_CURRENCY_ISO_EXTRA = {"دولار أمريكي": "USD", "الدولار": "USD",
+                       "ريال سعودي": "SAR", "جنيه استرليني": "GBP"}
+
+
+def iso_currency(currency: object) -> str:
+    """رمزُ ISO للعملة إن كان معروفاً — وإلّا سلسلةٌ فارغة.
+
+    الصنف ٩: مبلغٌ بلا رمزِ عملةٍ لا يُدقَّق. والغيابُ يُعاد فارغاً كي
+    **يُعلَن** ناقصاً، لا يُخمَّن رمزٌ من اسمٍ يسعُ عدّةَ دول.
+    """
+    cur = str(currency or "").strip()
+    if not cur:
+        return ""
+    if re.fullmatch(r"[A-Za-z]{3}", cur):
+        return cur.upper()
+    if cur in _CURRENCY_ISO_EXTRA:
+        return _CURRENCY_ISO_EXTRA[cur]
+    for code, ar in CURRENCY_AR.items():
+        if ar == cur:
+            return code
+    return ""
+
+
+def fmt_derived_input(inp: object) -> str:
+    """مدخلٌ واحدٌ من مدخلات رقمٍ مشتقّ: اسمُه ثمّ مصدرُه أو وسمُ الافتراض.
+
+    المصدرُ المرصود يُسمّى؛ والمعلمةُ المفترضة تُوسَم «افتراض» صريحاً — فلا
+    يقرأ صاحبُ القرار معلمةَ سيناريو كأنها قياس. مدخلٌ بلا أيٍّ منهما
+    يُعلَن «مصدره غير مسجّل» (فجوةٌ معلنة لا حشوٌ صامت).
+    """
+    if not isinstance(inp, dict):
+        return str(inp or "").strip()
+    name = str(inp.get("name") or "").strip()
+    if not name:
+        return ""
+    src = str(inp.get("source") or "").strip()
+    if inp.get("assumed"):
+        return (f"{name} — {ASSUMPTION_TAG_AR}: {src}" if src
+                else f"{name} — {ASSUMPTION_TAG_AR} غير مصدَّق")
+    if src:
+        return f"{name} — المصدر: {src}"
+    return f"{name} — مصدره غير مسجّل"
+
+
+DERIVED_PROVENANCE_RULE = (
+    "**إسنادُ الرقم المشتقّ (إلزامي):** كلُّ مبلغٍ يُكتَب برمز عملته "
+    "(SAR/USD/EUR…) — مبلغٌ بلا عملةٍ لا يُدقَّق. وكلُّ رقمٍ **تشتقّه** "
+    "(تعادل، كلفةُ دخول، سقفُ خسارة، شريحةٌ قابلة للخدمة) يُكتَب معه: "
+    "معادلتُه، ومدخلاتُها واحداً واحداً، ومصدرُ كلّ مدخلٍ مرصود، ووسمُ "
+    "«افتراض» على كلّ مدخلٍ غيرِ مرصود. وسقفُ الخسارة **مدىً** لا رقماً "
+    "مفرداً، وتُسمّى فيه المكوّناتُ التي لم تُحسَب وبقيت خارجه. "
+    "ولا تكتب رقماً لبندٍ تُعلِنه الحقائقُ غيرَ محسوب: الصيغةُ المشروعة "
+    "«غير محسوب — الناقص: [اسم المدخل]»."
+)
+
+
+def fmt_derived(entry: object) -> str:
+    """طريقةُ اشتقاق بندٍ من «أرقام القرار» — معادلتُه ثمّ مدخلاتُها بمصادرها
+    ثمّ المكوّناتُ غير المحسوبة بأسمائها.
+
+    بلا الراية (أو بلا الحقلين) تُعاد `method` **حرفياً كما هي** — فكلّ سطح
+    يستدعي هذا المُنسِّق بلا أن يتغيّر خرجُه المطفأ.
+    """
+    e = entry if isinstance(entry, dict) else {}
+    method = str(e.get("method") or "").strip()
+    if not derived_provenance_enabled():
+        return method
+    inputs = [x for x in (e.get("inputs") or []) if x]
+    unknown = [str(u).strip() for u in (e.get("unknown") or []) if str(u).strip()]
+    if not inputs and not unknown:
+        return method
+    parts = [method] if method else []
+    rendered = [r for r in (fmt_derived_input(i) for i in inputs) if r]
+    if rendered:
+        parts.append("المدخلات: " + "؛ ".join(rendered) + ".")
+    if unknown:
+        parts.append("مكوّنات غير محسوبة وخارج هذا الرقم: "
+                     + "؛ ".join(unknown) + ".")
+    return " ".join(parts)
+
+
 def fmt_year(v: object) -> str:
     """سنةٌ للعرض — بلا فاصلِ آلاف («2024» لا «2,024»)."""
     n = _as_float(v)

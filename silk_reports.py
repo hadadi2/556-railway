@@ -2310,8 +2310,15 @@ def _economics_md_lines(dr: dict) -> list[str]:
                            f"±{e['width_pct']}%)")
                 # سطح مشغّل/أكاديمي: الاستشهاد الخام يُلحق هنا (سطح العميل
                 # يعرض الطريقة بلغة الزائر فقط — سياسة موجة ٣).
-                _mth = e["method"] + (f" — المصدر: {e['source']}"
-                                      if e.get("source") else "")
+                # الصنف ٩: المعادلةُ ومدخلاتُها ومصادرُها والناقصُ من
+                # مُنسِّقٍ واحد (`silk_narrative.fmt_derived`) — بلا الراية
+                # يعيد `method` حرفياً فلا يتغيّر حرفٌ في هذا السطر.
+                from silk_narrative import fmt_derived as _fmt_derived
+                _mth = _fmt_derived(e)
+                # الاستشهادُ الخام لا يُكرَّر: حين يكون مصدرَ أحدِ المدخلات
+                # المعروضة فقد ذُكِر (الصنف ٥ — شرحٌ واحدٌ لكلّ حقيقة).
+                if e.get("source") and str(e["source"]) not in _mth:
+                    _mth += f" — المصدر: {e['source']}"
                 dn_lines.append(f"| {e['name']} | {val} | {_mth} | "
                                 f"{e['confirm']} — {e['confirm_time']} |")
             else:
@@ -3592,7 +3599,10 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
                 val = (f"{e['value']} {e.get('unit', '')} "
                        f"(المدى {r['low']}–{r['high']}، "
                        f"±{e['width_pct']}%)")
-            rows.append([e["name"], val, e["method"],
+            # الصنف ٩: نفسُ المُنسِّق على سطح العميل — سقفُ المخاطرة
+            # يصل القارئَ بناقصه مسمّىً لا شاملاً في الظاهر.
+            from silk_narrative import fmt_derived as _fmt_derived
+            rows.append([e["name"], val, _fmt_derived(e),
                          f"{e['confirm']} — {e['confirm_time']}"])
         else:
             rows.append([e["name"],

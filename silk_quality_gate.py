@@ -2520,6 +2520,8 @@ _FLAGGED_FAIL_TRIGGERS: tuple = (
      "open_conditions_single"),
     ("high_confidence_with_missing_pillar", "silk_render",
      "confidence_discipline"),
+    ("reference_to_nonexistent_figure", "silk_narrative",
+     "derived_provenance_enabled"),
 )
 
 
@@ -3430,6 +3432,145 @@ def _check_derived_number_has_inputs(view: dict) -> list[dict]:
                          "المحسوب معلَّق لغياب مدخلاته المرصودة — رقم مشتق "
                          "بلا مدخلات لا يُسلَّم؛ البديل: «غير محسوب — "
                          "الناقص: [اسم المدخل]»")}]
+    return []
+
+
+# ── الصنف ٩: رقمٌ مشتقٌّ بلا إسناد · derived figure without provenance ─────
+# **العيبُ المرصود:** خارطةُ الطريق تُسمّي «الشريحةَ القابلة للخدمة» و«نقطةَ
+# التعادل» بأرقامٍ في إطارٍ محسوب، بينما المحرّكُ يُعلن البندَين نفسَهما
+# **فجوةً** (`tier == "gap"`) في «أرقام القرار» — فيقرأ صاحبُ القرار رقماً
+# لم يُحسَب أصلاً. و«أقصى خسارة» تصل رقماً واحداً شاملَ المظهر بينما أساسُها
+# (كلفةُ الدخول) استُبعد منه الشحنُ غيرُ المتحقّق ورسومُ التسجيل.
+#
+# **الجذر:** لا قاعدةَ تقابل بين ما أعلنه المحرّك مجهولاً وما كتبه الكاتبُ
+# محسوباً؛ فالكاتبُ يُعيد الاشتقاق بحرّية والبوابةُ لا تقيس التقابل.
+#
+# الأوّلُ حاجبٌ **خلف رايةِ الصنف ٩ فقط** (`_FLAGGED_FAIL_TRIGGERS`)؛ والثاني
+# تحذيريّ. والمرجعُ في الحالتين حتميّ: بنودُ `decision_numbers` نفسُها.
+_DN_STOPWORDS = ("من", "الى", "في", "حتى", "اول", "ان", "على", "عن",
+                 "مع", "او", "و", "الي", "بعد", "قبل", "لكل")
+_MAX_LOSS_NEEDLES = ("أقصى خسارة", "أقصى الخسارة", "سقف الخسارة",
+                     "maximum loss", "max loss")
+# إفصاحُ الاستبعاد المقبول قرب سقفِ المخاطرة — أيٌّ منها يُعفي (والمدى
+# نفسُه إفصاحٌ: رقمان بينهما شَرطة يقولان إنّ الرقم غيرُ قاطع).
+_EXCLUSION_DISCLOSURE = ("خارج", "غير محسوب", "غير محسوبة", "غير متحقق",
+                         "غير متحققة", "مستبعد", "مستبعدة", "لا يشمل",
+                         "لا تشمل", "يُستبعد", "يستبعد", "بلا سعر",
+                         "excluded", "not included", "does not include")
+_ENGINE_EXCLUSION_MARKS = ("خارج المجموع", "يُستبعد من المجموع",
+                           "فيُستبعد من المجموع")
+# المدى: رقمان بفاصلٍ صريح («7,100–10,700»، «بين 7,100 و 10,700»،
+# «7,100 to 10,700»). العطفُ بين رقمين يُقبَل فاصلَ مدىً — ثمنُه المُعلَن
+# أنّ رقمين غيرَ مرتبطين في جملةِ السقف نفسِها يُعفيانها، وهو ثمنٌ أهونُ
+# من معاقبةِ الصيغةِ العربيّةِ الأشهرِ للمدى.
+_RANGE_MARK_RE = re.compile(
+    r"\d[\s,.\d]*\s*(?:[-–—]|و|الى|إلى|to)\s*\d")
+
+
+def _dn_needle(name: object) -> str:
+    """إبرةُ بندٍ من «أرقام القرار»: أقصرُ مقطعٍ **متّصلٍ** من اسمه يبدأ من
+    أوّله ويضمّ كلمةً دالّةً واحدةً على الأقلّ بعد الأولى.
+
+    «نقطة التعادل» ⇒ «نقطة التعادل»؛ «أقصى خسارة إن فشل الدخول» ⇒ «أقصى
+    خسارة»؛ «الزمن من القرار إلى أول فاتورة» ⇒ «الزمن من القرار» (الكلمةُ
+    الثانيةُ حرفُ جرٍّ فتُضَمّ الثالثة) — كي لا تبتلعَ الإبرةُ نثراً عاماً.
+    """
+    words = [w for w in _norm_ar(str(name or "")).split() if w]
+    if len(words) < 2:
+        return " ".join(words)
+    for i in range(1, len(words)):
+        if words[i] not in _DN_STOPWORDS and len(words[i]) >= 3:
+            return " ".join(words[:i + 1])
+    return " ".join(words[:2])
+
+
+def _check_reference_to_nonexistent_figure(view: dict) -> list[dict]:
+    """`reference_to_nonexistent_figure` (الصنف ٩ — حاجبٌ خلف رايته): المتنُ
+    يُسمّي بندَ قرارٍ برقمٍ في إطارٍ محسوب بينما المحرّكُ يُعلنه فجوة.
+
+    **منطقةُ العمى المعلنة:** (أ) صياغةٌ لا تحمل إبرةَ اسمِ البند («العتبةُ
+    التي تتساوى عندها») لا تُرى؛ (ب) رقمٌ بلا رقمٍ عربيٍّ أو لاتينيّ في
+    الجملة نفسها لا يُرى؛ (ج) جملةٌ تحمل رمزَ فجوةٍ معلَنة تُعفى بالتصميم —
+    «نقطةُ التعادل غير محسوبة: الناقصُ تكلفتُك» هي الصيغةُ المشروعة.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    text = ((dr.get("report") or {}).get("text") or "")
+    dn = ((dr.get("economics") or {}).get("decision_numbers") or [])
+    if not text or not dn:
+        return []
+    gaps = _norm_gap_tokens()
+    named: list[str] = []
+    plain_segs = [seg for seg in re.split(r"[.\n؟!؛]", _norm_ar(text))]
+    for e in dn:
+        if not isinstance(e, dict) or e.get("tier") != "gap":
+            continue
+        needle = _dn_needle(e.get("name"))
+        if len(needle) < 6:
+            continue
+        for seg in plain_segs:
+            if (needle in seg and _ANY_DIGIT_RE.search(seg)
+                    and not any(g in seg for g in gaps)):
+                nm = str(e.get("name") or "").strip()
+                if nm and nm not in named:
+                    named.append(nm)
+                break
+    if not named:
+        return []
+    return [{
+        "check": "reference_to_nonexistent_figure", "repairable": False,
+        "note": ("المتن يعرض رقماً لبنودٍ يُعلنها المحرك غير محسوبة: «"
+                 + "، ".join(named[:4]) + "» — رقمٌ لبندٍ مجهولٍ لا يُسلَّم؛ "
+                 "البديل: «غير محسوب — الناقص: [اسم المدخل]»")}]
+
+
+def _check_max_loss_without_components(view: dict) -> list[dict]:
+    """`max_loss_without_components` (الصنف ٩، تحذيريّ): سقفُ المخاطرة يصل
+    رقماً مفرداً بينما أساسُه المحسوب **استُبعد منه** مكوّنٌ سمّاه المحرّك.
+
+    المرجعُ حتميّ: بندُ كلفةِ الدخول يُصرِّح بالاستبعاد نصّاً («خارج
+    المجموع»/«يُستبعد من المجموع»). فإن صرّح ولم يحمل نثرُ سقفِ المخاطرة
+    مدىً ولا إفصاحَ استبعاد ⇒ سقفٌ يُقرأ شاملاً وهو ناقص.
+
+    **منطقةُ العمى المعلنة:** غيابُ ذكرِ السقف من المتن أصلاً لا يُلتقَط هنا
+    (شأنُ `decision_numbers_present`)؛ ومدىً مكتوبٌ بالكلمات بلا رقمين
+    («بين أدنى وأقصى») لا يُرى.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    text = ((dr.get("report") or {}).get("text") or "")
+    dn = ((dr.get("economics") or {}).get("decision_numbers") or [])
+    if not text or not dn:
+        return []
+    excluded: list[str] = []
+    ml_named = False
+    for e in dn:
+        if not isinstance(e, dict):
+            continue
+        method = str(e.get("method") or "")
+        if any(m in method for m in _ENGINE_EXCLUSION_MARKS):
+            excluded.append(str(e.get("name") or ""))
+        if (any(n in str(e.get("name") or "") for n in _MAX_LOSS_NEEDLES)
+                and e.get("tier") == "estimated"):
+            ml_named = True
+            excluded += [str(u) for u in (e.get("unknown") or [])]
+    if not ml_named or not excluded:
+        return []
+    n_needles = tuple(_norm_ar(n) for n in _MAX_LOSS_NEEDLES)
+    n_disclose = tuple(_norm_ar(d) for d in _EXCLUSION_DISCLOSURE)
+    gaps = _norm_gap_tokens()
+    for raw_seg in re.split(r"[.\n؟!؛]", text):
+        seg = _norm_ar(raw_seg)
+        if not (any(n in seg for n in n_needles)
+                and _ANY_DIGIT_RE.search(seg)):
+            continue
+        if (any(d in seg for d in n_disclose) or any(g in seg for g in gaps)
+                or _RANGE_MARK_RE.search(raw_seg)):
+            continue
+        return [{
+            "check": "max_loss_without_components", "repairable": True,
+            "note": ("سقف المخاطرة يُعرض رقماً مفرداً بينما أساسه المحسوب "
+                     "استُبعد منه مكوّن سمّاه المحرك — اعرضه مدىً وسمِّ ما "
+                     "هو خارجه: «" + "؛ ".join(
+                         x for x in excluded[:2] if x) + "»")}]
     return []
 
 
@@ -5501,6 +5642,10 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_derived_number_has_inputs(view)
     # البند 6: تناقض تسعيري محسوب بلا تحذير إلزامي — لا يُسلَّم.
     findings += _check_pricing_contradiction_flagged(view)
+    # الصنف ٩: رقمٌ لبندٍ يُعلنه المحرك مجهولاً (حاجبٌ خلف رايته)، وسقفُ
+    # مخاطرةٍ مفردٍ فوق أساسٍ استُبعد منه مكوّن (تحذيريّ).
+    findings += _check_reference_to_nonexistent_figure(view)
+    findings += _check_max_loss_without_components(view)
     # البند 7: ترقية حكم مع تدهور كل مؤشرات الدليل — لا تُسلَّم.
     findings += _check_verdict_evidence_direction(view)
     # البند 10: تسمية «عدم دخول» فوق متنٍ يوصي بباب دخول مسمّى — لا تُسلَّم.

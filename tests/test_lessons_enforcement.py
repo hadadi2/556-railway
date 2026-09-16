@@ -207,6 +207,14 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٣ — المرساةُ السلوكية: السقفُ يَرِث ناقصَه بالاسم، والشدةُ تتبع
+    # الراية، والتفعيلُ إضافةُ إسنادٍ فقط، وصفرُ إطلاقةٍ على المدوّنات.
+    (243, "tests/test_report_quality_logic_layer.py",
+     ["def test_c9_max_loss_inherits_the_named_unknown_components",
+      "def test_c9_severity_follows_the_flag",
+      "def test_c9_flag_on_only_appends_provenance_to_the_derived_row",
+      "def test_c9_no_hard_fail_on_any_canonical_blob_with_the_flag_on",
+      "def test_c9_iso_currency_never_guesses_an_ambiguous_name"]),
     # ٢٤٢ — المرساةُ السلوكية: الحسابُ يُعيد إنتاج الدرجة على الاثنتي عشرة،
     # ويحترم قاعدةَ الحدّ الأدنى، والتفعيلُ إضافةٌ محضة.
     (242, "tests/test_report_quality_logic_layer.py",
@@ -560,6 +568,21 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤٣ — إسنادُ الرقم المشتقّ: المُنسِّقُ الواحد، ورمزُ ISO بلا تخمين،
+    # وحقلا المحرّك، وقاعدتا البوابة، وإبرةُ اسمِ البند.
+    (243, "silk_narrative.py",
+     ["def fmt_derived", "def fmt_derived_input", "def iso_currency",
+      "def derived_provenance_enabled", "DERIVED_PROVENANCE_RULE",
+      "ASSUMPTION_TAG_AR"]),
+    (243, "silk_economics.py",
+     ["def _unit_cur", "unknown=list(entry.get(\"unknown\") or [])",
+      "inputs=", "unknown="]),
+    (243, "silk_quality_gate.py",
+     ["def _check_reference_to_nonexistent_figure",
+      "def _check_max_loss_without_components", "def _dn_needle",
+      "_ENGINE_EXCLUSION_MARKS", "_RANGE_MARK_RE"]),
+    (243, "silk_reports.py", ["fmt_derived"]),
+    (243, "silk_ai_judge.py", ["_derived_rule", "DERIVED_PROVENANCE_RULE"]),
     # ٢٤٢ — انضباطُ الثقة: الأعمدةُ الأساسية، والسقف، وجدولُ التحلُّل،
     # وحسابُ الدرجة المُلزَم بقاعدة الحدّ الأدنى، وفصلُ نسبةِ التحقّق.
     (242, "silk_decision.py",

@@ -1227,6 +1227,16 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                 _figure_rule = _FS.FIGURE_ID_RULE
     except Exception as _e:  # noqa: BLE001 — المخزنُ تحسينٌ لا شرطُ كتابة
         log.warning("figure store skipped: %s", _e)
+    # الصنف ٩ (موجة عيوب التقرير) — **خلف رايةٍ مطفأةٍ افتراضياً**: قاعدةُ
+    # إسنادِ الرقم المشتقّ (عملةٌ + معادلةٌ + مدخلاتٌ بمصادرها + وسمُ
+    # الافتراض + سقفُ خسارةٍ مدىً بمكوّناته). بلا الراية لا يُلحَق حرفٌ.
+    _derived_rule = ""
+    try:
+        import silk_narrative as _NR
+        if _NR.derived_provenance_enabled():
+            _derived_rule = _NR.DERIVED_PROVENANCE_RULE
+    except Exception as _e:  # noqa: BLE001 — قاعدةٌ تحسينٌ لا شرطُ كتابة
+        log.warning("derived provenance rule skipped: %s", _e)
     sections = "\n".join(f"{i}. {s}" for i, s
                          in enumerate(report_sections(lang), 1))
     parts = [
@@ -1234,6 +1244,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         contract,
         # الصنف ٦: قاعدةُ هويةِ الرقم — فارغةٌ بلا الراية فلا تُغيّر الموجّه.
         *([_figure_rule] if _figure_rule else []),
+        # الصنف ٩: قاعدةُ إسنادِ الرقم المشتقّ — كذلك فارغةٌ بلا رايتها.
+        *([_derived_rule] if _derived_rule else []),
         "قارن أسعار عروض تطابق نوع المنتج وشكله الفعلي فقط. لا تغيّر اسم "
         "منتج في المصدر لكي يبدو مطابقاً: الطحينة ليست الحلاوة الطحينية، "
         "والحليب السائل ليس مسحوق الحليب. اعتمد عروض بعثة التسعير المقبولة؛ "

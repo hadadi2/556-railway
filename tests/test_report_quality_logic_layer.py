@@ -604,3 +604,223 @@ def test_c8_all_three_flags_add_only_new_keys_on_production_views():
             if issues:
                 problems[key] = issues
     assert problems == {}, problems
+
+
+# ════════════ الصنف ٩ — رقمٌ مشتقٌّ بلا إسنادٍ ولا عملة ════════════
+
+def _engine_dn(cost: "float | None" = 1.2, cur: str = "SAR") -> list:
+    """أرقامُ القرار **كما يحسبها المحرّك** لفئةٍ لها وحدةُ سوقٍ مسجّلة —
+    لا جدولٌ مكتوبٌ باليد: الاستبعادُ («الشحن بلا سعر ممر متحقق»، «رسوم
+    التسجيل غير متحققة») من الحساب نفسِه، وهو مصدرُ العيب المرصود."""
+    import silk_economics as E
+    return E.build_decision_numbers(
+        category="milk", market_iso3="EGY", cost_per_unit=cost,
+        cost_currency=cur,
+        reverse={"max_exw": 3.0, "unit": "لتر", "currency": cur})
+
+
+def _dn_view(dn: list, text: str) -> dict:
+    return {"deep_research": {"report": {"text": text},
+                              "economics": {"decision_numbers": dn}}}
+
+
+def test_c9_severity_follows_the_flag():
+    """الحجبُ **مع الراية فقط** — قرارُ المالك «لا حجب جديداً» سليم."""
+    import silk_quality_gate as G
+    with _env(SILK_DERIVED_PROVENANCE=None):
+        assert "reference_to_nonexistent_figure" \
+            not in G.effective_fail_triggers()
+    with _env(SILK_DERIVED_PROVENANCE="1"):
+        assert "reference_to_nonexistent_figure" in G.effective_fail_triggers()
+    # التحذيريُّ لا يدخل مجموعةَ الحجب في أيّ حال.
+    assert "max_loss_without_components" not in G.FAIL_TRIGGER_CHECKS
+    with _env(SILK_DERIVED_PROVENANCE="1"):
+        assert "max_loss_without_components" \
+            not in G.effective_fail_triggers()
+
+
+def test_c9_gate_catches_a_number_for_a_figure_the_engine_declares_unknown():
+    """**العيبُ المرصود**: المتنُ يُسمّي بنداً برقمٍ في إطارٍ محسوب بينما
+    المحرّكُ يُعلنه فجوة — «خارطةُ الطريق تُحيل إلى شريحةٍ لم تُحسَب»."""
+    import silk_quality_gate as G
+    dn = _engine_dn(cost=None)          # بلا تكلفةٍ ⇒ البنودُ فجواتٌ معلنة
+    gaps = [e["name"] for e in dn if e.get("tier") == "gap"]
+    assert "نقطة التعادل" in gaps and any("أقصى خسارة" in g for g in gaps)
+    view = _dn_view(dn, "تبلغ نقطة التعادل 3 شحنات، وأقصى خسارة إن فشل "
+                        "الدخول 8,900 ريال.")
+    out = G._check_reference_to_nonexistent_figure(view)
+    assert len(out) == 1 and out[0]["check"] == "reference_to_nonexistent_figure"
+    assert out[0]["repairable"] is False
+    assert "نقطة التعادل" in out[0]["note"]
+    assert any("أقصى خسارة" in x for x in [out[0]["note"]])
+
+
+def test_c9_the_declared_gap_wording_is_the_legitimate_form():
+    """«غير محسوب — الناقص: …» هي الصيغةُ المشروعة ولا تُحتسَب — وإلّا
+    عاقبَ الفحصُ الإفصاحَ نفسَه (سابقةُ حارسِ سياق النفي القائم)."""
+    import silk_quality_gate as G
+    dn = _engine_dn(cost=None)
+    ok = _dn_view(dn, "نقطة التعادل غير محسوبة — الناقص: تكلفة إنتاج "
+                      "الوحدة لديك (دقيقة واحدة لإدخالها).")
+    assert G._check_reference_to_nonexistent_figure(ok) == []
+    # وبندٌ **محسوب** برقمه ليس عيباً بحال.
+    dn2 = _engine_dn()
+    est = [e["name"] for e in dn2 if e.get("tier") == "estimated"]
+    assert est, "الفئةُ المسجّلة تُنتِج بنداً محسوباً واحداً على الأقلّ"
+    assert G._check_reference_to_nonexistent_figure(
+        _dn_view(dn2, f"{est[0]} يبلغ 26,070 لتراً.")) == []
+
+
+def test_c9_needle_never_swallows_general_prose():
+    """إبرةُ البند مقطعٌ متّصلٌ يضمّ كلمةً دالّةً — «الزمن من» وحدَها تسعُ
+    نثراً عاماً فتُضَمّ الثالثة."""
+    import silk_quality_gate as G
+    assert G._dn_needle("نقطة التعادل") == G._norm_ar("نقطة التعادل")
+    assert G._dn_needle("أقصى خسارة إن فشل الدخول") == G._norm_ar("أقصى خسارة")
+    assert G._dn_needle("الزمن من القرار إلى أول فاتورة") == \
+        G._norm_ar("الزمن من القرار")
+
+
+def test_c9_max_loss_single_figure_is_flagged_when_its_base_excluded_a_part():
+    """سقفُ المخاطرة رقماً مفرداً فوق أساسٍ استُبعد منه مكوّنٌ سمّاه المحرّك
+    — يُقرأ شاملاً وهو ناقص. المرجعُ حتميّ من `method` نفسِه."""
+    import silk_quality_gate as G
+    dn = _engine_dn()
+    entry = [e for e in dn if e["name"].startswith("كلفة الدخول")][0]
+    assert any(m in entry["method"] for m in G._ENGINE_EXCLUSION_MARKS), \
+        "هذا الاختبار يقيس حالةَ الاستبعاد المُعلَنة في الحساب"
+    bad = _dn_view(dn, "أقصى خسارة إن فشل الدخول 8,900 ريال.")
+    out = G._check_max_loss_without_components(bad)
+    assert len(out) == 1 and out[0]["check"] == "max_loss_without_components"
+    assert out[0]["repairable"] is True
+    # المدى إفصاحٌ، وتسميةُ الخارج إفصاحٌ — كلٌّ منهما يُعفي وحده.
+    for ok_text in ("أقصى خسارة إن فشل الدخول بين 7,100 و 10,700 ريال.",
+                    "أقصى خسارة إن فشل الدخول 8,900 ريال، ولا يشمل الرقم "
+                    "كلفة الشحن ورسوم التسجيل.",
+                    "أقصى خسارة غير محسوبة — الناقص: تكلفتك."):
+        assert G._check_max_loss_without_components(
+            _dn_view(dn, ok_text)) == [], ok_text
+
+
+def test_c9_max_loss_inherits_the_named_unknown_components():
+    """المكوّناتُ المستبعَدة من كلفةِ الدخول تنتقل **بأسمائها** إلى سقفِ
+    المخاطرة ونقطةِ التعادل — لا سقفَ يُقدَّم شاملاً وهو ناقص."""
+    with _env(SILK_DERIVED_PROVENANCE="1"):
+        dn = _engine_dn()
+    entry = [e for e in dn if e["name"].startswith("كلفة الدخول")][0]
+    ml = [e for e in dn if e["name"].startswith("أقصى خسارة")][0]
+    assert entry.get("unknown"), "الشحنُ والرسومُ غيرُ المتحققين مُسمَّيان"
+    assert ml.get("unknown") == entry["unknown"]
+    assert any("الشحن" in u for u in ml["unknown"])
+
+
+def test_c9_every_input_carries_a_source_or_an_assumption_tag():
+    """لا مدخلَ يُعرَض عارياً: مصدرٌ مرصود أو وسمُ «افتراض» صريح — فلا
+    تُقرَأ معلمةُ سيناريو قياساً."""
+    import silk_narrative as N
+    with _env(SILK_DERIVED_PROVENANCE="1"):
+        dn = _engine_dn()
+        seen = 0
+        for e in dn:
+            for i in (e.get("inputs") or []):
+                seen += 1
+                rendered = N.fmt_derived_input(i)
+                assert "—" in rendered, rendered
+                assert ("المصدر:" in rendered
+                        or N.ASSUMPTION_TAG_AR in rendered), rendered
+        assert seen >= 5, seen
+        # الوسمُ يُطبَع فعلاً على مدخلٍ مفترض واحدٍ على الأقلّ.
+        allp = " ".join(N.fmt_derived(e) for e in dn)
+        assert N.ASSUMPTION_TAG_AR in allp
+
+
+def test_c9_iso_currency_never_guesses_an_ambiguous_name():
+    """«دينار» تسعُ خمسَ دول — رمزٌ مخمَّنٌ اختلاقٌ لا ترجمة، فيُعاد فراغاً
+    ويبقى النصُّ كما صرّح به المالك."""
+    import silk_narrative as N
+    assert N.iso_currency("ريال") == "SAR"
+    assert N.iso_currency("usd") == "USD"
+    assert N.iso_currency("دينار") == ""
+    assert N.iso_currency("") == ""
+    with _env(SILK_DERIVED_PROVENANCE="1"):
+        import silk_economics as E
+        assert E._unit_cur("ريال") == "SAR"
+        assert E._unit_cur("دينار") == "دينار"      # لا تخمين
+        assert E._unit_cur("") == "بعملة تكلفتك"
+
+
+def test_c9_flag_off_adds_no_field_and_no_prompt_line():
+    """عقدُ عدمِ المساس: بلا الراية لا حقلَ إسنادٍ يُضاف ولا قاعدةَ تُلحَق."""
+    import silk_narrative as N
+    with _env(SILK_DERIVED_PROVENANCE=None):
+        dn = _engine_dn()
+        for e in dn:
+            assert "inputs" not in e and "unknown" not in e, e["name"]
+            assert N.fmt_derived(e) == str(e.get("method") or "")
+        assert N.derived_provenance_enabled() is False
+    src = open(os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "silk_ai_judge.py"),
+        encoding="utf-8").read()
+    assert "_derived_rule = \"\"" in src
+    assert "*([_derived_rule] if _derived_rule else [])" in src
+
+
+def test_c9_flag_on_only_appends_provenance_to_the_derived_row():
+    """شرطُ قبول الصنف: **كلُّ** فرقٍ بين الرايتين إضافةُ إسنادٍ على صفِّ
+    رقمٍ مشتقّ — لا قيمةَ ولا مدىً ولا حكمَ ولا سطرَ آخرَ يتغيّر."""
+    import silk_reports
+    changed: dict = {}
+    with block_network():
+        for key in _canonical_keys():
+            with _env(SILK_DERIVED_PROVENANCE=None):
+                off = silk_reports.render_markdown(_prod_view(key)).split("\n")
+            with _env(SILK_DERIVED_PROVENANCE="1"):
+                on = silk_reports.render_markdown(_prod_view(key)).split("\n")
+            assert len(off) == len(on), key
+            diffs = [(a, b) for a, b in zip(off, on) if a != b]
+            changed[key] = len(diffs)
+            for a, b in diffs:
+                # الصفُّ نفسُه: العمودان الأوّلان (الاسمُ والقيمة) كما هما.
+                assert a.split("|")[:3] == b.split("|")[:3], (key, a, b)
+                assert "المدخلات:" in b and "المدخلات:" not in a, (key, b)
+                assert len(b) > len(a), (key, a, b)
+    # فئةٌ بلا وحدةِ سوقٍ مسجّلة لا تُنتِج بنداً محسوباً ⇒ صفرُ فرق.
+    assert changed["fettuccine"] == 0
+    assert all(v <= 1 for v in changed.values()), changed
+    assert sum(1 for v in changed.values() if v == 1) == 11, changed
+
+
+def test_c9_no_hard_fail_on_any_canonical_blob_with_the_flag_on():
+    """صفرُ إطلاقةٍ للقاعدتين على المدوّنات الاثنتَي عشرة في الحالتين —
+    والحكمُ نفسُه بالراية وبدونها (شرطُ القبول الذي أخفقت فيه قاعدةُ
+    الصنف ٥ أوّلَ مرّة: قاعدةٌ تُطلِق على الصحيح لا تُشحَن)."""
+    import silk_quality_gate as G
+    new = {"reference_to_nonexistent_figure", "max_loss_without_components"}
+    fired: dict = {}
+    with block_network():
+        for key in _canonical_keys():
+            with _env(SILK_DERIVED_PROVENANCE=None):
+                g_off = G.run_quality_gate(_prod_view(key))
+            with _env(SILK_DERIVED_PROVENANCE="1"):
+                g_on = G.run_quality_gate(_prod_view(key))
+            hits = [f["check"] for f in g_off["findings"] + g_on["findings"]
+                    if f["check"] in new]
+            if hits:
+                fired[key] = hits
+            assert g_off["verdict"] == g_on["verdict"], key
+    assert fired == {}, fired
+
+
+def test_c9_the_checks_are_live_not_dormant_on_production_data():
+    """القاعدةُ التي لا تُقاس إلّا على مثالٍ مصنوعٍ في اختبارٍ لا يُعرَف أنها
+    تلتقط شيئاً في الإنتاج: كلُّ مدوّنةٍ تحمل بنودَ قرارٍ حقيقيةً بفجواتٍ
+    معلنة، فالفحصُ يمرّ على نصٍّ حقيقيّ ويصمت — صمتٌ مقيسٌ لا غياب."""
+    with block_network():
+        for key in _canonical_keys():
+            v = _prod_view(key)
+            eco = ((v.get("deep_research") or {}).get("economics") or {})
+            dn = eco.get("decision_numbers") or []
+            assert len(dn) == 5, (key, len(dn))
+            assert any(e.get("tier") == "gap" for e in dn), key
+            assert (((v.get("deep_research") or {}).get("report") or {})
+                    .get("text") or "").strip(), key
