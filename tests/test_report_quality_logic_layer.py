@@ -417,3 +417,190 @@ def test_c7_flag_changes_nothing_on_any_production_shaped_view():
                               zip(("view", "md", "verdict"), zip(off, on))
                               if a != b]
     assert diffs == {}, diffs
+
+
+# ════════════════ الصنف ٨ — انضباطُ الثقة والدرجة ════════════════
+
+_PILLARS_FULL = {
+    "market": {"value": 0.8, "missing": []},
+    "competition": {"value": 0.43, "missing": []},
+    "regulatory": {"value": 0.9, "missing": []},
+    "profit": {"value": 0.6, "missing": []},
+    "risk": {"value": 0.5, "missing": []},
+}
+
+
+def _pillars_missing_core() -> dict:
+    out = {k: dict(v) for k, v in _PILLARS_FULL.items()}
+    out["profit"] = {"value": None, "missing": ["margin"]}
+    return out
+
+
+def test_c8_core_pillars_are_named_not_guessed():
+    """القاعدةُ تحتاج تعريفاً: قرارُ دخولٍ لا يُبنى بلا معرفةِ الطلب وجدارِ
+    السعر ووجودِ هامش. والتنظيمُ والمخاطرُ بوّابتان — غيابُهما **شرطٌ
+    مفتوح** لا عجزٌ عن التقييم، فلا يمنعان «عالية» وحدهما."""
+    import silk_decision as D
+    assert D.CORE_PILLARS == ("market", "competition", "profit")
+    assert D.missing_core_pillars(_PILLARS_FULL) == []
+    assert D.missing_core_pillars(_pillars_missing_core()) == ["profit"]
+    only_gates = {k: dict(v) for k, v in _PILLARS_FULL.items()}
+    only_gates["regulatory"] = {"value": None, "missing": ["x"]}
+    only_gates["risk"] = {"value": None, "missing": ["y"]}
+    assert D.missing_core_pillars(only_gates) == []
+    assert D.confidence_band_cap(only_gates, []) is None
+
+
+def test_c8_high_confidence_is_capped_by_a_missing_core_pillar():
+    import silk_decision as D
+    from silk_style_contract import confidence_band_label as label
+    assert D.confidence_band_cap(_pillars_missing_core(), []) == "medium"
+    assert label(91) == "عالية"
+    assert label(91, cap="medium") == "متوسطة", "التسميةُ تُسقَّف"
+    assert label(40, cap="medium") == "منخفضة", "السقفُ لا يرفع نطاقاً"
+    assert label(91, "en", cap="medium") == "medium"
+
+
+def test_c8_two_open_conditions_also_cap_the_band():
+    import silk_decision as D
+    assert D.confidence_band_cap(_PILLARS_FULL, ["أ"]) is None
+    assert D.confidence_band_cap(_PILLARS_FULL, ["أ", "ب"]) == "medium"
+    assert D.MAX_CONDITIONS_FOR_HIGH == 2
+
+
+def test_c8_age_decay_follows_a_published_schedule():
+    """جدولٌ معلَنٌ لا معامِلٌ مخفيّ — بياناتُ عشرِ سنواتٍ تصف سوقاً آخر."""
+    import silk_decision as D
+    assert [D.age_decay_factor(y) for y in (0, 2, 3, 5, 6, 10, 11, 40)] == \
+        [1.0, 1.0, 0.9, 0.9, 0.75, 0.75, 0.6, 0.6]
+    assert D.age_decay_factor(None) == 1.0
+    assert D.age_decay_factor(-3) == 1.0
+    # والجدولُ نفسُه منشورٌ كثابتٍ يُقرأ لا مدفونٌ في شرطٍ.
+    assert D.CONFIDENCE_AGE_DECAY[0] == (2, 0.00)
+
+
+def test_c8_rendered_arithmetic_reproduces_the_score_exactly():
+    """**شرطُ المهمة حرفياً**: «اختبارٌ يثبت أنّ الحساب المعروض يُعيد إنتاج
+    الدرجة». يُقاس على الاثنتي عشرة مدوّنة لا على مثالٍ واحد."""
+    import silk_decision as D
+    import silk_deep_pillars
+    with block_network():
+        for key in _canonical_keys():
+            dec = silk_deep_pillars.decide_for_deep(
+                _blob(key).get("deep_research") or {},
+                product_card=None, regulatory=None)
+            opt = dec.get("weights_option") or "A"
+            arith = D.score_arithmetic(dec.get("pillars"),
+                                       D.WEIGHT_OPTIONS[opt])
+            assert arith["score"] == dec.get("score"), (key, arith, dec.get("score"))
+
+
+def test_c8_arithmetic_respects_the_min_pillars_rule():
+    """**قِياسٌ كشف عيباً كنتُ سأُدخِله**: الصيغةُ الأولى حسبت درجةً لإحدى
+    عشرةَ مدوّنةٍ من اثنتي عشرة **حجب المحرّكُ درجتَها عمداً** — فكان
+    الحسابُ المعروض يُظهِر رقماً قال المحرّكُ إنه لا يُصدره. حسابٌ يخالف
+    الدرجةَ أسوأُ من حسابٍ غائب لأنه يُوهِم القارئَ بالتحقّق."""
+    import silk_decision as D
+    thin = {"market": {"value": 0.8, "missing": []},
+            "competition": {"value": None, "missing": ["x"]},
+            "regulatory": {"value": None, "missing": ["y"]},
+            "profit": {"value": None, "missing": ["z"]},
+            "risk": {"value": None, "missing": ["w"]}}
+    arith = D.score_arithmetic(thin, D.WEIGHT_OPTIONS["A"])
+    assert arith["score"] is None
+    assert arith["withheld_reason"], "الامتناعُ يُقال بسببه لا يُترَك فراغاً"
+    assert arith["computed_pillars"] == 1
+    # وبأعمدةٍ كافية يُحسَب فعلاً، والأوزانُ مُعاد تسويتها معلَنةً.
+    full = D.score_arithmetic(_PILLARS_FULL, D.WEIGHT_OPTIONS["A"])
+    assert full["score"] is not None and full["renormalised"] is False
+
+
+def test_c8_basis_additions_are_purely_additive_behind_the_flag():
+    """مفعّلةً: مفاتيحُ **جديدة** فقط — لا قيمةَ قائمةٌ تتغيّر."""
+    import silk_render as R
+    ed = {"schema": "silk.decision/v1", "score": 0.579, "confidence": 0.9,
+          "coverage": 0.8, "weights_option": "A", "conditions": ["أ"],
+          "pillars": _pillars_missing_core()}
+    with _env(SILK_CONFIDENCE_DISCIPLINE=None):
+        off = R.decision_basis(ed, None, "ar")
+    with _env(SILK_CONFIDENCE_DISCIPLINE="1"):
+        on = R.decision_basis(ed, None, "ar")
+    assert set(off) <= set(on), "مفتاحٌ اختفى بالتفعيل"
+    for key in off:
+        assert off[key] == on[key], f"قيمةٌ قائمة تغيّرت: {key}"
+    for key in ("score_arithmetic", "score_arithmetic_line",
+                "confidence_band", "verification_rate_pct",
+                "confidence_band_cap"):
+        assert key in on and key not in off, key
+    assert on["confidence_band"] == "متوسطة", on["confidence_band"]
+
+
+def test_c8_verification_rate_is_named_as_not_being_confidence():
+    """البلاغ: «نسبةُ التحقّق من البيانات معروضةٌ كأنها ثقةُ الحكم»."""
+    import silk_i18n as I
+    import silk_render as R
+    note = I.t("verification_rate_note", "ar")
+    assert "غير" in note and "ثقة" in note
+    ed = {"schema": "silk.decision/v1", "score": 0.579, "confidence": 0.9,
+          "coverage": 0.8, "weights_option": "A", "conditions": [],
+          "pillars": dict(_PILLARS_FULL)}
+    with _env(SILK_CONFIDENCE_DISCIPLINE="1"):
+        basis = R.decision_basis(ed, None, "ar")
+    assert basis["verification_rate_pct"] == 80
+    assert basis["confidence_pct"] == 90, "المقياسان مختلفان ولا يُدمَجان"
+
+
+def test_c8_gate_severity_follows_the_flag_and_spares_a_capped_label():
+    import silk_quality_gate as G
+    view = {"markets": [{"entry_decision": {
+        "pillars": _pillars_missing_core(), "conditions": []}}],
+        "decision": {"basis": {}}}
+    high = {"report": {"text": "## 1. الخلاصة\nالحكم بثقة عالية."}}
+    with _env(SILK_CONFIDENCE_DISCIPLINE=None):
+        off = G._check_high_confidence_with_missing_pillar(view, high)
+    with _env(SILK_CONFIDENCE_DISCIPLINE="1"):
+        on = G._check_high_confidence_with_missing_pillar(view, high)
+    assert off and off[0]["repairable"] is True
+    assert on and on[0]["repairable"] is False
+    # تسميةٌ مسقوفةٌ فعلاً ⇒ لا إطلاقة.
+    medium = {"report": {"text": "## 1. الخلاصة\nالحكم بثقة متوسطة."}}
+    assert G._check_high_confidence_with_missing_pillar(view, medium) == []
+    # وأعمدةٌ كاملةٌ بلا شروط ⇒ «عالية» مشروعة.
+    ok_view = {"markets": [{"entry_decision": {
+        "pillars": dict(_PILLARS_FULL), "conditions": []}}],
+        "decision": {"basis": {}}}
+    assert G._check_high_confidence_with_missing_pillar(ok_view, high) == []
+
+
+def test_c8_all_three_flags_add_only_new_keys_on_production_views():
+    """شرطُ قبول الجولة على الرايات الثلاث مجتمعةً: لا قيمةَ قائمة تتغيّر،
+    ولا حكمٌ يتغيّر، ولا حجبٌ جديدٌ على أيّ مدوّنة."""
+    import silk_quality_gate as G
+    import silk_reports
+    flags = {"SILK_FIGURE_STORE": "1", "SILK_OPEN_CONDITIONS_SINGLE": "1",
+             "SILK_CONFIDENCE_DISCIPLINE": "1"}
+    off_flags = {k: None for k in flags}
+    problems: dict = {}
+    with block_network():
+        for key in _canonical_keys():
+            with _env(**off_flags):
+                v_off = _prod_view(key)
+                md_off = silk_reports.render_markdown(v_off)
+                g_off = G.run_quality_gate(v_off)
+            with _env(**flags):
+                v_on = _prod_view(key)
+                md_on = silk_reports.render_markdown(v_on)
+                g_on = G.run_quality_gate(v_on)
+            issues = []
+            if g_off["verdict"] != g_on["verdict"]:
+                issues.append(f"verdict {g_off['verdict']}→{g_on['verdict']}")
+            if md_off != md_on:
+                issues.append("md")
+            b_off = (v_off.get("decision") or {}).get("basis") or {}
+            b_on = (v_on.get("decision") or {}).get("basis") or {}
+            for k in b_off:
+                if b_off[k] != b_on.get(k):
+                    issues.append(f"basis.{k} changed")
+            if issues:
+                problems[key] = issues
+    assert problems == {}, problems

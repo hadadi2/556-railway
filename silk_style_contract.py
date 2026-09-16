@@ -340,17 +340,31 @@ CONFIDENCE_HIGH_MIN_PCT = 80    # عالية ≥ 80%
 CONFIDENCE_MEDIUM_MIN_PCT = 60  # متوسطة 60–79% / منخفضة < 60%
 
 
-def confidence_band_label(pct: float, lang: str = "ar") -> str:
+# الصنف ٨ (موجة عيوب التقرير): ترتيبُ النطاقات لتطبيق سقفٍ عليها.
+_BAND_ORDER: tuple = ("low", "medium", "high")
+
+
+def confidence_band_label(pct: float, lang: str = "ar",
+                          cap: "str | None" = None) -> str:
     """تسمية نطاق الثقة من النسبة المئوية — المشتقّ الوحيد.
 
     الموجة ٠: **العتبات لا تتغيّر بتغيّر اللغة** (٨٠٪ / ٦٠٪ في اللغتين) —
-    النطاق حكمٌ حسابيّ، والتسمية وحدها معروضة. العربية تبقى حرفياً كما هي."""
+    النطاق حكمٌ حسابيّ، والتسمية وحدها معروضة. العربية تبقى حرفياً كما هي.
+
+    الصنف ٨: `cap` سقفٌ اختياريّ (`"medium"`) يمنع تسميةَ «عالية» حين يكون
+    عمودٌ أساسيٌّ مجهولاً أو الشروطُ المفتوحة اثنتين — **الرقمُ لا يُمَسّ،
+    التسميةُ وحدها تُسقَّف**، فلا قيمةَ مخزَّنة تتغيّر. القاعدةُ تُقال
+    للقارئ: «لا نقول ثقةً عالية ونحن لا نعرف الربحية».
+    """
     if pct >= CONFIDENCE_HIGH_MIN_PCT:
         band = "high"
     elif pct >= CONFIDENCE_MEDIUM_MIN_PCT:
         band = "medium"
     else:
         band = "low"
+    if cap in _BAND_ORDER and \
+            _BAND_ORDER.index(band) > _BAND_ORDER.index(cap):
+        band = cap
     if str(lang or "ar").lower() != "en":
         return {"high": "عالية", "medium": "متوسطة", "low": "منخفضة"}[band]
     import silk_i18n

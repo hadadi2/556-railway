@@ -904,6 +904,48 @@ def tidy_punctuation(text: str) -> str:
     return out
 
 
+# ── الصنف ٨ (موجة عيوب التقرير): حسابُ الدرجة وسقفُ الثقة بلغة القارئ ──────
+TERMS.update({
+    "score_arithmetic_line": {
+        "ar": "كيف حُسبت هذه القوة: {parts} — مقسومةً على مجموع أوزان "
+              "الجوانب المحسوبة ({wsum}) فالناتج {score} من 100. الجوانبُ "
+              "التي لا نعرفها لم تُحسَب صفراً بل أُخرِجت من القسمة.",
+        "en": "How this strength was computed: {parts} — divided by the sum "
+              "of the scored aspects' weights ({wsum}), giving {score} out "
+              "of 100. Aspects we do not know were excluded from the "
+              "division, not counted as zero."},
+    "score_arithmetic_withheld": {
+        "ar": "لم تُحسَب قوةُ الفرصة: {reason}.",
+        "en": "The opportunity strength was not computed: {reason}."},
+    "score_arithmetic_withheld_empty": {
+        "ar": "لم تُحسَب قوةُ الفرصة — الجوانبُ المحسوبة دون الحدّ الأدنى "
+              "للتقييم، فلا درجةَ تُعرَض ولا تُخمَّن.",
+        "en": "The opportunity strength was not computed — the scored "
+              "aspects are below the minimum needed to rate it, so no score "
+              "is shown and none is guessed."},
+    "confidence_cap_core_missing": {
+        "ar": "لا نصف ثقتَنا بأنها عالية ونحن لا نعرف {parts} — السقفُ "
+              "«متوسطة» حتى تُكمَل هذه الجوانب أو تُغلَق الشروط المفتوحة.",
+        "en": "We do not call our confidence high while {parts} is unknown — "
+              "it is capped at “medium” until those aspects are completed or "
+              "the open conditions are closed."},
+    "confidence_cap_core_missing_empty": {
+        "ar": "لا نصف ثقتَنا بأنها عالية مع وجود شرطين مفتوحين أو أكثر — "
+              "السقفُ «متوسطة» حتى تُغلَق.",
+        "en": "We do not call our confidence high with two or more open "
+              "conditions — it is capped at “medium” until they are closed."},
+    "verification_rate_note": {
+        "ar": "نسبةُ التحقّق تقيس كم من أرقام هذا التقرير فُتِح مصدرُها "
+              "وتأكّدت قيمتُه منه — وهي **غيرُ** ثقةِ التوصية: تقريرٌ "
+              "مُتحقَّقٌ من أرقامه قد تبقى توصيتُه منخفضةَ الثقة لنقصِ جانب.",
+        "en": "The verification rate measures how many of this report's "
+              "figures had their source opened and value confirmed — it is "
+              "**not** the recommendation's confidence: a well-verified "
+              "report can still carry low confidence if an aspect is "
+              "missing."},
+})
+
+
 def repair_interpolation(text: str) -> str:
     """أصلِح العطبَ المكانيكيّ الذي تتركه **خانةٌ فارغة** — حتميّ، بلا معنى.
 

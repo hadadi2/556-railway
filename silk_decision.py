@@ -49,6 +49,107 @@ _GO, _NOGO = 0.65, 0.45          # عتبات §8
 _MIN_CONF_GO = 0.60
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٨ (موجة عيوب التقرير) — انضباطُ الثقة · confidence discipline
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «درجة 65 — عند العتبة بالضبط — وعمودُ الربحية مجهول»،
+# و«ثقة عالية بينما عمودٌ أساسيٌّ غائب»، و«نسبةُ التحقّق من البيانات معروضةٌ
+# كأنها ثقةُ الحكم».
+#
+# **الأعمدةُ الأساسية** — تُسمّى صريحةً لأنّ القاعدةَ تحتاج تعريفاً لا حدساً:
+# قرارُ دخولِ سوقٍ لا يُبنى بلا معرفةِ (أ) حجمِ الطلب، (ب) جدارِ السعر الذي
+# سيواجهه، (ج) وجودِ هامشٍ بعده. أمّا `regulatory` و`risk` فبوّابتان: غيابُهما
+# **شرطٌ مفتوح** لا عجزٌ عن التقييم — ولذلك لا يمنعان «ثقةً عالية» وحدهما،
+# بل يمنعانها عبر قاعدةِ «شرطان مفتوحان» أدناه.
+CORE_PILLARS: tuple = ("market", "competition", "profit")
+
+# سقفُ نطاقِ الثقة: لا «عالية» عند عمودٍ أساسيٍّ مجهول أو شرطين مفتوحين.
+MAX_CONDITIONS_FOR_HIGH = 2
+
+# تحلُّلُ الثقة بقِدَم البيانات — **جدولٌ معلَنٌ** لا معامِلٌ مخفيّ:
+# سنتان فأقل: بلا خصم. ٣–٥ سنوات: ٪١٠. ٦–١٠: ٪٢٥. فوق ١٠: ٪٤٠.
+# السببُ: بياناتُ تجارةٍ عمرُها عشرُ سنواتٍ تصف سوقاً آخر، والثقةُ في حكمٍ
+# مبنيٍّ عليها ليست ثقةَ حكمٍ مبنيٍّ على بيانات العام الماضي.
+CONFIDENCE_AGE_DECAY: tuple = ((2, 0.00), (5, 0.10), (10, 0.25),
+                               (10**6, 0.40))
+
+
+def age_decay_factor(age_years: object) -> float:
+    """معامِلُ الإبقاء (١ − الخصم) لعُمرِ البيانات — من الجدول المعلَن."""
+    try:
+        age = int(age_years)
+    except (TypeError, ValueError):
+        return 1.0
+    if age < 0:
+        return 1.0
+    for cap, cut in CONFIDENCE_AGE_DECAY:
+        if age <= cap:
+            return round(1.0 - cut, 3)
+    return round(1.0 - CONFIDENCE_AGE_DECAY[-1][1], 3)
+
+
+def missing_core_pillars(pillars: object) -> list:
+    """أسماءُ الأعمدة الأساسية التي لا قيمةَ لها — قائمةٌ (قد تكون فارغة)."""
+    out: list = []
+    for name in CORE_PILLARS:
+        row = (pillars or {}).get(name) if isinstance(pillars, dict) else None
+        if not isinstance((row or {}).get("value"), (int, float)):
+            out.append(name)
+    return out
+
+
+def confidence_band_cap(pillars: object, conditions: object) -> "str | None":
+    """أعلى نطاقِ ثقةٍ مسموح — `"medium"` عند عمودٍ أساسيٍّ مجهول أو شرطين
+    مفتوحين، و`None` بلا سقف.
+
+    القاعدةُ تُقال للقارئ لا تُخفى: «لا نقول ثقةً عالية ونحن لا نعرف
+    الربحية» جملةٌ يفهمها صاحبُ القرار ويحاسبنا عليها.
+    """
+    if missing_core_pillars(pillars):
+        return "medium"
+    if len(conditions or []) >= MAX_CONDITIONS_FOR_HIGH:
+        return "medium"
+    return None
+
+
+def score_arithmetic(pillars: object, weights: object) -> dict:
+    """حسابُ الدرجة **معروضاً**: وزنٌ × قوّةٌ لكلّ عمودٍ محسوب، ومجموعُ
+    الأوزان المُعاد تسويتها، والناتج.
+
+    يعيد `{"terms": [{name, weight, strength, product}], "weight_sum",
+    "score", "renormalised"}` — والناتجُ يجب أن يُطابِق `decide()["score"]`
+    حرفياً، وذلك مقفولٌ باختبار: حسابٌ معروضٌ لا يُعيد إنتاج الدرجة أسوأُ من
+    حسابٍ غائب، لأنه يُوهِم القارئَ بالتحقّق.
+    """
+    terms: list = []
+    contrib = wsum = 0.0
+    for name, w in (weights or {}).items():
+        strength = pillar_strength(
+            name, ((pillars or {}).get(name) or {}).get("value"))
+        if strength is None:
+            continue
+        terms.append({"name": name, "weight": float(w),
+                      "strength": strength,
+                      "product": round(float(w) * strength, 6)})
+        contrib += float(w) * strength
+        wsum += float(w)
+    # **قاعدةُ الحدّ الأدنى تسري هنا حرفياً** (البند 2 من أمر إصلاح المحرّك).
+    # قِياسٌ كشفه: الصيغةُ الأولى كانت تحسب درجةً لإحدى عشرةَ مدوّنةٍ من
+    # اثنتي عشرة **حجب المحرّكُ درجتَها عمداً** (أعمدةٌ محسوبةٌ دون الحدّ)
+    # — فكان الحسابُ المعروض يُظهِر رقماً قال المحرّكُ إنه لا يُصدره. حسابٌ
+    # يخالف الدرجةَ أسوأُ من حسابٍ غائب، لأنه يُوهِم القارئَ بالتحقّق.
+    enough = len(terms) >= _min_scored_pillars()
+    score = round(contrib / wsum, 3) if (wsum and enough) else None
+    return {"terms": terms, "weight_sum": round(wsum, 3), "score": score,
+            "renormalised": bool(wsum and abs(wsum - 1.0) > 1e-9),
+            "computed_pillars": len(terms),
+            "min_scored_pillars": _min_scored_pillars(),
+            "withheld_reason": (None if enough else
+                                f"أعمدةٌ محسوبة {len(terms)} دون الحدّ "
+                                f"الأدنى {_min_scored_pillars()} — لا درجةَ "
+                                "تُعرَض ولا تُخمَّن")}
+
+
 def _min_scored_pillars() -> int:
     """الحدّ الأدنى من الأعمدة المحسوبة قبل أيّ درجةٍ موزونة — البند 2 من
     أمر إصلاح المحرّك (تقريرا #10/#11: «درجة موزونة 84%» بعمودٍ واحد و«26%»

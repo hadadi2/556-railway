@@ -2518,6 +2518,8 @@ _FLAGGED_FAIL_TRIGGERS: tuple = (
     ("metric_value_divergence", "silk_figure_store", "enabled"),
     ("open_conditions_count_mismatch", "silk_render",
      "open_conditions_single"),
+    ("high_confidence_with_missing_pillar", "silk_render",
+     "confidence_discipline"),
 )
 
 
@@ -4880,6 +4882,57 @@ def _check_open_conditions_count_mismatch(view: dict, dr: dict) -> list[dict]:
     return findings
 
 
+# ══════ الصنف ٨ (موجة عيوب التقرير) — ثقةٌ عالية بمدخلاتٍ ناقصة ══════
+# بلاغُ المالك: «ثقة عالية بينما عمودٌ أساسيٌّ غائب»، و«درجة 65 — عند
+# العتبة بالضبط — وعمودُ الربحية مجهول»، و«نسبةُ التحقّق معروضةٌ كثقةِ حكم».
+#
+# القاعدةُ تُقال للقارئ لا تُخفى: لا «ثقةً عالية» مع جانبٍ أساسيٍّ مجهول أو
+# شرطين مفتوحين. حاجبٌ خلف رايةِ `SILK_CONFIDENCE_DISCIPLINE`، تحذيريٌّ
+# بدونها.
+_HIGH_CONF_RE = re.compile(r"ثقة\s*عالية|ثقةٌ\s*عالية|عالية\s*\(\d{1,3}\s*%\)"
+                           r"|high\s+confidence", re.IGNORECASE)
+
+
+def _check_high_confidence_with_missing_pillar(view: dict,
+                                               dr: dict) -> list[dict]:
+    """`high_confidence_with_missing_pillar` (الصنف ٨): تسميةُ «ثقة عالية»
+    على سطحٍ يقرؤه القارئ بينما جانبٌ أساسيٌّ مجهولٌ أو الشروطُ ≥٢.
+
+    تُفحَص سطوحُ العرض **والنثر** معاً: العيبُ ظهر في الاثنين (لوحةُ الأساس
+    تحمل التسمية، والكاتبُ يكتبها نثراً).
+    """
+    import silk_decision as D
+    import silk_render as R
+    if not isinstance(view, dict):
+        return []
+    top = ((view.get("markets") or [None])[0]) or {}
+    ed = top.get("entry_decision") or top.get("decision") or {}
+    pillars = ed.get("pillars") or {}
+    if not pillars:
+        return []
+    cap = D.confidence_band_cap(pillars, ed.get("conditions"))
+    if not cap:
+        return []
+    basis = ((view.get("decision") or {}).get("basis") or {})
+    surfaces = [str(basis.get("confidence_band") or ""),
+                str(basis.get("score_line") or ""),
+                _split_off_appendix(_report_text(dr))]
+    hit = next((s for s in surfaces if s and _HIGH_CONF_RE.search(s)), None)
+    if not hit:
+        return []
+    missing = D.missing_core_pillars(pillars)
+    why = (f"الجانبُ الأساسيّ «{D.pillar_label(missing[0])}» مجهول"
+           if missing else
+           f"{len(ed.get('conditions') or [])} شروطٌ مفتوحة")
+    return [{
+        "check": "high_confidence_with_missing_pillar",
+        "repairable": not R.confidence_discipline(),
+        "note": (f"تسميةُ «ثقة عالية» على سطحٍ يقرؤه القارئ بينما {why} — "
+                 "السقفُ «متوسطة» حتى يُكمَل الجانبُ أو تُغلَق الشروط "
+                 "(silk_decision.confidence_band_cap). الرقمُ لا يُمَسّ، "
+                 "التسميةُ وحدها تُسقَّف")}]
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -5486,6 +5539,8 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_metric_value_divergence(view, dr)
     # الصنف ٧: عددٌ مذكورٌ يخالف القائمةَ الواحدة — حاجبٌ خلف رايته.
     findings += _check_open_conditions_count_mismatch(view, dr)
+    # الصنف ٨: «ثقة عالية» مع جانبٍ أساسيٍّ مجهول — حاجبٌ خلف رايته.
+    findings += _check_high_confidence_with_missing_pillar(view, dr)
     findings += _check_shared_value_across_entities(dr)
     findings += _check_cross_section_near_duplicate(text)
     findings += _check_connector_repeated_in_paragraph(text, _lang)

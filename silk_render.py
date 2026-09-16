@@ -125,6 +125,15 @@ def _decision(top: dict | None) -> dict:
 # قائمةٌ واحدة، وعددٌ واحدٌ هو **العددُ الكامل دائماً**، وأيُّ قصٍّ يُعلَن
 # نصّاً («وشرطان آخران») فلا يُخفي العددَ الحقيقيّ.
 
+CONFIDENCE_DISCIPLINE_FLAG = "SILK_CONFIDENCE_DISCIPLINE"
+
+
+def confidence_discipline() -> bool:
+    """هل رايةُ الصنف ٨ مفعّلة؟ — سقفُ النطاق وعرضُ حساب الدرجة."""
+    return os.environ.get(CONFIDENCE_DISCIPLINE_FLAG, "").strip().lower() in (
+        "1", "true", "yes")
+
+
 OPEN_CONDITIONS_FLAG = "SILK_OPEN_CONDITIONS_SINGLE"
 OPEN_CONDITIONS_CAP = 6          # سقفُ العرض الموحَّد عند التفعيل
 
@@ -155,6 +164,26 @@ def open_conditions(ed: object, cap: "int | None" = None) -> dict:
                 else f"و{hidden} شروطٌ أخرى")
     return {"items": items, "count": len(items), "shown": shown,
             "hidden": hidden, "more_note": note}
+
+
+def _score_arithmetic_line(arith: dict, lang: str = "ar") -> str:
+    """حسابُ الدرجة في سطرٍ يقرؤه صاحبُ القرار — أو إعلانُ الامتناع.
+
+    الصنف ٨: «الدرجة 65» بلا حسابٍ لا تُراجَع؛ و«الدرجة 65 = (0.25×0.80 +
+    0.20×0.57) ÷ 0.45» تُراجَع بقلم. والامتناعُ يُقال بسببه لا يُترَك فراغاً.
+    """
+    import silk_i18n as _I
+    terms = (arith or {}).get("terms") or []
+    if (arith or {}).get("score") is None:
+        reason = (arith or {}).get("withheld_reason") or ""
+        return _I.t("score_arithmetic_withheld", lang, reason=reason)
+    import silk_decision as _D
+    parts = "، ".join(
+        f"{_D.pillar_label(t['name'], lang)} {t['weight']:g}×"
+        f"{t['strength']:g}" for t in terms)
+    return _I.t("score_arithmetic_line", lang, parts=parts,
+                wsum=f"{arith['weight_sum']:g}",
+                score=round(float(arith["score"]) * 100))
 
 
 def decision_basis(ed: dict, displayed_confidence: object = None,
@@ -250,6 +279,39 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
         out["score_line"] = _t("decision_weighted_line",
                                score=out["score_pct"],
                                conf=out["confidence_pct"])
+    # ── الصنف ٨ (موجة عيوب التقرير) — خلف رايةٍ مطفأةٍ افتراضياً ──────────
+    # (أ) **سقفُ نطاق الثقة**: لا «عالية» عند عمودٍ أساسيٍّ مجهول أو شرطين
+    #     مفتوحين. **الرقمُ لا يُمَسّ** — التسميةُ وحدها تُسقَّف، فلا قيمةَ
+    #     مخزَّنة تتغيّر.
+    # (ب) **حسابُ الدرجة معروضاً**: وزنٌ × قوّةٌ لكلّ عمودٍ محسوب، ومجموعُ
+    #     الأوزان المُعاد تسويتها، والناتج — ومقفولٌ باختبارٍ أنّ الناتج
+    #     يُطابِق `decide()["score"]` حرفياً في الحالتين (رقمٌ أو امتناعٌ
+    #     مُعلَن). حسابٌ يخالف الدرجة يُوهِم القارئَ بالتحقّق.
+    # (ج) **مقياسان لا واحد**: ثقةُ الحكم ≠ نسبةُ التحقّق من البيانات —
+    #     البلاغُ أنّ الثانية عُرضت مكان الأولى.
+    if confidence_discipline():
+        _cap = _D.confidence_band_cap(pillars, ed.get("conditions"))
+        if _cap:
+            out["confidence_band_cap"] = _cap
+            out["confidence_cap_reason"] = _t(
+                "confidence_cap_core_missing",
+                parts=_D.part_labels(
+                    [_D.pillar_label(n, lang)
+                     for n in _D.missing_core_pillars(pillars)], lang))
+        if isinstance(out["confidence_pct"], (int, float)):
+            from silk_style_contract import confidence_band_label
+            out["confidence_band"] = confidence_band_label(
+                out["confidence_pct"], lang, cap=_cap)
+        _opt = ed.get("weights_option") or "A"
+        _arith = _D.score_arithmetic(pillars,
+                                     _D.WEIGHT_OPTIONS.get(_opt) or {})
+        out["score_arithmetic"] = _arith
+        out["score_arithmetic_line"] = _score_arithmetic_line(_arith, lang)
+        # نسبةُ التحقّق مقياسٌ مسمّىً مستقلّ — لا تُقدَّم كثقةِ حكم.
+        _cov = ed.get("coverage")
+        if isinstance(_cov, (int, float)):
+            out["verification_rate_pct"] = round(float(_cov) * 100)
+            out["verification_rate_note"] = _t("verification_rate_note")
     # القاعدةُ والحجّة: مُصفّاتان بالصمّام — غيابُهما إطفاءٌ مقصود لا نقص.
     if layer_enabled("VERDICT_STRUCTURE"):
         if ed.get("decision_rule"):

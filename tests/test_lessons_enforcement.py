@@ -207,6 +207,13 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٢ — المرساةُ السلوكية: الحسابُ يُعيد إنتاج الدرجة على الاثنتي عشرة،
+    # ويحترم قاعدةَ الحدّ الأدنى، والتفعيلُ إضافةٌ محضة.
+    (242, "tests/test_report_quality_logic_layer.py",
+     ["def test_c8_rendered_arithmetic_reproduces_the_score_exactly",
+      "def test_c8_arithmetic_respects_the_min_pillars_rule",
+      "def test_c8_basis_additions_are_purely_additive_behind_the_flag",
+      "def test_c8_all_three_flags_add_only_new_keys_on_production_views"]),
     # ٢٤١ — المرساةُ السلوكية: صياغةُ القارئ لا تُستبدَل بلغة القياس،
     # والقصُّ يُعلَن، والقياسُ على شكل الإنتاج لا على المدوّنة الخام.
     (241, "tests/test_report_quality_logic_layer.py",
@@ -553,6 +560,22 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤٢ — انضباطُ الثقة: الأعمدةُ الأساسية، والسقف، وجدولُ التحلُّل،
+    # وحسابُ الدرجة المُلزَم بقاعدة الحدّ الأدنى، وفصلُ نسبةِ التحقّق.
+    (242, "silk_decision.py",
+     ["CORE_PILLARS", "MAX_CONDITIONS_FOR_HIGH", "CONFIDENCE_AGE_DECAY",
+      "def age_decay_factor", "def missing_core_pillars",
+      "def confidence_band_cap", "def score_arithmetic",
+      "withheld_reason"]),
+    (242, "silk_style_contract.py", ["_BAND_ORDER", "cap in _BAND_ORDER"]),
+    (242, "silk_render.py",
+     ["def confidence_discipline", "def _score_arithmetic_line",
+      "verification_rate_pct", "confidence_band_cap"]),
+    (242, "silk_quality_gate.py",
+     ["def _check_high_confidence_with_missing_pillar", "_HIGH_CONF_RE"]),
+    (242, "silk_i18n.py",
+     ["score_arithmetic_line", "verification_rate_note",
+      "confidence_cap_core_missing"]),
     # ٢٤١ — قائمةُ شروطٍ واحدة: المُعِدّ، والعددُ الكامل، وإعلانُ القصّ،
     # وفحصُ العدد المذكور بسياق «مفتوح».
     (241, "silk_render.py",
