@@ -3574,6 +3574,70 @@ def _check_max_loss_without_components(view: dict) -> list[dict]:
     return []
 
 
+# ── الصنف ١٢: «غير متاح» وهو مرصود · declared unavailable yet observed ────
+# **العيبُ المرصود:** «التعرفة غير متاحة — اعتُمدت 0%» وبعثةُ التعريفات
+# تحمل «التعريفة المطبَّقة 60%»؛ و«الناقص: عملة السعر المرصود» وملاحظةُ
+# السعر تقول «روبية» صريحةً. الفجوةُ مُعلَنةٌ صادقةً في ظاهرها وكاذبةٌ في
+# مضمونها: المعطى **مرصودٌ** ولم يُعرَف، لا مفقود.
+#
+# هذا الفحصُ يقابل **إعلانَ النقص** بما تحمله البعثةُ المسؤولةُ عنه فعلاً.
+# تحذيريّ دائماً (لا حجبَ جديد)، ويعمل بالراية وبدونها — فهو الشاهدُ على
+# أنّ الفكسَ أصلحَ شيئاً: مطفأةً يُطلِق على المدوّنتين، ومفعّلةً يصمت.
+# الصياغةُ الدقيقة (بعد قياسٍ): الفحصُ لا يسأل «هل تَرِد الكلمةُ في بعثةٍ ما؟»
+# — سؤالٌ أطلقَ على تسعِ مدوّناتٍ منها ستٌّ **فجوتُها صادقة** (كلمةُ «جمرك»
+# ترد بلا رقمٍ قابلٍ للقراءة، والعملةُ ترد في صفِّ سعرٍ **آخرَ** غيرِ المرساة).
+# يسأل السؤالَ الحتميّ الوحيد: **هل كان مستخلِصُ المحرّك نفسُه سيجدها لو
+# وُسِّعت المفردات؟** فيصمت بالبناء حين تُفعَّل الراية، ويُطلِق حين — وفقط
+# حين — كان المعطى قابلاً للقراءة ولم يُقرَأ.
+_UNAVAILABLE_INPUTS = (
+    ("التعرفة غير متاحة", "tariff", "التعرفة", "tariffs_agreements"),
+    ("عملة السعر المرصود", "currency", "عملة السعر المرصود",
+     "pricing_scout"),
+)
+
+
+def _check_observed_value_declared_unavailable(view: dict) -> list[dict]:
+    """`observed_value_declared_unavailable` (الصنف ١٢، تحذيريّ): قسمُ
+    الاقتصاد يُعلن معطىً ناقصاً بينما مستخلِصُ المحرّك **كان سيجده** بمفرداتٍ
+    أوسع — معطىً مرصوداً لم يُقرأ، لا معطىً مفقوداً.
+
+    **منطقةُ العمى المعلنة:** (أ) المعطيانِ المقابَلان اثنان (التعريفةُ
+    وعملةُ سعرِ المرساة) — وهما المقيسان، ويُزاد الجدولُ بمعطىً حين يُرصَد
+    مثلُه؛ (ب) عملةٌ ترد في صفِّ سعرٍ لم يُصبح مرساةً لا تُحتسَب (المرساةُ
+    وحدها تُغذّي الحلَّ العكسيّ)؛ (ج) اسمُ عملةٍ أقصرُ من ثلاثة أحرف
+    مستبعَدٌ في المصدر الواحد (`silk_narrative._currency_token_re`).
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    eco = (dr.get("economics") or {})
+    gaps = [str(g) for g in (eco.get("gaps") or []) if str(g).strip()]
+    if not gaps or not (dr.get("missions") or {}):
+        return []
+    import silk_economics as _E
+    import silk_narrative as _N
+    wide = _E._TARIFF_WORDS + _E._TARIFF_WORDS_EXTRA
+    findings = []
+    for needle, kind, label, mkey in _UNAVAILABLE_INPUTS:
+        if not any(needle in g for g in gaps):
+            continue
+        hit = ""
+        if kind == "tariff":
+            val, note = _E._mission_numeric(dr, mkey, wide, 0.0, 100.0)
+            if val is not None:
+                hit = f"{val}% — «{str(note)[:40]}»"
+        else:
+            hit = _N.currency_in((eco.get("anchor_price") or {}).get("source"))
+        if not hit:
+            continue
+        findings.append({
+            "check": "observed_value_declared_unavailable",
+            "repairable": True,
+            "note": (f"قسم الاقتصاد يُعلن «{label}» معطىً ناقصاً بينما "
+                     f"بعثة «{mkey}» تحمله قابلاً للقراءة ({hit}) — معطىً "
+                     "مرصوداً لم يُقرأ، لا معطىً مفقوداً؛ مفرداتُ التعرّف "
+                     "أضيقُ من مفرداتِ البيانات")})
+    return findings
+
+
 # البند 6 (أمر إصلاح المحرّك) — تناقضُ تسعيرٍ محسوب مرّ بلا تعليق (تقرير
 # #11: أقصى EXW ‏$0.3274 مقابل متوسط استيراد $0.81 — أدنى بـ60%، ومع ذلك
 # قُدِّم الرقم «أساساً للتفاوض»). حين يحسب المحرك `pricing_contradiction`:
@@ -5646,6 +5710,8 @@ def run_quality_gate(view: dict) -> dict:
     # مخاطرةٍ مفردٍ فوق أساسٍ استُبعد منه مكوّن (تحذيريّ).
     findings += _check_reference_to_nonexistent_figure(view)
     findings += _check_max_loss_without_components(view)
+    # الصنف ١٢: فجوةٌ مُعلَنةٌ لمعطىً تحمله بعثتُه فعلاً — تحذيريّ.
+    findings += _check_observed_value_declared_unavailable(view)
     # البند 7: ترقية حكم مع تدهور كل مؤشرات الدليل — لا تُسلَّم.
     findings += _check_verdict_evidence_direction(view)
     # البند 10: تسمية «عدم دخول» فوق متنٍ يوصي بباب دخول مسمّى — لا تُسلَّم.

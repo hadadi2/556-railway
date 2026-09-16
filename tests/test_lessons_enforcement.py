@@ -207,6 +207,14 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٤ — المرساةُ السلوكية: الحارسُ يُطلِق على المقروءِ غيرِ المقروء
+    # حرفياً، والقيمُ المتغيّرةُ محسوبةٌ بمقدار التعريفة، والحكمُ لا يتغيّر.
+    (244, "tests/test_report_quality_logic_layer.py",
+     ["def test_c12_guard_fires_exactly_on_readable_but_unread_inputs",
+      "def test_c12_the_repo_own_provider_wording_was_unreadable",
+      "def test_c12_no_alternative_of_the_frozen_narrow_pattern_is_lost",
+      "def test_c12_an_ambiguous_currency_name_never_gets_an_iso_code",
+      "def test_c12_flag_changes_only_the_three_measured_markets"]),
     # ٢٤٣ — المرساةُ السلوكية: السقفُ يَرِث ناقصَه بالاسم، والشدةُ تتبع
     # الراية، والتفعيلُ إضافةُ إسنادٍ فقط، وصفرُ إطلاقةٍ على المدوّنات.
     (243, "tests/test_report_quality_logic_layer.py",
@@ -568,6 +576,18 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤٤ — مفرداتُ التعرّف: المصدرُ الواحد، والاتحادُ لا الاستبدال،
+    # ومنعُ تخمينِ الدولة من اسمٍ واسع، والحارسُ الحتميّ.
+    (244, "silk_narrative.py",
+     ["def currency_tokens", "def currency_in", "def _currency_token_re",
+      "_CURRENCY_AMBIGUOUS_AR", "_CURRENCY_MIN_AR"]),
+    (244, "silk_economics.py",
+     ["def tariff_words", "def currency_in_note",
+      "def recognition_vocabulary", "_TARIFF_WORDS_EXTRA",
+      "RECOGNITION_VOCABULARY_FLAG"]),
+    (244, "silk_quality_gate.py",
+     ["def _check_observed_value_declared_unavailable",
+      "_UNAVAILABLE_INPUTS"]),
     # ٢٤٣ — إسنادُ الرقم المشتقّ: المُنسِّقُ الواحد، ورمزُ ISO بلا تخمين،
     # وحقلا المحرّك، وقاعدتا البوابة، وإبرةُ اسمِ البند.
     (243, "silk_narrative.py",

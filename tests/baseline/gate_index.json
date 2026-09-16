@@ -25,6 +25,7 @@
    "decision_numbers_present",
    "markdown_artifacts",
    "narrative_money_not_grounded",
+   "observed_value_declared_unavailable",
    "template_interpolation"
   ],
   "language_quality": [],
@@ -58,7 +59,9 @@
    "access_timeline_missing",
    "agent_empty",
    "curated_reference_not_consulted",
-   "markdown_artifacts"
+   "markdown_artifacts",
+   "observed_value_declared_unavailable",
+   "observed_value_declared_unavailable"
   ],
   "language_quality": [],
   "skipped_checks": [],
@@ -111,7 +114,8 @@
    "agent_empty",
    "agent_empty",
    "curated_reference_not_consulted",
-   "markdown_artifacts"
+   "markdown_artifacts",
+   "observed_value_declared_unavailable"
   ],
   "language_quality": [],
   "skipped_checks": [],

@@ -867,3 +867,166 @@ def test_c9_every_blob_still_renders_a_client_docx_with_the_flag_on():
                 out = silk_reports.render_client_docx(
                     v, os.path.join(tmp, f"{key}.docx"))
                 assert os.path.getsize(out) > 0, key
+
+
+# ═══ الصنف ١٢ — «غير متاح» وهو مرصود (مفرداتُ التعرّف) ═══
+
+def _repo(name: str) -> str:
+    return open(os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), name), encoding="utf-8").read()
+
+
+def test_c12_the_repo_own_provider_wording_was_unreadable():
+    """**الجذرُ مرصودٌ في هذا الـHEAD**: مزوّدُ التعريفة في الريبو يكتب
+    «التعريفة المطبَّقة %» بينما مستخلِصُ الاقتصاد يعرف «تعرفة» وحدَها —
+    تباعدٌ داخليّ لا افتراضيّ. و`silk_gap_recovery` يقبل الإملاءَين معاً."""
+    import silk_economics as E
+    provider = "التعريفة المطبَّقة"
+    assert provider in _repo("silk_wto_tariff.py")
+    assert not any(w in provider for w in E._TARIFF_WORDS), \
+        "لو صار الضيّقُ يقرؤها لسقط سببُ هذا الصنف"
+    assert any(w in provider for w in E._TARIFF_WORDS_EXTRA)
+    assert "التعريفة" in _repo("silk_gap_recovery.py")
+    with _env(SILK_RECOGNITION_VOCABULARY=None):
+        assert E.tariff_words() == E._TARIFF_WORDS
+    with _env(SILK_RECOGNITION_VOCABULARY="1"):
+        assert any(w in provider for w in E.tariff_words())
+
+
+def test_c12_one_vocabulary_feeds_display_detector_and_guard():
+    """مصدرٌ واحد: سجلُّ العرض `CURRENCY_AR` يُغذّي الكاشفَ والحارس — فإضافةُ
+    عملةٍ للعرض تُعلِّم الكاشفَ تلقائياً ولا تتباعد ثلاثُ مفردات."""
+    import silk_narrative as N
+    toks = set(N.currency_tokens())
+    assert set(N.CURRENCY_AR) <= toks and set(N.CURRENCY_AR.values()) <= toks
+    short = {t for t in N.CURRENCY_AR.values()
+             if len(t) < N._CURRENCY_MIN_AR}
+    for code, ar in N.CURRENCY_AR.items():
+        assert N.currency_in(f"سعر الرف 12 {code}") == code, code
+        if ar not in short:
+            assert N.currency_in(f"سعر الرف 12 {ar}") == ar, ar
+    # منطقةُ العمى المعلنة: الاسمُ الأقصرُ من ثلاثة أحرف («ين») مستبعَد،
+    # ورمزُه يُقرَأ — إعلانٌ لا صمت.
+    assert short and all(N.currency_in(f"12 {t}") == "" for t in short)
+    assert N.currency_in("12 JPY") == "JPY"
+
+
+def test_c12_no_alternative_of_the_frozen_narrow_pattern_is_lost():
+    """الاتحادُ لا الاستبدال — حارسُ انحدارٍ قِيس **قبل** الشحن: «جنيه»
+    العارية كانت في النمط القائم ولا مقابلَ لها في سجلّ العرض، فأوّلُ صيغةٍ
+    للمصدر الواحد أسقطتها. وكذلك «ر.س» أسقطها قيدُ الطول (حرفان)."""
+    import silk_economics as E
+    import silk_narrative as N
+    frozen = E._CURRENCY_RE.pattern.strip("()").split("|")
+    assert len(frozen) >= 15
+    for alt in frozen:
+        raw = alt.replace("\\", "")
+        assert N.currency_in(f"السعر 5 {raw}"), raw
+
+
+def test_c12_clitics_are_read_and_ordinary_words_are_not():
+    """اسمُ العملة في العربية يَرِد ملتصقاً أكثرَ مما يَرِد مفرداً؛ ونمطٌ
+    بحدودٍ صارمةٍ يفوّته. وفي المقابل «الصين» و«بين» ليستا عملة."""
+    import silk_narrative as N
+    for t in ("سعر بالروبية", "والنايرا للعبوة", "سعرٌ فبالدرهم"):
+        assert N.currency_in(t), t
+    for t in ("حصة الصين 10%", "بين المتجرين", "سنتين", "مؤشر HHI 1490",
+              "برنامج SONCAP", "وفق WITS"):
+        assert N.currency_in(t) == "", t
+
+
+def test_c12_an_ambiguous_currency_name_never_gets_an_iso_code():
+    """سجلُّ العرض خريطةٌ **واحدٌ لواحد** والعلاقةُ كثيرٌ لواحد: «درهم» تسعُ
+    الإماراتَ والمغرب، و«روبية» ستَّ دول. فعكسُ الخريطة كان يُخمِّن دولةً —
+    درهمُ المغرب يُوسَم AED. القائمةُ الواسعةُ تعلو العكسَ دائماً."""
+    import silk_narrative as N
+    for name in ("درهم", "روبية", "جنيه", "ليرة", "بيزو", "فرنك"):
+        assert N.iso_currency(name) == "", name
+        assert N.currency_in(f"12 {name}") == name, name   # تُقرَأ عملةً
+    # «ريال» تبقى SAR: عرفُ الريبو المُسجَّل (`CURRENCY_AR["SAR"]`) وسياقُ
+    # مالكِ المنصّة — والخطرُ المتبقّي (ريالُ قطر/اليمن) مُعلَنٌ في
+    # docs/report-quality/LOGIC_ISSUES.md ومسكنُه تهيئةُ الصنف ١٠.
+    assert N.iso_currency("ريال") == "SAR"
+
+
+def test_c12_guard_fires_exactly_on_readable_but_unread_inputs():
+    """الحارسُ يسأل السؤالَ الحتميّ: **هل كان المستخلِصُ سيجده؟** — فيُطلِق
+    على ما كان مقروءاً ولم يُقرأ، ويصمت بالبناء حين تُفعَّل الراية.
+
+    الإطلاقاتُ **محصورةٌ حرفياً**: أوّلُ صياغةٍ سألت «هل تَرِد الكلمةُ في
+    بعثةٍ ما؟» فأطلقت على تسعِ مدوّنات، ستٌّ منها فجوتُها صادقة."""
+    import silk_quality_gate as G
+    expected = {("egypt_olive_oil", "التعرفة"),
+                ("india_honey", "التعرفة"),
+                ("india_honey", "عملة السعر المرصود"),
+                ("morocco_juice", "التعرفة")}
+    with block_network():
+        fired = set()
+        with _env(SILK_RECOGNITION_VOCABULARY=None):
+            for key in _canonical_keys():
+                for f in G.run_quality_gate(_prod_view(key))["findings"]:
+                    if f["check"] == "observed_value_declared_unavailable":
+                        assert f["repairable"] is True
+                        lab = ("التعرفة" if "«التعرفة»" in f["note"]
+                               else "عملة السعر المرصود")
+                        fired.add((key, lab))
+        assert fired == expected, fired
+        with _env(SILK_RECOGNITION_VOCABULARY="1"):
+            still = [(k, f["check"]) for k in _canonical_keys()
+                     for f in G.run_quality_gate(_prod_view(k))["findings"]
+                     if f["check"] == "observed_value_declared_unavailable"]
+        assert still == [], still
+
+
+def test_c12_flag_changes_only_the_three_measured_markets():
+    """كلُّ قيمةٍ تتغيّر **مسمّاةٌ ومحسوبة**: التعريفةُ المُهمَلة تُضخِّم أقصى
+    سعرِ مصنعٍ منافسٍ بمقدارها بالضبط — ٨.٦٣١ ÷ ١.٢٥ = ٦.٩٠٤٨ للمغرب،
+    و٨٨.٠٩٥٢ ÷ ١.١٠ = ٨٠.٠٨٦٦ لمصر — أي أنّ التقريرَ كان يُبلِغ المصدّرَ
+    أنه يقدر على تكلفةٍ لا يقدر عليها."""
+    import silk_render
+
+    def exw(key):
+        blob = _blob(key)
+        v = silk_render.build_view(blob)
+        eco = ((v.get("deep_research") or {}).get("economics") or {})
+        return (eco.get("reverse_solve") or {}).get("max_exw")
+    with block_network():
+        with _env(SILK_RECOGNITION_VOCABULARY=None):
+            off = {k: exw(k) for k in _canonical_keys()}
+        with _env(SILK_RECOGNITION_VOCABULARY="1"):
+            on = {k: exw(k) for k in _canonical_keys()}
+    assert {k for k in off if off[k] != on[k]} == {
+        "egypt_olive_oil", "india_honey", "morocco_juice"}
+    assert (off["morocco_juice"], on["morocco_juice"]) == (8.631, 6.9048)
+    assert round(off["morocco_juice"] / 1.25, 4) == on["morocco_juice"]
+    assert (off["egypt_olive_oil"], on["egypt_olive_oil"]) == (88.0952,
+                                                               80.0866)
+    assert off["india_honey"] is None and on["india_honey"] == 178.5714
+
+
+def test_c12_verdict_and_score_never_change_and_nothing_new_blocks():
+    """القِيَمُ الاقتصاديةُ تتغيّر بالتصحيح، والحكمُ لا: الدرجةُ والثقةُ
+    والتسميةُ كما هي على الأربعَ عشرة، وصفرُ حجبٍ جديد."""
+    import silk_quality_gate as G
+    assert "observed_value_declared_unavailable" \
+        not in G.FAIL_TRIGGER_CHECKS
+    with _env(SILK_RECOGNITION_VOCABULARY="1"):
+        assert "observed_value_declared_unavailable" \
+            not in G.effective_fail_triggers()
+    problems = {}
+    with block_network():
+        for key in _canonical_keys():
+            with _env(SILK_RECOGNITION_VOCABULARY=None):
+                v0 = _prod_view(key)
+                g0 = G.run_quality_gate(v0)
+            with _env(SILK_RECOGNITION_VOCABULARY="1"):
+                v1 = _prod_view(key)
+                g1 = G.run_quality_gate(v1)
+            d0, d1 = (v0.get("decision") or {}), (v1.get("decision") or {})
+            issues = [k for k in ("verdict", "score", "confidence")
+                      if d0.get(k) != d1.get(k)]
+            if g0["verdict"] != g1["verdict"]:
+                issues.append(f"gate {g0['verdict']}→{g1['verdict']}")
+            if issues:
+                problems[key] = issues
+    assert problems == {}, problems

@@ -4571,6 +4571,15 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    244: lambda: (
+        _needles("silk_narrative.py", "def currency_tokens",
+                 "def currency_in", "_CURRENCY_AMBIGUOUS_AR")(),
+        _needles("silk_economics.py", "def tariff_words",
+                 "def recognition_vocabulary", "_TARIFF_WORDS_EXTRA")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_observed_value_declared_unavailable")(),
+        _absent("silk_economics.py", "cur_m = _CURRENCY_RE.search")(),
+        _needles("tests/test_lessons_enforcement.py", '(244, ')()),
     243: lambda: (
         _needles("silk_narrative.py", "def fmt_derived", "def iso_currency",
                  "DERIVED_PROVENANCE_RULE",

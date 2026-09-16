@@ -387,6 +387,43 @@ def reverse_solve_max_exw(shelf_price: float, *, tariff_pct, vat_pct,
 # ── بناء قسم الاقتصاد من نتائج البعثات · the view assembler ────────────────
 
 _TARIFF_WORDS = ("تعرفة", "التعرفة", "رسوم جمركية", "جمرك", "tariff", "duty")
+# ── الصنف ١٢: «غير متاح» وهو مرصود · one recognition vocabulary ────────────
+# **العيبُ المرصود:** بعثةُ التعريفات تُعيد «التعريفة المطبَّقة % HS…» —
+# وهي **الصيغةُ الحرفية** التي يكتبها مزوّدُ WTO في هذا الريبو
+# (`silk_wto_tariff.py:149`) — فلا تُقرَأ هنا لأنّ القائمة تعرف «تعرفة»
+# وحدَها، فيُعتمَد **٠٪ جمارك** في الحل العكسي ويُعلَن «التعرفة غير متاحة».
+# أثرُه رقميّ لا لغويّ: أقصى سعرِ مصنعٍ منافسٍ مُبالَغٌ بمقدار التعريفة
+# كلِّها، أي أنّ التقرير يُبلِغ المصدّرَ أنه يقدر على تكلفةٍ لا يقدر عليها.
+# و`silk_gap_recovery.py:691` يقبل الإملاءَين معاً أصلاً — فالتباعدُ داخليّ
+# لا افتراضيّ.
+_TARIFF_WORDS_EXTRA = ("تعريفة", "التعريفة", "التعريفات",
+                       "الرسوم الجمركية", "customs duty", "applied tariff")
+
+RECOGNITION_VOCABULARY_FLAG = "SILK_RECOGNITION_VOCABULARY"
+
+
+def recognition_vocabulary() -> bool:
+    """هل رايةُ الصنف ١٢ مفعّلة؟ — نمطُ الرايات القائم."""
+    import os
+    return os.environ.get(RECOGNITION_VOCABULARY_FLAG,
+                          "").strip().lower() in ("1", "true", "yes")
+
+
+def tariff_words() -> tuple:
+    """مفرداتُ التعرّف على التعريفة — الضيّقةُ بلا الراية، والموسَّعةُ معها.
+    الاتحادُ لا الاستبدال: لا بديلَ قائمٌ يسقط (اختبارُ عدم الانحدار)."""
+    return (_TARIFF_WORDS + _TARIFF_WORDS_EXTRA if recognition_vocabulary()
+            else _TARIFF_WORDS)
+
+
+def currency_in_note(note: object) -> str:
+    """عملةُ الملاحظة — من المصدر الواحد (`silk_narrative.currency_in`) حين
+    تكون الرايةُ مفعّلة، وبالنمط الضيّق القائم حرفياً بدونها."""
+    if recognition_vocabulary():
+        import silk_narrative
+        return silk_narrative.currency_in(note)
+    m = _CURRENCY_RE.search(str(note or ""))
+    return m.group(1) if m else ""
 _VAT_WORDS = ("ضريبة القيمة المضافة", "ضريبة", "VAT")
 _HHI_WORDS = ("HHI", "هيرفندال", "تركّز")
 # بنود بعثة الأسعار التي ليست أسعاراً (عدّادات/نِسَب/مؤشرات) — تُستبعد من
@@ -1050,10 +1087,9 @@ def economics_view(dr: dict, product_card: dict | None = None,
     if retail_rows:
         lowest, src_note = min(retail_rows, key=lambda t: t[0])
         pack_kg, pack_litre = _parse_pack_from_note(src_note)
-        cur_m = _CURRENCY_RE.search(src_note)
         anchor = normalize_price(lowest, basis="retail", category=category,
                                  pack_kg=pack_kg, pack_litre=pack_litre,
-                                 currency=(cur_m.group(1) if cur_m else ""),
+                                 currency=currency_in_note(src_note),
                                  source=src_note,
                                  note="أدنى سعر رف منافس مرصود")
     elif other_rows:
@@ -1070,7 +1106,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
                     "سعر واحد على الأقل (بعثة الأسعار)")
 
     tariff, t_note = _mission_numeric(dr, "tariffs_agreements",
-                                      _TARIFF_WORDS, 0.0, 100.0)
+                                      tariff_words(), 0.0, 100.0)
     if tariff is None:
         gaps.append("التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي")
     vat, _ = _mission_numeric(dr, "tariffs_agreements", _VAT_WORDS, 0.0, 50.0)
