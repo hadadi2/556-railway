@@ -1,0 +1,430 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق هولندا (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 42000000"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 30,
+  "note": "30 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "واردات تنمو 8%",
+      "retrieved_at": "2026-07-15",
+      "source": "UN Comtrade",
+      "value": 42000000
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "سعر رفّ",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Maps",
+      "value": 7.49
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "هولندا مراقبة السوق — سوق مفتّت بأسعار رفّ جيدة."
+  },
+  "caveat_box": "",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": false,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": {
+    "basis": "retail",
+    "category": "تمور",
+    "currency": "€",
+    "fx_date": "",
+    "fx_rate": null,
+    "gaps": [
+     "التحويل kg→litre يتطلب الكثافة لفئة «تمور» — غير مسجّل في سجل الثوابت؛ أضفه بمصدره أو صرّح بالخاصية المفقودة",
+     "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
+    ],
+    "note": "أدنى سعر رف منافس مرصود",
+    "per_kg": 7.49,
+    "per_litre": null,
+    "per_unit": 7.49,
+    "raw_value": 7.49,
+    "source": "Albert Heijn سعر رف عبوة 1 كجم بسعر €7.49",
+    "value_usd": null
+   },
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج كجم الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": false,
+   "gaps": [
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للكيلوغرام لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف؛ الحل العكسي أعلاه يعطيك أقصى تكلفة قابلة للمنافسة"
+   ],
+   "hhi": 940.0,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": {
+    "currency": "€",
+    "formula": "EXW_max = سعر الرف ÷ [(1+شحن)(1+تعرفة)(1+هامش الموزّع)(1+هامش التجزئة)(1+ضريبة)]",
+    "headline_scenario": "متوسط",
+    "max_exw": 4.4583,
+    "parameters": [
+     "التعرفة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
+     "الضريبة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
+     "نسبة الشحن (معلمة معلنة قابلة للتعديل)",
+     "هامش الموزّع (معلمة معلنة قابلة للتعديل)",
+     "هامش التجزئة (معلمة معلنة قابلة للتعديل)"
+    ],
+    "scenarios": [
+     {
+      "distributor_pct": 10.0,
+      "freight_pct": 5.0,
+      "max_exw": 5.639,
+      "retailer_pct": 15.0,
+      "scenario": "منخفض"
+     },
+     {
+      "distributor_pct": 20.0,
+      "freight_pct": 12.0,
+      "max_exw": 4.4583,
+      "retailer_pct": 25.0,
+      "scenario": "متوسط"
+     },
+     {
+      "distributor_pct": 30.0,
+      "freight_pct": 25.0,
+      "max_exw": 3.2923,
+      "retailer_pct": 40.0,
+      "scenario": "مرتفع"
+     }
+    ],
+    "shelf_price": 7.49,
+    "unit": "كجم"
+   },
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج الكيلوغرام، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في هولندا",
+    "met": false
+   }
+  ],
+  "gap_register": [],
+  "glossary": [
+   {
+    "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع",
+    "term": "HHI"
+   }
+  ],
+  "hs_confirmation": {
+   "code_desc": "تمور طازجة أو مجففة",
+   "confirmed": true,
+   "hs_code": "080410",
+   "missing_terms": [],
+   "overlap": 1.0,
+   "product_terms": [
+    "تمور"
+   ],
+   "reason": "وصف الرمز يشمل صفات المنتج المميّزة",
+   "shared_terms": [
+    "تمور"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "08",
+   "confirmed": null,
+   "heading": "0804",
+   "hs6": "080410",
+   "official_description": "Fruit, edible; dates, fresh or dried",
+   "subheading": "080410"
+  },
+  "hs_flagged": false,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [],
+  "market": {
+   "iso2": "NL",
+   "iso3": "NLD",
+   "m49": 528,
+   "name_ar": "هولندا",
+   "name_en": "Netherlands"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "HHI تركّز",
+      "retrieved_at": "2026-07-15",
+      "source": "UN Comtrade",
+      "value": 940
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "HHI 940 — سوق مفتّت",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "Albert Heijn سعر رف عبوة 1 كجم بسعر €7.49",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Maps",
+      "value": 7.49
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "أسعار رفّ 6.20–9.80€ (60/60)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "لا مخاطر حادة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "واردات 2023",
+      "retrieved_at": "2026-07-15",
+      "source": "UN Comtrade",
+      "value": 42000000
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات تنمو 8% (76/76 بند)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "Albert Heijn سعر رف عبوة 1 كجم بسعر €7.49",
+    "reason": "",
+    "value": 7.49
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "تمور",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 2,
+   "text": "## 1. الخلاصة التنفيذية\nالحكم مراقبة السوق بدرجة ثقة متوسطة (60%) (درجة الثقة). واردات هولندا من التمور تنمو 8% سنوياً،\nوالمشهد تنافسي مفتّت (HHI (مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع) 940). أسعار الرفّ 6.20–9.80 يورو/كغم.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، جميعها ناجحة، ثم محلّل شامل فكاتب التقرير بدورتَي مراجعة.\n\n## 3. نظرة عامة على السوق وحجمه\nواردات 2023 نحو 42 مليون دولار.\n\n## 4. ديناميكيات السوق\nنمو مطّرد مدفوع بالطلب على المنتجات الصحية.\n\n## 5. تحليل المستهلك والطلب\nشريحتان: تجزئة راقية وجاليات.\n\n## 6. المشهد التنافسي\nمورّدون: تونس، الجزائر، إيران. مؤشر التركّز HHI = 940 (سوق مفتّت).\n\n## 7. التنظيم والوصول للسوق\nEU 2017/625 (منشأة معتمدة إلزامية)، EU 1169/2011 (وسم المستهلك).\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري عبر ميناء روتردام.\n\n## 9. تقييم المخاطر\nتقلّب أسعار المنافسين؛ لا مخاطر تنظيمية حادة.\n\n## 10. التوصيات الاستراتيجية\nابدأ باختبار السوق قبل الالتزام الكامل.\n### خارطة طريق الدخول\n1. تحقّق من المستوردين. 2. سجّل المنشأة لدى الجهة المختصة.\n\n## 11. الملاحق\nUN Comtrade, World Bank, Google Maps.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "nld-real",
+  "verdict": {
+   "ai": {
+    "reasoning": "سوق واعد لكن يحتاج تحقّق المستوردين.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.6,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "080410",
+  "origin": "SAU",
+  "product": "تمور",
+  "target_market": "هولندا"
+ },
+ "hs_code": "080410",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "تمور",
+ "provenance": [
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 3,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [],
+   "source": "Google Maps",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

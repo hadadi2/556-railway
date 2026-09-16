@@ -1,0 +1,459 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق اليابان (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 62000000"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 27,
+  "note": "27 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "واردات تحت الرمز 040900",
+      "retrieved_at": "2026-07-22",
+      "source": "UN Comtrade",
+      "value": 62000000
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "سعر تجزئة فاخر",
+      "retrieved_at": "2026-07-22",
+      "source": "Google Maps",
+      "value": 26.0
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "اليابان مراقبة السوق — سوق مركّز نسبياً بفرصة عبر شريحة العسل الفاخر."
+  },
+  "caveat_box": "",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": false,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": {
+    "basis": "retail",
+    "category": "عسل طبيعي",
+    "currency": "",
+    "fx_date": "",
+    "fx_rate": null,
+    "gaps": [
+     "حجم العبوة (كجم أو لتر) غير متاح — السعر/كجم والسعر/لتر غير محسوبَين، لا تخمين",
+     "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
+    ],
+    "note": "أدنى سعر رف منافس مرصود",
+    "per_kg": null,
+    "per_litre": null,
+    "per_unit": 26.0,
+    "raw_value": 26.0,
+    "source": "متوسط سعر تجزئة عسل فاخر مستورد",
+    "value_usd": null
+   },
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج كجم الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": false,
+   "gaps": [
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "أقصى سعر مصنع (EXW) غير محسوب — الناقص: حجم العبوة (لتطبيع السعر إلى كجم/لتر)؛ عملة السعر المرصود",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للكيلوغرام لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف"
+   ],
+   "hhi": 1450.0,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج الكيلوغرام، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في اليابان",
+    "met": false
+   }
+  ],
+  "gap_register": [],
+  "glossary": [
+   {
+    "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع",
+    "term": "HHI"
+   },
+   {
+    "gloss": "متوسط النمو السنوي المركّب",
+    "term": "CAGR"
+   }
+  ],
+  "hs_confirmation": {
+   "code_desc": "عسل طبيعي",
+   "confirmed": true,
+   "hs_code": "040900",
+   "reason": ""
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "04",
+   "confirmed": true,
+   "heading": "0409",
+   "hs6": "040900",
+   "official_description": "Honey; natural",
+   "subheading": "040900"
+  },
+  "hs_flagged": false,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [],
+  "market": {
+   "iso2": "JP",
+   "iso3": "JPN",
+   "m49": 392,
+   "name_ar": "اليابان",
+   "name_en": "Japan"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "HHI محسوب من حصص 040900",
+      "retrieved_at": "2026-07-22",
+      "source": "UN Comtrade",
+      "value": 1450
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "HHI 1450 — سوق مركّز نسبياً",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "دخل الفرد (2024)",
+      "retrieved_at": "2026-07-22",
+      "source": "World Bank",
+      "value": 34000
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMMissionAgent",
+    "summary": "دخل فرد مرتفع (2024)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "متوسط سعر تجزئة عسل فاخر مستورد",
+      "retrieved_at": "2026-07-22",
+      "source": "Google Maps",
+      "value": 26.0
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "سعر تجزئة 18–34 دولار/كغم للعسل الفاخر",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "مخاطر تنظيمية معتدلة (فحص حجر)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "الجدول التعريفي الياباني لرمز 0409 — لا اتفاقية شراكة اقتصادية سعودية يابانية",
+      "retrieved_at": "2026-07-22",
+      "source": "World Bank WITS",
+      "value": "أساسية (لا أفضلية)"
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMMissionAgent",
+    "summary": "تعريفة يابانية أساسية، لا أفضلية سعودية-يابانية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "واردات 2023 تحت الرمز 040900",
+      "retrieved_at": "2026-07-22",
+      "source": "UN Comtrade",
+      "value": 62000000
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات العسل (040900) نحو 62 مليون دولار",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "متوسط سعر تجزئة عسل فاخر مستورد",
+    "reason": "الوزن غير متاح",
+    "value": 26.0
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "عسل طبيعي",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nالحكم مراقبة السوق بدرجة ثقة منخفضة (55%). واردات اليابان من العسل الطبيعي (رمز 040900)\nنحو 62 مليون دولار في آخر سنة مرصودة، والمشهد مركّز نسبياً (HHI (مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع) 1450).\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. رمز HS 040900 مؤكَّدٌ\n(عسل طبيعي، الفصل ٠٤ لكن البند الصحيح 0409 لا بند ألبان/زبدة مجاور).\n\n## 3. نظرة عامة على السوق وحجمه\nواردات 2023 نحو 62 مليون دولار وفق UN Comtrade تحت الرمز 040900.\n\n## 4. ديناميكيات السوق\nنمو سنوي مركّب (CAGR (متوسط النمو السنوي المركّب)) 4% مدفوعاً بالطلب على العسل الفاخر/أحادي المصدر\nالنباتي.\n\n## 5. تحليل المستهلك والطلب\nشريحتان: تجزئة صحية فاخرة (عسل أحادي الأزهار)، وقطاع الأغذية المصنَّعة\n(مكوّن وسيط).\n\n## 6. المشهد التنافسي\nمورّدون رئيسيون: الصين، الأرجنتين، أوكرانيا. مؤشر التركّز HHI = 1450 (سوق\nمركّز نسبياً). متوسط سعر التجزئة 18–34 دولار/كغم للعسل الفاخر المستورد.\n\n## 7. التنظيم والوصول للسوق\nيخضع استيراد العسل لإخطار الاستيراد وفق قانون الصحة الغذائية الياباني\n(Food Sanitation Act) وفحص الحجر الزراعي؛ شهادة عضوية JAS مطلوبة فقط عند\nالادّعاء بالعضوية. **لا اتفاقية تجارة تفضيلية أو شراكة اقتصادية بين\nالسعودية واليابان حالياً**، فتُطبَّق التعريفة الأساسية وفق الجدول\nالتعريفي الياباني دون أفضلية منشأ (إفصاحٌ صادق، لا ميزة مختلَقة).\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري عبر ميناء يوكوهاما أو كوبي، بتغليفٍ محكم يفي بمتطلبات فحص\nالحجر الزراعي.\n\n## 9. تقييم المخاطر\nتركّز الموردين الحاليين (الصين خاصةً) يعرّض السوق لتقلّب أسعارٍ مستورَد؛\nمخاطر تنظيمية معتدلة (فحص حجر إضافي للمنتجات الجديدة).\n\n## 10. التوصيات الاستراتيجية\nابدأ بشريحة العسل الفاخر أحادي المصدر عبر موزّع متخصص بالأغذية المستوردة\nقبل استهداف قطاع الأغذية المصنَّعة الأوسع.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. إتمام إخطار الاستيراد وفحص الحجر الزراعي. 2. تعاقد مع موزّع أغذية\nفاخرة مستوردة. 3. اختبار تسعير محدود على شريحة التجزئة الفاخرة.\n\n## 11. الملاحق\nUN Comtrade, World Bank WITS, ITC Trade Map.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "jpn-real",
+  "verdict": {
+   "ai": {
+    "reasoning": "سوق مركّز نسبياً يحتاج تحقّق شهادة الحجر الزراعي وموزّعاً متخصصاً قبل الالتزام.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.55,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "040900",
+  "origin": "SAU",
+  "product": "عسل طبيعي",
+  "target_market": "اليابان"
+ },
+ "hs_code": "040900",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "عسل طبيعي",
+ "provenance": [
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 3,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [],
+   "source": "Google Maps",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "World Bank WITS",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "World Bank",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

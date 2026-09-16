@@ -1,0 +1,498 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق الأردن (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 2000000"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 25,
+  "note": "25 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "واردات مصرَّحة تحت 040110",
+      "retrieved_at": "2026-08-20",
+      "source": "UN Comtrade",
+      "value": 2000000
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "علاوة علامة مستوردة",
+      "retrieved_at": "2026-08-20",
+      "source": "بحث ويب",
+      "value": 0.85
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "الأردن مراقبة السوق — فجوة مرآة غير محسومة ترجّح تضييق نطاق HS، وعلاوة سعرٍ تدلّ على تمايزٍ لا إغلاق."
+  },
+  "caveat_box": "",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": false,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": null,
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن لتر الواحد (1.03 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 27359.22,
+      "low": 24782.52
+     },
+     "source": "tracecontainer.com — 40ft HC reefer spec",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "لتر",
+     "value": 26070.87,
+     "width_pct": 4.9
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج لتر الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": false,
+   "displacement_required": false,
+   "gaps": [
+    "الأسعار المرصودة ليست أسعار رفّ للمستهلك (مستوى غير محدد) — والفرق بينها وبين سعر الرفّ أضعاف، فبناء الهامش عليها يعطي ربحاً أكبر من الحقيقي. الحل العكسي يبقى معلَّقاً حتى يُرصد سعر رفّ واحد على الأقل",
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للتر الواحد لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف",
+    "تركّز المورّدين غير متاح — لم نستطع تحديد ما إذا كان السوق محكوماً بعدد قليل من المورّدين أم مفتوحاً للتنافس. لا تقرأ ذلك «سوقاً مفتوحاً»: هو بند لم يُقَس"
+   ],
+   "hhi": null,
+   "market_unit": {
+    "code": "litre",
+    "label_ar": "لتر"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج اللتر، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في الأردن",
+    "met": false
+   }
+  ],
+  "gap_register": [],
+  "glossary": [],
+  "hs_confirmation": {
+   "code_desc": "حليب لا يتجاوز محتواه الدهني ١٪ وزناً",
+   "confirmed": true,
+   "hs_code": "040110",
+   "reason": ""
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "04",
+   "confirmed": true,
+   "heading": "0401",
+   "hs6": "040110",
+   "official_description": "Dairy produce; milk and cream, not concentrated, not containing added sugar or other sweetening matter, of a fat content, by weight, not exceeding 1%",
+   "subheading": "040110"
+  },
+  "hs_flagged": false,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [],
+  "market": {
+   "iso2": "JO",
+   "iso3": "JOR",
+   "m49": 400,
+   "name_ar": "الأردن",
+   "name_en": "Jordan"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "صادرات السعودية للأردن تحت 040110 (مرآة) 2024",
+      "retrieved_at": "2026-08-20",
+      "source": "UN Comtrade (مرآة)",
+      "value": 11200000
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "صادرات السعودية (مرآة) 11.2 مليون دولار — فجوة 5.6× غير محسومة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "consumer_culture": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "بيانٌ من جهةٍ ذات مصلحة مباشرة في إغلاق السوق",
+      "retrieved_at": "2026-08-20",
+      "source": "اتحاد منتجي الألبان الأردنيين",
+      "value": "لا حاجة لاستيراد إضافي"
+     }
+    ],
+    "label": "ثقافة المستهلك",
+    "name": "LLMMissionAgent",
+    "summary": "اتحاد منتجي الألبان الأردنيين: «لا حاجة لاستيراد إضافي»",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demand_trends": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "اتجاه بحث صاعد — منتج بروتين حليب، علامة منشؤها السعودية",
+      "retrieved_at": "2026-08-20",
+      "source": "Google Trends",
+      "value": "صاعد"
+     }
+    ],
+    "label": "اتجاهات الطلب والموسمية",
+    "name": "LLMMissionAgent",
+    "summary": "استعلام صاعد على منتج بروتين حليب يقابل علامة تصدير سعودية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "logistics": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "مسار الشحن الطبيعي عبر الحدود البرّية المباشرة مع السعودية، لا ميناء العقبة البحري",
+      "retrieved_at": "2026-08-20",
+      "source": "بحث ويب",
+      "value": "المعبر البرّي (الحديثة/الدرّة)"
+     }
+    ],
+    "label": "اللوجستيات",
+    "name": "LLMMissionAgent",
+    "summary": "الأردن جارٌ برّي مباشر — المعبر البرّي لا ميناء العقبة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "سعر تجزئة علامة مستوردة — دينار أردني/لتر",
+      "retrieved_at": "2026-08-20",
+      "source": "بحث ويب",
+      "value": 0.85
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "سعر تجزئة علامة محلية — دينار أردني/لتر",
+      "retrieved_at": "2026-08-20",
+      "source": "بحث ويب",
+      "value": 0.55
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "علاوة تجزئة ~54% لعلامة مستوردة (0.85 مقابل 0.55 دينار/لتر)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "عضوية مشتركة سعودية أردنية",
+      "retrieved_at": "2026-08-20",
+      "source": "World Bank WITS",
+      "value": "تفضيلي (GAFTA)"
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMMissionAgent",
+    "summary": "اتفاقية التجارة الحرة العربية الكبرى (GAFTA)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "واردات الأردن 2024 تحت الرمز 040110",
+      "retrieved_at": "2026-08-20",
+      "source": "UN Comtrade",
+      "value": 2000000
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات الأردن المصرَّحة تحت 040110 نحو 2 مليون دولار (2024)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "سعر تجزئة علامة مستوردة — دينار أردني/لتر",
+    "reason": "الوزن غير متاح",
+    "value": 0.85
+   },
+   {
+    "note": "سعر تجزئة علامة محلية — دينار أردني/لتر",
+    "reason": "الوزن غير متاح",
+    "value": 0.55
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "حليب",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nالحكم مراقبة السوق بدرجة ثقة منخفضة (50%). واردات الأردن المصرَّحة من الحليب (040110) نحو\n2 مليون دولار، بينما صادرات السعودية للأردن من الرمز نفسه 11.2 مليون دولار\n(فجوة مرآة 5.6×) — يُرجَّح أن السبب تضييق نطاق الرمز لا تقصيراً جمركياً.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. رمز HS 040110 مُصنَّفٌ\nآلياً؛ وصفُه الرسمي «حليب لا يتجاوز محتواه الدهني ١٪ وزناً» — لم تُصرِّح\nالدراسة بأيّ صفة دهنٍ محدَّدة، فالنطاقُ أضيقُ ممّا يقتضيه سؤال «الحليب» عموماً.\n\n## 3. نظرة عامة على السوق وحجمه\nواردات الأردن المصرَّحة تحت 040110 نحو 2 مليون دولار (2024)؛ صادرات\nالسعودية المرآتية لنفس الرمز 11.2 مليون دولار — فجوةٌ 5.6× غير محسومة.\n\n## 4. ديناميكيات السوق\nعلاوةُ تجزئةٍ مستدامة لعلامةٍ مستوردة: 0.85 دينار/لتر مقابل 0.55 دينار/لتر\nللعلامة المحلية (~54% علاوة) — إشارةُ تمايزٍ في السوق لا إغلاقاً أمامه.\n\n## 5. تحليل المستهلك والطلب\nاستعلامُ بحثٍ صاعدٌ على منتج بروتين الحليب المُصنَّع يقابل علامةَ تصديرٍ\nسعودية — إشارةُ فرصةٍ (الممرّ التصديريّ يعمل فعلاً)، لا ضجيجاً عابراً.\n\n## 6. المشهد التنافسي\nاتحادُ منتجي الألبان الأردنيين صرَّح بأن «لا حاجة لاستيراد إضافي» — بيانٌ\nمن جهةٍ ذات مصلحة مباشرة (تُعامَل Tier X، لا دليل سوق مستقلّ).\n\n## 7. التنظيم والوصول للسوق\nاشتراطات الدخول القياسية لمنتجات الألبان الطازجة/المجفَّفة إلى الأردن.\n\n## 8. اللوجستيات وسلسلة الإمداد\nالأردنُ جارٌ بَرّيٌّ مباشر للسعودية — المعبر البرّي (الحديثة/الدرّة) هو\nمسار الشحن الطبيعي، لا ميناء العقبة البحري الذي افترضته مسودةٌ أولى من\nهذا التقرير قبل تصحيحها.\n\n## 9. تقييم المخاطر\nفجوةُ المرآة غير المحسومة (٥) تبقى الخطرَ الأكبر على موثوقية أرقام هذا\nالقسم حتى تُراجَع مطابقةُ رمز HS.\n\n## 10. التوصيات الاستراتيجية\nراجِع تصنيف HS أولاً (منتَجٌ عامّ صُنِّف على رمزٍ ضيّق) قبل أيّ التزام؛\nاختبر عبر المعبر البرّي المباشر لا ميناء العقبة.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. إعادة تصنيف الرمز بصفةٍ صريحة (دهن/حفظ). 2. تسعير اختباري عبر موزّع\nتجزئة يستوعب علاوة العلامة. 3. ترتيب الشحن عبر المعبر البرّي.\n\n## 11. الملاحق\nUN Comtrade (استيراد الأردن + مرآة الصادرات السعودية), بحث ويب (أسعار\nالتجزئة/الاتجاهات).",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "jor-milk-study9-synthetic",
+  "verdict": {
+   "ai": {
+    "reasoning": "فجوةُ مرآة 5.6× غير محسومة (يُرجَّح تضييق نطاق HS)؛ علاوةُ سعرٍ ~54% تدعم دخول علامةٍ متمايزة بعد تصحيح التصنيف.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.5,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "040110",
+  "origin": "SAU",
+  "product": "حليب",
+  "target_market": "الأردن"
+ },
+ "hs_code": "040110",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "حليب",
+ "provenance": [
+  {
+   "attempted": 4,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 4,
+   "failures": [],
+   "source": "بحث ويب",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "UN Comtrade (مرآة)",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "Google Trends",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "اتحاد منتجي الألبان الأردنيين",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "World Bank WITS",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

@@ -1,0 +1,522 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: توصية أولية بالدخول — سوق اليمن (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 2090000",
+  "فعّل خدمة التعميق المدفوعة للتحقق من المستوردين وجهات الاتصال قبل الالتزام"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 28,
+  "note": "28 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "consumer_demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": 2018,
+      "note": "دخل الفرد لليمن (2018)",
+      "retrieved_at": "2026-07-20",
+      "source": "World Bank",
+      "status": "",
+      "value": 1200
+     }
+    ],
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": 2023,
+      "note": "واردات اليمن المُصرّحة تحت الرمز 040110",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 2090000
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "اليمن — الحضور السعودي قائم لكن سلسلة التصريح ضعيفة ورمز HS على الأرجح خاطئ."
+  },
+  "caveat_box": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: أرقام الاستيراد والتركّز والحصص في هذا التقرير مجموعةٌ تحت رمز HS 040110، ووصفه الرسمي لا يشمل صفة المنتج المميّزة — الأرقام الموسومة بنجمة (*) تُقرأ في سياق هذا التنبيه حتى تأكيد الرمز الصحيح.",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": true,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": null,
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن لتر الواحد (1.03 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 27359.22,
+      "low": 24782.52
+     },
+     "source": "tracecontainer.com — 40ft HC reefer spec",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "لتر",
+     "value": 26070.87,
+     "width_pct": 4.9
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج لتر الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": true,
+   "gaps": [
+    "لا سعر رف منافس مرصود — الحل العكسي غير ممكن حتى يُرصد سعر واحد على الأقل (بعثة الأسعار)",
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للتر الواحد لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف"
+   ],
+   "hhi": 7743.7,
+   "market_unit": {
+    "code": "litre",
+    "label_ar": "لتر"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج اللتر، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [],
+  "gap_register": [
+   {
+    "gap_class": "G1",
+    "gap_class_label": "غير مجموع في أي مصدر معروف — يتطلب بحثاً أولياً",
+    "text": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040110 («حليب وقشدة، غير مركّزة وغير محلّاة، دسم ≤1% (طازج)») لا يشمل صفة المنتج المميّزة (طويل الأمد، كامل الدسم، UHT) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح."
+   },
+   {
+    "gap_class": "G1",
+    "gap_class_label": "غير مجموع في أي مصدر معروف — يتطلب بحثاً أولياً",
+    "text": "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي)."
+   },
+   {
+    "gap_class": "G3",
+    "gap_class_label": "منشور وعام؛ فشل الاسترجاع تقنياً — عيب منصّة لا قيد معرفي",
+    "text": "المصدر «Google Trends» تعذّر جلب بياناته في هذه التشغيلة — لم يُعتمد عليه ولا يُدرَج ضمن مصادر التقرير."
+   }
+  ],
+  "glossary": [
+   {
+    "gloss": "إجمالي حجم السوق الكلي المتاح نظرياً",
+    "term": "TAM"
+   },
+   {
+    "gloss": "متوسط النمو السنوي المركّب",
+    "term": "CAGR"
+   },
+   {
+    "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع",
+    "term": "HHI"
+   }
+  ],
+  "hs_confirmation": {
+   "code_desc": "حليب وقشدة، غير مركّزة وغير محلّاة، دسم ≤1% (طازج)",
+   "confirmed": false,
+   "hs_code": "040110",
+   "missing_terms": [
+    "طويل الأمد",
+    "كامل الدسم",
+    "UHT"
+   ],
+   "product_terms": [
+    "حليب",
+    "طويل",
+    "الأمد",
+    "كامل",
+    "الدسم",
+    "UHT"
+   ],
+   "reason": "وصف الرمز 040110 (طازج ≤1% دسم) لا يشمل الصفة المميّزة «طويل الأمد كامل الدسم» لمنتج Nadec المرصود",
+   "shared_terms": [
+    "حليب"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "04",
+   "confirmed": false,
+   "heading": "0401",
+   "hs6": "040110",
+   "official_description": "Dairy produce; milk and cream, not concentrated, not containing added sugar or other sweetening matter, of a fat content, by weight, not exceeding 1%",
+   "subheading": "040110",
+   "substitution_note": "هذه الأرقام تصف الرمز 040110 (فئة مجاورة غير مؤكَّدة لمواصفة المنتج)؛ لا تُنقل إلى فئة المنتج الفعلية، ولا تُبنى عليها خلاصة حجم أو حصة أو تركّز.",
+   "substitution_note_en": "These figures describe HS code 040110 (an adjacent category not confirmed for the product specification); do not carry them over to the actual product category, and do not build size, share, or concentration conclusions on them."
+  },
+  "hs_flagged": true,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [
+   "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040110 («حليب وقشدة، غير مركّزة وغير محلّاة، دسم ≤1% (طازج)») لا يشمل صفة المنتج المميّزة (طويل الأمد، كامل الدسم، UHT) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
+   "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي).",
+   "المصدر «Google Trends» تعذّر جلب بياناته في هذه التشغيلة — لم يُعتمد عليه ولا يُدرَج ضمن مصادر التقرير."
+  ],
+  "market": {
+   "iso2": "YE",
+   "iso3": "YEM",
+   "m49": 887,
+   "name_ar": "اليمن",
+   "name_en": "Yemen"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "HHI محسوب من حصص المورّدين",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 7743.7
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "HHI مرتفع — سوق تقوده السعودية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demand_trends": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.0,
+      "data_year": null,
+      "note": "no series for seasonality",
+      "retrieved_at": "2026-07-20",
+      "source": "Google Trends",
+      "status": "fetch_failed",
+      "value": null
+     }
+    ],
+    "label": "اتجاهات الطلب والموسمية",
+    "name": "LLMMissionAgent",
+    "summary": "لا سلسلة موسمية متاحة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2018,
+      "note": "دخل الفرد لليمن (2018)",
+      "retrieved_at": "2026-07-20",
+      "source": "World Bank",
+      "status": "",
+      "value": 1200
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2013,
+      "note": "تعادل القوة الشرائية للفرد (2013)",
+      "retrieved_at": "2026-07-20",
+      "source": "World Bank",
+      "status": "",
+      "value": 2400
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMMissionAgent",
+    "summary": "دخل فرد منخفض (2018) + PPP قديم (2013)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "استقرار سياسي منخفض",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2023,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "صادرات السعودية إلى اليمن 2023 (منظور مرآة التصدير)",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 22140000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2018,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "HS040110 إجمالي استيراد اليمن من العالم 2018, USD",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 880000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2019,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "HS040110 إجمالي استيراد اليمن من العالم 2019, USD",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 5590000
+     },
+     {
+      "confidence": 0.0,
+      "data_year": null,
+      "note": "HS040110 استيراد اليمن 2020: لا سجل (ولا مرآة)",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "no_record",
+      "value": null
+     },
+     {
+      "confidence": 0.0,
+      "data_year": null,
+      "note": "HS040110 استيراد اليمن 2021: لا سجل (ولا مرآة)",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "no_record",
+      "value": null
+     },
+     {
+      "confidence": 0.0,
+      "data_year": null,
+      "note": "HS040110 استيراد اليمن 2022: لا سجل (ولا مرآة)",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "no_record",
+      "value": null
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2023,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "HS040110 إجمالي استيراد اليمن من العالم 2023, USD",
+      "retrieved_at": "2026-07-20",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 2090000
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات اليمن المُصرّحة 2.09M مقابل مرآة تصدير السعودية 22.14M | سلسلة 2018=0.88M، ذروة 2019=5.59M، 2023=2.09M",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": "فعّل خدمة التعميق المدفوعة للتحقق من المستوردين وجهات الاتصال قبل الالتزام",
+  "price_rows": [],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "حليب Nadec طويل الأمد",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nتوصية أولية بالدخول إلى السوق اليمني بدرجة ثقة مسقوفة. الحضور السعودي (Nadec)\nقائمٌ في فئة الحليب طويل الأمد، لكن سلسلة التصريح الجمركي اليمني ضعيفة.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. رمز HS المستخدم 040110 (حليب\nطازج دسمه ≤1%)، بينما منتج Nadec المرصود حليبٌ كامل الدسم طويل الأمد (UHT) —\nالأدقّ 0401.20/0401.40 أو 0402؛ انظر قسم المنهجية.\n\n## 3. نظرة عامة على السوق وحجمه\nإجمالي واردات اليمن المُصرّح بها من الحليب تحت الرمز 040110 — أي حجم السوق\nالكلي (TAM (إجمالي حجم السوق الكلي المتاح نظرياً)) — بلغ TAM = 2,090,000$ عام 2023 وفق تصريحات اليمن الجمركية.\nفي المقابل، تكشف بيانات المرآة أن صادرات السعودية وحدها من الألبان إلى اليمن\nبلغت 22,140,000$ لنفس السنة (UN Comtrade، منظور تصدير المُصدِّر).\n\n## 4. ديناميكيات السوق\nتُظهر سلسلة واردات اليمن المُصرّح بها انكماشاً سنوياً مركّباً (CAGR (متوسط النمو السنوي المركّب)) قدره\n‑22.08% خلال 2019–2023. التهديد الرئيسي هو الحفاظ على حصة في مواجهة انكماش\nالحجم؛ وقد يكون جزءٌ من هذا الانكماش ضعفاً في التسجيل الرسمي لا انكماشاً\nحقيقياً في الطلب.\n\n## 5. تحليل المستهلك والطلب\nدخل الفرد في اليمن نحو 1,200 دولار (2018) — بيانات 2018 (الأحدث المتاح) وتعادل القوة الشرائية للفرد وفق آخر\nتقدير متاح (2013) — بيانات 2013 (الأحدث المتاح). القدرة الشرائية المحدودة تقيّد التسعير المتاح لمنتجٍ مستورد\nعالي القيمة، فالتوصية تعتمد سعراً تنافسياً حصراً.\n\n## 6. المشهد التنافسي\nمورّدون: السعودية (Nadec/Almarai)، نيوزيلندا، فرنسا. مؤشر تركّز المورّدين\nHHI (مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع) = 7743.7 (سوق شديد التركّز تقوده السعودية).\n\n## 7. التنظيم والوصول للسوق\nاشتراطات استيراد عامة؛ لا لائحة مرقّمة مرصودة لهذا الرمز تحديداً في اليمن.\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن برّي/بحري عبر منافذ الحدود ومينائي عدن والحديدة.\n\n## 9. تقييم المخاطر\nنقطة الضعف الأبرز في التحليل الرباعي (SWOT) هي انكماش الحجم المُصرَّح؛ استقرار\nسياسي منخفض ومخاطر تشغيلية مرتفعة.\n\n## 10. التوصيات الاستراتيجية\nينبغي التعامل مع سلسلة التصريح الجمركي كمؤشر أدنى لا كمقياس طلبٍ مباشر حتى\nمصالحة منظور المرآة.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. تأكيد رمز HS الصحيح لمنتج UHT كامل الدسم. 2. تعاقد مع موزّع محلي مؤكَّد.\n\n## 11. الملاحق\nUN Comtrade, World Bank, Google Maps.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "nadec-yem-analysis7",
+  "verdict": {
+   "ai": {
+    "reasoning": "حضورٌ سعوديّ قائم لكن سلسلة التصريح الجمركي ضعيفة ورمز HS يحتاج تأكيداً قبل الالتزام.",
+    "verdict": "PRELIMINARY GO"
+   },
+   "confidence": 0.5,
+   "verdict": "PRELIMINARY GO — مبدئي إيجابي"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "توصية أولية بالدخول",
+  "verdict_tone": "preliminary"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "040110",
+  "origin": "SAU",
+  "product": "حليب Nadec طويل الأمد",
+  "target_market": "اليمن"
+ },
+ "hs_code": "040110",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040110 («حليب وقشدة، غير مركّزة وغير محلّاة، دسم ≤1% (طازج)») لا يشمل صفة المنتج المميّزة (طويل الأمد، كامل الدسم، UHT) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
+  "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي).",
+  "المصدر «Google Trends» تعذّر جلب بياناته في هذه التشغيلة — لم يُعتمد عليه ولا يُدرَج ضمن مصادر التقرير.",
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "حليب Nadec طويل الأمد",
+ "provenance": [
+  {
+   "attempted": 9,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 6,
+   "failures": [
+    "HS040110 استيراد اليمن 2020: لا سجل (ولا مرآة)",
+    "HS040110 استيراد اليمن 2021: لا سجل (ولا مرآة)",
+    "HS040110 استيراد اليمن 2022: لا سجل (ولا مرآة)"
+   ],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 3,
+   "failures": [],
+   "source": "World Bank",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "contributed": 0,
+   "failures": [
+    "no series for seasonality"
+   ],
+   "source": "Google Trends",
+   "tail": "",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

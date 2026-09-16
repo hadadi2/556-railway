@@ -1,0 +1,1437 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق الجزائر (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 22000000"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 26,
+  "note": "26 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "واردات تحت الرمز 040510",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 22000000
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "سعر تجزئة مرصود",
+      "retrieved_at": "2026-07-21",
+      "source": "Google Maps",
+      "status": "",
+      "value": "9.14 يورو/كجم"
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "الجزائر مراقبة السوق — حصة سعودية منخفضة ونمو مطّرد."
+  },
+  "caveat_box": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: أرقام الاستيراد والتركّز والحصص في هذا التقرير مجموعةٌ تحت رمز HS 040510، ووصفه الرسمي لا يشمل صفة المنتج المميّزة — الأرقام الموسومة بنجمة (*) تُقرأ في سياق هذا التنبيه حتى تأكيد الرمز الصحيح.",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": true,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": {
+    "basis": "retail",
+    "category": "زبدة الفول السوداني",
+    "currency": "",
+    "fx_date": "",
+    "fx_rate": null,
+    "gaps": [
+     "حجم العبوة (كجم أو لتر) غير متاح — السعر/كجم والسعر/لتر غير محسوبَين، لا تخمين",
+     "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
+    ],
+    "note": "أدنى سعر رف منافس مرصود",
+    "per_kg": null,
+    "per_litre": null,
+    "per_unit": 6.25,
+    "raw_value": 6.25,
+    "source": "سعر تجزئة مرصود فعلياً — علامة محلية، متجر أوريدو",
+    "value_usd": null
+   },
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج كجم الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": false,
+   "gaps": [
+    "أقصى سعر مصنع (EXW) غير محسوب — الناقص: حجم العبوة (لتطبيع السعر إلى كجم/لتر)؛ عملة السعر المرصود",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للكيلوغرام لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف"
+   ],
+   "hhi": 2200.0,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج الكيلوغرام، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "إعادة تصنيف الرمز ثم سحب واردات كومتريد تحته",
+    "condition": "توفّر بيانات استيراد موثوقة تحت رمز HS الصحيح",
+    "met": false
+   },
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في الجزائر",
+    "met": false
+   }
+  ],
+  "gap_register": [
+   {
+    "gap_class": "G1",
+    "gap_class_label": "غير مجموع في أي مصدر معروف — يتطلب بحثاً أولياً",
+    "text": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040510 («زبدة (Butter)») لا يشمل صفة المنتج المميّزة (فول، سوداني) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح."
+   }
+  ],
+  "glossary": [
+   {
+    "gloss": "متوسط النمو السنوي المركّب",
+    "term": "CAGR"
+   },
+   {
+    "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع",
+    "term": "HHI"
+   }
+  ],
+  "hs_confirmation": {
+   "code_desc": "زبدة (Butter)",
+   "confirmed": false,
+   "hs_code": "040510",
+   "missing_terms": [
+    "فول",
+    "سوداني"
+   ],
+   "product_terms": [
+    "فول",
+    "سوداني",
+    "زبدة"
+   ],
+   "reason": "وصف الرمز لا يشمل الصفة المميّزة «فول سوداني»",
+   "shared_terms": [
+    "زبدة"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "04",
+   "confirmed": false,
+   "heading": "0405",
+   "hs6": "040510",
+   "official_description": "Dairy produce; derived from milk, butter",
+   "subheading": "040510",
+   "substitution_note": "هذه الأرقام تصف الرمز 040510 (فئة مجاورة غير مؤكَّدة لمواصفة المنتج)؛ لا تُنقل إلى فئة المنتج الفعلية، ولا تُبنى عليها خلاصة حجم أو حصة أو تركّز.",
+   "substitution_note_en": "These figures describe HS code 040510 (an adjacent category not confirmed for the product specification); do not carry them over to the actual product category, and do not build size, share, or concentration conclusions on them."
+  },
+  "hs_flagged": true,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [
+   "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040510 («زبدة (Butter)») لا يشمل صفة المنتج المميّزة (فول، سوداني) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح."
+  ],
+  "market": {
+   "iso2": "DZ",
+   "iso3": "DZA",
+   "m49": 12,
+   "name_ar": "الجزائر",
+   "name_en": "Algeria"
+  },
+  "missions": {
+   "channels_importers": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "channels_importers — بند 8"
+     }
+    ],
+    "label": "قنوات التوزيع والاستيراد",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة قنوات التوزيع والاستيراد",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "competitors — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "HHI محسوب من حصص الرمز 040510",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 2200
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "HHI 2200 — سوق معتدل التركّز (تحت الرمز 040510)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "consumer_culture": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 8"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 9",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "consumer_culture — بند 9"
+     }
+    ],
+    "label": "ثقافة المستهلك",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة ثقافة المستهلك",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "customs_requirements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "customs_requirements — بند 8"
+     }
+    ],
+    "label": "الاشتراطات الجمركية",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة الاشتراطات الجمركية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demand_trends": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demand_trends — بند 8"
+     }
+    ],
+    "label": "اتجاهات الطلب والموسمية",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة اتجاهات الطلب والموسمية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "demographics_economy — بند 8"
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة الديموغرافيا والاقتصاد الكلي",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "logistics": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "logistics — بند 8"
+     }
+    ],
+    "label": "اللوجستيات",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة logistics",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "opportunity_gaps": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "opportunity_gaps — بند 8"
+     }
+    ],
+    "label": "الفرص الاستراتيجية والفجوات",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة الفرص الاستراتيجية والفجوات",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "pricing_scout — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "سعر تجزئة مرصود فعلياً — علامة أوروبية، متجر كارفور",
+      "retrieved_at": "2026-07-21",
+      "source": "Google Maps",
+      "status": "",
+      "value": "9.14 يورو/كجم"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "سعر تجزئة مرصود فعلياً — علامة محلية، متجر أوريدو",
+      "retrieved_at": "2026-07-21",
+      "source": "Google Maps",
+      "status": "",
+      "value": "6.25 يورو/كجم"
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "سلّم أسعار: منتجات منافِسة باليورو",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "risk_news — بند 8"
+     }
+    ],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة تقييم المخاطر والمستجدات",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 7",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 7"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 8",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "tariffs_agreements — بند 8"
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMMissionAgent",
+    "summary": "ملخّص بعثة التعريفات الجمركية والاتفاقيات التجارية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 1",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "trade_flow — بند 1"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 2",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "trade_flow — بند 2"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 3",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "trade_flow — بند 3"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 4",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "trade_flow — بند 4"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 5",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "trade_flow — بند 5"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "ملاحظة توثيقية 6",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "trade_flow — بند 6"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "واردات 2023 تحت الرمز 040510",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 22000000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "حصة السعودية من واردات 040510",
+      "retrieved_at": "2026-07-21",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": "1.5%"
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات الجزائر من الرمز 040510 نحو 22 مليون دولار",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "ملاحظة توثيقية 1",
+    "reason": "",
+    "value": "pricing_scout — بند 1"
+   },
+   {
+    "note": "ملاحظة توثيقية 2",
+    "reason": "",
+    "value": "pricing_scout — بند 2"
+   },
+   {
+    "note": "ملاحظة توثيقية 3",
+    "reason": "",
+    "value": "pricing_scout — بند 3"
+   },
+   {
+    "note": "ملاحظة توثيقية 4",
+    "reason": "",
+    "value": "pricing_scout — بند 4"
+   },
+   {
+    "note": "ملاحظة توثيقية 5",
+    "reason": "",
+    "value": "pricing_scout — بند 5"
+   },
+   {
+    "note": "ملاحظة توثيقية 6",
+    "reason": "",
+    "value": "pricing_scout — بند 6"
+   },
+   {
+    "note": "ملاحظة توثيقية 7",
+    "reason": "",
+    "value": "pricing_scout — بند 7"
+   },
+   {
+    "note": "سعر تجزئة مرصود فعلياً — علامة أوروبية، متجر كارفور",
+    "reason": "",
+    "value": "9.14 يورو/كجم"
+   },
+   {
+    "note": "سعر تجزئة مرصود فعلياً — علامة محلية، متجر أوريدو",
+    "reason": "",
+    "value": "6.25 يورو/كجم"
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "زبدة الفول السوداني",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nالحكم مراقبة السوق بدرجة ثقة متوسطة (60%). واردات الجزائر من الرمز 040510 نحو 22 مليون دولار،\nوحصة السعودية منها محدودة 1.5% فقط. نمو سنوي مركّب (CAGR (متوسط النمو السنوي المركّب)) قدره 9.3% على مدى\nثلاث سنوات.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. رمز HS المستخدم 040510،\nبينما العائلة الأدقّ لهذا المنتج هي البند 2008 (محضرات الفول السوداني).\n\n## 3. نظرة عامة على السوق وحجمه\nواردات 2023 نحو 22 مليون دولار وفق UN Comtrade تحت الرمز 040510، بنمو سنوي\nمركّب 9.3% على مدى ثلاث سنوات — وهو معدّل أعلى من متوسط نمو الواردات\nالإقليمية. حصة السعودية من هذه الواردات 1.5% فقط، وهو ما يترك هامشاً واسعاً\nللنمو لمصدّر سعودي جديد.\n\n\n## 4. ديناميكيات السوق\nمحرّكات الطلب: نمو استهلاك المنتجات المصنّعة من الفول السوداني. معوقات: منافسة\nالاستيراد الأوروبي. فرص: توسّع قنوات التجزئة الحديثة. تهديدات: تقلّب سعر\nالصرف. وكما ذُكِر في قسم السوق بالأرقام، فإن حصة السعودية المحدودة تفتح نافذة\nنمو حقيقية لمورّد جديد.\n\n## 5. تحليل المستهلك والطلب\nدخل الفرد متوسط نسبياً في الجزائر. الطلب على «زبدة الفول السوداني» في تصاعد\nموسمي حول رمضان وفق بيانات محدودة من Trends. حصة السعودية لا تتجاوز 1.5%\nمن إجمالي الواردات — فجوة تستحق الاستهداف.\n\n## 6. المشهد التنافسي\n### المنتجات المنافسة وأسعارها\n| المنتج/العلامة | المنشأ | العبوة | سعر التجزئة | السعر/كجم باليورو | المتجر وتاريخ الرصد | مستوى التوثيق |\n| --- | --- | --- | --- | --- | --- | --- |\n| زبدة فول سوداني - علامة أوروبية | إسبانيا | 350غ | 3.20€ | 9.14€ | متجر كارفور الجزائر، 2026-07-15 | ✓ مرصود برابط |\n| زبدة فول سوداني - علامة محلية | الجزائر | 400غ | 2.50€ | 6.25€ | متجر أوريدو، 2026-07-16 | ✓ مرصود برابط |\n\nمورّدون: إسبانيا، تركيا، فرنسا. مؤشر التركّز HHI (مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع) = 2200 (سوق معتدل التركّز).\n\n## 7. التنظيم والوصول للسوق\nاشتراطات استيراد جزائرية عامة؛ لا لائحة مرقّمة مرصودة لهذا الرمز تحديداً.\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري عبر ميناء الجزائر العاصمة.\n\n## 9. تقييم المخاطر\nاستقرار سياسي متوسط نسبياً؛ واتجاه الاستهلاك صاعد وفق المؤشرات المتاحة.\n\n## 10. التوصيات الاستراتيجية\nحصة السعودية المنخفضة مقابل نمو السوق 9.3% تدعم دخولاً مشروطاً بعد تأكيد رمز\nHS الصحيح.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. تأكيد رمز HS الصحيح. 2. تعاقد مع موزّع محلي مؤكَّد. 3. تسعير تنافسي أدنى\nمن متوسط سلّم الأسعار المرصود.\n**ماذا يعني هذا لقرارك:** حصة السعودية 1.5% الحالية مقابل معدّل النمو المذكور\nأعلاه تعني فرصة حقيقية بشرط تأكيد الرمز أولاً.\n\n## 11. الملاحق\nUN Comtrade, World Bank, Google Maps.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "dza-real",
+  "verdict": {
+   "ai": {
+    "reasoning": "سوق ينمو بمعدّل جيد وحصة سعودية منخفضة تفتح مجالاً للنمو، بشرط تأكيد رمز HS.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.5,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "040510",
+  "origin": "SAU",
+  "product": "زبدة الفول السوداني",
+  "target_market": "الجزائر"
+ },
+ "hs_code": "040510",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040510 («زبدة (Butter)») لا يشمل صفة المنتج المميّزة (فول، سوداني) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "زبدة الفول السوداني",
+ "provenance": [
+  {
+   "attempted": 97,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 97,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 3,
+   "failures": [],
+   "source": "Google Maps",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}
