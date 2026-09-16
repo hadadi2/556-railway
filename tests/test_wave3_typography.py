@@ -118,7 +118,10 @@ def test_pdffonts_embeds_plex_regular_and_bold(tmp_path):
     out = subprocess.run(["pdffonts", pdf], capture_output=True,
                          text=True, timeout=60).stdout
     plex = [ln for ln in out.splitlines() if "plexsansarabic" in ln.lower()]
-    assert any("regular" in ln.lower() for ln in plex), out
+    # اسم PostScript للوزن العادي يطابق اسم العائلة بلا لاحقة "Regular" —
+    # اصطلاح OpenType القياسي (كما في Arial، Helvetica...)، فسطر Plex بلا
+    # "bold" هو الوزن العادي المُضمَّن، لا غياباً له.
+    assert any("bold" not in ln.lower() for ln in plex), out
     assert any("bold" in ln.lower() for ln in plex), out
     # مُضمَّن: عمود emb = yes على أسطر Plex (لا تبديل، لا إحالة خارجية).
     assert all("yes" in ln.lower() for ln in plex), out
