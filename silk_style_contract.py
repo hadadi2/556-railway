@@ -264,6 +264,61 @@ REFERENTIAL_INTEGRITY_RULE_EN = (
 )
 
 
+# ── الصنف ٥ (موجة عيوب التقرير): شرحٌ واحدٌ لكلّ حقيقة · single explanation ──
+# بلاغُ المالك: القرارُ التنظيميّ نفسُه مشروحٌ في خمسة أقسام، و«وهذا يعني»
+# في كلّ فقرةٍ تقريباً. الجذرُ: كلُّ قسمٍ يُولَّد باستقلالٍ فلا يعرف ما شُرِح
+# قبله. القاعدةُ توجيهٌ، والفحصُ إنفاذ (`cross_section_near_duplicate` و
+# `connector_repeated_in_paragraph`).
+#
+# **مفاتيحُ الروابط مصدرٌ واحد** يقرؤه الموجّهُ والفحص: قاعدةٌ تحظر رابطاً
+# لا يعدّه فحصٌ أمنيةٌ لا قاعدة.
+REPEATED_CONNECTORS: tuple = (
+    "وهذا يعني", "هذا يعني", "ومعنى ذلك", "ما يعني", "وبالتالي", "بالتالي",
+    "من ناحية", "علاوة على ذلك", "بالإضافة إلى", "من جهة أخرى",
+    "إضافة إلى ذلك", "ومن ثم", "لذلك", "وعليه", "في المقابل", "ومع ذلك",
+    "كما أن", "جدير بالذكر",
+)
+
+REPEATED_CONNECTORS_EN: tuple = (
+    "this means", "which means", "therefore", "as a result",
+    "in addition", "furthermore", "moreover", "on the other hand",
+    "that said", "it is worth noting", "consequently",
+)
+
+SINGLE_EXPLANATION_RULE = (
+    "**شرحٌ واحدٌ لكلّ حقيقة (إلزامي — التكرارُ يُطيل ولا يُقنع):**\n"
+    "- **لكلّ حقيقةٍ قسمٌ واحدٌ يشرحها كاملةً**: القرارُ التنظيميّ في "
+    "قسم التنظيم، والمنافسةُ في قسمها، والسعرُ في قسمه. حين تحتاجها في "
+    "قسمٍ آخر فاذكرها **بجملةٍ واحدة** تُحيل إلى قسمها ولا تُعيد شرحها: "
+    "«يبقى قيدُ الإدراج المذكور في التنظيم حاجزاً أمام أول شحنة» — لا "
+    "إعادةَ سردِ اللائحة ورقمِها وأثرِها من جديد.\n"
+    "- **لا فقرةَ تُختَم بما افتتحته**: إن لم تُضِف الجملةُ الأخيرة معلومةً "
+    "أو نتيجةً لم تُقَل، احذفها.\n"
+    "- **الرابطُ لا يتكرّر في الفقرة الواحدة**: لا «وهذا يعني» مرّتين في "
+    "فقرة، ولا في فقرتين متجاورتين. للمعنى الواحد صيغٌ عدّة (ومن ثمّ، فـ، "
+    "والأثرُ العمليّ، ويترتّب على ذلك) — أو اذكر النتيجة مباشرةً بلا رابط."
+)
+
+SINGLE_EXPLANATION_RULE_EN = (
+    "**One explanation per fact (mandatory — repetition lengthens without "
+    "persuading):**\n"
+    "- **Each fact has exactly one section that explains it in full.** Where "
+    "you need it elsewhere, state it in **one sentence** that points back to "
+    "that section and do not re-explain it.\n"
+    "- **No paragraph may close on what it opened with**: if the last "
+    "sentence adds no information or conclusion not already stated, cut it.\n"
+    "- **Never repeat a connective inside one paragraph**, and not in two "
+    "adjacent paragraphs either — vary it, or state the conclusion with no "
+    "connective at all."
+)
+
+
+def single_explanation_rule(lang: str = "ar") -> str:
+    """قاعدةُ الشرح الواحد بلغة التقرير — مصدرٌ واحد للموجّه والفحص."""
+    return SINGLE_EXPLANATION_RULE_EN if str(lang).lower().startswith("en") \
+        else SINGLE_EXPLANATION_RULE
+
+
 def referential_integrity_rule(lang: str = "ar") -> str:
     """قاعدةُ سلامة الإحالة بلغة التقرير — مصدرٌ واحد للموجّه والفحص."""
     return REFERENTIAL_INTEGRITY_RULE_EN if str(lang).lower().startswith("en") \
@@ -649,6 +704,8 @@ ACADEMIC_WRITER_CONTRACT = (
     + "\n\n" + READER_LANGUAGE_RULE
     # الصنف ٢: لا إحالةَ إلى ما لم يُعرَض، ولا عددٌ يخالف معدودَه.
     + "\n\n" + REFERENTIAL_INTEGRITY_RULE
+    # الصنف ٥: قسمٌ واحدٌ يشرح كلَّ حقيقة، ورابطٌ لا يتكرّر في الفقرة.
+    + "\n\n" + SINGLE_EXPLANATION_RULE
 )
 
 
@@ -689,6 +746,8 @@ WRITER_STYLE_CONTRACT = (
     + "\n\n" + READER_LANGUAGE_RULE
     # الصنف ٢: لا إحالةَ إلى ما لم يُعرَض، ولا عددٌ يخالف معدودَه.
     + "\n\n" + REFERENTIAL_INTEGRITY_RULE
+    # الصنف ٥: قسمٌ واحدٌ يشرح كلَّ حقيقة، ورابطٌ لا يتكرّر في الفقرة.
+    + "\n\n" + SINGLE_EXPLANATION_RULE
 )
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -782,6 +841,8 @@ WRITER_STYLE_CONTRACT_EN = (
     + "\n\n" + READER_LANGUAGE_RULE_EN
     # الصنف ٢ — المرآةُ الإنجليزية.
     + "\n\n" + REFERENTIAL_INTEGRITY_RULE_EN
+    # الصنف ٥ — المرآةُ الإنجليزية.
+    + "\n\n" + SINGLE_EXPLANATION_RULE_EN
 )
 
 ACADEMIC_WRITER_CONTRACT_EN = (
@@ -813,6 +874,8 @@ ACADEMIC_WRITER_CONTRACT_EN = (
     + "\n\n" + READER_LANGUAGE_RULE_EN
     # الصنف ٢ — المرآةُ الإنجليزية.
     + "\n\n" + REFERENTIAL_INTEGRITY_RULE_EN
+    # الصنف ٥ — المرآةُ الإنجليزية.
+    + "\n\n" + SINGLE_EXPLANATION_RULE_EN
 )
 
 

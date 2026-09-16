@@ -3775,6 +3775,18 @@ def _reader_snippet(text: str, start: int, end: int) -> str:
     return " ".join(text[lo:end + 45].split())
 
 
+# **تصادمٌ رصده حارسٌ قائم** (`test_quality_gate_stays_warn…`): «إلى»
+# تُطبَّع إلى «الي» بتوحيد الهمزات، وكذلك «آلي» — فكان حرفُ الجرّ الأكثرُ
+# شيوعاً في العربية يُبلَّغ «لغةَ نظام». المفرداتُ ذاتُ المعنيين تُطابَق
+# بتطبيعٍ **يحفظ الهمزة** (حركاتٌ وتطويلٌ فقط)، فلا يقع التصادم.
+_TOKEN_SOFT_NORM_RE = re.compile("[\u064b-\u0652\u0670\u0640]")
+
+
+def _norm_token(s: object) -> str:
+    """تطبيعٌ للمطابقةِ **يحفظ صيغةَ الألف**: الحركاتُ والتطويلُ فقط."""
+    return _TOKEN_SOFT_NORM_RE.sub("", str(s or ""))
+
+
 def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
     """`reader_language_leak` (الصنف ١، تحذيريّ): لغةُ نظامٍ داخلية في نصٍّ
     يقرؤه صاحبُ القرار.
@@ -3840,15 +3852,16 @@ def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
                  "رمزٌ خام لا معنى له عند القارئ")
 
     # (٣) المفرداتُ ذاتُ المعنيين — بقرينةٍ فقط، وإطلاقةٌ واحدة لكلّ مفردة.
+    soft = _norm_token(body)
     for tok in CONTEXTUAL_READER_TOKENS:
-        ntok = _norm_ar(tok)
+        ntok = _norm_token(tok)
         for m in re.finditer(rf"(?<![^\W\d_]){re.escape(ntok)}(?![^\W\d_])",
-                             plain):
+                             soft):
             if _inside_reported(m.start()):
                 continue
             lo = max(0, m.start() - _READER_LEAK_WINDOW)
-            hi = min(len(plain), m.end() + _READER_LEAK_WINDOW)
-            window = plain[lo:hi]
+            hi = min(len(soft), m.end() + _READER_LEAK_WINDOW)
+            window = _norm_ar(soft[lo:hi])
             if any(_norm_ar(a) in window for a in READER_TOKEN_ALLOW):
                 continue
             cue = next((c for c in SYSTEM_SENSE_CUES
@@ -4418,6 +4431,142 @@ def _check_defined_term_without_definition(view: dict, dr: dict) -> list[dict]:
                       + " — التعريفُ سطرٌ واحدٌ ثابتٌ يُعرَض حين يَرِد "
                         "المصطلح (silk_style_contract."
                         "METHODOLOGY_DEFINITIONS)")}]
+
+
+# ══════════ الصنف ٥ (موجة عيوب التقرير) — التكرار ══════════
+# بلاغُ المالك: القرارُ التنظيميّ نفسُه مشروحٌ في خمسة أقسام، و«وهذا يعني»
+# في كلّ فقرةٍ تقريباً. الجذرُ: كلُّ قسمٍ يُولَّد باستقلالٍ فلا يعرف ما شُرِح
+# قبله — فالقاعدةُ في الموجّه (`SINGLE_EXPLANATION_RULE`) والإنفاذُ هنا.
+#
+# **ما هو مغطّىً أصلاً ولا يُكرَّر:** `_check_repeated_span` يلتقط تكراراً
+# **حرفياً** لثماني كلماتٍ **داخل الفقرة الواحدة** — ونطاقُه الفقرةُ عمداً
+# (§58: ذيلُ استشهادٍ متكرر عبر الأقسام نثرٌ مشروع). و`_check_style` يعدّ
+# خمسةَ روابطَ ثقيلة **على مستوى المستند** (WARN عند ٣، FAIL عند ٥).
+# فالناقصُ قناتان: **إعادةُ الصياغة** عبر الأقسام (لا تكرارٌ حرفيّ فلا
+# يبلغها الأول)، و**تكرارُ الرابط داخل الفقرة** (العدّ المستنديّ لا يراه:
+# «وهذا يعني» مرّتين في فقرةٍ ومرّةً في فقرتين = ٤ فقط).
+_XSEC_MIN_WORDS = 8          # جملةٌ أقصرُ لا تحمل معنىً يُقارَن
+_XSEC_SIM_DEFAULT = 0.55     # مُعايَرٌ: صفرُ زوجٍ ≥ 0.45 في المدوّنات العشر
+_XSEC_SENT_SPLIT = re.compile(r"(?<=[.!?؟])\s+|\n")
+_XSEC_WORD_SPLIT = re.compile(r"[^\w؀-ۿ]+")
+
+
+def _report_sections(text: str) -> list:
+    """[(عنوانُ القسم، متنُه)] — تقسيمٌ على العناوين نفسِها التي يعرفها
+    `_HEADING_RE`، فلا تعريفَ ثانياً للقسم يتباعد."""
+    out: list = []
+    cur, buf = "قبل أول عنوان", []
+    for line in (text or "").splitlines():
+        m = _HEADING_RE.match(line)
+        if m:
+            out.append((cur, "\n".join(buf)))
+            cur, buf = m.group(1).strip(), []
+        else:
+            buf.append(line)
+    out.append((cur, "\n".join(buf)))
+    return out
+
+
+def _xsec_sentences(text: str) -> list:
+    """[(القسم، الجملة، مجموعةُ كلماتها المُطبَّعة)] — نثرٌ فقط."""
+    out: list = []
+    for name, body in _report_sections(text):
+        for raw in _XSEC_SENT_SPLIT.split(body or ""):
+            sent = " ".join(raw.split())
+            if not sent or sent.startswith(("|", "#", ">", "-", "*")):
+                continue
+            words = [w for w in _XSEC_WORD_SPLIT.split(_norm_ar(sent))
+                     if len(w) > 2]
+            if len(words) >= _XSEC_MIN_WORDS:
+                out.append((name, sent, frozenset(words)))
+    return out
+
+
+def _check_cross_section_near_duplicate(text: str) -> list[dict]:
+    """`cross_section_near_duplicate` (الصنف ٥، تحذيريّ): الحقيقةُ نفسُها
+    مشروحةٌ في قسمين — **إعادةُ صياغةٍ** لا تكرارٌ حرفيّ.
+
+    القياسُ تشابهُ مجموعتَي الكلمات (Dice/Jaccard على الكلمات المُطبَّعة
+    الأطولَ من حرفين) — نفسُ أسلوبِ مطابقةِ الأسماء المحافظ في
+    `correlation.py`. العتبةُ 0.55 و**مُعايَرةٌ**: صفرُ زوجٍ يبلغ 0.45 في
+    المدوّنات العشر، فهامشُ الأمان ضِعف. تُضبَط بـ`SILK_XSEC_SIM`.
+
+    الجملُ داخل القسم الواحد **مستثناة**: تفصيلٌ متدرّجٌ داخل قسمه مشروع،
+    والعيبُ المرصود عبورُ الأقسام.
+    """
+    if not text:
+        return []
+    try:
+        thresh = float(os.environ.get("SILK_XSEC_SIM", _XSEC_SIM_DEFAULT))
+    except ValueError:
+        thresh = _XSEC_SIM_DEFAULT
+    sents = _xsec_sentences(_split_off_appendix(text))
+    best = None
+    for i in range(len(sents)):
+        for j in range(i + 1, len(sents)):
+            if sents[i][0] == sents[j][0]:
+                continue
+            a, b = sents[i][2], sents[j][2]
+            union = len(a | b)
+            if not union:
+                continue
+            sim = len(a & b) / union
+            if sim >= thresh and (best is None or sim > best[0]):
+                best = (sim, sents[i], sents[j])
+    if not best:
+        return []
+    sim, first, second = best
+    return [{"check": "cross_section_near_duplicate", "repairable": True,
+             "note": (f"الحقيقةُ نفسُها مشروحةٌ في قسمين (تشابه "
+                      f"{round(sim * 100)}%): «{first[0]}» و«{second[0]}» — "
+                      f"«{first[1][:80]}» مقابل «{second[1][:80]}». قسمٌ "
+                      "واحدٌ يشرحها كاملةً، والآخرُ يُحيل إليها بجملةٍ واحدة")}]
+
+
+def _check_connector_repeated_in_paragraph(text: str,
+                                           lang: str = "ar") -> list[dict]:
+    """`connector_repeated_in_paragraph` (الصنف ٥، تحذيريّ): الرابطُ نفسُه
+    أكثرَ من مرّةٍ في الفقرة الواحدة.
+
+    العدّ المستنديّ في `_check_style` لا يرى هذا: «وهذا يعني» مرّتين في
+    فقرةٍ ومرّةً في فقرتين = أربعٌ، دون عتبةِ الخمس. والعيبُ المرصود
+    («وهذا يعني» في كلّ فقرةٍ تقريباً) يظهر في **توزيعه** لا في مجموعه.
+    """
+    if not text:
+        return []
+    from silk_style_contract import (REPEATED_CONNECTORS,
+                                     REPEATED_CONNECTORS_EN)
+    en = str(lang).lower().startswith("en")
+    conns = REPEATED_CONNECTORS_EN if en else REPEATED_CONNECTORS
+    body = _split_off_appendix(text)
+    findings: list[dict] = []
+    for para in re.split(r"\n\s*\n", body):
+        # عنوانٌ يلاصق متنَه بلا سطرٍ فارغ يجعل الفقرةَ تبدأ بـ«##»، وإسقاطُ
+        # الفقرة كلّها حينها يُخمِد الفحصَ على نصفِ التقارير — تُسقَط
+        # **الأسطرُ** غيرُ النثرية وحدها (قياسٌ: القاعدةُ لم تُطلِق أصلاً).
+        flat = " ".join(
+            ln for ln in para.splitlines()
+            if not ln.strip().startswith(("|", "#", ">")))
+        flat = " ".join(flat.split())
+        if not flat:
+            continue
+        hay = flat.lower() if en else _norm_ar(flat)
+        for c in conns:
+            needle = c.lower() if en else _norm_ar(c)
+            n = hay.count(needle)
+            if n > 1:
+                findings.append({
+                    "check": "connector_repeated_in_paragraph",
+                    "repairable": True,
+                    "note": (f"الرابط «{c}» تكرّر {n} مرّات في فقرةٍ واحدة "
+                             # موضعُ أوّلِ سطرٍ نثريّ لا موضعُ الفقرة: الفقرةُ
+                             # قد تبدأ بعنوانها، فيقع الموضعُ **قبله**
+                             # فيُبلَّغ «قبل أول عنوان» خطأً.
+                             f"— القسم «{_reader_section_of(body, body.find(flat.split()[0]))}»: "
+                             f"…{flat[:70]}… للمعنى الواحد صيغٌ عدّة، أو "
+                             "اذكر النتيجة بلا رابط")})
+                break
+    return findings[:3]
 
 
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
@@ -5017,6 +5166,11 @@ def run_quality_gate(view: dict) -> dict:
     # الصنف ٤ (موجة عيوب التقرير): تسميةُ الجهة الواحدة، والمصطلحُ بلا
     # تعريفه — تحذيريّتان. تسمياتُ النشاط الإنجليزية يغطّيها
     # `language_consistency` الحاجز أصلاً، فلا قاعدةَ ثانيةً لها.
+    # الصنف ٥ (موجة عيوب التقرير): إعادةُ صياغةٍ عبر الأقسام، وتكرارُ
+    # الرابط داخل الفقرة — قناتان لا يبلغهما `_check_repeated_span`
+    # (نطاقُه الفقرة وتكرارُه حرفيّ) ولا عدّادُ `_check_style` المستنديّ.
+    findings += _check_cross_section_near_duplicate(text)
+    findings += _check_connector_repeated_in_paragraph(text, _lang)
     findings += _check_authority_naming_drift(view, dr, _lang)
     findings += _check_defined_term_without_definition(view, dr)
     findings += _check_score_format_drift(text)

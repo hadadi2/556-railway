@@ -207,6 +207,12 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٣٨ — المرساةُ السلوكية: هامشُ العتبة مقيسٌ لا مخمَّن، والتفصيلُ داخل
+    # القسم ليس تكراراً، والعيبُ في توزيع الرابط لا مجموعه.
+    (238, "tests/test_report_quality_reader_layer.py",
+     ["def test_c5_similarity_threshold_has_measured_headroom",
+      "def test_c5_detail_inside_one_section_is_not_repetition",
+      "def test_c5_connector_repeated_inside_one_paragraph_is_caught"]),
     # ٢٣٧ — المرساةُ السلوكية: المنصوبُ المنوَّن ليس جهةً، والتهيئةُ مُدقَّقة،
     # والحاجزُ القائم يكفي للتسمية الإنجليزية (مقيسٌ لا مُفترَض).
     (237, "tests/test_report_quality_reader_layer.py",
@@ -233,7 +239,8 @@ _TEST_ANCHORS = [
     (234, "tests/test_report_quality_reader_layer.py",
      ["def test_c1_counter_case_reaches_the_client_docx_in_reader_language",
       "def test_c1_zero_false_positives_across_every_canonical_blob",
-      "def test_c1_contextual_tokens_fire_only_in_the_system_sense"]),
+      "def test_c1_contextual_tokens_fire_only_in_the_system_sense",
+      "def test_c1_alef_hamza_does_not_collide_with_the_preposition_ila"]),
     # البند ٩٣ — الهوية المستعارة: ألوان Stripe الحرفية عاشت في المنتج لأن
     # الحارس طابَق ملفّ الهوية ولم يسأل عن **مصدر** قيمه. المرساة: المنع
     # الصريح بالاسم على الصفحات الأربع + تحقّق المتصفّح من اللون المحسوب.
@@ -524,6 +531,15 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٣٨ — التكرار: قاعدةُ الشرح الواحد، وقائمةُ الروابط المشتركة، وقناتا
+    # الإنفاذ (تشابهٌ عبر الأقسام + رابطٌ داخل الفقرة) بعتبةٍ مُعايَرة.
+    (238, "silk_style_contract.py",
+     ["SINGLE_EXPLANATION_RULE", "REPEATED_CONNECTORS",
+      "REPEATED_CONNECTORS_EN", "def single_explanation_rule"]),
+    (238, "silk_quality_gate.py",
+     ["def _check_cross_section_near_duplicate",
+      "def _check_connector_repeated_in_paragraph",
+      "_XSEC_SIM_DEFAULT", "def _report_sections"]),
     # ٢٣٧ — انزياحُ التسمية: جدولُ الترجمة، التعريفاتُ المشروطة، تهيئةُ
     # السلطات ومُدقِّقُها، وكشفُ الانزياح بالإشارة الصرفية.
     (237, "silk_style_contract.py",
@@ -568,7 +584,9 @@ _SYMBOL_ANCHORS_EXTRA = [
       "CONTEXTUAL_READER_TOKENS", "SYSTEM_SENSE_CUES",
       "READER_LANGUAGE_RULE", "def reader_language_rule"]),
     (234, "silk_quality_gate.py",
-     ["def _check_reader_language_leak", "reader_language_leak"]),
+     ["def _check_reader_language_leak", "reader_language_leak",
+      # تصادمُ «إلى»/«آلي»: تطبيعٌ يحفظ صيغةَ الألف في هذه القناة.
+      "def _norm_token", "_TOKEN_SOFT_NORM_RE"]),
     (234, "silk_render.py", ["_AUTO_CLASSIFIED_RE"]),
     # ١١٧ — بلاغ تحليل 20: حارس العملية المدفوعة العقيمة + تسليم الجزئي بدل
     # §5-الإتلاف + شارة «غير مكتمل» في كل مخرَج + الاستئناف من الجزء.

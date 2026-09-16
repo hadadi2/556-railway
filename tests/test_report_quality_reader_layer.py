@@ -25,6 +25,31 @@ if _TOOLS not in sys.path:
 from conftest import block_network, docx_all_text  # noqa: E402
 
 
+class _env:
+    """متغيّراتُ بيئةٍ باستعادةٍ مضمونة — الاصطلاحُ القائم في هذه الحزمة."""
+
+    def __init__(self, **vals):
+        self.vals = vals
+        self.old = {}
+
+    def __enter__(self):
+        for k, v in self.vals.items():
+            self.old[k] = os.environ.get(k)
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = str(v)
+        return self
+
+    def __exit__(self, *exc):
+        for k, v in self.old.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        return False
+
+
 # ════════════════════════ أدواتُ إعادة الإنتاج ════════════════════════
 
 def _production_view(blob_key: str) -> dict:
@@ -136,6 +161,24 @@ def test_c1_contextual_tokens_fire_only_in_the_system_sense():
     )
     for text in system_sense:
         assert chk(text), text
+
+
+def test_c1_alef_hamza_does_not_collide_with_the_preposition_ila():
+    """**تصادمٌ رصده حارسٌ قائم** (`test_quality_gate_stays_warn…`): «إلى»
+    تُطبَّع إلى «الي» بتوحيد الهمزات، وكذلك «آلي» — فكان حرفُ الجرّ الأكثرُ
+    شيوعاً في العربية يُبلَّغ «لغةَ نظام» في كلّ تقرير.
+
+    العلاجُ: المفرداتُ ذاتُ المعنيين تُطابَق بتطبيعٍ **يحفظ صيغةَ الألف**
+    (حركاتٌ وتطويلٌ فقط). حارسُ انحدارٍ دائم — أيُّ عودةٍ لتوحيد الهمزات في
+    هذه القناة تُحمِّر هنا."""
+    from silk_quality_gate import _check_reader_language_leak as chk
+    for text in ("## 5. المستهلك\nتنوّعت المؤشرات بلا إشارةٍ حاسمةٍ إلى "
+                 "انقلاب.",
+                 "## 3. السوق\nانتقل الطلبُ إلى العبوات الصغيرة.",
+                 "## 9. المخاطر\nيؤدّي التأخيرُ إلى غرامةٍ تعاقدية."):
+        assert chk(text) == [], text
+    # والمعنى التقنيّ ما زال يُلتقَط.
+    assert chk("## 2. المنهجية\nرمز HS مُصنَّفٌ آلياً بلا مراجعة.")
 
 
 def test_c1_appendix_is_exempt_like_the_decimal_rule():
@@ -809,3 +852,130 @@ def test_c4_authority_rule_has_an_english_mirror():
     single = {"report": {"text": "## 7. Regulation\nThe Sanaa authorities "
                                  "charge a fee on shipments."}}
     assert chk({}, single, "en") == []
+
+
+# ════════════════════ الصنف ٥ — التكرار ════════════════════
+
+def test_c5_the_same_fact_explained_in_two_sections_is_caught():
+    """**العيبُ المرصود**: القرارُ التنظيميّ نفسُه مشروحٌ في خمسة أقسام.
+
+    **إعادةُ صياغةٍ** لا تكرارٌ حرفيّ — فلا يبلغها `_check_repeated_span`
+    (تكرارُه حرفيٌّ ونطاقُه الفقرةُ الواحدة)."""
+    from silk_quality_gate import _check_cross_section_near_duplicate as chk
+    dup = ("## 7. التنظيم والوصول للسوق\nيشترط قرارُ الإدراج الأوروبيُّ "
+           "تسجيلَ المنشأة لدى الجهة المختصة قبل أيِّ شحنةٍ من أصلٍ "
+           "حيواني.\n\n"
+           "## 9. تقييم المخاطر\nتسجيلُ المنشأة لدى الجهة المختصة شرطٌ "
+           "يشترطه قرارُ الإدراج الأوروبيُّ قبل أيِّ شحنةٍ من أصلٍ حيواني.\n")
+    out = chk(dup)
+    assert out and out[0]["check"] == "cross_section_near_duplicate"
+    # البلاغُ يسمّي القسمين كي يعرف المشغّلُ أيَّهما يُختصَر.
+    assert "التنظيم والوصول للسوق" in out[0]["note"]
+    assert "تقييم المخاطر" in out[0]["note"]
+
+
+def test_c5_detail_inside_one_section_is_not_repetition():
+    """تفصيلٌ متدرّجٌ داخل قسمِه مشروع — العيبُ عبورُ الأقسام."""
+    from silk_quality_gate import _check_cross_section_near_duplicate as chk
+    same_section = ("## 7. التنظيم\nيشترط قرارُ الإدراج تسجيلَ المنشأة لدى "
+                    "الجهة المختصة قبل الشحن.\nوتسجيلُ المنشأة لدى الجهة "
+                    "المختصة يشترطه قرارُ الإدراج قبل الشحن.\n")
+    assert chk(same_section) == []
+    distinct = ("## 4. الديناميكيات\nانكمش السوق 22% خلال أربع سنوات "
+                "متتالية بحسب بيانات الجمارك.\n\n"
+                "## 5. المستهلك\nارتفع الطلبُ على العبوات الصغيرة في المدن "
+                "الكبرى وفق مؤشرات البحث.\n")
+    assert chk(distinct) == []
+
+
+def test_c5_similarity_threshold_has_measured_headroom():
+    """العتبةُ مُعايَرةٌ لا مُخمَّنة: صفرُ زوجٍ يبلغ **0.45** في المدوّنات
+    العشر، والعتبةُ المعتمدة 0.55 — هامشُ أمانٍ ضِعف."""
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    assert G._XSEC_SIM_DEFAULT >= 0.5
+    with block_network(), _env(SILK_XSEC_SIM="0.45"):
+        for key in _canonical_keys():
+            mod, fn = B.CANONICAL_BLOBS[key]
+            blob = getattr(importlib.import_module(mod), fn)()
+            text = (silk_render.build_view(blob).get("deep_research") or {}
+                    ).get("report", {}).get("text") or ""
+            assert G._check_cross_section_near_duplicate(text) == [], key
+
+
+def test_c5_connector_repeated_inside_one_paragraph_is_caught():
+    """«وهذا يعني» في كلّ فقرةٍ تقريباً — عيبٌ في **التوزيع** لا في المجموع.
+
+    عدّادُ `_check_style` مستنديٌّ بعتبةِ خمس: مرّتان في فقرةٍ ومرّةٌ في
+    فقرتين = أربعٌ، فيمرّ."""
+    from silk_quality_gate import \
+        _check_connector_repeated_in_paragraph as chk
+    twice = ("## 4. ديناميكيات السوق\nانكمش السوق 22% وهذا يعني ضيقَ "
+             "الفرصة، وارتفع سعرُ الرف وهذا يعني هامشاً أوسع.\n")
+    out = chk(twice)
+    assert out and out[0]["check"] == "connector_repeated_in_paragraph"
+    assert "ديناميكيات السوق" in out[0]["note"], \
+        "القسمُ يُنسَب لعنوانه لا «قبل أول عنوان»"
+    once = ("## 4. الديناميكيات\n\nانكمش السوق 22% وهذا يعني ضيقَ الفرصة.\n\n"
+            "## 5. المستهلك\n\nارتفع الطلبُ على العبوات الصغيرة.\n")
+    assert chk(once) == []
+
+
+def test_c5_connector_rule_has_an_english_mirror_and_skips_tables():
+    from silk_quality_gate import \
+        _check_connector_repeated_in_paragraph as chk
+    en = ("## 4. Dynamics\n\nThe market shrank 22%, which means a narrower "
+          "window, and shelf prices rose, which means a wider margin.\n")
+    assert chk(en, "en")
+    assert chk("## 4. Dynamics\n\nThe market shrank 22%, which means a "
+               "narrower window.\n", "en") == []
+    # خليّةُ جدولٍ ليست فقرةَ نثر.
+    assert chk("## 6. الجدول\n| الجانب | وهذا يعني | وهذا يعني |\n"
+               "|---|---|---|\n") == []
+
+
+def test_c5_connector_list_is_one_source_read_by_prompt_and_gate():
+    """قاعدةٌ تحظر رابطاً لا يعدّه فحصٌ أمنيةٌ لا قاعدة."""
+    import inspect
+
+    import silk_quality_gate as G
+    import silk_style_contract as S
+    assert "وهذا يعني" in S.REPEATED_CONNECTORS
+    assert "this means" in S.REPEATED_CONNECTORS_EN
+    for name in ("WRITER_STYLE_CONTRACT", "ACADEMIC_WRITER_CONTRACT"):
+        assert S.SINGLE_EXPLANATION_RULE in getattr(S, name), name
+    for name in ("WRITER_STYLE_CONTRACT_EN", "ACADEMIC_WRITER_CONTRACT_EN"):
+        assert S.SINGLE_EXPLANATION_RULE_EN in getattr(S, name), name
+    gate = inspect.getsource(G._check_connector_repeated_in_paragraph)
+    assert "REPEATED_CONNECTORS" in gate
+    # والقاعدةُ تسمّي «وهذا يعني» صريحاً في نصّها.
+    assert "وهذا يعني" in S.SINGLE_EXPLANATION_RULE
+
+
+def test_c5_zero_false_positives_across_every_canonical_blob():
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    new = ("cross_section_near_duplicate",
+           "connector_repeated_in_paragraph")
+    with block_network():
+        for key in _canonical_keys():
+            mod, fn = B.CANONICAL_BLOBS[key]
+            blob = getattr(importlib.import_module(mod), fn)()
+            out = G.run_quality_gate(silk_render.build_view(blob))
+            hits = [f["note"] for f in out["findings"]
+                    if f["check"] in new]
+            assert hits == [], (key, hits)
+
+
+def test_c5_rules_are_wired_and_warning_only():
+    import inspect
+
+    import silk_quality_gate as G
+    src = inspect.getsource(G.run_quality_gate)
+    assert "_check_cross_section_near_duplicate" in src
+    assert "_check_connector_repeated_in_paragraph" in src
+    for check in ("cross_section_near_duplicate",
+                  "connector_repeated_in_paragraph"):
+        assert check not in G.FAIL_TRIGGER_CHECKS, check
