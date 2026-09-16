@@ -3602,7 +3602,7 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
             # الصنف ٩: نفسُ المُنسِّق على سطح العميل — سقفُ المخاطرة
             # يصل القارئَ بناقصه مسمّىً لا شاملاً في الظاهر.
             from silk_narrative import fmt_derived as _fmt_derived
-            rows.append([e["name"], val, _fmt_derived(e),
+            rows.append([e["name"], val, _fmt_derived(e, client=True),
                          f"{e['confirm']} — {e['confirm_time']}"])
         else:
             rows.append([e["name"],

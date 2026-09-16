@@ -67,6 +67,23 @@
     "view_verdict": "CONDITIONAL-GO",
     "view_verdict_label": "دخول مشروط"
   },
+  "india_honey": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.298,
+      "market": 0.846,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.52,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
   "japan_honey": {
     "computed_pillars": 2,
     "engine_confidence": null,
@@ -115,6 +132,23 @@
       "risk": null
     },
     "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "morocco_juice": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.396,
+      "market": 0.808,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.47,
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },

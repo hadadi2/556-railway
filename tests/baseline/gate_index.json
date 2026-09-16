@@ -53,6 +53,17 @@
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
+ "india_honey": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
  "japan_honey": {
   "findings": [
    "agent_empty",
@@ -93,6 +104,18 @@
   "language_quality": [],
   "skipped_checks": [],
   "verdict": "FAIL"
+ },
+ "morocco_juice": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
  },
  "nadec_yemen_dairy": {
   "findings": [

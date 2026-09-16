@@ -678,19 +678,47 @@ def iso_currency(currency: object) -> str:
     return ""
 
 
-def fmt_derived_input(inp: object) -> str:
+_LATIN_RE = re.compile(r"[A-Za-z]")
+APPENDIX_SOURCE_AR = "المصدر مذكورٌ في ملحق المراجع"
+
+
+def _input_source(inp: dict, client: bool) -> str:
+    """مصدرُ المدخل **بلغةِ السطح**.
+
+    سياسةُ الريبو القائمة: الاستشهادُ الخام (`icontainers.com — ISO max
+    gross 30,480 kg`) سطحُ مشغّلٍ لا سطحُ عميل — وبوابةُ نصّ المُنتَج
+    النهائي ترفض تسرّبَ اللغة. وقياسُ المراجعة الذاتية للجولة الثانية أثبت
+    أنّ البوابةَ **ليست شبكةً موثوقة** لهذا التسرّب: مواصفةُ حاويةٍ واحدة
+    رُفِضت والأخرى مرّت. فالمنعُ عند المصدر: تسميةٌ عربيةٌ صريحة
+    (`source_client`) أوّلاً، ثمّ المصدرُ نفسُه **إن خلا من الحرف اللاتيني**،
+    وإلّا فإحالةٌ إلى ملحق المراجع الذي يحمله فعلاً.
+    """
+    ar = str(inp.get("source_client") or "").strip()
+    raw = str(inp.get("source") or "").strip()
+    if not client:
+        return raw or ar
+    if ar:
+        return ar
+    if raw and not _LATIN_RE.search(raw):
+        return raw
+    return APPENDIX_SOURCE_AR if raw else ""
+
+
+def fmt_derived_input(inp: object, client: bool = False) -> str:
     """مدخلٌ واحدٌ من مدخلات رقمٍ مشتقّ: اسمُه ثمّ مصدرُه أو وسمُ الافتراض.
 
     المصدرُ المرصود يُسمّى؛ والمعلمةُ المفترضة تُوسَم «افتراض» صريحاً — فلا
     يقرأ صاحبُ القرار معلمةَ سيناريو كأنها قياس. مدخلٌ بلا أيٍّ منهما
     يُعلَن «مصدره غير مسجّل» (فجوةٌ معلنة لا حشوٌ صامت).
+
+    `client=True`: لغةُ الزائر حصراً (انظر `_input_source`).
     """
     if not isinstance(inp, dict):
         return str(inp or "").strip()
     name = str(inp.get("name") or "").strip()
     if not name:
         return ""
-    src = str(inp.get("source") or "").strip()
+    src = _input_source(inp, client)
     if inp.get("assumed"):
         return (f"{name} — {ASSUMPTION_TAG_AR}: {src}" if src
                 else f"{name} — {ASSUMPTION_TAG_AR} غير مصدَّق")
@@ -711,7 +739,7 @@ DERIVED_PROVENANCE_RULE = (
 )
 
 
-def fmt_derived(entry: object) -> str:
+def fmt_derived(entry: object, client: bool = False) -> str:
     """طريقةُ اشتقاق بندٍ من «أرقام القرار» — معادلتُه ثمّ مدخلاتُها بمصادرها
     ثمّ المكوّناتُ غير المحسوبة بأسمائها.
 
@@ -727,7 +755,8 @@ def fmt_derived(entry: object) -> str:
     if not inputs and not unknown:
         return method
     parts = [method] if method else []
-    rendered = [r for r in (fmt_derived_input(i) for i in inputs) if r]
+    rendered = [r for r in (fmt_derived_input(i, client) for i in inputs)
+                if r]
     if rendered:
         parts.append("المدخلات: " + "؛ ".join(rendered) + ".")
     if unknown:

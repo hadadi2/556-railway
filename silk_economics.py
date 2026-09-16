@@ -726,7 +726,8 @@ def estimate_trial_shipment(category: str, unit_kg: float | None = None
         f"{mu_ar} الواحد ({unit_kg:g} كجم)",
         "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
         "3–5 أيام عمل", unit=mu_ar,
-        inputs=[{"name": "حمولة حاوية 40 قدماً", "source": spec["source"]},
+        inputs=[{"name": "حمولة حاوية 40 قدماً", "source": spec["source"],
+                 "source_client": "مواصفة حمولة الحاوية المنشورة"},
                 {"name": f"وزن {mu_ar} الواحد ({unit_kg:g} كجم)",
                  "source": "ثابت كثافة الفئة المسجّل" if mu_code == "litre"
                            else "وحدة السوق كجم (بلا تحويل)"}])
@@ -870,7 +871,9 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                  "source": "حمولة الحاوية المنشورة ÷ وزن الوحدة"}]
             + ([{"name": "كلفة الشحن للوحدة",
                  "source": ((freight or {}).get("source")
-                            or "سعر ممر منشور متحقق")}] if fr_known else [])
+                            or "سعر ممر منشور متحقق"),
+                 "source_client": "سعر ممر شحن منشور متحقق"}]
+               if fr_known else [])
             + ([{"name": "رسوم التسجيل والاعتماد",
                  "source": "جدول رسوم الجهة التنظيمية للسوق"}]
                if cert_fee_range else []),

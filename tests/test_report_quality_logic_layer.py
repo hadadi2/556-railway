@@ -784,10 +784,14 @@ def test_c9_flag_on_only_appends_provenance_to_the_derived_row():
                 assert a.split("|")[:3] == b.split("|")[:3], (key, a, b)
                 assert "المدخلات:" in b and "المدخلات:" not in a, (key, b)
                 assert len(b) > len(a), (key, a, b)
-    # فئةٌ بلا وحدةِ سوقٍ مسجّلة لا تُنتِج بنداً محسوباً ⇒ صفرُ فرق.
-    assert changed["fettuccine"] == 0
-    assert all(v <= 1 for v in changed.values()), changed
-    assert sum(1 for v in changed.values() if v == 1) == 11, changed
+    # العددُ **مقيسٌ لكلّ مدوّنة** لا مُقدَّر: بندٌ محسوبٌ واحدٌ في المدوّنات
+    # بلا تكلفةٍ مُدخَلة (الشحنةُ التجريبية وحدها)، وثلاثةٌ في مدوّنتَي
+    # الجولة الثانية (تكلفةٌ مُدخَلة ⇒ كلفةُ الدخول وسقفُ المخاطرة أيضاً)،
+    # وصفرٌ في `fettuccine` (فئةٌ بلا وحدةِ سوقٍ مسجّلة فلا بندَ محسوب).
+    expected = {k: 3 if k in ("india_honey", "morocco_juice")
+                else 0 if k == "fettuccine" else 1
+                for k in _canonical_keys()}
+    assert changed == expected, changed
 
 
 def test_c9_no_hard_fail_on_any_canonical_blob_with_the_flag_on():
@@ -824,3 +828,42 @@ def test_c9_the_checks_are_live_not_dormant_on_production_data():
             assert any(e.get("tier") == "gap" for e in dn), key
             assert (((v.get("deep_research") or {}).get("report") or {})
                     .get("text") or "").strip(), key
+
+
+# ── مراجعةُ الجولة الثانية الذاتية: سطحُ العميل لا يحمل استشهاداً خاماً ──
+
+def test_c9_client_surface_never_carries_a_raw_latin_citation():
+    """**قِياسُ المراجعة الذاتية**: أوّلُ تفعيلٍ للصنف ٩ أدخل الاستشهادَ
+    الخام (`icontainers.com — ISO max gross 30,480 kg`) إلى جدولِ أرقامِ
+    القرار على **سطح العميل** — وبوابةُ نصّ المُنتَج النهائي رفضت المغربَ
+    وأمرّت الهندَ بالتسرّب نفسِه، فالبوابةُ ليست شبكةً موثوقة لهذا.
+    المنعُ عند المصدر: `client=True` يُخرِج لغةَ الزائر حصراً."""
+    import silk_narrative as N
+    inp = {"name": "حمولة حاوية 40 قدماً",
+           "source": "icontainers.com — ISO max gross 30,480 kg",
+           "source_client": "مواصفة حمولة الحاوية المنشورة"}
+    assert "icontainers" in N.fmt_derived_input(inp)              # المشغّل
+    assert "icontainers" not in N.fmt_derived_input(inp, True)    # العميل
+    assert "مواصفة حمولة الحاوية المنشورة" in N.fmt_derived_input(inp, True)
+    # مصدرٌ عربيٌّ خالصٌ يخدم السطحين بلا تكرارِ نصٍّ في المحرّك.
+    ar = {"name": "تكلفتك", "source": "بطاقة المنتج التي أدخلتها"}
+    assert N.fmt_derived_input(ar, True) == N.fmt_derived_input(ar)
+    # واستشهادٌ لاتينيٌّ بلا تسميةٍ عربية يُحال إلى الملحق الذي يحمله فعلاً.
+    lat = {"name": "سعر الممر", "source": "https://example.com/lane.csv"}
+    assert N.fmt_derived_input(lat, True).endswith(N.APPENDIX_SOURCE_AR)
+
+
+def test_c9_every_blob_still_renders_a_client_docx_with_the_flag_on():
+    """حارسُ انحدارٍ على كلّ المدوّنات: تقريرُ العميل يُبنى فعلاً والرايةُ
+    مفعّلة — أيُّ تسرّبٍ لغويٍّ جديدٍ من طبقة الإسناد يُحمِّر هذا الاختبار
+    بدل أن يرفضَه المالكُ عند التصدير."""
+    import tempfile
+
+    import silk_reports
+    with block_network(), _env(SILK_DERIVED_PROVENANCE="1"):
+        with tempfile.TemporaryDirectory() as tmp:
+            for key in _canonical_keys():
+                v = _prod_view(key)
+                out = silk_reports.render_client_docx(
+                    v, os.path.join(tmp, f"{key}.docx"))
+                assert os.path.getsize(out) > 0, key

@@ -44,6 +44,13 @@ CANONICAL_BLOBS = {
     "egypt_olive_oil": ("canonical_egypt_olive_oil",
                         "egypt_olive_oil_research_blob"),
     "nigeria_dates": ("canonical_nigeria_dates", "nigeria_dates_research_blob"),
+    # الجولةُ الثانية (المراجعةُ الذاتية بعدها): الهندُ (مسارُ الاقتصاد
+    # مكتملاً — بطاقةُ تكلفةٍ مُدخَلةٌ وسعرُ رفٍّ مرصود، فبنودُ القرار
+    # محسوبةٌ لا فجوات) والمغربُ (عملتان لا تُطرَحان). وهما معاً الطرفان
+    # في مقارنةِ مفرداتِ التعرّف (الصنف ١٢).
+    "india_honey": ("canonical_india_honey", "india_honey_research_blob"),
+    "morocco_juice": ("canonical_morocco_juice",
+                      "morocco_juice_research_blob"),
     "fettuccine": ("canonical_fettuccine", "fettuccine_research_blob"),
     "germany_dates": ("canonical_germany_dates", "germany_dates_research_blob"),
     "japan_honey": ("canonical_japan_honey", "japan_honey_research_blob"),
