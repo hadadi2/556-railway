@@ -1766,8 +1766,12 @@ def _docx_entry_decision(doc, m: dict) -> None:
             _pillar_ar(k) for k in ed["missing_pillars"]))
     if ed.get("critical_risk"):
         doc.add_paragraph("تحذير: خطر حرج مرصود — راجع سجل المخاطر أدناه.")
-    doc.add_paragraph("الشروط:")
-    for c in ed.get("conditions") or ["لا شروط مفتوحة"]:
+    # الصنف ٧: المصدرُ الواحد — كاملةٌ بلا قصٍّ كما كانت، والعددُ مُعلَن.
+    from silk_render import open_conditions
+    _oc = open_conditions(ed)
+    doc.add_paragraph(f"الشروط ({_oc['count']}):" if _oc["count"]
+                      else "الشروط:")
+    for c in _oc["shown"] or ["لا شروط مفتوحة"]:
         doc.add_paragraph(str(c), style="List Bullet")
     doc.add_paragraph("سجل المخاطر:")
     for r in ed.get("risks") or []:
@@ -5829,9 +5833,14 @@ def render_markdown(view: dict) -> str:
                 _pillar_ar(k) for k in ed["missing_pillars"]))
         if ed.get("critical_risk"):
             L.append("- **خطر حرج مرصود** — راجع سجل المخاطر أدناه.")
-        if ed.get("conditions"):
-            L += ["", "**الشروط:**",
-                  *[f"- {c}" for c in ed["conditions"]]]
+        # الصنف ٧: المصدرُ الواحد — والعددُ الكامل في العنوان.
+        from silk_render import open_conditions
+        _oc = open_conditions(ed)
+        if _oc["count"]:
+            L += ["", f"**الشروط ({_oc['count']}):**",
+                  *[f"- {c}" for c in _oc["shown"]]]
+            if _oc["more_note"]:
+                L.append(f"- {_oc['more_note']}")
         if ed.get("first_steps"):
             L += ["", "**الخطوات الأولى:**",
                   *[f"{i}. {s}" for i, s in enumerate(ed["first_steps"], 1)]]

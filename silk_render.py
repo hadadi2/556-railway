@@ -107,6 +107,56 @@ def _decision(top: dict | None) -> dict:
             "tone": _verdict_tone(verdict)}
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٧ (موجة عيوب التقرير) — قائمةُ شروطٍ واحدة · one open-conditions list
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «ثلاثةُ شروطٍ في الملخّص، واثنان في التوصيات، وثلاثةٌ في قسم
+# إعادة التقييم».
+#
+# الجذرُ **مرصودٌ حرفياً**: `silk_decision.decide` يبني القائمةَ الواحدة
+# (`silk_decision.py` — مفتاح `conditions`)، ثم تقرؤها خمسةُ سطوحٍ بأربعِ
+# سلوكيّات: هذا الملفّ يقصّ `[:3]` في `format_result` و`[:4]` في
+# `render_text`، و`decision_basis` **يُعيد بناءها من الأعمدة** ثم يقصّ
+# `[:6]`، و`silk_reports` يعرضها كاملةً في موضعين. فالقارئُ الذي يقارن
+# مستندَ العميل بمستند المشغّل بالطرفية يرى ثلاثةَ أعدادٍ وأسماءً مختلفة.
+#
+# **خلف رايةٍ مطفأةٍ افتراضياً** (`SILK_OPEN_CONDITIONS_SINGLE`): مطفأةً يحفظ
+# كلُّ سطحٍ سقفَه القائم حرفياً؛ ومفعّلةً يقرأ الجميعُ من هذا المُعِدّ —
+# قائمةٌ واحدة، وعددٌ واحدٌ هو **العددُ الكامل دائماً**، وأيُّ قصٍّ يُعلَن
+# نصّاً («وشرطان آخران») فلا يُخفي العددَ الحقيقيّ.
+
+OPEN_CONDITIONS_FLAG = "SILK_OPEN_CONDITIONS_SINGLE"
+OPEN_CONDITIONS_CAP = 6          # سقفُ العرض الموحَّد عند التفعيل
+
+
+def open_conditions_single() -> bool:
+    """هل رايةُ الصنف ٧ مفعّلة؟"""
+    return os.environ.get(OPEN_CONDITIONS_FLAG, "").strip().lower() in (
+        "1", "true", "yes")
+
+
+def open_conditions(ed: object, cap: "int | None" = None) -> dict:
+    """الشروطُ المفتوحة **بعددها الكامل** — المصدرُ الواحد لكلّ سطح.
+
+    يعيد `{"items", "count", "shown", "hidden", "more_note"}`:
+    `count` هو العددُ الكامل **دائماً** (لا عددُ المعروض)، و`more_note` جملةُ
+    إفصاحٍ عن المخفيّ أو `""`. مطفأةً: `cap` كما يمرّره المُنادي (سلوكُه
+    القائم)؛ ومفعّلةً: سقفٌ واحدٌ موحَّد.
+    """
+    items = [str(c) for c in ((ed or {}).get("conditions") or [])
+             if str(c).strip()] if isinstance(ed, dict) else []
+    limit = (OPEN_CONDITIONS_CAP if open_conditions_single()
+             else (cap if isinstance(cap, int) else None))
+    shown = items[:limit] if isinstance(limit, int) else list(items)
+    hidden = len(items) - len(shown)
+    note = ""
+    if hidden > 0:
+        note = (f"و{hidden} شرطٌ آخر" if hidden == 1
+                else f"و{hidden} شروطٌ أخرى")
+    return {"items": items, "count": len(items), "shown": shown,
+            "hidden": hidden, "more_note": note}
+
+
 def decision_basis(ed: dict, displayed_confidence: object = None,
                    lang: str = "ar") -> "dict | None":
     """أساسُ الحكم **جاهزاً للعرض** — بنيةٌ واحدة يستهلكها كلُّ سطحِ عميل.
@@ -161,11 +211,32 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
                          "note": _t("pillar_measured")})
             if strength < 0.5:
                 conds.append(_t("cond_pillar_weak", pillar=label, pct=pct))
+    # الصنف ٧: **العددُ والسقفُ يُوحَّدان، والصياغةُ تبقى صياغةَ القارئ.**
+    #
+    # جُرِّبت قراءةُ نصوصِ المحرّك مباشرةً وأُسقِطت بالقياس: سلاسلُ المحرّك
+    # لغةُ قياسٍ داخلية («متوسط المتاح من: log10(TAM)/9…») بينما سطرُ
+    # `cond_pillar_weak` صياغةُ قارئٍ («عالِجه قبل الالتزام…») — فكان
+    # التفعيلُ **يُعيد** العيبَ الذي سدّه الصنف ١. والعيبُ المرصود لم يكن
+    # إعادةَ البناء بل **انزياحَ العدد وصمتَ القصّ**: فيُعلَن العددُ الكامل
+    # ويُوحَّد السقفُ ويُقال ما خُفي، والنصُّ كما هو.
+    _oc = open_conditions(ed, OPEN_CONDITIONS_CAP)
+    _cap = OPEN_CONDITIONS_CAP if open_conditions_single() else 6
+    _shown_conds = conds[:_cap]
+    _hidden = max(0, len(conds) - len(_shown_conds))
+    if open_conditions_single() and _hidden:
+        _shown_conds = _shown_conds + [
+            (f"و{_hidden} شرطٌ آخر" if _hidden == 1
+             else f"و{_hidden} شروطٌ أخرى") + f" (الإجمالي {len(conds)})"]
     out = {
         "head": _t("decision_basis_head"),
         "pillars": rows,
         "conditions_head": _t("decision_conditions_head"),
-        "conditions": conds[:6],
+        "conditions": _shown_conds,
+        # العددُ الكامل دائماً — سطحٌ يعرض ثلاثةً من ثمانيةٍ يقول ذلك.
+        # يُقرأ من الصياغة المعروضة (هي ما يراه القارئ)، ويُطابِق عددَ
+        # قائمة المحرّك في كلّ حالةٍ مقيسة (كلاهما من الأعمدة نفسِها).
+        "conditions_count": len(conds),
+        "engine_conditions_count": _oc["count"],
         "col_pillar": _t("pillar_col"),
         "col_strength": _t("pillar_strength_col"),
         "col_note": _t("pillar_note_col"),
@@ -3406,8 +3477,13 @@ def render_text(view: dict) -> str:
         L.append(f"قرار الدخول (المحرك الموزون): {verdict_ar(ed.get('verdict'))} "
                  f"— النقاط {_sc_txt} — الثقة "
                  f"{confidence_phrase(ed.get('confidence'))} — {ed.get('why')}")
-        for c in (ed.get("conditions") or [])[:3]:
+        # الصنف ٧: المصدرُ الواحد — السقفُ القائم (٣) يبقى مطفأةً.
+        _oc = open_conditions(ed, 3)
+        for c in _oc["shown"]:
             L.append(f"  شرط: {c}")
+        if _oc["more_note"]:
+            L.append(f"  شرط: {_oc['more_note']} "
+                     f"(الإجمالي {_oc['count']})")
     cp = view["competitive_position"]
     L.append("موقعك التنافسي:")
     if cp.get("available"):
@@ -3543,8 +3619,13 @@ def analysis_context(result: dict, max_chars: int = 6000) -> str:
         for g in (a.get("gaps") or [])[:2]:
             L.append(f"فجوة {k_ar}: {_humanize_gap_note(g)}")
     ed = top.get("entry_decision") or {}
-    for cnd in (ed.get("conditions") or [])[:4]:
+    # الصنف ٧: المصدرُ الواحد — السقفُ القائم (٤) يبقى مطفأةً.
+    _oc = open_conditions(ed, 4)
+    for cnd in _oc["shown"]:
         L.append(f"شرط مفتوح: {cnd}")
+    if _oc["more_note"]:
+        L.append(f"شرط مفتوح: {_oc['more_note']} "
+                 f"(الإجمالي {_oc['count']})")
     for x in (view.get("limits") or [])[:6]:
         L.append(f"حدّ معلن: {x}")
     out = "\n".join(L)

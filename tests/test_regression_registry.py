@@ -4571,6 +4571,15 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    241: lambda: (
+        _needles("silk_render.py", "def open_conditions",
+                 "OPEN_CONDITIONS_CAP", "engine_conditions_count")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_open_conditions_count_mismatch",
+                 "_OPEN_COND_CTX_RE")(),
+        _absent("silk_render.py", '(ed.get("conditions") or [])[:3]',
+                '(ed.get("conditions") or [])[:4]')(),
+        _needles("tests/test_lessons_enforcement.py", '(241, ')()),
     240: lambda: (
         _needles("silk_figure_store.py", "def decision_reading",
                  "FIGURE_ID_RULE", "_METHOD_RANK", "def enabled")(),

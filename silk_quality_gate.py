@@ -2514,18 +2514,19 @@ FAIL_TRIGGER_CHECKS = frozenset({
 # نفسُها **لا تُمَسّ** — عشراتُ الاختبارات تقرؤها عقداً ثابتاً — فتُحسَب
 # المجموعةُ الفعّالة عند الحكم: مطفأةً = المجموعةُ الأصلية حرفياً.
 _FLAGGED_FAIL_TRIGGERS: tuple = (
-    # (اسمُ الفحص، الوحدةُ التي تحمل رايتَه)
-    ("metric_value_divergence", "silk_figure_store"),
+    # (اسمُ الفحص، الوحدةُ التي تحمل رايتَه، اسمُ دالّة الراية)
+    ("metric_value_divergence", "silk_figure_store", "enabled"),
+    ("open_conditions_count_mismatch", "silk_render",
+     "open_conditions_single"),
 )
 
 
 def effective_fail_triggers() -> frozenset:
     """مجموعةُ الفحوص الحاجبة الآن — الثابتة زائداً ما تُفعِّله الرايات."""
     extra = set()
-    for check, module in _FLAGGED_FAIL_TRIGGERS:
+    for check, module, fname in _FLAGGED_FAIL_TRIGGERS:
         try:
-            mod = __import__(module)
-            if mod.enabled():
+            if getattr(__import__(module), fname)():
                 extra.add(check)
         except Exception:  # noqa: BLE001 — رايةٌ غيرُ قابلةٍ للقراءة = مطفأة
             continue
@@ -4788,6 +4789,97 @@ def _check_shared_value_across_entities(dr: dict) -> list[dict]:
     return findings
 
 
+# ══════ الصنف ٧ (موجة عيوب التقرير) — عددُ الشروط المفتوحة ══════
+# بلاغُ المالك: «ثلاثةٌ في الملخّص، واثنان في التوصيات، وثلاثةٌ في إعادة
+# التقييم». الجذرُ في `silk_render.open_conditions` (قائمةٌ واحدة، خمسةُ
+# سطوحٍ بأربعِ سلوكيّات) — وهذا الفحصُ يقيس **ما يقوله النثرُ** مقابل
+# القائمة الواحدة: عددٌ مذكورٌ في جملةٍ يخالف عددَ الشروط الفعليّ.
+#
+# حاجبٌ خلف رايةِ `SILK_OPEN_CONDITIONS_SINGLE`، وتحذيريٌّ بدونها.
+
+# عددٌ عربيّ لفظاً — العيبُ المرصود كُتب لفظاً («شرطين») لا رقماً.
+_AR_COUNT_WORDS = {
+    "شرط واحد": 1, "شرطاً واحداً": 1, "شرطٌ واحد": 1,
+    "شرطين": 2, "شرطان": 2, "شرطَين": 2,
+    "ثلاثة شروط": 3, "ثلاث شروط": 3, "ثلاثةُ شروط": 3,
+    "أربعة شروط": 4, "أربع شروط": 4, "أربعةُ شروط": 4,
+    "خمسة شروط": 5, "خمس شروط": 5, "خمسةُ شروط": 5,
+    "ستة شروط": 6, "ست شروط": 6, "ستةُ شروط": 6,
+    "سبعة شروط": 7, "سبع شروط": 7,
+    "ثمانية شروط": 8, "ثماني شروط": 8,
+}
+# صيغةٌ رقمية: «٣ شروط مفتوحة» / «شرطان (2)» / «2 شروط».
+_DIGIT_COUNT_RE = re.compile(
+    r"(\d{1,2})\s*(?:شرط|شروط|شرطاً|شروطاً)"
+    r"|(?:شرط|شروط|شرطاً|شروطاً)\s*[\(（]\s*(\d{1,2})\s*[\)）]")
+# سياقُ «مفتوح» شرطٌ لازم: «ثلاثة شروط صحّية» ليست عدَّ شروطِ القرار.
+_OPEN_COND_CTX_RE = re.compile(r"مفتوح|مفتوحة|مفتوحين|مفتوحان|غير محسوم"
+                               r"|لم تُغلَق|لم تغلق|قائمة")
+_OPEN_COND_WINDOW = 60
+
+
+def _stated_condition_counts(body: str) -> list:
+    """[(العدد المذكور، الموضع، المقتطف)] — لفظاً ورقماً، بسياق «مفتوح»."""
+    out: list = []
+    plain = _norm_ar(body)
+    for phrase, n in _AR_COUNT_WORDS.items():
+        i = plain.find(_norm_ar(phrase))
+        if i < 0:
+            continue
+        win = plain[max(0, i - _OPEN_COND_WINDOW):i + _OPEN_COND_WINDOW]
+        if _OPEN_COND_CTX_RE.search(win):
+            out.append((n, i, phrase))
+    for m in _DIGIT_COUNT_RE.finditer(body):
+        n = int(m.group(1) or m.group(2))
+        win = body[max(0, m.start() - _OPEN_COND_WINDOW):
+                   m.end() + _OPEN_COND_WINDOW]
+        if _OPEN_COND_CTX_RE.search(_norm_ar(win)):
+            out.append((n, m.start(), m.group(0).strip()))
+    return out
+
+
+def _check_open_conditions_count_mismatch(view: dict, dr: dict) -> list[dict]:
+    """`open_conditions_count_mismatch` (الصنف ٧): عددٌ مذكورٌ في النثر
+    يخالف عددَ الشروط المفتوحة الفعليّ، أو عددان مختلفان في تقريرٍ واحد.
+
+    حاجبٌ خلف الراية، تحذيريٌّ بدونها. والعددُ المرجعيّ من **القائمة
+    الواحدة** (`silk_render.open_conditions`) لا من عدِّ أسطرٍ في سطح.
+    """
+    import silk_render as R
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    top = ((view.get("markets") or [None])[0]
+           if isinstance(view, dict) else None) or {}
+    ed = top.get("entry_decision") or top.get("decision") or {}
+    actual = R.open_conditions(ed)["count"]
+    stated = _stated_condition_counts(body)
+    if not stated:
+        return []
+    blocking = R.open_conditions_single()
+    distinct = sorted({n for n, _, _ in stated})
+    findings: list[dict] = []
+    if len(distinct) > 1:
+        shown = "، ".join(
+            f"«{frag}» ({n}) في القسم «{_reader_section_of(body, pos)}»"
+            for n, pos, frag in stated[:3])
+        findings.append({
+            "check": "open_conditions_count_mismatch",
+            "repairable": not blocking,
+            "note": (f"عددُ الشروط المفتوحة مذكورٌ بأكثر من قيمة في تقريرٍ "
+                     f"واحد: {shown} — قائمةٌ واحدة وعددٌ واحد")})
+    elif actual and distinct and distinct[0] != actual:
+        n, pos, frag = stated[0]
+        findings.append({
+            "check": "open_conditions_count_mismatch",
+            "repairable": not blocking,
+            "note": (f"النثرُ يذكر «{frag}» ({n}) بينما الشروطُ المفتوحة "
+                     f"الفعلية {actual} — القسم "
+                     f"«{_reader_section_of(body, pos)}». العددُ يُقرأ من "
+                     "القائمة الواحدة لا يُكتَب يدوياً")})
+    return findings
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -5392,6 +5484,8 @@ def run_quality_gate(view: dict) -> dict:
     # حاجبٌ خلف رايةِ `SILK_FIGURE_STORE` وتحذيريٌّ بدونها؛ ونسبةٌ واحدة
     # لكيانين تحذيرٌ دائم.
     findings += _check_metric_value_divergence(view, dr)
+    # الصنف ٧: عددٌ مذكورٌ يخالف القائمةَ الواحدة — حاجبٌ خلف رايته.
+    findings += _check_open_conditions_count_mismatch(view, dr)
     findings += _check_shared_value_across_entities(dr)
     findings += _check_cross_section_near_duplicate(text)
     findings += _check_connector_repeated_in_paragraph(text, _lang)

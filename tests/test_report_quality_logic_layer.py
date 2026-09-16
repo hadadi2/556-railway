@@ -257,3 +257,163 @@ def test_c6_no_hard_fail_on_any_canonical_blob_with_the_flag_on():
             if got:
                 hits[key] = got
     assert hits == {}, hits
+
+
+# ════════════════ الصنف ٧ — عددُ الشروط المفتوحة ════════════════
+
+def _prod_view(key: str) -> dict:
+    """عرضٌ مبنيٌّ **كما يبنيه الإنتاج** — المدوّنات مجمّدةٌ بـ`markets: []`
+    فلا تُشغِّل `decision_basis` إطلاقاً (منطقةٌ عمياء أُعلِنت في الصنف ١)."""
+    import silk_deep_pillars
+    import silk_render
+    blob = _blob(key)
+    dr = blob.get("deep_research") or {}
+    mk = blob.get("market") or {}
+    dec = silk_deep_pillars.decide_for_deep(dr, product_card=None,
+                                            regulatory=None)
+    row = {"iso3": mk.get("iso3") or "XXX",
+           "name_ar": mk.get("name_ar") or "سوق",
+           "name_en": mk.get("name_en") or "Market",
+           "country": mk.get("name_ar") or "سوق", "rank": 1, "deep": True,
+           "components": silk_deep_pillars.build_components(dr),
+           "decision": dec}
+    if dec.get("score") is not None:
+        row["total_score"] = dec["score"]
+    if dec.get("confidence") is not None:
+        row["confidence"] = dec["confidence"]
+    blob = dict(blob)
+    blob["markets"] = [row]
+    return silk_render.build_view(blob)
+
+
+def test_c7_five_surfaces_read_one_list():
+    """**الجذرُ المرصود حرفياً**: قائمةٌ واحدة، خمسةُ سطوحٍ بأربعِ سلوكيّات
+    — `[:3]` في الطرفية، `[:4]` في نصّ المحادثة، إعادةُ بناءٍ ثم `[:6]` في
+    لوحة الأساس، وكاملةٌ في موضعَي المشغّل."""
+    import inspect
+
+    import silk_render as R
+    import silk_reports
+    for mod in (R, silk_reports):
+        src = inspect.getsource(mod)
+        assert "open_conditions(" in src, mod.__name__
+    # ولا قصَّ يدويّ باقياً على أيّ سطح.
+    rsrc = inspect.getsource(R)
+    for stale in ('(ed.get("conditions") or [])[:3]',
+                  '(ed.get("conditions") or [])[:4]'):
+        assert stale not in rsrc, stale
+
+
+def test_c7_count_is_always_the_full_count_and_truncation_is_disclosed():
+    """سطحٌ يعرض ثلاثةً من ثمانيةٍ **يقول ذلك** — الصمتُ هو العيب."""
+    import silk_render as R
+    ed = {"conditions": [f"شرط {i}" for i in range(1, 9)]}
+    with _env(SILK_OPEN_CONDITIONS_SINGLE=None):
+        off = R.open_conditions(ed, 3)
+    with _env(SILK_OPEN_CONDITIONS_SINGLE="1"):
+        on = R.open_conditions(ed, 3)
+    assert off["count"] == on["count"] == 8, "العددُ الكامل في الحالتين"
+    assert len(off["shown"]) == 3, "مطفأةً: السقفُ القائم للسطح"
+    assert len(on["shown"]) == R.OPEN_CONDITIONS_CAP, "مفعّلةً: سقفٌ موحَّد"
+    assert off["more_note"] and on["more_note"], "القصُّ يُعلَن دائماً"
+    # مخفيٌّ واحد ⇒ صيغةُ المفرد (أربعةُ شروطٍ بسقف ثلاثة).
+    one = R.open_conditions({"conditions": [f"ش{i}" for i in range(4)]}, 3)
+    assert one["hidden"] == 1 and "شرطٌ آخر" in one["more_note"], one
+
+
+def test_c7_reader_wording_is_not_replaced_by_engine_measurement_language():
+    """**تصحيحٌ جاء من القياس.** جُرِّبت قراءةُ نصوصِ المحرّك مباشرةً
+    فأعادت لغةَ القياس الداخلية إلى لوحة الأساس («متوسط المتاح من:
+    log10(TAM)/9…») — أي أنّ تفعيل الراية كان **يُعيد** عيبَ الصنف ١.
+
+    العيبُ المرصود لم يكن إعادةَ البناء بل انزياحَ العدد وصمتَ القصّ."""
+    with block_network(), _env(SILK_OPEN_CONDITIONS_SINGLE="1"):
+        basis = ((_prod_view("dza_peanut_butter").get("decision") or {})
+                 .get("basis") or {})
+    conds = " ".join(str(c) for c in (basis.get("conditions") or []))
+    assert conds.strip(), "لوحةُ الأساس بلا شروط — المسارُ لم يُشغَّل"
+    for leak in ("log10", "متوسط المتاح من", "مقسوماً على"):
+        assert leak not in conds, leak
+    assert "عالِجه قبل الالتزام" in conds or "أكمِلها" in conds, conds
+
+
+def test_c7_basis_exposes_both_counts_and_they_agree():
+    """عددُ الصياغة المعروضة وعددُ قائمة المحرّك — كلاهما مُعلَن، ويتطابقان
+    لأنّ كلتيهما من الأعمدة نفسِها. اختلافُهما إشارةُ انحدارٍ لا تُخفى."""
+    with block_network():
+        basis = ((_prod_view("dza_peanut_butter").get("decision") or {})
+                 .get("basis") or {})
+    assert basis.get("conditions_count") is not None
+    assert basis["conditions_count"] == basis.get("engine_conditions_count")
+
+
+def test_c7_gate_catches_two_different_counts_in_one_report():
+    """**العيبُ المرصود**: ثلاثةٌ في الملخّص، واثنان في التوصيات."""
+    import silk_quality_gate as G
+    view = {"markets": [{"entry_decision": {"conditions": ["أ", "ب", "ج"]}}]}
+    dr = {"report": {"text": "## 1. الخلاصة التنفيذية\nاستند الحكم إلى "
+                             "ثلاثة شروط مفتوحة.\n\n## 10. التوصيات "
+                             "الاستراتيجية\nيبقى شرطين مفتوحين قبل "
+                             "الالتزام."}}
+    with _env(SILK_OPEN_CONDITIONS_SINGLE=None):
+        off = G._check_open_conditions_count_mismatch(view, dr)
+    with _env(SILK_OPEN_CONDITIONS_SINGLE="1"):
+        on = G._check_open_conditions_count_mismatch(view, dr)
+    assert [f["check"] for f in off] == ["open_conditions_count_mismatch"]
+    assert off[0]["repairable"] is True and on[0]["repairable"] is False
+
+
+def test_c7_gate_catches_a_count_that_contradicts_the_actual_list():
+    import silk_quality_gate as G
+    view = {"markets": [{"entry_decision": {"conditions": ["أ", "ب", "ج"]}}]}
+    wrong = {"report": {"text": "## 1. الخلاصة\nاستند الحكم إلى شرطين "
+                                "مفتوحين."}}
+    out = G._check_open_conditions_count_mismatch(view, wrong)
+    assert out and "الفعلية 3" in out[0]["note"], out
+    right = {"report": {"text": "## 1. الخلاصة\nاستند الحكم إلى ثلاثة شروط "
+                                "مفتوحة."}}
+    assert G._check_open_conditions_count_mismatch(view, right) == []
+
+
+def test_c7_a_count_outside_the_open_conditions_sense_is_not_counted():
+    """قيدُ صدق: «ثلاثة شروط صحّية» ليست عدَّ شروطِ القرار — وبلا هذا القيد
+    تُطلِق القاعدةُ على كلّ قسمٍ تنظيميّ."""
+    import silk_quality_gate as G
+    view = {"markets": [{"entry_decision": {"conditions": ["أ", "ب", "ج"]}}]}
+    dr = {"report": {"text": "## 7. التنظيم\nتشترط الجهة ثلاثة شروط صحّية "
+                             "للشحن."}}
+    assert G._check_open_conditions_count_mismatch(view, dr) == []
+
+
+def test_c7_flag_changes_nothing_on_any_production_shaped_view():
+    """شرطُ قبول الجولة: فرقُ البيانات المهيكلة مفعّلةً ضدّ مطفأة.
+
+    يُقاس على **شكل الإنتاج** لا على المدوّنة الخام: المدوّناتُ مجمّدةٌ
+    بـ`markets: []` فلا تُشغِّل `decision_basis`، وقياسٌ عليها وحدها يُنتِج
+    «صفرَ فرق» **فراغاً** لا دليلاً (منطقةٌ عمياء أُعلِنت في الصنف ١)."""
+    import json
+
+    import silk_quality_gate as G
+    import silk_reports
+
+    def snap(key: str) -> tuple:
+        view = _prod_view(key)
+        return (json.dumps(view, ensure_ascii=False, sort_keys=True,
+                           default=str),
+                silk_reports.render_markdown(view),
+                G.run_quality_gate(view)["verdict"])
+
+    diffs: dict = {}
+    with block_network():
+        for key in _canonical_keys():
+            with _env(SILK_FIGURE_STORE=None,
+                      SILK_OPEN_CONDITIONS_SINGLE=None):
+                off = snap(key)
+            with _env(SILK_FIGURE_STORE="1",
+                      SILK_OPEN_CONDITIONS_SINGLE="1"):
+                on = snap(key)
+            if off != on:
+                diffs[key] = [n for n, (a, b) in
+                              zip(("view", "md", "verdict"), zip(off, on))
+                              if a != b]
+    assert diffs == {}, diffs

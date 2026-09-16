@@ -207,6 +207,13 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤١ — المرساةُ السلوكية: صياغةُ القارئ لا تُستبدَل بلغة القياس،
+    # والقصُّ يُعلَن، والقياسُ على شكل الإنتاج لا على المدوّنة الخام.
+    (241, "tests/test_report_quality_logic_layer.py",
+     ["def test_c7_reader_wording_is_not_replaced_by_engine_measurement_language",
+      "def test_c7_count_is_always_the_full_count_and_truncation_is_disclosed",
+      "def test_c7_flag_changes_nothing_on_any_production_shaped_view",
+      "def test_c7_a_count_outside_the_open_conditions_sense_is_not_counted"]),
     # ٢٤٠ — المرساةُ السلوكية: الشدةُ تتبع الراية، وتسميةُ الفرق ليست عيباً،
     # وصفرُ حجبٍ جديد على المدوّنات والرايةُ مفعّلة.
     (240, "tests/test_report_quality_logic_layer.py",
@@ -546,6 +553,16 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤١ — قائمةُ شروطٍ واحدة: المُعِدّ، والعددُ الكامل، وإعلانُ القصّ،
+    # وفحصُ العدد المذكور بسياق «مفتوح».
+    (241, "silk_render.py",
+     ["def open_conditions", "def open_conditions_single",
+      "OPEN_CONDITIONS_CAP", "conditions_count",
+      "engine_conditions_count"]),
+    (241, "silk_quality_gate.py",
+     ["def _check_open_conditions_count_mismatch", "_AR_COUNT_WORDS",
+      "_OPEN_COND_CTX_RE", "def _stated_condition_counts"]),
+    (241, "silk_reports.py", ["open_conditions"]),
     # ٢٤٠ — هويةُ الرقم: المخزن، قاعدةُ قراءةِ القرار، حقنُ المعرّف في
     # الموجّه خلف الراية، ومجموعةُ الحجب المحسوبة عند الحكم.
     (240, "silk_figure_store.py",
