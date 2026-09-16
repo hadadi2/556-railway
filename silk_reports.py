@@ -5431,13 +5431,29 @@ _LEADS_TITLE = "قائمة مستوردين وموزعين قابلين للتو
 _LEADS_HEADER = ["الاسم", "العنوان", "الهاتف", "الإيميل", "الموقع", "التقييم"]
 _LEADS_COL_KEYS = ("col_name", "col_address", "col_phone", "col_email",
                    "col_website", "col_rating")
+# الصنف ١٠: عمودُ «سبب الإدراج» — العيبُ المرصود أنّ القائمة حملت نشاطاً لا
+# صلةَ له وغاب عنها موزّعٌ يوصي به المتن، ولا عمودَ يقول للقارئ **لماذا**
+# دخلت هذه الجهةُ القائمة. خلف رايةِ الصنف ١٠: بلا الراية الرأسُ حرفياً كما هو.
+_LEADS_REASON_KEY = "col_include_reason"
+
+
+def _leads_reason_on() -> bool:
+    try:
+        import silk_market_structure
+        return silk_market_structure.enabled()
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _leads_header(lang: str = "ar") -> list:
     """رؤوس أعمدة جدول الروابط بلغة التقرير — العربية تبقى حرفياً كما هي."""
     if silk_i18n.normalize(lang) == "ar":
-        return list(_LEADS_HEADER)
-    return [_T(k, "en") for k in _LEADS_COL_KEYS]
+        head = list(_LEADS_HEADER)
+    else:
+        head = [_T(k, "en") for k in _LEADS_COL_KEYS]
+    if _leads_reason_on():
+        head.append(_T(_LEADS_REASON_KEY, lang))
+    return head
 
 
 import functools as _functools
@@ -5505,12 +5521,35 @@ def _clean_leads(leads: list, dr: dict) -> list:
     # ومن جدولٍ واحد يقرؤه الفحصُ أيضاً. غيرُ المُدرَجة تمرّ بحالها فيلتقطها
     # حاجزُ اتساق اللغة القائم بدل أن تُستَر بترجمةٍ مختلَقة.
     from silk_style_contract import activity_label_ar
+    # الصنف ١٠ (خلف رايته): مِصفاةُ النشاط، وحصانةُ الجهةِ التي يسمّيها المتن.
+    # العيبُ المرصود وجهان: نشاطٌ لا صلةَ له **دخل** القائمة، وموزّعٌ يوصي به
+    # التقريرُ **غاب** عنها. فالنشاطُ صار مِصفاةً (والمجهولُ يمرّ)، والجهةُ
+    # المسمّاةُ في المتن لا تُسقِطها مِصفاةٌ أبداً — لا تُختلَق جهةٌ ولا
+    # يُختلَق اتصال، إنما تُمنَع مِصفاةٌ من إخفاء ما يوصي به التقريرُ نفسُه.
+    _scoped = _leads_reason_on()
+    _body = ""
+    if _scoped:
+        from silk_style_contract import lead_activity_allowed
+        _body = (((dr.get("report") or {}).get("text") or "")
+                 if isinstance(dr.get("report"), dict) else "")
     out = []
     for lead in leads or []:
         lead = clean_contact(lead, iso3)
         if lead is None:
             continue
         nm = (lead.get("name") or "").strip()
+        named = bool(_scoped and nm and len(nm) >= 4 and nm in _body)
+        if named:
+            lead = dict(lead)
+            lead["named_in_report"] = True
+        if _scoped and not named and not lead_activity_allowed(
+                lead.get("category")):
+            continue
+        if named:
+            if lead.get("category"):
+                lead["category"] = activity_label_ar(lead["category"])
+            out.append(lead)
+            continue
         if not nm or not looks_like_name(nm):          # البند ٥: نثر/بلا اسم
             continue
         if _is_filler_lead(lead):                        # البند ٦: حشو
@@ -5530,7 +5569,7 @@ def _leads_data(dr: dict):
     return leads, (il.get("note") or "")
 
 
-def _lead_cells(lead: dict) -> list:
+def _lead_cells(lead: dict, lang: str = "ar") -> list:
     """C5: خلايا صفّ رائد — الحقل الغائب «—» (لا اختلاق). التقييم مع عدد
     المراجعات إن توفّرا."""
     def g(k):
@@ -5541,8 +5580,22 @@ def _lead_cells(lead: dict) -> list:
                 else str(rating) if rating else "—")
     site = lead.get("website") or lead.get("maps_link") or ""
     # WS10: خلية «مستوى التوثيق» (doc_level) أُسقِطت — لا عمود إسناد في المتن.
-    return [g("name"), g("address"), g("phone"), g("email"),
-            site.strip() or "—", rating_s]
+    cells = [g("name"), g("address"), g("phone"), g("email"),
+             site.strip() or "—", rating_s]
+    if _leads_reason_on():
+        cells.append(_lead_reason(lead, lang))
+    return cells
+
+
+def _lead_reason(lead: dict, lang: str = "ar") -> str:
+    """سببُ إدراج الجهة بلغة الزائر — نشاطٌ ذو صلة، أو تسميةُ المتن لها،
+    أو إفصاحٌ بأنّ نشاطها غير مُصرَّح. لا خانةَ صامتة."""
+    if lead.get("named_in_report"):
+        return _T("lead_reason_named", lang)
+    cat = str(lead.get("category") or "").strip()
+    if cat:
+        return _T("lead_reason_activity", lang, activity=cat)
+    return _T("lead_reason_unknown", lang)
 
 
 def _md_leads(dr: dict, L: list) -> None:
@@ -5555,11 +5608,12 @@ def _md_leads(dr: dict, L: list) -> None:
         L += ["لا جهات اتصال قابلة للتواصل في هذا التشغيل — القائمة غير متاحة"
               + (f" ({note})" if note else "") + ".", ""]
         return
-    L += ["| " + " | ".join(_LEADS_HEADER) + " |",
-          "|" + "|".join(["---"] * len(_LEADS_HEADER)) + "|"]
+    head = _leads_header("ar")
+    L += ["| " + " | ".join(head) + " |",
+          "|" + "|".join(["---"] * len(head)) + "|"]
     for lead in leads:
         L.append("| " + " | ".join(c.replace("|", "／")
-                                   for c in _lead_cells(lead)) + " |")
+                                   for c in _lead_cells(lead, "ar")) + " |")
     L += ["", MAPS_DISCLAIMER, ""]
 
 
@@ -5578,7 +5632,7 @@ def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar") -> None:
             f" ({note})" if (note and silk_i18n.normalize(lang) == "ar") else "")
         doc.add_paragraph(sanitize(msg) if sanitize else msg)
         return
-    rows = [[(sanitize(c) if sanitize else c) for c in _lead_cells(lead)]
+    rows = [[(sanitize(c) if sanitize else c) for c in _lead_cells(lead, lang)]
             for lead in leads]
     _add_table(doc, _leads_header(lang), rows)
     line = MAPS_DISCLAIMER

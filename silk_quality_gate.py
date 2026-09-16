@@ -3679,6 +3679,307 @@ def _check_decision_number_format_drift(view: dict) -> list[dict]:
                  + "؛ ".join(drifted[:3]))}]
 
 
+# ══════ الصنف ١٠: افتراضاتُ بنية السوق · market-structure assumptions ══════
+# **العيوبُ المرصودة** في تقريرٍ حيٍّ واحد: «تقلّب 0.00%» لدولةٍ بسعرين
+# متباعدين؛ وسلطةٌ هنا ومرفأٌ هناك بلا إقليمِ هدف؛ وبندٌ جمركيٌّ يغطّي فئةً
+# كاملةً مقروءاً سوقَ منتج؛ ونشاطٌ لا صلةَ له في قائمة الروابط؛ ونظامُ مطابقةٍ
+# يخصّ دولةً أخرى في قسم الحدود.
+#
+# الحرّاسُ الستّة **تحذيريةٌ كلُّها** (قرارُ المالك: لا حجب جديداً) وتقرأ
+# **نصَّ التقرير أوّلاً**: سجلُّ التهيئة يغطّي أربعةَ أسواقٍ من ٣٨، فحارسٌ
+# يشترط التهيئة ينام في الباقي — وهو بعينه الدرس ٩٨ (حارسٌ لا يُطلِق).
+# التهيئةُ **تُثري البلاغَ** ولا تشترطه، كما في `authority_naming_drift`.
+_FX_VOL_NEEDLES = ("تقلب سعر الصرف", "تقلّب سعر الصرف", "fx volatility")
+_FX_PEG_DISCLOSURE = ("مربوط", "ربط رسمي", "ربطٌ رسميّ", "سعر ثابت رسمي",
+                      "pegged", "official peg")
+
+
+def _check_zero_fx_volatility(view: dict) -> list[dict]:
+    """`zero_fx_volatility` (الصنف ١٠، تحذيريّ): المحرّك أصدر تقلّبَ صرفٍ
+    **صفراً** فصار عمودُ أمانِ العملة كاملاً، بلا إعلانِ ربطٍ رسميّ.
+
+    الصفرُ قيمةٌ مشروعةٌ لعملةٍ مربوطة، وهو أيضاً ما تُنتِجه سلسلةٌ ثابتةٌ
+    أو سعرٌ رسميٌّ واحدٌ في سوقٍ له سعران — والفرقُ بينهما قرارُ مخاطرة.
+    فالمطلوبُ إعلانُ أيِّهما، لا حَجبُ الرقم.
+
+    **منطقةُ العمى المعلنة:** (أ) الفحصُ لا يميّز الربطَ الحقيقيَّ من السلسلة
+    الثابتة — ولذلك هو تحذيرٌ يطلب الإعلان لا حكمٌ؛ (ب) تقلّبٌ **غيرُ**
+    صفريٍّ لكنه محسوبٌ من سعرٍ رسميٍّ واحدٍ في سوقٍ بسعرين لا يُرى (لا معطى
+    يُقابِل السعرَ الموازي)؛ (ج) صياغةُ الربط بالإنجليزية مشمولةٌ بإبرتين.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    missions = dr.get("missions") or {}
+    risk = missions.get("risk_news") if isinstance(missions, dict) else None
+    findings = ((risk.get("findings") if isinstance(risk, dict)
+                 else getattr(risk, "findings", None)) or [])
+    zero = False
+    for f in findings:
+        note = str((f.get("note") if isinstance(f, dict)
+                    else getattr(f, "note", "")) or "")
+        val = (f.get("value") if isinstance(f, dict)
+               else getattr(f, "value", None))
+        if not any(n in note for n in _FX_VOL_NEEDLES):
+            continue
+        try:
+            if val is not None and float(val) == 0.0:
+                zero = True
+        except (TypeError, ValueError):
+            continue
+    if not zero:
+        return []
+    text = ((dr.get("report") or {}).get("text") or "")
+    if any(d in text for d in _FX_PEG_DISCLOSURE):
+        return []
+    return [{
+        "check": "zero_fx_volatility", "repairable": True,
+        "note": ("تقلّبُ سعر الصرف مرصودٌ صفراً فصار عمودُ أمان العملة "
+                 "كاملاً (١.٠٠) في الدرجة — والصفرُ إمّا ربطٌ رسميٌّ وإمّا "
+                 "سلسلةٌ ثابتةٌ أو سعرٌ رسميٌّ واحدٌ في سوقٍ له سعران. "
+                 "أعلِن أيَّهما: «العملة مربوطة رسمياً» أو «لم يُرصَد إلا "
+                 "السعر الرسمي»")}]
+
+
+# الصنف ١٠ — سلطتان ومرفأٌ بلا إقليمِ هدف. الإبرُ قويةُ الدلالة: منفذُ دخولٍ
+# فعليّ لا كلمةٌ عامة، وإفصاحُ الإقليم بصيغِه المتوقّعة.
+# بوّابةٌ **مسمّاة**: إبرةُ منفذٍ يتبعها اسمٌ علَم — «ميناء عدن» لا «ميناء».
+# القيدُ مقيسٌ: الإبرةُ وحدَها أطلقت على تقريرٍ سليمٍ ذكر جهتين مشروعتين
+# ومنفذاً واحداً، والشرطُ الحقيقيُّ للعيب المرصود **بوّابتان** (قيودُ سلطةٍ
+# ومرفأُ أخرى). بالبوّابتين: صفرُ إطلاقةٍ على المدوّنات الأربعَ عشرة.
+_NAMED_GATEWAY_RE = re.compile(
+    r"(?:ميناء|مرفأ|منفذ|معبر|مطار)\s+([^\s،.؛()]{3,})")
+_TARGET_REGION_DISCLOSURE = ("الإقليم المستهدف", "المنطقة المستهدفة",
+                             "منفذ الدخول المستهدف", "الإقليم الخاضع",
+                             "تحت سلطة", "target region")
+
+
+def _check_target_region_missing(view: dict, dr: dict,
+                                 lang: str = "ar") -> list[dict]:
+    """`target_region_missing_in_multi_authority` (الصنف ١٠، تحذيريّ): المتنُ
+    يذكر جهتين مُنسَبتين **ومنفذَ دخولٍ** بلا إقليمِ هدفٍ مُعلَن.
+
+    كلُّ سلطةٍ منفذٌ وقيودٌ ورسومٌ مختلفة، فقائمةُ اشتراطاتٍ من سلطةٍ فوق
+    مرفأٍ تحت أخرى قائمةٌ لا تصلح للتنفيذ. آلةُ رصدِ الجهات هي
+    `_authority_mentions` نفسُها (الصنف ٤) — لا كاشفَ ثانٍ.
+
+    **منطقةُ العمى المعلنة:** (أ) جهتان بلا نسبةٍ («الحكومة» عارية) شأنُ
+    `authority_naming_drift` لا هذا الفحص؛ (ب) بوّابةٌ بلا اسمٍ علَمٍ
+    («الميناء الرئيس») لا تُعَدّ — القيدُ مقيسٌ لا مُقدَّر: بالإبرة وحدَها
+    أطلق الفحصُ على تقريرٍ سليم، وبالبوّابتين المسمّيتين صفرُ إطلاقةٍ على
+    المدوّنات الأربعَ عشرة؛ (ج) الفحصُ عربيُّ المجسّ (`_AR_ONLY_CHECKS`)؛
+    (د) التهيئةُ (`multi_authority`) تُثري البلاغَ ولا تشترطه.
+    """
+    text = ((dr.get("report") or {}).get("text") or "")
+    if not text or lang != "ar":
+        return []
+    mentions = _authority_mentions(text)
+    quals = {row["qual"] for row in mentions.values()} if mentions else set()
+    if len(quals) < 2:
+        return []
+    gates = sorted(set(_NAMED_GATEWAY_RE.findall(text)))
+    if len(gates) < 2:
+        return []
+    if any(d in text for d in _TARGET_REGION_DISCLOSURE):
+        return []
+    tail = ""
+    try:
+        import silk_market_structure as _MS
+        iso3 = str((view.get("market") or {}).get("iso3")
+                   or ((dr.get("market") or {}).get("iso3")) or "")
+        if _MS.multi_authority(iso3):
+            region = _MS.target_region(iso3)
+            tail = (f" والإقليمُ المُهيَّأ لهذا السوق: «{region}»." if region
+                    else " والسوقُ مُهيَّأٌ متعدّدَ السلطات بلا إقليمِ هدف.")
+    except Exception:  # noqa: BLE001 — التهيئةُ تُثري البلاغ لا تشترطه
+        tail = ""
+    return [{
+        "check": "target_region_missing_in_multi_authority",
+        "repairable": True,
+        "note": ("المتنُ يذكر جهتين مُنسَبتين (" + "، ".join(
+            f"«{q}»" for q in sorted(quals)[:3]) + ") وبوّابتَي دخولٍ ("
+            + "، ".join(f"«{g}»" for g in gates[:3]) + ") بلا إقليمِ هدفٍ "
+            "مُعلَن — وكلُّ سلطةٍ بوّابةٌ وقيودٌ ورسومٌ مختلفة، فالقائمةُ "
+            "لا تصلح للتنفيذ حتى يُسمَّى الإقليم." + tail)}]
+
+
+# الصنف ١٠ — بندٌ جمركيٌّ واسعٌ غيرُ مُعلَن. الاتّساعُ يُثبَت بأحد سبيلين
+# حتميّين: تهيئةُ المنتج (`hs_scope: broad`)، أو **وصفُ البند الرسميّ نفسُه**
+# حين يحمل علامةَ سلّةٍ («ومنه»/«أخرى»/"other") — أي أنّ البندَ يضمّ المنتجَ
+# بين غيره. وما لا يُثبَت لا يُحكَم عليه.
+_HS_BREADTH_MARKS = ("ومنه", "ومنها", "أخرى", "غير ذلك", "غير مذكورة",
+                     "other", "n.e.s")
+_HS_BREADTH_DISCLOSURE = ("أوسع من", "فئة أوسع", "فئةً أوسع", "سياقاً للفئة",
+                          "سياقاً عاماً للفئة", "فئة مجاورة", "فئةٍ مجاورة",
+                          "مُعلَّم", "معلَّم", "broader category",
+                          "category context")
+
+
+def _check_broad_hs_scope_undisclosed(view: dict) -> list[dict]:
+    """`broad_hs_scope_undisclosed` (الصنف ١٠، تحذيريّ): البندُ الجمركيُّ
+    يغطّي فئةً أوسع من المنتج، والمتنُ لا يُفصِح.
+
+    **منطقةُ العمى المعلنة:** (أ) بندٌ خارج المرجع المسجّل وبلا تهيئةٍ لا
+    يُرى — الاتّساعُ لا يُخمَّن (وهو حالُ أغلب البنود اليوم: المرجعُ ثمانيةُ
+    بنودٍ سداسية)؛ (ب) الإفصاحُ يُقاس بإبَرٍ نصّية، فصياغةٌ غيرُ متوقّعةٍ
+    تُحتسَب غياباً — ثمنٌ مقبولٌ لتحذير؛ (ج) `hs_flagged` عائلةٌ **أخرى**
+    (وصفُ البند لا يشمل صفةَ المنتج) ولها آلتُها القائمة.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    hs = str(view.get("hs_code")
+             or (view.get("header") or {}).get("hs_code") or "").strip()
+    text = ((dr.get("report") or {}).get("text") or "")
+    if len(hs) < 6 or not text:
+        return []
+    broad, why = False, ""
+    try:
+        import silk_market_structure as _MS
+        if _MS.hs_scope(hs) == "broad":
+            broad, why = True, "التهيئةُ تُعلنه بنداً واسعاً"
+    except Exception:  # noqa: BLE001
+        pass
+    if not broad:
+        try:
+            from silk_hs_reference import definition
+            defn = str(definition(hs) or "")
+            if defn and any(m in defn for m in _HS_BREADTH_MARKS):
+                broad = True
+                why = f"وصفُ البند الرسميّ «{defn[:60]}» علامةُ سلّة"
+        except Exception:  # noqa: BLE001
+            pass
+    if not broad:
+        return []
+    if any(d in text for d in _HS_BREADTH_DISCLOSURE):
+        return []
+    return [{
+        "check": "broad_hs_scope_undisclosed", "repairable": True,
+        "note": (f"أرقامُ التجارة مجموعةٌ تحت البند {hs} وهو أوسعُ من المنتج "
+                 f"المدروس ({why}) — والمتنُ لا يُفصِح، فتُقرأ أرقامُ فئةٍ "
+                 "كأنها أرقامُ المنتج. أضف سطرَ إفصاحٍ واحداً")}]
+
+
+def _check_border_price_out_of_range(view: dict) -> list[dict]:
+    """`border_price_out_of_range` (الصنف ١٠، تحذيريّ): سعرُ الحدود المرصود
+    خارج المدى المعقول المُهيَّأ للمنتج.
+
+    **منطقةُ العمى المعلنة:** يصمت كلياً بلا `price_range` مُهيَّأ — والمفتاحُ
+    غيرُ مُدخَلٍ لأيّ منتجٍ اليوم (قرارُ مالكٍ مسجَّل: المخطَّطُ والمُدقِّقُ
+    والحارسُ تُشحَن، والصفوفُ إدخالٌ لاحقٌ بمصدرٍ). فهو عقدٌ جاهزٌ لا فحصٌ
+    عاملٌ على بياناتٍ قائمة — إعلانٌ صريحٌ لا صمت.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    hs = str(view.get("hs_code")
+             or (view.get("header") or {}).get("hs_code") or "").strip()
+    if not hs or not dr:
+        return []
+    try:
+        import silk_economics as _E
+        import silk_market_structure as _MS
+        band = _MS.price_range(hs)
+        if not band:
+            return []
+        val, note = _E._mission_numeric(
+            dr, "trade_flow", ("متوسط سعر استيراد", "قيمة الوحدة الحدودية",
+                              "unit value"), 0.0, 100_000.0)
+    except Exception:  # noqa: BLE001
+        return []
+    if val is None or band["min"] <= val <= band["max"]:
+        return []
+    return [{
+        "check": "border_price_out_of_range", "repairable": True,
+        "note": (f"سعرُ الحدود المرصود {_fmt_gate_num(val)} دولار/كجم خارج "
+                 f"المدى المعقول المُهيَّأ للمنتج "
+                 f"({_fmt_gate_num(band['min'])}–{_fmt_gate_num(band['max'])})"
+                 f" — «{str(note)[:40]}»؛ راجع البند أو المصدر قبل بناء "
+                 "هامشٍ عليه")}]
+
+
+def _check_lead_outside_activity_allowlist(view: dict) -> list[dict]:
+    """`lead_outside_activity_allowlist` (الصنف ١٠، تحذيريّ): رابطٌ في قائمة
+    الجهات نشاطُه مُدرَجٌ ومستبعَدٌ من قائمة السماح.
+
+    **منطقةُ العمى المعلنة:** (أ) نشاطٌ **مجهولٌ** يمرّ بالتصميم — الجهلُ
+    بالتسمية ليس دليلَ عدمِ الصلة (سياسةُ `activity_label_ar`)؛ (ب) روابطُ
+    مسارِ Places وبحثِ الويب لا تحمل نشاطاً أصلاً فلا تُرى (مسارُ الخرائط
+    وحدَه يحمله)؛ (ج) الفحصُ لا يحكم على غيابِ موزّعٍ مسمّىً في النثر —
+    ذلك شأنُ الإدراجِ التلقائيّ في `_clean_leads`.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    leads = ((dr.get("importer_leads") or {}).get("leads") or [])
+    if not leads:
+        return []
+    try:
+        from silk_style_contract import lead_activity_allowed
+    except Exception:  # noqa: BLE001
+        return []
+    bad = []
+    for lead in leads:
+        if not isinstance(lead, dict):
+            continue
+        cat = str(lead.get("category") or "").strip()
+        if cat and not lead_activity_allowed(cat):
+            name = str(lead.get("name") or "").strip() or "جهةٌ بلا اسم"
+            row = f"{name} ({cat})"
+            if row not in bad:
+                bad.append(row)
+    if not bad:
+        return []
+    return [{
+        "check": "lead_outside_activity_allowlist", "repairable": True,
+        "note": ("قائمةُ الجهات تحمل نشاطاً لا صلةَ له بالمنتج: "
+                 + "؛ ".join(bad[:3]) + " — الجهةُ تُدرَج لنشاطها لا لقربها "
+                 "الجغرافيّ، وإدراجُها يُضعِف ثقةَ القائمة كلِّها")}]
+
+
+def _check_regime_not_belonging_to_country(view: dict) -> list[dict]:
+    """`regime_not_belonging_to_country` (الصنف ١٠، تحذيريّ): المتنُ يستشهد
+    بنظامِ مطابقةٍ مالكُه دولةٌ أخرى ولا كتلةٌ يخصّها سوقُ الهدف.
+
+    المرجعُ حتميّ: `data/regulatory_schemes_l1.csv` — مفتاحُه **النظام** لا
+    السوق، فيعمل الفحصُ على الأسواق كلِّها بلا انتظار تهيئةِ سوق (الدرس ٩٨).
+    ودولةُ المنشأ مشروعةٌ دائماً: اشتراطاتُ الخروج جزءٌ من كلّ تقرير.
+
+    **منطقةُ العمى المعلنة:** (أ) نظامٌ غيرُ مُسجَّلٍ في الجدول لا يُحكَم
+    عليه — لا نحكم على ما لا نعرف، والسجلُّ يُوسَّع بصفٍّ مُستشهَد؛
+    (ب) المعاييرُ الدولية والأسماءُ التي تتقاسمها برامجُ عدّة دول موسومةٌ
+    `INTL`/`MULTI` فلا تُحتسَب أبداً؛ (ج) ذكرُ النظام **نفياً** («لا ينطبق
+    SONCAP هنا») يُحتسَب — ثمنٌ مُعلَنٌ لتحذير، والصياغةُ المشروعة أن يُذكَر
+    نظامُ السوق لا نظامُ غيره.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    text = ((dr.get("report") or {}).get("text") or "")
+    if not text:
+        return []
+    iso3 = str((view.get("market") or {}).get("iso3")
+               or ((dr.get("market") or {}).get("iso3")) or "").strip()
+    if not iso3:
+        return []
+    origin = str((view.get("header") or {}).get("origin") or "").strip()
+    try:
+        import silk_market_structure as _MS
+        rows = _MS.schemes()
+    except Exception:  # noqa: BLE001
+        return []
+    alien = []
+    for row in rows:
+        name = row["scheme"]
+        if not re.search(r"(?<![A-Za-z0-9])" + re.escape(name)
+                         + r"(?![A-Za-z0-9])", text, re.I):
+            continue
+        if _MS.scheme_belongs_to(name, iso3, origin):
+            continue
+        owner = row.get("owner_iso3") or row.get("owner_bloc") or "—"
+        entry = f"{name} ({owner})"
+        if entry not in alien:
+            alien.append(entry)
+    if not alien:
+        return []
+    return [{
+        "check": "regime_not_belonging_to_country", "repairable": True,
+        "note": ("المتنُ يستشهد بأنظمةِ مطابقةٍ لا تخصّ سوقَ الهدف "
+                 f"({iso3}): " + "، ".join(alien[:3]) + " — نظامُ دولةٍ أخرى "
+                 "في قائمةِ اشتراطاتٍ يُوهِم بقيدٍ غيرِ قائمٍ ويُخفي القيدَ "
+                 "القائم")}]
+
+
 # البند 6 (أمر إصلاح المحرّك) — تناقضُ تسعيرٍ محسوب مرّ بلا تعليق (تقرير
 # #11: أقصى EXW ‏$0.3274 مقابل متوسط استيراد $0.81 — أدنى بـ60%، ومع ذلك
 # قُدِّم الرقم «أساساً للتفاوض»). حين يحسب المحرك `pricing_contradiction`:
@@ -5755,6 +6056,13 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_observed_value_declared_unavailable(view)
     # الصنف ١٣: خانةُ قيمةٍ خارج المنسِّق الواحد — تحذيريّ.
     findings += _check_decision_number_format_drift(view)
+    # الصنف ١٠: افتراضاتُ بنية السوق — ستّةُ حرّاسَ تحذيريةٍ تقرأ النصَّ أوّلاً.
+    findings += _check_zero_fx_volatility(view)
+    findings += _check_target_region_missing(view, dr, _lang)
+    findings += _check_broad_hs_scope_undisclosed(view)
+    findings += _check_border_price_out_of_range(view)
+    findings += _check_lead_outside_activity_allowlist(view)
+    findings += _check_regime_not_belonging_to_country(view)
     # البند 7: ترقية حكم مع تدهور كل مؤشرات الدليل — لا تُسلَّم.
     findings += _check_verdict_evidence_direction(view)
     # البند 10: تسمية «عدم دخول» فوق متنٍ يوصي بباب دخول مسمّى — لا تُسلَّم.

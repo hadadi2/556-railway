@@ -207,6 +207,16 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٦ — المرساةُ السلوكية: الحارسُ يُضيَّق بقياسٍ لا بتقدير، والنظامُ
+    # الأجنبيُّ يُرصَد والمنشأُ يُعفى، والمخطَّطُ يرفض المجهول، والرايةُ
+    # تحكم السلوكَ وحدَه.
+    (246, "tests/test_market_structure_config.py",
+     ["def test_target_region_guard_needs_two_authorities_and_two_named_gateways",
+      "def test_regime_guard_fires_on_a_foreign_scheme_and_spares_origin",
+      "def test_an_unknown_top_level_section_no_longer_passes_silently",
+      "def test_the_module_carries_no_country_or_hs_literal",
+      "def test_the_six_guards_fire_on_no_canonical_blob_in_either_flag_state",
+      "def test_flag_off_changes_no_surface_on_any_canonical_blob"]),
     # ٢٤٥ — المرساةُ السلوكية: الخانةُ المرصودة تُعاد ثمّ تُصلَح، والمرجعُ
     # لا يسأل الراية، والحارسُ يصمت بالبناء، وصفرُ مسٍّ بالبيانات.
     (245, "tests/test_report_quality_logic_layer.py",
@@ -583,6 +593,28 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤٦ — بنيةُ السوق تهيئةً: الوحدةُ القارئة، وسجلُّ الأنظمة، والمخطَّطُ
+    # الجديد مع رفضِ المجهول، والحرّاسُ الستّة، ومبدِّلُ تعليمةِ البعثة.
+    (246, "silk_market_structure.py",
+     ["def market_currency", "def main_port", "def standards_bodies",
+      "def target_region", "def regions", "def hs_scope",
+      "def price_range", "def scheme_belongs_to", "NO_COUNTRY_OWNER",
+      "def enabled"]),
+    (246, "silk_profiles.py",
+     ["_MARKET_SECTIONS", "_PRODUCT_SECTIONS", "def _check_region",
+      "HS_SCOPES", "REGION_FACTS", "target_region"]),
+    (246, "silk_quality_gate.py",
+     ["def _check_zero_fx_volatility", "def _check_target_region_missing",
+      "def _check_broad_hs_scope_undisclosed",
+      "def _check_border_price_out_of_range",
+      "def _check_lead_outside_activity_allowlist",
+      "def _check_regime_not_belonging_to_country", "_NAMED_GATEWAY_RE"]),
+    (246, "silk_missions.py",
+     ["def scope_instructions", "_LEGACY_SCHEME_HINT",
+      "_SCOPED_SCHEME_HINT"]),
+    (246, "silk_style_contract.py",
+     ["def lead_activity_allowed", "LEAD_ACTIVITY_ALLOWED"]),
+    (246, "silk_reports.py", ["def _lead_reason", "_LEADS_REASON_KEY"]),
     # ٢٤٥ — خانةُ القيمة: المنسِّقُ الواحد، والمرجعُ المستقلُّ عن الراية،
     # والصيغةُ القائمة محفوظةً مرجعاً، والفحصُ الذي يقابلهما.
     (245, "silk_narrative.py",

@@ -804,6 +804,15 @@ TERMS: dict[str, dict[str, str]] = {
     "col_email": {"ar": "الإيميل", "en": "Email"},
     "col_website": {"ar": "الموقع", "en": "Website"},
     "col_rating": {"ar": "التقييم", "en": "Rating"},
+    # الصنف ١٠: سببُ إدراج الجهة — الجهةُ تُدرَج لنشاطها أو لتسميةِ التقرير
+    # لها، لا لقربها الجغرافيّ (عمودٌ خلف رايةِ الصنف ١٠).
+    "col_include_reason": {"ar": "سبب الإدراج", "en": "Why included"},
+    "lead_reason_activity": {"ar": "نشاطٌ ذو صلة: {activity}",
+                             "en": "Relevant activity: {activity}"},
+    "lead_reason_named": {"ar": "مذكورةٌ في متن التقرير",
+                          "en": "Named in the report body"},
+    "lead_reason_unknown": {"ar": "نشاطُها غير مُصرَّح",
+                            "en": "Activity not declared"},
     "next_step_deepen": {
         "ar": "فعّل خدمة التعميق المدفوعة للتحقق من المستوردين وجهات الاتصال "
               "قبل الالتزام",

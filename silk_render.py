@@ -2885,6 +2885,25 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
                       + (f" ({_missing})" if _missing else "")
                       + " — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي "
                       "حتى تأكيد الرمز الصحيح.")
+    # ── الصنف ١٠ (خلف رايته): اتّساعُ البند الجمركيّ يُعلَن كما يُعلَن
+    # عدمُ شموله لصفة المنتج — **بالآلة نفسِها** لا بمسارِ عرضٍ ثانٍ:
+    # سطرُ حدودٍ واحد + تعليمُ أرقامِ التركّز سياقاً + سقفُ الثقة القائم.
+    # العيبُ المرصود: بندٌ يغطّي فئةً كاملةً قُرِئ سوقَ منتجٍ واحد. والاتّساعُ
+    # **واقعةُ منتجٍ مُهيَّأة** (`hs_scope`) لا استنتاجَ محرّك.
+    _hs_broad = False
+    try:
+        import silk_market_structure as _MS
+        if _MS.enabled() and _MS.hs_scope(result.get("hs_code")) == "broad":
+            _hs_broad = True
+    except Exception:  # noqa: BLE001 — تهيئةٌ غائبةٌ ليست خطأَ عرض
+        _hs_broad = False
+    if _hs_broad and not hs_flagged:
+        verdict = cap_confidence_for_flagged_hs(verdict, hs_conf)
+        limits.insert(0, f"{CONTEXTUAL_TAG}: رمز HS "
+                      f"{result.get('hs_code')} يغطي فئةً أوسع من المنتج "
+                      "المدروس وفق تهيئة المنتج — تُقرأ أرقام الاستيراد "
+                      "والتركّز والحصص سياقاً عاماً للفئة لا قياساً مباشراً "
+                      "لهذا المنتج.")
     # البند 18 (موجة سدّ الفجوات F5): صندوقُ التحذير الواحد أعلى التقرير —
     # يُبنى حتمياً من نفس عقد التأكيد الذي يبني سطرَ الحدود أعلاه؛ المُصدِّرون
     # (md/docx/اللوحة) يعرضونه مرةً واحدة في الرأس بدل تكرار جملة التحذير
@@ -3045,7 +3064,9 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
         "price_unlock": PRICE_UNLOCK_LINE,
         # Wave 3.2: عند تعليم الرمز، التركّز (HHI) سياقٌ فقط لا إشارة تسجيل
         # للحكم لهذا المنتج — الشارة تستهلكها المُصدِّرات.
-        "concentration_context_only": bool(hs_flagged),
+        # الصنف ١٠: الاتّساعُ المُهيَّأ يُعلِّم أرقامَ التركّز سياقاً كما
+        # يُعلّمها عدمُ شمولِ الوصف — نفسُ المفتاح، فلا سطرَ عرضٍ ثانٍ.
+        "concentration_context_only": bool(hs_flagged or _hs_broad),
         # Wave 6.1: شرطا قلب الحكم المهيكلان (حكم مراقبة/مشروط) — يعرضهما كل
         # مُصدِّر «شرطا قلب الحكم»، وتربط خارطة الـ٩٠ يوماً كل خطوة بأيّهما تُغلق.
         "flip_conditions": _flip_conditions(

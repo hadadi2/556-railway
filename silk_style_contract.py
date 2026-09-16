@@ -419,6 +419,49 @@ ACTIVITY_LABEL_AR: dict[str, str] = {
 }
 
 
+# ── الصنف ١٠: قائمةُ سماحِ النشاط · lead activity allow-list ───────────────
+# **العيبُ المرصود:** قائمةُ الروابط حملت «متجر قطع غيار» بينما غاب عنها
+# الموزّعون الذين يوصي بهم التقريرُ نفسُه. و`_clean_leads` يُنقّي بالاسم
+# والجغرافيا والحشو **لا بالنشاط** — فلا مِصفاةَ تمنع نشاطاً لا صلةَ له.
+#
+# القائمةُ **بياناتٌ لا تفريعُ سوق**: نشاطٌ يُشترى منه أو يُوزَّع عبره أو
+# يُخلّص به. والنشاطُ **غيرُ المُدرَج في الجدول يمرّ** (سياسةُ
+# `activity_label_ar` نفسُها): الجهلُ بالتسمية ليس دليلَ عدمِ الصلة، والمنعُ
+# يكون بنشاطٍ مُدرَجٍ **ومستبعَدٍ صريحاً** لا بنشاطٍ مجهول.
+LEAD_ACTIVITY_ALLOWED: frozenset = frozenset({
+    "import export company", "importer", "exporter", "food broker",
+    "food products supplier", "wholesaler", "wholesale grocer",
+    "distributor", "food manufacturer", "grocery store", "supermarket",
+    "hypermarket", "convenience store", "trading company", "general store",
+    "warehouse", "logistics service", "freight forwarding service",
+    "customs broker", "confectionery", "candy store", "dairy store",
+    "dairy farm",
+})
+
+
+def lead_activity_allowed(raw: object) -> bool:
+    """هل نشاطُ الرابط ضمن السماح؟ — والمجهولُ يمرّ (انظر أعلاه).
+
+    المطابقةُ على التسميةِ الخام **وعلى ترجمتها** كلتيهما، فرابطٌ خُزِّن
+    مترجَماً (المسارُ يترجم عند `_clean_leads`) لا يصير مجهولاً بالترجمة.
+    """
+    given = str(raw or "").strip()
+    if not given:
+        return True
+    key = given.lower()
+    # تُحلّ التسميةُ العربية إلى مفتاحها الخام أوّلاً — وإلّا مرّ «متجر قطع
+    # غيار» المترجَمُ بينما يُمنَع أصلُه الإنجليزيّ (قِياسٌ على هذه الدالّة
+    # نفسِها كشف العيبَ قبل الشحن).
+    if key not in ACTIVITY_LABEL_AR:
+        for k, v in ACTIVITY_LABEL_AR.items():
+            if v == given:
+                key = k
+                break
+    if key in LEAD_ACTIVITY_ALLOWED:
+        return True
+    return key not in ACTIVITY_LABEL_AR
+
+
 def activity_label_ar(raw: object) -> str:
     """تسميةُ نشاطٍ خارجية بالعربية — غيرُ المعروفة **تُعاد كما هي**.
 

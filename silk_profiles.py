@@ -49,6 +49,9 @@ LOGISTICS_MODES = ("sea", "land", "air", "landlocked_corridor")
 PRODUCTION_CATEGORIES = ("groundnuts", "dates", "dairy", "potatoes",
                          "vegetables", "cassava", "sorghum", "spices", "rice")
 
+# اتّساعُ البند الجمركيّ (الصنف ١٠): `exact` = البندُ يطابق المنتج،
+# و`broad` = يغطّي فئةً أوسع فتُقرَأ أرقامُه سياقاً لا قياساً.
+HS_SCOPES = ("exact", "broad")
 _CITED_KEYS = ("value", "source_url", "review_date")
 
 
@@ -197,7 +200,66 @@ def validate_market(iso3: str, prof: dict) -> list:
         if n < 2:
             e.append(f"{iso3}.multi_authority=true يلزمه "
                      f"authorities بتسميتين موثَّقتين على الأقل (وُجد {n})")
+
+    # ── الصنف ١٠: الإقليمُ المستهدَف وأقاليمُ السوق ──────────────────────
+    # العيبُ المرصود: قيودٌ من سلطةٍ ومرفأٌ تحت أخرى بلا إقليمِ هدفٍ مذكور.
+    # المفتاحان **اختياريان** (لا يُبطِلان مُهيَّأً قائماً) ومُدقَّقان متى
+    # حضرا؛ وقاعدةُ التقابل: سوقٌ مُعلَنةٌ متعدّدةَ السلطات يلزمها إقليمُ
+    # هدفٍ مسمّىً — وإلّا فالقارئُ لا يعرف أيَّ سلطةٍ تحكم شحنتَه.
+    tgt = prof.get("target_region")
+    if tgt is not None:
+        _check_cited(tgt, f"{iso3}.target_region", e)
+    if isinstance(multi, dict) and multi.get("value") is True and tgt is None:
+        e.append(f"{iso3}.multi_authority=true يلزمه target_region "
+                 "موثَّقاً — سلطةٌ تحكم منفذاً وأخرى تحكم غيرَه")
+    regions = prof.get("regions")
+    if regions is not None:
+        if not isinstance(regions, list):
+            e.append(f"{iso3}.regions: مطلوبةٌ قائمة")
+        else:
+            for i, row in enumerate(regions):
+                _check_region(row, f"{iso3}.regions[{i}]", e)
+
+    # ── سدُّ ثقبٍ مرصود: القسمُ العلويُّ المجهول كان يمرّ **صامتاً** ─────
+    # `_check_cited` يرفض المفتاحَ المجهول **داخل عقدةِ الحقيقة** وحدَها،
+    # والمُدقِّقُ يقرأ الأقسامَ المسمّاة فقط — فقسمٌ مكتوبٌ بخطأٍ إملائيّ
+    # (`regualtory_regime`) يُقبَل ولا يقرؤه أحد، وهو أسوأُ من الرفض لأنه
+    # يُطمئن. الآن: كلُّ قسمٍ خارج المعروف خطأٌ مسمّى.
+    extra = set(prof) - _MARKET_SECTIONS
+    if extra:
+        e.append(f"{iso3}: أقسامٌ غيرُ معروفة {sorted(extra)} — "
+                 f"المعروف {sorted(_MARKET_SECTIONS)}")
     return e
+
+
+# أقسامُ ملفِّ السوق المعروفة — مصدرٌ واحدٌ يقرؤه المُدقِّقُ وحارسُ المجهول.
+_MARKET_SECTIONS = frozenset({
+    "identity", "trade_regime", "reporting_quality", "regulatory_regime",
+    "logistics", "data_sources", "domestic_production",
+    "authorities", "multi_authority", "target_region", "regions",
+})
+# مفاتيحُ الإقليم الاختيارية — كلٌّ حقيقةٌ موثَّقةٌ متى حضرت.
+REGION_FACTS = ("fx", "customs", "port", "collection", "distributors",
+                "prices")
+
+
+def _check_region(row: object, path: str, errors: list) -> None:
+    """إقليمٌ داخل سوق: اسمٌ موثَّقٌ إلزاميّ، وكلُّ واقعةٍ حضرت موثَّقةٌ كذلك.
+
+    البياناتُ غيرُ مُدخَلةٍ لأيّ سوقٍ بعد (قرارُ مالكٍ مسجَّل: المخطَّطُ
+    والمُدقِّقُ والحارسُ تُشحَن أوّلاً) — فهذا المُدقِّقُ عقدٌ جاهزٌ لا فحصٌ
+    على بياناتٍ قائمة.
+    """
+    if not isinstance(row, dict):
+        errors.append(f"{path}: مدخلُ إقليمٍ ليس خريطة")
+        return
+    _check_cited(row.get("name"), f"{path}.name", errors)
+    unknown = set(row) - {"name"} - set(REGION_FACTS)
+    if unknown:
+        errors.append(f"{path}: مفاتيحُ إقليمٍ غيرُ معروفة {sorted(unknown)}")
+    for f in REGION_FACTS:
+        if row.get(f) is not None:
+            _check_cited(row.get(f), f"{path}.{f}", errors)
 
 
 def _check_corridor(c: object, path: str, errors: list) -> None:
@@ -245,7 +307,41 @@ def validate_product(key: str, prof: dict) -> list:
     hi = cited_value((band or {}).get("per_capita_kg_max"))
     if isinstance(lo, (int, float)) and isinstance(hi, (int, float)) and lo > hi:
         e.append(f"{key}.plausibility_band: الحدُّ الأدنى ({lo}) > الأعلى ({hi})")
+
+    # ── الصنف ١٠: اتّساعُ البند الجمركيّ ومدى سعرِ الحدود ────────────────
+    # العيبُ المرصود: بندٌ يغطّي فئةً كاملةً قُرِئ سوقَ منتجٍ واحد. الاتّساعُ
+    # **واقعةُ منتجٍ** لا استنتاجَ محرّك، فموطنُه هنا؛ ومدى سعرِ الحدود
+    # يُغذّي المعقولية كما يغذّيها `plausibility_band`. المفتاحان اختياريان
+    # (لا يُبطِلان مُهيَّأً قائماً) ومُدقَّقان متى حضرا.
+    if prof.get("hs_scope") is not None:
+        _enum(prof.get("hs_scope"), HS_SCOPES, f"{key}.hs_scope", e)
+    pr = prof.get("price_range")
+    if pr is not None:
+        if not isinstance(pr, dict):
+            e.append(f"{key}.price_range: مطلوبةٌ خريطة")
+        else:
+            for f in ("border_usd_per_kg_min", "border_usd_per_kg_max"):
+                _check_cited(pr.get(f), f"{key}.price_range.{f}", e)
+            p_lo = cited_value(pr.get("border_usd_per_kg_min"))
+            p_hi = cited_value(pr.get("border_usd_per_kg_max"))
+            if isinstance(p_lo, (int, float)) and \
+                    isinstance(p_hi, (int, float)) and p_lo > p_hi:
+                e.append(f"{key}.price_range: الحدُّ الأدنى ({p_lo}) > "
+                         f"الأعلى ({p_hi})")
+
+    extra = set(prof) - _PRODUCT_SECTIONS
+    if extra:
+        e.append(f"{key}: مفاتيحُ غيرُ معروفة {sorted(extra)} — "
+                 f"المعروف {sorted(_PRODUCT_SECTIONS)}")
     return e
+
+
+# أقسامُ ملفِّ المنتج المعروفة — مصدرٌ واحدٌ كنظيره في ملفِّ السوق.
+_PRODUCT_SECTIONS = frozenset({
+    "hs_code", "parent_chapter", "unit_convention", "product_class",
+    "ingredient_class", "storage_regime", "shelf_life_days",
+    "production_category", "plausibility_band", "hs_scope", "price_range",
+})
 
 
 # ── البوّابة العامّة ──────────────────────────────────────────────────────────

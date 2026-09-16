@@ -735,10 +735,15 @@ def test_c4_authority_config_is_validated_when_present():
     uncited["authorities"] = [{"value": "جهة أ"}]
     assert any("authorities[0].source_url" in x
                for x in P.validate_market("QAT", uncited))
-    # وحضورُ التسميتين موثَّقتين يمرّ.
+    # وحضورُ التسميتين موثَّقتين يمرّ — **مع إقليمِ الهدف**: الصنفُ ١٠ شدَّ
+    # العقدَ فصار تعدّدُ السلطات يلزمه `target_region` كذلك (سلطةٌ تحكم
+    # منفذاً وأخرى تحكم غيرَه، فقائمةُ اشتراطاتٍ بلا إقليمٍ لا تصلح
+    # للتنفيذ). تحديثُ قفلٍ مُعلَن لا تخفيفُ شرط.
     good = copy.deepcopy(base)
     good["multi_authority"] = dict(cited, value=True)
     good["authorities"] = [dict(cited, value="جهة أ"), dict(cited, value="جهة ب")]
+    assert any("target_region" in x for x in P.validate_market("QAT", good))
+    good["target_region"] = dict(cited, value="إقليم الجنوب")
     assert P.validate_market("QAT", good) == []
 
 
