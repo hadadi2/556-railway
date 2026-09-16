@@ -1030,3 +1030,103 @@ def test_c12_verdict_and_score_never_change_and_nothing_new_blocks():
             if issues:
                 problems[key] = issues
     assert problems == {}, problems
+
+
+# ═══ الصنف ١٣ — خانةُ قيمةٍ خارج المنسِّق الواحد ═══
+
+def _dn_estimated(key: str = "india_honey") -> dict:
+    import silk_render
+    v = silk_render.build_view(_blob(key))
+    dn = ((v.get("deep_research") or {}).get("economics") or {}) \
+        .get("decision_numbers") or []
+    return [e for e in dn if e.get("tier") == "estimated"]
+
+
+def test_c13_the_observed_cell_is_reproduced_then_fixed():
+    """**العيبُ المرصود حرفياً** في تقرير الهند: «2539350 INR (المدى
+    2539350–2539350، ±0%)» — سبعُ خاناتٍ بلا فاصلِ آلاف، ومدىً منحلٌّ
+    يُقدَّم مجالَ قياسٍ ±0% حيث لا مجال."""
+    import silk_narrative as N
+    with block_network():
+        entries = _dn_estimated()
+    entry = [e for e in entries if e["name"].startswith("كلفة الدخول")][0]
+    with _env(SILK_DECISION_NUMBER_FORMAT=None):
+        legacy = N.fmt_decision_value(entry)
+    assert legacy == "2539350 INR (المدى 2539350–2539350، ±0%)", legacy
+    with _env(SILK_DECISION_NUMBER_FORMAT="1"):
+        fixed = N.fmt_decision_value(entry)
+    assert fixed == "2,539,350 INR", fixed
+
+
+def test_c13_a_real_range_keeps_its_range_and_gains_separators():
+    """المدى الحقيقيُّ يبقى مدىً — الطيُّ للمنحلِّ وحدَه، لا لكلّ مدى."""
+    import silk_narrative as N
+    with block_network():
+        entries = _dn_estimated("egypt_olive_oil")
+    trial = [e for e in entries if e["name"].startswith("حجم الشحنة")][0]
+    with _env(SILK_DECISION_NUMBER_FORMAT="1"):
+        out = N.fmt_decision_value(trial)
+    assert out == ("29,188.04 لتر (المدى 27,745.65–30,630.43، ±4.9%)"), out
+
+
+def test_c13_canonical_form_never_asks_about_the_flag():
+    """مرجعُ المقابلة لا يسأل الراية — وإلّا قابلَ الفحصُ الشيءَ بنفسه
+    فأطلقَ على المسار **المُصلَح** (وهو ما فعلته الصيغةُ الأولى: ثلاثَ عشرةَ
+    إطلاقةً مقلوبةً، مطفأةً صفرٌ ومفعّلةً ثلاثَ عشرة)."""
+    import silk_narrative as N
+    e = {"tier": "estimated", "value": 1234567, "unit": "SAR",
+         "range": {"low": 1234567, "high": 1234567}, "width_pct": 0}
+    with _env(SILK_DECISION_NUMBER_FORMAT=None):
+        assert N.canonical_decision_value(e) == "1,234,567 SAR"
+        assert N.fmt_decision_value(e) != N.canonical_decision_value(e)
+    with _env(SILK_DECISION_NUMBER_FORMAT="1"):
+        assert N.fmt_decision_value(e) == N.canonical_decision_value(e)
+
+
+def test_c13_guard_marks_the_superseded_path_and_goes_silent_when_fixed():
+    """الحارسُ موضوعُه **مسارُ العرض الساري**: يُطلِق على كلّ مدوّنةٍ تحمل
+    بنداً محسوباً ما دامت الرايةُ مطفأة (١٣ من ١٤ — و`fettuccine` بلا بندٍ
+    محسوبٍ أصلاً)، ويصمت بالبناء حين تُفعَّل."""
+    import silk_quality_gate as G
+    with block_network():
+        with _env(SILK_DECISION_NUMBER_FORMAT=None):
+            off = {k for k in _canonical_keys()
+                   if any(f["check"] == "decision_number_format_drift"
+                          for f in G.run_quality_gate(
+                              _prod_view(k))["findings"])}
+        with _env(SILK_DECISION_NUMBER_FORMAT="1"):
+            on = {k for k in _canonical_keys()
+                  if any(f["check"] == "decision_number_format_drift"
+                         for f in G.run_quality_gate(
+                             _prod_view(k))["findings"])}
+    assert off == set(_canonical_keys()) - {"fettuccine"}, off
+    assert on == set(), on
+    assert "decision_number_format_drift" not in G.FAIL_TRIGGER_CHECKS
+    with _env(SILK_DECISION_NUMBER_FORMAT="1"):
+        assert "decision_number_format_drift" not in G.effective_fail_triggers()
+
+
+def test_c13_flag_changes_only_the_value_cell_and_no_stored_number():
+    """القيمُ المخزّنة لا تُمَسّ: الفرقُ كلُّه في **خانة العرض**، والقيمةُ
+    والمدى في البيانات كما هما رقماً برقم."""
+    import silk_reports
+    with block_network():
+        for key in _canonical_keys():
+            with _env(SILK_DECISION_NUMBER_FORMAT=None):
+                v0 = _prod_view(key)
+                md0 = silk_reports.render_markdown(v0).split("\n")
+                dn0 = (((v0.get("deep_research") or {}).get("economics")
+                        or {}).get("decision_numbers") or [])
+            with _env(SILK_DECISION_NUMBER_FORMAT="1"):
+                v1 = _prod_view(key)
+                md1 = silk_reports.render_markdown(v1).split("\n")
+                dn1 = (((v1.get("deep_research") or {}).get("economics")
+                        or {}).get("decision_numbers") or [])
+            assert dn0 == dn1, key            # صفرُ مسٍّ بالبيانات
+            assert len(md0) == len(md1), key
+            for a, b in zip(md0, md1):
+                if a == b:
+                    continue
+                # الاسمُ كما هو، والخانةُ الثانيةُ وحدَها تغيّرت.
+                assert a.split("|")[1] == b.split("|")[1], (key, a, b)
+                assert a.split("|")[3:] == b.split("|")[3:], (key, a, b)

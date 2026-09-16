@@ -855,6 +855,60 @@ def currency_in(text: object) -> str:
     return ""
 
 
+# ── الصنف ١٣: قيمةُ بندِ القرار تمرّ بالمنسِّق الواحد ─────────────────────
+# **العيبُ المرصود** (المراجعةُ الذاتية للجولة الثانية، مدوّنةُ الهند):
+# «كلفة الدخول الكلية حتى أول شحنة | **2539350 INR** (المدى
+# 2539350–2539350، ±0%)» — رقمٌ من سبع خاناتٍ بلا فاصلِ آلاف يقرؤه صاحبُ
+# القرار بالتقطيع، ومدىً **منحلٌّ** طرفاه متساويان يُقدَّم كأنه مجالُ قياسٍ
+# ±0% بينما هو قيمةٌ نقطية.
+#
+# **الجذر:** الصنفُ ٣ وحّد المنسِّقات، وهذان السطحان (`_economics_md_lines`
+# و`_client_decision_numbers_table`) يبنيان خانةَ القيمة بـf-string خاصّةٍ
+# بهما — سطحٌ لم يبلغه التوحيد، فعاد العيبُ من الباب نفسه.
+DECISION_NUMBER_FORMAT_FLAG = "SILK_DECISION_NUMBER_FORMAT"
+
+
+def decision_number_format() -> bool:
+    """هل رايةُ الصنف ١٣ مفعّلة؟ — نمطُ الرايات القائم."""
+    import os
+    return os.environ.get(DECISION_NUMBER_FORMAT_FLAG,
+                          "").strip().lower() in ("1", "true", "yes")
+
+
+def _legacy_decision_value(e: dict) -> str:
+    """الصيغةُ القائمة حرفياً — تُحفَظ هنا مرجعاً للمقابلة لا للاستخدام."""
+    r = e.get("range") or {}
+    return (f"{e.get('value')} {e.get('unit', '')} "
+            f"(المدى {r.get('low')}–{r.get('high')}، "
+            f"±{e.get('width_pct')}%)")
+
+
+def canonical_decision_value(entry: object) -> str:
+    """الصيغةُ القانونية **بلا سؤالِ الراية** — مرجعُ المقابلة في البوابة.
+
+    فاصلُ آلافٍ من `fmt_number`، ومدىً منحلٌّ (طرفاه متساويان) يُطوى فلا
+    يُقدَّم مجالَ قياسٍ ±0% حيث لا مجال.
+    """
+    e = entry if isinstance(entry, dict) else {}
+    unit = str(e.get("unit") or "").strip()
+    body = fmt_number(e.get("value"))
+    head = f"{body} {unit}".strip()
+    r = e.get("range") or {}
+    lo, hi = r.get("low"), r.get("high")
+    if lo is None or hi is None or _as_float(lo) == _as_float(hi):
+        return head
+    return (f"{head} (المدى {fmt_number(lo)}–{fmt_number(hi)}، "
+            f"±{e.get('width_pct')}%)")
+
+
+def fmt_decision_value(entry: object) -> str:
+    """خانةُ القيمة كما تُعرَض **الآن**: قانونيةً مع الراية، والقائمةُ حرفاً
+    بحرفٍ بدونها. والبوابةُ تقابل هذه بتلك فتعرف أيُّ مسارٍ سارٍ."""
+    return (canonical_decision_value(entry) if decision_number_format()
+            else _legacy_decision_value(
+                entry if isinstance(entry, dict) else {}))
+
+
 def fmt_year(v: object) -> str:
     """سنةٌ للعرض — بلا فاصلِ آلاف («2024» لا «2,024»)."""
     n = _as_float(v)

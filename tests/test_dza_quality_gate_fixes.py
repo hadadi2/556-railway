@@ -302,7 +302,13 @@ def test_overall_verdict_moves_from_fail_to_pass_with_warnings():
                       "narrative_confidence_mismatch",
                       # Part B: مدوّنة DZA بلا قسم «أرقام القرار» — تحذيري
                       # بالتصميم حتى معيار التصعيد (تحديث قفل معلن).
-                      "decision_numbers_present"}
+                      "decision_numbers_present",
+                      # الصنف ١٣ (موجة عيوب التقرير): خانةُ قيمةٍ في «أرقام
+                      # القرار» تُعرَض خارج المنسِّق الواحد — تحذيريّ يُطلِق
+                      # على كلّ مدوّنةٍ تحمل بنداً محسوباً ما دامت رايةُ
+                      # `SILK_DECISION_NUMBER_FORMAT` مطفأة، ويصمت بالبناء
+                      # حين تُفعَّل (تحديثُ قفلٍ معلَن، لا توسيعُ سماح).
+                      "decision_number_format_drift"}
 
 
 def test_no_regression_guard_fires_on_the_dza_blob_after_fix():

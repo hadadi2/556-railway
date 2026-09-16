@@ -2304,10 +2304,10 @@ def _economics_md_lines(dr: dict) -> list[str]:
                 if e.get("too_wide"):
                     val = e.get("note")
                 else:
-                    r = e["range"]
-                    val = (f"{e['value']} {e.get('unit', '')} "
-                           f"(المدى {r['low']}–{r['high']}، "
-                           f"±{e['width_pct']}%)")
+                    # الصنف ١٣: خانةُ القيمة من المنسِّق الواحد — بلا الراية
+                    # تُعاد الصيغةُ القائمة حرفاً بحرف.
+                    from silk_narrative import fmt_decision_value
+                    val = fmt_decision_value(e)
                 # سطح مشغّل/أكاديمي: الاستشهاد الخام يُلحق هنا (سطح العميل
                 # يعرض الطريقة بلغة الزائر فقط — سياسة موجة ٣).
                 # الصنف ٩: المعادلةُ ومدخلاتُها ومصادرُها والناقصُ من
@@ -3595,10 +3595,8 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
             if e.get("too_wide"):
                 val = str(e.get("note"))
             else:
-                r = e["range"]
-                val = (f"{e['value']} {e.get('unit', '')} "
-                       f"(المدى {r['low']}–{r['high']}، "
-                       f"±{e['width_pct']}%)")
+                from silk_narrative import fmt_decision_value
+                val = fmt_decision_value(e)
             # الصنف ٩: نفسُ المُنسِّق على سطح العميل — سقفُ المخاطرة
             # يصل القارئَ بناقصه مسمّىً لا شاملاً في الظاهر.
             from silk_narrative import fmt_derived as _fmt_derived

@@ -3638,6 +3638,47 @@ def _check_observed_value_declared_unavailable(view: dict) -> list[dict]:
     return findings
 
 
+# ── الصنف ١٣: خانةُ قيمةٍ خارج المنسِّق الواحد ──────────────────────────────
+# **العيبُ المرصود:** «2539350 INR (المدى 2539350–2539350، ±0%)» — سبعُ
+# خاناتٍ بلا فاصلِ آلاف، ومدىً منحلٌّ يُقدَّم مجالَ قياسٍ ±0% حيث لا مجال.
+# الصنفُ ٣ وحّد المنسِّقات وهذان السطحان بُنِيا بـf-string خاصّةٍ بهما.
+#
+# الفحصُ يقابل **الصيغةَ القائمة** بالصيغةِ القانونية للمنسِّق الواحد،
+# ويسمّي الخانةَ بعينها. تحذيريّ دائماً، ويصمت بالبناء حين تُفعَّل الراية —
+# فموضوعُه مسارُ العرض الساري لا بياناتُ المدوّنة.
+def _check_decision_number_format_drift(view: dict) -> list[dict]:
+    """`decision_number_format_drift` (الصنف ١٣، تحذيريّ): خانةُ قيمةٍ في
+    «أرقام القرار» تُعرَض بصيغةٍ غير صيغةِ المنسِّق الواحد.
+
+    **منطقةُ العمى المعلنة:** (أ) بنودُ الفجوة (`tier != "estimated"`) نصٌّ
+    لا رقمٌ فلا تُقابَل؛ (ب) بندٌ مُعلَنٌ «أوسعَ من أن يُتصرف به»
+    (`too_wide`) يُعرَض بملاحظته لا بقيمته فيُستثنى؛ (ج) سطوحٌ أخرى تعرض
+    مقادير (جدولُ السيناريوهات والشلال) خارج نطاق هذا الفحص — تُضاف حين
+    تُقاس، ولا يُدّعى شمولٌ غيرُ محقَّق.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    dn = ((dr.get("economics") or {}).get("decision_numbers") or [])
+    if not dn:
+        return []
+    import silk_narrative as _N
+    drifted = []
+    for e in dn:
+        if not isinstance(e, dict) or e.get("tier") != "estimated" \
+                or e.get("too_wide"):
+            continue
+        canonical = _N.canonical_decision_value(e)
+        if canonical != _N.fmt_decision_value(e):
+            drifted.append(f"{e.get('name')}: «{canonical}»")
+    if not drifted:
+        return []
+    return [{
+        "check": "decision_number_format_drift", "repairable": True,
+        "note": ("خانةُ قيمةٍ في «أرقام القرار» تُعرَض خارج المنسِّق الواحد "
+                 "(فاصلُ آلافٍ غائب أو مدىً منحلٌّ طرفاه متساويان يُقدَّم "
+                 "مجالَ قياس) — الصيغةُ القانونية: "
+                 + "؛ ".join(drifted[:3]))}]
+
+
 # البند 6 (أمر إصلاح المحرّك) — تناقضُ تسعيرٍ محسوب مرّ بلا تعليق (تقرير
 # #11: أقصى EXW ‏$0.3274 مقابل متوسط استيراد $0.81 — أدنى بـ60%، ومع ذلك
 # قُدِّم الرقم «أساساً للتفاوض»). حين يحسب المحرك `pricing_contradiction`:
@@ -5712,6 +5753,8 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_max_loss_without_components(view)
     # الصنف ١٢: فجوةٌ مُعلَنةٌ لمعطىً تحمله بعثتُه فعلاً — تحذيريّ.
     findings += _check_observed_value_declared_unavailable(view)
+    # الصنف ١٣: خانةُ قيمةٍ خارج المنسِّق الواحد — تحذيريّ.
+    findings += _check_decision_number_format_drift(view)
     # البند 7: ترقية حكم مع تدهور كل مؤشرات الدليل — لا تُسلَّم.
     findings += _check_verdict_evidence_direction(view)
     # البند 10: تسمية «عدم دخول» فوق متنٍ يوصي بباب دخول مسمّى — لا تُسلَّم.

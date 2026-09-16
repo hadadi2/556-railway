@@ -4571,6 +4571,14 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    245: lambda: (
+        _needles("silk_narrative.py", "def canonical_decision_value",
+                 "def fmt_decision_value", "def decision_number_format")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_decision_number_format_drift")(),
+        _needles("silk_reports.py", "fmt_decision_value")(),
+        _absent("silk_reports.py", "f\"(المدى {r['low']}–{r['high']}، \"")(),
+        _needles("tests/test_lessons_enforcement.py", '(245, ')()),
     244: lambda: (
         _needles("silk_narrative.py", "def currency_tokens",
                  "def currency_in", "_CURRENCY_AMBIGUOUS_AR")(),

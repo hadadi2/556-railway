@@ -3,6 +3,7 @@
   "findings": [
    "access_timeline_missing",
    "curated_reference_not_consulted",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_constraints",
    "exec_summary_recommendation_first",
@@ -22,6 +23,7 @@
    "authority_naming_drift",
    "connector_repeated_in_paragraph",
    "cross_section_near_duplicate",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "markdown_artifacts",
    "narrative_money_not_grounded",
@@ -45,6 +47,7 @@
  "germany_dates": {
   "findings": [
    "agent_empty",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_constraints",
    "exec_summary_recommendation_first",
@@ -59,6 +62,7 @@
    "access_timeline_missing",
    "agent_empty",
    "curated_reference_not_consulted",
+   "decision_number_format_drift",
    "markdown_artifacts",
    "observed_value_declared_unavailable",
    "observed_value_declared_unavailable"
@@ -70,6 +74,7 @@
  "japan_honey": {
   "findings": [
    "agent_empty",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_constraints",
    "exec_summary_recommendation_first",
@@ -82,6 +87,7 @@
  },
  "jordan_milk": {
   "findings": [
+   "decision_number_format_drift",
    "decision_numbers_present",
    "economics_missing_despite_inputs",
    "exec_summary_recommendation_first",
@@ -97,6 +103,7 @@
    "agent_empty",
    "caveat_repetition",
    "dangling_cross_reference",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_constraints",
    "exec_summary_recommendation_first",
@@ -114,6 +121,7 @@
    "agent_empty",
    "agent_empty",
    "curated_reference_not_consulted",
+   "decision_number_format_drift",
    "markdown_artifacts",
    "observed_value_declared_unavailable"
   ],
@@ -125,6 +133,7 @@
   "findings": [
    "agent_empty",
    "cagr_sign_flips_under_base_year",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_recommendation_first",
    "markdown_artifacts",
@@ -141,6 +150,7 @@
  "netherlands": {
   "findings": [
    "agent_empty",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_constraints",
    "exec_summary_recommendation_first",
@@ -156,6 +166,7 @@
    "agent_empty",
    "cross_universe_ratio",
    "decimal_precision",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "markdown_artifacts",
    "narrative_money_not_grounded"
@@ -170,6 +181,7 @@
    "client_section_placeholder",
    "client_section_placeholder",
    "client_section_placeholder",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "markdown_artifacts",
    "narrative_money_not_grounded",
@@ -183,6 +195,7 @@
   "findings": [
    "agent_empty",
    "dangling_cross_reference",
+   "decision_number_format_drift",
    "decision_numbers_present",
    "exec_summary_constraints",
    "exec_summary_recommendation_first",

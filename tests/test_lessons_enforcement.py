@@ -207,6 +207,13 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٥ — المرساةُ السلوكية: الخانةُ المرصودة تُعاد ثمّ تُصلَح، والمرجعُ
+    # لا يسأل الراية، والحارسُ يصمت بالبناء، وصفرُ مسٍّ بالبيانات.
+    (245, "tests/test_report_quality_logic_layer.py",
+     ["def test_c13_the_observed_cell_is_reproduced_then_fixed",
+      "def test_c13_canonical_form_never_asks_about_the_flag",
+      "def test_c13_guard_marks_the_superseded_path_and_goes_silent_when_fixed",
+      "def test_c13_flag_changes_only_the_value_cell_and_no_stored_number"]),
     # ٢٤٤ — المرساةُ السلوكية: الحارسُ يُطلِق على المقروءِ غيرِ المقروء
     # حرفياً، والقيمُ المتغيّرةُ محسوبةٌ بمقدار التعريفة، والحكمُ لا يتغيّر.
     (244, "tests/test_report_quality_logic_layer.py",
@@ -576,6 +583,15 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤٥ — خانةُ القيمة: المنسِّقُ الواحد، والمرجعُ المستقلُّ عن الراية،
+    # والصيغةُ القائمة محفوظةً مرجعاً، والفحصُ الذي يقابلهما.
+    (245, "silk_narrative.py",
+     ["def canonical_decision_value", "def fmt_decision_value",
+      "def _legacy_decision_value", "def decision_number_format",
+      "DECISION_NUMBER_FORMAT_FLAG"]),
+    (245, "silk_quality_gate.py",
+     ["def _check_decision_number_format_drift"]),
+    (245, "silk_reports.py", ["fmt_decision_value"]),
     # ٢٤٤ — مفرداتُ التعرّف: المصدرُ الواحد، والاتحادُ لا الاستبدال،
     # ومنعُ تخمينِ الدولة من اسمٍ واسع، والحارسُ الحتميّ.
     (244, "silk_narrative.py",
