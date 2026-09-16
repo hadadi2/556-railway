@@ -38,6 +38,12 @@ BASELINE_PATH = os.path.join(_REPO_ROOT, "tests", "baselines",
 # المدوّنات العشر — مفتاح ثابت → (وحدة، دالة المدوّنة)
 CANONICAL_BLOBS = {
     "dza_peanut_butter": ("canonical_dza_peanut_butter", "dza_research_blob"),
+    # موجة عيوب التقرير (أمر المالك بعد كلّ جولة): سوقان ومنتَجان جديدان
+    # تُولَّد تقاريرُهما وتُراجَع ذاتياً لاكتشافِ عائلاتِ عيوبٍ لم تُرصَد —
+    # مصرُ (عملةٌ محلّية وفئةٌ واسعة) ونيجيريا (ضعفُ تبليغٍ مُعلَن ⇒ مرآة).
+    "egypt_olive_oil": ("canonical_egypt_olive_oil",
+                        "egypt_olive_oil_research_blob"),
+    "nigeria_dates": ("canonical_nigeria_dates", "nigeria_dates_research_blob"),
     "fettuccine": ("canonical_fettuccine", "fettuccine_research_blob"),
     "germany_dates": ("canonical_germany_dates", "germany_dates_research_blob"),
     "japan_honey": ("canonical_japan_honey", "japan_honey_research_blob"),

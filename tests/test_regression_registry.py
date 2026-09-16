@@ -4571,6 +4571,13 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    239: lambda: (
+        _needles("silk_quality_gate.py", "_OTHER_UNIVERSE_CTX_RE",
+                 "def _fmt_gate_num", "بيانات المرآة")(),
+        _absent("silk_quality_gate.py", 'واردات {ev:,.0f}$ بينما')(),
+        _needles("tools/gen_verdict_baseline.py", "egypt_olive_oil",
+                 "nigeria_dates")(),
+        _needles("tests/test_lessons_enforcement.py", '(239, ')()),
     238: lambda: (
         _needles("silk_style_contract.py", "SINGLE_EXPLANATION_RULE",
                  "REPEATED_CONNECTORS", "وهذا يعني")(),

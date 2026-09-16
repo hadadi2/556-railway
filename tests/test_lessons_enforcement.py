@@ -207,10 +207,18 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٣٩ — المرساةُ السلوكية: المدوّنةُ لم تَعُد محجوبةً بتناقضٍ كاذب،
+    # والتناقضُ الحقيقيّ ما زال يحجب، والتثبيتةُ الموجَبة تُطلِق فعلاً.
+    (239, "tests/test_report_quality_reader_layer.py",
+     ["def test_c11_nigeria_blob_is_no_longer_blocked_by_a_false_contradiction",
+      "def test_c11_a_disclosed_mirror_gap_is_not_a_blocking_contradiction",
+      "def test_c11_c_a_real_contradiction_still_blocks",
+      "def test_selfreview_egypt_is_the_positive_fixture_for_the_first_round",
+      "def test_c5_similarity_threshold_separates_measured_negatives_from_the_defect"]),
     # ٢٣٨ — المرساةُ السلوكية: هامشُ العتبة مقيسٌ لا مخمَّن، والتفصيلُ داخل
     # القسم ليس تكراراً، والعيبُ في توزيع الرابط لا مجموعه.
     (238, "tests/test_report_quality_reader_layer.py",
-     ["def test_c5_similarity_threshold_has_measured_headroom",
+     ["def test_c5_similarity_threshold_separates_measured_negatives_from_the_defect",
       "def test_c5_detail_inside_one_section_is_not_repetition",
       "def test_c5_connector_repeated_inside_one_paragraph_is_caught"]),
     # ٢٣٧ — المرساةُ السلوكية: المنصوبُ المنوَّن ليس جهةً، والتهيئةُ مُدقَّقة،
@@ -531,6 +539,18 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٣٩ — المراجعةُ الذاتية بعد الجولة الأولى: تضييقُ فحصٍ حاجبٍ يُطلِق على
+    # الصحيح، وبلاغٌ يمرّ على المنسِّق، وعتبةٌ تُعايَر بفصلٍ مقيس، وتثبيتةٌ
+    # موجَبةٌ واحدة تُثبِت أنّ القواعدَ تصطاد نثرَ كاتبٍ طبيعيّ.
+    (239, "silk_quality_gate.py",
+     ["_OTHER_UNIVERSE_CTX_RE", "def _fmt_gate_num", "_XSEC_SIM_DEFAULT",
+      "بيانات المرآة"]),
+    (239, "tools/canonical_egypt_olive_oil.py",
+     ["def egypt_olive_oil_research_blob", "بالحصة السعودية"]),
+    (239, "tools/canonical_nigeria_dates.py",
+     ["def nigeria_dates_research_blob", "بيانات المرآة"]),
+    (239, "tools/gen_verdict_baseline.py",
+     ["egypt_olive_oil", "nigeria_dates"]),
     # ٢٣٨ — التكرار: قاعدةُ الشرح الواحد، وقائمةُ الروابط المشتركة، وقناتا
     # الإنفاذ (تشابهٌ عبر الأقسام + رابطٌ داخل الفقرة) بعتبةٍ مُعايَرة.
     (238, "silk_style_contract.py",

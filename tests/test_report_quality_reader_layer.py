@@ -91,9 +91,20 @@ def _production_view(blob_key: str) -> dict:
     return silk_render.build_view(blob)
 
 
+# **التثبيتةُ الموجَبة الوحيدة** — نثرُها يحمل العيوبَ عمداً، فتُستثنى من كلّ
+# تأكيدٍ سالب **بالاسم** لا بصمت (وتُثبَت إطلاقاتُها في اختبارها الخاصّ).
+_POSITIVE_FIXTURES = ("egypt_olive_oil",)
+
+
 def _canonical_keys() -> list:
+    """كلُّ المدوّنات — للقياس والعرض."""
     from tools import gen_verdict_baseline as B
     return sorted(B.CANONICAL_BLOBS)
+
+
+def _negative_keys() -> list:
+    """المدوّناتُ التي يجب أن تمرّ بصفرِ إطلاقة."""
+    return [k for k in _canonical_keys() if k not in _POSITIVE_FIXTURES]
 
 
 # ════════════════ الصنف ١ — لغةُ النظام تصل القارئ ════════════════
@@ -208,7 +219,7 @@ def test_c1_the_three_real_templates_no_longer_speak_to_a_developer():
               "أضعف الأعمدة", "عمود ضعيف", "عمود قوي", "لا أعمدة محسوبة")
     emitted = []
     with block_network():
-        for key in _canonical_keys():
+        for key in _negative_keys():
             view = _production_view(key)
             basis = ((view.get("decision") or {}).get("basis") or {})
             emitted.append(str(basis.get("counter_case_line") or ""))
@@ -320,7 +331,7 @@ def test_c1_zero_false_positives_across_every_canonical_blob():
     أسوأ من غيابها."""
     import silk_quality_gate as G
     with block_network():
-        for key in _canonical_keys():
+        for key in _negative_keys():
             from tools import gen_verdict_baseline as B
             import silk_render
             mod, fn = B.CANONICAL_BLOBS[key]
@@ -467,7 +478,7 @@ def test_c2_zero_false_positives_across_every_canonical_blob():
     import silk_render
     from tools import gen_verdict_baseline as B
     with block_network():
-        for key in _canonical_keys():
+        for key in _negative_keys():
             mod, fn = B.CANONICAL_BLOBS[key]
             blob = getattr(importlib.import_module(mod), fn)()
             out = G.run_quality_gate(silk_render.build_view(blob))
@@ -636,7 +647,7 @@ def test_c3_new_rules_fire_once_on_the_canonical_set_and_it_is_a_true_positive()
            "stale_data_without_year", "observation_date_equals_run_date")
     hits: dict = {}
     with block_network():
-        for key in _canonical_keys():
+        for key in _negative_keys():
             mod, fn = B.CANONICAL_BLOBS[key]
             blob = getattr(importlib.import_module(mod), fn)()
             out = G.run_quality_gate(silk_render.build_view(blob))
@@ -807,7 +818,7 @@ def test_c4_zero_false_positives_across_every_canonical_blob():
     from tools import gen_verdict_baseline as B
     new = ("authority_naming_drift", "defined_term_without_definition")
     with block_network():
-        for key in _canonical_keys():
+        for key in _negative_keys():
             mod, fn = B.CANONICAL_BLOBS[key]
             blob = getattr(importlib.import_module(mod), fn)()
             out = G.run_quality_gate(silk_render.build_view(blob))
@@ -888,20 +899,42 @@ def test_c5_detail_inside_one_section_is_not_repetition():
     assert chk(distinct) == []
 
 
-def test_c5_similarity_threshold_has_measured_headroom():
-    """العتبةُ مُعايَرةٌ لا مُخمَّنة: صفرُ زوجٍ يبلغ **0.45** في المدوّنات
-    العشر، والعتبةُ المعتمدة 0.55 — هامشُ أمانٍ ضِعف."""
+def test_c5_similarity_threshold_separates_measured_negatives_from_the_defect():
+    """العتبةُ مُعايَرةٌ **بفصلٍ مقيس** لا بسؤالٍ أضعف.
+
+    القيمةُ الأولى (0.55) قِيست بـ«هل يبلغ زوجٌ 0.45؟» فكانت **تفوّت العيبَ
+    الحقيقيّ** (0.538) — قياسٌ ناقصٌ يُطمئن وهو أخطرُ من غيابه. القياسُ
+    الكامل: أعلى تشابهٍ في المدوّنات السالبة، وتشابهُ العيب في الموجَبة.
+    """
     import silk_quality_gate as G
     import silk_render
     from tools import gen_verdict_baseline as B
-    assert G._XSEC_SIM_DEFAULT >= 0.5
-    with block_network(), _env(SILK_XSEC_SIM="0.45"):
-        for key in _canonical_keys():
-            mod, fn = B.CANONICAL_BLOBS[key]
-            blob = getattr(importlib.import_module(mod), fn)()
-            text = (silk_render.build_view(blob).get("deep_research") or {}
-                    ).get("report", {}).get("text") or ""
-            assert G._check_cross_section_near_duplicate(text) == [], key
+
+    def _max_sim(key: str) -> float:
+        mod, fn = B.CANONICAL_BLOBS[key]
+        blob = getattr(importlib.import_module(mod), fn)()
+        text = G._split_off_appendix(
+            (silk_render.build_view(blob).get("deep_research") or {}
+             ).get("report", {}).get("text") or "")
+        sents = G._xsec_sentences(text)
+        best = 0.0
+        for i in range(len(sents)):
+            for j in range(i + 1, len(sents)):
+                if sents[i][0] == sents[j][0]:
+                    continue
+                a, b = sents[i][2], sents[j][2]
+                union = len(a | b)
+                if union:
+                    best = max(best, len(a & b) / union)
+        return best
+
+    with block_network():
+        worst_negative = max(_max_sim(k) for k in _negative_keys())
+        positive = max(_max_sim(k) for k in _POSITIVE_FIXTURES)
+    assert worst_negative <= 0.35, worst_negative
+    assert positive >= 0.50, positive
+    assert worst_negative < G._XSEC_SIM_DEFAULT < positive, (
+        worst_negative, G._XSEC_SIM_DEFAULT, positive)
 
 
 def test_c5_connector_repeated_inside_one_paragraph_is_caught():
@@ -960,7 +993,7 @@ def test_c5_zero_false_positives_across_every_canonical_blob():
     new = ("cross_section_near_duplicate",
            "connector_repeated_in_paragraph")
     with block_network():
-        for key in _canonical_keys():
+        for key in _negative_keys():
             mod, fn = B.CANONICAL_BLOBS[key]
             blob = getattr(importlib.import_module(mod), fn)()
             out = G.run_quality_gate(silk_render.build_view(blob))
@@ -979,3 +1012,153 @@ def test_c5_rules_are_wired_and_warning_only():
     for check in ("cross_section_near_duplicate",
                   "connector_repeated_in_paragraph"):
         assert check not in G.FAIL_TRIGGER_CHECKS, check
+
+
+# ══════ المراجعةُ الذاتية بعد الجولة الأولى (أمر المالك) — سوقان جديدان ══════
+#
+# «بعد كل جولة ولّد تقريرين لسوقين جديدين وراجعهما بنفسك؛ ما تجده يُضاف
+# كفئة جديدة بنفس الأسلوب.» — مصرُ (عملةٌ محلّية وفئةٌ واسعة) ونيجيريا
+# (ضعفُ تبليغٍ مُعلَن ⇒ مرآة). ما وُجد: ثلاثُ إطلاقاتٍ صحيحةٍ لقواعد الجولة،
+# وإنذاران كاذبان فيها، وعائلةٌ جديدة (الصنف ١١) في فحصٍ **حاجب**.
+
+
+def test_selfreview_egypt_is_the_positive_fixture_for_the_first_round():
+    """التثبيتةُ **الموجَبة**: نثرُ كاتبٍ طبيعيّ يحمل ثلاثَ عائلاتٍ مرصودة.
+
+    الإحدى عشرةُ الأخرى سالبةٌ (صفرُ إطلاقة) — وقاعدةٌ لا تُطلِق إلّا على
+    مثالٍ مصنوعٍ في اختبارٍ لا يُعرَف أنها تصطاد شيئاً في الإنتاج."""
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    mod, fn = B.CANONICAL_BLOBS["egypt_olive_oil"]
+    with block_network():
+        blob = getattr(importlib.import_module(mod), fn)()
+        out = G.run_quality_gate(silk_render.build_view(blob))
+    got = {f["check"] for f in out["findings"]}
+    assert "authority_naming_drift" in got, "«الحكومة» عاريةً بجوار جهتين"
+    assert "connector_repeated_in_paragraph" in got, "«وهذا يعني» مرّتين"
+    assert "template_interpolation" in got, "«بالحصة السعودية»"
+    assert "cross_section_near_duplicate" in got, \
+        "شرطُ التسجيل مشروحٌ في الخلاصة والتنظيم معاً (الصنف ٥)"
+    echo = [f["note"] for f in out["findings"]
+            if f["check"] == "template_interpolation"]
+    assert any("السعودية" in n for n in echo), echo
+
+
+def test_selfreview_only_egypt_fires_on_the_first_round_rules():
+    """شرطُ القبول على **اثنتي عشرة** مدوّنة: التثبيتةُ الموجَبة وحدها،
+    زائداً إطلاقةَ اليمن الحقيقية المُعدَّدة في الصنف ٣."""
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    mine = ("reader_language_leak", "template_interpolation",
+            "score_format_drift", "amount_without_currency",
+            "stale_data_without_year", "observation_date_equals_run_date",
+            "authority_naming_drift", "defined_term_without_definition",
+            "cross_section_near_duplicate",
+            "connector_repeated_in_paragraph")
+    hits: dict = {}
+    with block_network():
+        for key in sorted(B.CANONICAL_BLOBS):
+            mod, fn = B.CANONICAL_BLOBS[key]
+            blob = getattr(importlib.import_module(mod), fn)()
+            out = G.run_quality_gate(silk_render.build_view(blob))
+            got = sorted({f["check"] for f in out["findings"]
+                          if f["check"] in mine})
+            if got:
+                hits[key] = got
+    assert hits == {
+        # العتبةُ بعد المعايرة الصحيحة (0.45) تلتقط أيضاً شرطَ التسجيل
+        # المشروحَ في الخلاصة والتنظيم معاً — رابعُ عيبٍ في التثبيتة الموجَبة.
+        "egypt_olive_oil": ["authority_naming_drift",
+                            "connector_repeated_in_paragraph",
+                            "cross_section_near_duplicate",
+                            "template_interpolation"],
+        "yemen": ["stale_data_without_year"],
+    }, hits
+
+
+def test_c11_a_disclosed_mirror_gap_is_not_a_blocking_contradiction():
+    """**الصنف ١١ (أ)** — تمييزُ المباشر عن المرآة عقدٌ محفوظ.
+
+    سجلُّ الأدلة يحمل قراءتين مشروعتين لمؤشرٍ واحد (تصريحٌ مباشر + مرآة)،
+    فكانت الحلقةُ تقارن قراءةَ المتن بالقراءةِ **الأخرى** وتُفشِل `FAIL`
+    تقريراً يفعل بالضبط ما يُطلَب منه: يُفصِح عن الفجوة صريحاً. وذكرُ
+    قراءتين بلا تمييزٍ عيبٌ حقيقيّ لكنه عائلةُ **الصنف ٦**."""
+    from silk_quality_gate import \
+        _check_evidence_body_numeric_consistency as chk
+    dr = {"report": {"text": "## 3. السوق\nالتصريح المباشر 1.2 مليون دولار، "
+                             "وبيانات المرآة 9.6 مليون دولار — فجوة ثمانية "
+                             "أضعاف لم تُحسم."},
+          "missions": {"trade_flow": {"findings": [
+              {"value": 1_200_000, "note": "واردات مصرَّحة 2023"},
+              {"value": 9_600_000, "note": "مرآة صادرات الشركاء 2023"}]}},
+          "analyst": {"by_category": {}}}
+    assert chk(dr) == []
+
+
+def test_c11_b_per_capita_is_not_compared_against_a_total():
+    """**الصنف ١١ (ب)** — عوالمُ مختلفة لا تُقارَن.
+
+    «نصيب الفرد من الواردات 0.005 دولار» يحمل كلمة «الواردات» فيدخل
+    المِجَسّ، فتُقارَن نسبةٌ للفرد بإجماليٍّ ⇒ 240,000,000× ⇒ **حجب**.
+    و`_check_cross_universe_ratio` يعرف أصلاً أنّ «نصيب الفرد» عالمٌ آخر —
+    فالمعرفةُ كانت في البوابة ولم تبلغ هذا الفحص."""
+    from silk_quality_gate import \
+        _check_evidence_body_numeric_consistency as chk
+    dr = {"report": {"text": "## 4. الديناميكيات\nواردات 1.2 مليون دولار، "
+                             "ونصيب الفرد من الواردات 0.005 دولار."},
+          "missions": {"trade_flow": {"findings": [
+              {"value": 1_200_000, "note": "واردات 2023"}]}},
+          "analyst": {"by_category": {}}}
+    assert chk(dr) == []
+
+
+def test_c11_c_a_real_contradiction_still_blocks():
+    """التضييقُ لا يُعطِّل الحاجز: رقمٌ **غيرُ مسنودٍ** في الأدلة ما زال
+    يُفشِل — وإلّا صار الإصلاحُ إسكاتاً."""
+    from silk_quality_gate import \
+        _check_evidence_body_numeric_consistency as chk
+    dr = {"report": {"text": "## 3. السوق\nواردات السوق 42 مليون دولار."},
+          "missions": {"trade_flow": {"findings": [
+              {"value": 1_200_000, "note": "واردات 2023"}]}},
+          "analyst": {"by_category": {}}}
+    out = chk(dr)
+    assert out and out[0]["check"] == "evidence_body_numeric_contradiction"
+    assert out[0]["repairable"] is False
+
+
+def test_c11_d_sub_unit_amounts_are_not_reported_as_zero():
+    """**الصنف ١١ (د)** — بلاغُ البوابة سطحُ قراءةٍ أيضاً: `{v:,.0f}` كان
+    يطبع «0$» لمبلغٍ دون الوحدة، فيقرأ المشغّلُ بلاغاً بلا معنى."""
+    from silk_quality_gate import _fmt_gate_num
+    assert _fmt_gate_num(0.005) == "0.01" or "0.005" in _fmt_gate_num(0.005)
+    assert _fmt_gate_num(1_200_000) == "1,200,000"
+
+
+def test_c11_nigeria_blob_is_no_longer_blocked_by_a_false_contradiction():
+    """حارسُ انحدارٍ على المدوّنة نفسِها: كانت `FAIL` بإطلاقتين كاذبتين من
+    فحصٍ **حاجب** — وحجبُ تقريرٍ صحيحٍ يمنع تصديرَه للعميل فعلاً."""
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    mod, fn = B.CANONICAL_BLOBS["nigeria_dates"]
+    with block_network():
+        blob = getattr(importlib.import_module(mod), fn)()
+        out = G.run_quality_gate(silk_render.build_view(blob))
+    got = {f["check"] for f in out["findings"]}
+    assert "evidence_body_numeric_contradiction" not in got, got
+    assert out["verdict"] != "FAIL", out["verdict"]
+
+
+def test_selfreview_first_round_false_positives_stay_fixed():
+    """الإنذاران الكاذبان اللذان رصدتهما المراجعةُ الذاتية في قواعد الجولة."""
+    from silk_quality_gate import _check_template_interpolation as chk
+    # (أ) تباينُ «الصغيرة/الكبيرة» تكرارٌ مشروعٌ للموصوف.
+    assert chk("## 4. الديناميكيات\nانتقال الطلب إلى العبوات الصغيرة، "
+               "وانخفضت حصة العبوات الكبيرة.") == []
+    # (ب) نقطتان آخرَ سطرٍ **يتلوه متن** عنوانٌ مشروع.
+    assert chk("## 1. الخلاصة\nالشرط الحاجب:\nتسجيل المنتج قبل الشحن.") == []
+    # وكلا العيبين المرصودين ما زالا يُلتقَطان.
+    assert chk("## 6. المنافسة\nثم السعودية بالحصة السعودية البالغة 10.44%.")
+    assert chk("## 3. السوق\nينقصه:")

@@ -16,6 +16,21 @@
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
+ "egypt_olive_oil": {
+  "findings": [
+   "agent_empty",
+   "authority_naming_drift",
+   "connector_repeated_in_paragraph",
+   "cross_section_near_duplicate",
+   "decision_numbers_present",
+   "markdown_artifacts",
+   "narrative_money_not_grounded",
+   "template_interpolation"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
  "fettuccine": {
   "findings": [
    "decision_numbers_present",
@@ -103,6 +118,20 @@
    "exec_summary_constraints",
    "exec_summary_recommendation_first",
    "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "nigeria_dates": {
+  "findings": [
+   "agent_empty",
+   "agent_empty",
+   "cross_universe_ratio",
+   "decimal_precision",
+   "decision_numbers_present",
+   "markdown_artifacts",
+   "narrative_money_not_grounded"
   ],
   "language_quality": [],
   "skipped_checks": [],
