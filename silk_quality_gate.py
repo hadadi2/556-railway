@@ -4458,6 +4458,46 @@ def _norm_token(s: object) -> str:
     return _TOKEN_SOFT_NORM_RE.sub("", str(s or ""))
 
 
+# **المراجعةُ الذاتية للفرق (البند ٥٨)**: التطبيعُ يحذف حروفاً (تشكيلاً
+# وتطويلاً) ويطوي المسافات، فمواضعُ المطابقة في النصّ المطبَّع **لا تطابق**
+# مواضعَ النصّ الأصليّ — فكان بلاغُ `reader_language_leak` يسمّي قسماً غيرَ
+# الذي فيه العيب ويقتطع مقطعاً من موضعٍ آخر. وبلاغٌ يشير إلى موضعٍ خطأ
+# يُرسِل المشغّلَ إلى قسمٍ سليم.
+#
+# `_norm_map` يبني النصَّ المطبَّع **ومعه فهرسَ موضعِ كلّ حرفٍ في الأصل**،
+# فيعود كلُّ موضعٍ إلى نظامه الإحداثيّ الصحيح.
+def _norm_map(s: object, soft: bool = False) -> tuple:
+    """(النصُّ المطبَّع، فهرسُ موضعِ كلّ حرفٍ في الأصل).
+
+    `soft=True` يحفظ صيغةَ الألفِ ويطبّق تطبيعَ `_norm_token`؛ وإلّا يطبّق
+    تطبيعَ `_norm_ar` حرفاً بحرف — والنتيجةُ **مطابقةٌ نصّياً** لِما تعيده
+    الدالّتان، ومقفولٌ باختبار.
+    """
+    src = str(s or "")
+    out: list = []
+    idx: list = []
+    for i, ch in enumerate(src):
+        if _AR_DIACRITICS_STRIP_RE.fullmatch(ch) or ch == "ـ":
+            continue
+        if soft:
+            out.append(ch)
+            idx.append(i)
+            continue
+        if ch in "أإآ":
+            ch = "ا"
+        elif ch == "ة":
+            ch = "ه"
+        elif ch == "ى":
+            ch = "ي"
+        if ch in " \t":
+            if out and out[-1] == " ":
+                continue
+            ch = " "
+        out.append(ch.lower())
+        idx.append(i)
+    return "".join(out), idx
+
+
 def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
     """`reader_language_leak` (الصنف ١، تحذيريّ): لغةُ نظامٍ داخلية في نصٍّ
     يقرؤه صاحبُ القرار.
@@ -4485,9 +4525,18 @@ def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
                                      HARD_READER_TOKENS, READER_TOKEN_ALLOW,
                                      SYSTEM_SENSE_CUES)
     body = _split_off_appendix(text)
-    plain = _norm_ar(body)
+    # المواضعُ تُترجَم إلى إحداثيّات النصّ الأصليّ قبل أيّ بلاغ (انظر
+    # `_norm_map`): بلاغٌ يشير إلى قسمٍ غيرِ الذي فيه العيب يُرسِل المشغّلَ
+    # إلى قسمٍ سليم — وهو عيبُ بلاغٍ لا عيبُ كشف.
+    plain, _plain_idx = _norm_map(body)
     findings: list[dict] = []
-    covered: list[tuple] = []          # مدياتُ العبارات المُبلَّغة
+    covered: list[tuple] = []          # مدياتُ العبارات المُبلَّغة (بالأصل)
+
+    def _orig(pos: int, idx: list, fallback: int = 0) -> int:
+        """موضعٌ في النصّ المطبَّع ⇒ موضعُه في الأصل."""
+        if 0 <= pos < len(idx):
+            return idx[pos]
+        return idx[-1] if idx else fallback
 
     def _add(hit: str, start: int, end: int, why: str) -> None:
         covered.append((start, end))
@@ -4502,9 +4551,12 @@ def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
 
     # (١) العباراتُ الحرفية أوّلاً — فتغطّي رموزَها فلا يُبلَّغ الرمزُ مرّتين.
     for phrase in FORBIDDEN_READER_PHRASES:
-        i = plain.find(_norm_ar(phrase))
+        n_phrase = _norm_ar(phrase)
+        i = plain.find(n_phrase)
         if i >= 0:
-            _add(phrase, i, i + len(phrase), "عبارةٌ محظورة حرفياً")
+            lo = _orig(i, _plain_idx)
+            hi = _orig(i + len(n_phrase) - 1, _plain_idx, lo) + 1
+            _add(phrase, lo, hi, "عبارةٌ محظورة حرفياً")
 
     # (٢) الرموزُ الخام — حدُّ كلمةٍ للّاتينيّ الأبجديّ، ومطابقةٌ نصّيةٌ لغيره
     # (`{`/`}`/`N/A` رموزٌ لا كلمات، والعربيُّ يُطبَّع أوّلاً).
@@ -4517,18 +4569,26 @@ def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
             hay, needle = ((plain, _norm_ar(tok)) if not tok.isascii()
                            else (body, tok))
             i = hay.find(needle)
-            span = (i, i + len(needle)) if i >= 0 else None
+            if i < 0:
+                span = None
+            elif hay is body:
+                span = (i, i + len(needle))
+            else:
+                lo = _orig(i, _plain_idx)
+                span = (lo, _orig(i + len(needle) - 1, _plain_idx, lo) + 1)
         if span and not _inside_reported(span[0]):
             _add(tok, span[0], span[1],
                  "رمزٌ خام لا معنى له عند القارئ")
 
     # (٣) المفرداتُ ذاتُ المعنيين — بقرينةٍ فقط، وإطلاقةٌ واحدة لكلّ مفردة.
-    soft = _norm_token(body)
+    soft, _soft_idx = _norm_map(body, soft=True)
     for tok in CONTEXTUAL_READER_TOKENS:
         ntok = _norm_token(tok)
         for m in re.finditer(rf"(?<![^\W\d_]){re.escape(ntok)}(?![^\W\d_])",
                              soft):
-            if _inside_reported(m.start()):
+            o_lo = _orig(m.start(), _soft_idx)
+            o_hi = _orig(m.end() - 1, _soft_idx, o_lo) + 1
+            if _inside_reported(o_lo):
                 continue
             lo = max(0, m.start() - _READER_LEAK_WINDOW)
             hi = min(len(soft), m.end() + _READER_LEAK_WINDOW)
@@ -4538,7 +4598,7 @@ def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
             cue = next((c for c in SYSTEM_SENSE_CUES
                         if _norm_ar(c) in window), None)
             if cue:
-                _add(tok, m.start(), m.end(),
+                _add(tok, o_lo, o_hi,
                      f"بمعناها التقنيّ — قرينةُ «{cue}» بجوارها")
                 break
     return findings
@@ -4591,6 +4651,12 @@ _ECHO_UNIT_WORDS = frozenset({
     "الوزارة", "شركة", "مؤسسة", "جمعية", "بنك", "سوق", "مدينة", "محافظة",
     "إقليم", "منطقة", "ولاية",
 })
+# **المراجعةُ الذاتية للفرق (البند ٥٨)**: المقارنةُ تجري على الكلمةِ
+# **المطبَّعة** (`_norm_ar`) والقائمةُ مكتوبةٌ غيرَ مطبَّعة — فعشرون مدخلاً
+# منها كانت **ميتةً** (كلُّ ما فيه ة/أ/إ/ى: «عبوة»، «أسبوع»، «وحدة»،
+# «سنوياً»، «الهيئة»، «شركة»…)، ومنها استثناءاتٌ قائمةٌ قبل هذه الموجة. تُطبَّع
+# القائمةُ مرّةً واحدة عند البناء فلا يتكرّر العيبُ بإضافةِ مدخلٍ جديد.
+_ECHO_UNIT_NORM: frozenset = frozenset(_norm_ar(w) for w in _ECHO_UNIT_WORDS)
 # (٢) رابطُ مقارنةٍ بين الورودين ⇒ تكرارٌ مقصودٌ لطرفَي المقارنة.
 _ECHO_COMPARISON_RE = re.compile(
     r"مقابل|مقارنةً|مقارنة|بينما|في حين|أمام|versus|vs\.?|compared", re.I)
@@ -4683,7 +4749,7 @@ def _check_template_interpolation(text: str, lang: str = "ar") -> list[dict]:
         words = [(w.group(0), w.start()) for w in _ECHO_WORD_RE.finditer(line)]
         norm = [_norm_ar(w) for w, _ in words]
         for i, w in enumerate(norm):
-            if w in _ECHO_UNIT_WORDS:
+            if w in _ECHO_UNIT_NORM:
                 continue
             for j in range(i + 1, min(i + 1 + _ECHO_MAX_GAP, len(norm))):
                 if norm[j] != w or j == i + 1:
@@ -5243,16 +5309,31 @@ def _check_connector_repeated_in_paragraph(text: str,
     conns = REPEATED_CONNECTORS_EN if en else REPEATED_CONNECTORS
     body = _split_off_appendix(text)
     findings: list[dict] = []
-    for para in re.split(r"\n\s*\n", body):
+    # **المراجعةُ الذاتية للفرق (البند ٥٨)**: موضعُ القسم كان يُؤخَذ بـ
+    # `body.find(أوّلُ كلمةٍ في الفقرة)` — وهي تُطابِق **أوّلَ ورودٍ في
+    # المستند كلِّه**، فكلمةٌ شائعةٌ («في»، «السوق») تُرجِع موضعاً في قسمٍ
+    # آخر ويُسمّى قسمٌ سليمٌ في البلاغ. الموضعُ الآن **موضعُ الفقرة نفسِها**
+    # مُتعقَّباً بالتقطيع لا بالبحث.
+    _pos = 0
+    for para in re.split(r"(\n\s*\n)", body):
+        if not para.strip() or para.startswith("\n"):
+            _pos += len(para)
+            continue
+        _para_at = _pos
+        _pos += len(para)
         # عنوانٌ يلاصق متنَه بلا سطرٍ فارغ يجعل الفقرةَ تبدأ بـ«##»، وإسقاطُ
         # الفقرة كلّها حينها يُخمِد الفحصَ على نصفِ التقارير — تُسقَط
         # **الأسطرُ** غيرُ النثرية وحدها (قياسٌ: القاعدةُ لم تُطلِق أصلاً).
-        flat = " ".join(
-            ln for ln in para.splitlines()
-            if not ln.strip().startswith(("|", "#", ">")))
-        flat = " ".join(flat.split())
+        prose = [ln for ln in para.splitlines()
+                 if not ln.strip().startswith(("|", "#", ">"))]
+        flat = " ".join(" ".join(prose).split())
         if not flat:
             continue
+        # موضعُ أوّلِ سطرٍ **نثريّ** داخل الفقرة لا موضعُ الفقرة: الفقرةُ قد
+        # تبدأ بعنوانها بلا سطرٍ فاصل، فيقع الموضعُ على العنوان نفسِه
+        # فيُبلَّغ «قبل أول عنوان» خطأً.
+        _first = next((ln for ln in prose if ln.strip()), "")
+        _at = _para_at + (para.find(_first) if _first else 0)
         hay = flat.lower() if en else _norm_ar(flat)
         for c in conns:
             needle = c.lower() if en else _norm_ar(c)
@@ -5265,7 +5346,7 @@ def _check_connector_repeated_in_paragraph(text: str,
                              # موضعُ أوّلِ سطرٍ نثريّ لا موضعُ الفقرة: الفقرةُ
                              # قد تبدأ بعنوانها، فيقع الموضعُ **قبله**
                              # فيُبلَّغ «قبل أول عنوان» خطأً.
-                             f"— القسم «{_reader_section_of(body, body.find(flat.split()[0]))}»: "
+                             f"— القسم «{_reader_section_of(body, _at)}»: "
                              f"…{flat[:70]}… للمعنى الواحد صيغٌ عدّة، أو "
                              "اذكر النتيجة بلا رابط")})
                 break
@@ -5306,8 +5387,13 @@ def _rendered_figure_positions(body: str, value: float) -> list:
     for form in {f"{value:g}", f"{value:.2f}".rstrip("0").rstrip(".")}:
         if len(form) < 2:
             continue
+        # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الصيغةُ المشتقّة من `:g`
+        # تُسقِط الصفرَ العشريّ («30.0» ⇒ «30»)، والريبو يطبع الحصصَ
+        # الصحيحةَ بصفرٍ عشريّ («30.0%») — فكان المُطابِقُ يفوّتها ويصمت
+        # الفحصُ الحاجبُ (عائلةُ الدرس 98: حارسٌ لا يمكن أن يُطلِق).
+        # الأصفارُ العشريةُ اللاحقةُ مقبولةٌ بعد الرقم صراحةً.
         for m in re.finditer(
-                rf"(?<![\d.]){re.escape(form)}\s*[%٪]", body):
+                rf"(?<![\d.]){re.escape(form)}(?:\.0+)?\s*[%٪]", body):
             out.append((m.start(), m.end()))
             break
     return out

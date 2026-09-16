@@ -5542,13 +5542,13 @@ def _clean_leads(leads: list, dr: dict) -> list:
         if named:
             lead = dict(lead)
             lead["named_in_report"] = True
+        # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الحصانةُ كانت تتجاوز
+        # **كلَّ** المصافي لا مِصفاةَ النشاط وحدَها — فجهةٌ يسمّيها المتنُ
+        # بعنوانٍ في دولةٍ أخرى أو بلا أيّ اتصالٍ كانت تُعرَض. الحصانةُ
+        # مقصورةٌ على النشاط: التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ
+        # صحّةِ عنوانٍ ولا وجودِ اتصال.
         if _scoped and not named and not lead_activity_allowed(
                 lead.get("category")):
-            continue
-        if named:
-            if lead.get("category"):
-                lead["category"] = activity_label_ar(lead["category"])
-            out.append(lead)
             continue
         if not nm or not looks_like_name(nm):          # البند ٥: نثر/بلا اسم
             continue

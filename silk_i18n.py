@@ -943,6 +943,24 @@ TERMS.update({
               "السقفُ «متوسطة» حتى تُغلَق.",
         "en": "We do not call our confidence high with two or more open "
               "conditions — it is capped at “medium” until they are closed."},
+    # الصنف ٨ (المراجعةُ الذاتية للفرق، البند ٥٨): جدولُ تحلُّلِ الثقة
+    # بقِدَم البيانات كان **معلَناً بلا قارئ** — يُعرَض الآن سطراً مسمّىً
+    # ولا يُمَسّ الرقمُ المخزَّن (نمطُ سقفِ التسمية نفسِه).
+    "confidence_age_haircut": {
+        "ar": "أقدمُ سنةٍ تستند إليها هذه التوصية {year} (عمرُها {age} سنة) "
+              "— وبجدول تحلُّل الثقة المعلَن تُقرأ ثقةُ التوصية بخصمٍ قدرُه "
+              "{pct}% عن ثقةِ توصيةٍ مبنيةٍ على بيانات العام الماضي.",
+        "en": "The oldest year behind this recommendation is {year} ({age} "
+              "years old) — under the published confidence-decay table, read "
+              "its confidence with a {pct}% haircut against one built on "
+              "last year's data."},
+    # صيغةُ الفراغ (الصنف ٢): بلا سنةٍ مرصودةٍ لا خصمَ يُعرَض — والجملةُ
+    # تبقى نحويةً تامّةً بلا خانةٍ مكسورة.
+    "confidence_age_haircut_empty": {
+        "ar": "لم تُرصَد سنةُ أقدمِ معطىً تستند إليه هذه التوصية، فلا خصمَ "
+              "قِدَمٍ محسوب.",
+        "en": "The oldest data year behind this recommendation was not "
+              "observed, so no age haircut is computed."},
     "verification_rate_note": {
         "ar": "نسبةُ التحقّق تقيس كم من أرقام هذا التقرير فُتِح مصدرُها "
               "وتأكّدت قيمتُه منه — وهي **غيرُ** ثقةِ التوصية: تقريرٌ "

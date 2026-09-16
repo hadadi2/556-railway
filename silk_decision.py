@@ -124,14 +124,20 @@ def score_arithmetic(pillars: object, weights: object) -> dict:
     terms: list = []
     contrib = wsum = 0.0
     for name, w in (weights or {}).items():
-        strength = pillar_strength(
-            name, ((pillars or {}).get(name) or {}).get("value"))
+        raw = ((pillars or {}).get(name) or {}).get("value")
+        strength = pillar_strength(name, raw)
         if strength is None:
             continue
+        # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الجمعُ يجري على القوّة
+        # **غيرِ المُدوَّرة** كما يجمعها `decide._score` حرفياً؛ والتدويرُ
+        # للعرض وحدَه. كان الجمعُ على المُدوَّرة (٣ منازل) فتختلف الدرجةُ
+        # المعروضةُ عن العنوان بنقطةٍ في بعض التوليفات — وحسابٌ يخالف
+        # الدرجةَ أسوأُ من حسابٍ غائب لأنه يُوهِم بالتحقّق.
+        exact = (1.0 - float(raw)) if name == "competition" else float(raw)
         terms.append({"name": name, "weight": float(w),
                       "strength": strength,
-                      "product": round(float(w) * strength, 6)})
-        contrib += float(w) * strength
+                      "product": round(float(w) * exact, 6)})
+        contrib += float(w) * exact
         wsum += float(w)
     # **قاعدةُ الحدّ الأدنى تسري هنا حرفياً** (البند 2 من أمر إصلاح المحرّك).
     # قِياسٌ كشفه: الصيغةُ الأولى كانت تحسب درجةً لإحدى عشرةَ مدوّنةٍ من

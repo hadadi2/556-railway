@@ -552,16 +552,35 @@ def _trim_zeros(s: str) -> str:
     return s.rstrip("0").rstrip(".") if "." in s else s
 
 
+# **المراجعةُ الذاتية للفرق (البند ٥٨)**: سقفُ المنزلتين كان يطبع حصةً
+# مرصودةً 0.004% صفراً — **صفرٌ مختلَق** يصل سطحَ العميل، وهو خرقٌ للمبدأ
+# المؤسِّس لا عيبُ تنسيق (والصفرُ المُستنتَج مسقوفٌ بثقةٍ 0.6 في طبقة
+# البيانات لهذا السبب نفسِه). القاعدة: **قيمةٌ غيرُ صفريةٍ لا تُعرَض صفراً
+# أبداً** — تُزاد المنازلُ حتى يظهر أوّلُ رقمٍ دالّ، بسقفٍ مُعلَن.
+_SIGNIFICANT_DP_CAP = 6
+
+
+def _dp_keeping_value(n: float, dp: int) -> int:
+    """المنازلُ اللازمة كي لا تُعرَض قيمةٌ غيرُ صفريةٍ صفراً — بسقفٍ مُعلَن."""
+    dp = max(0, int(dp))
+    if not n:
+        return dp
+    while dp < _SIGNIFICANT_DP_CAP and round(abs(n), dp) == 0:
+        dp += 1
+    return dp
+
+
 def fmt_number(v: object, dp: int = AMOUNT_MAX_DP) -> str:
     """رقمٌ للعرض: فاصلُ آلافٍ دائماً، وحدٌّ أقصى للمنازل العشرية.
 
     «36234200.146» → «36,234,200.15»، و«26730» → «26,730». فاصلُ الآلاف ليس
     تجميلاً: بلاغُ المالك قارَن الرقمين فعلاً، وأحدُهما بلا فاصلٍ يُقرأ خطأً.
+    وقيمةٌ أصغرُ من سقف المنازل **لا تُطوى إلى صفر** (انظر أعلاه).
     """
     n = _as_float(v)
     if n is None:
         return GAP if v is None else str(v)
-    return _trim_zeros(f"{n:,.{max(0, int(dp))}f}")
+    return _trim_zeros(f"{n:,.{_dp_keeping_value(n, dp)}f}")
 
 
 def fmt_pct(v: object, signed: bool = False, dp: int = PCT_MAX_DP) -> str:
@@ -573,7 +592,7 @@ def fmt_pct(v: object, signed: bool = False, dp: int = PCT_MAX_DP) -> str:
     if n is None:
         return GAP if v is None else str(v)
     sign = "+" if (signed and n > 0) else ""
-    return f"{sign}{_trim_zeros(f'{n:,.{max(0, int(dp))}f}')}%"
+    return f"{sign}{_trim_zeros(f'{n:,.{_dp_keeping_value(n, dp)}f}')}%"
 
 
 def fmt_score(v: object) -> str:

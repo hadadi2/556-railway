@@ -1223,7 +1223,16 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         if _FS.enabled():
             _store = _FS.build(mission_reports)
             if (_store.get("figures") or []):
-                facts = _isolate(_FS.facts_block(_store))
+                # **المراجعةُ الذاتية للفرق (البند ٥٨)**: كان المخزنُ
+                # **يستبدل** كتلةَ الحقائق كلَّها، وهو يحفظ الأرقامَ وحدَها
+                # — فتسقط من موجّه الكاتب الفجواتُ المعلنة (`value=None`)
+                # والاكتشافاتُ النصّية والبنيوية وبلاغاتُ البعثات الفاشلة
+                # ووسمُ التقادم. أي أنّ تفعيلَ رايةِ الصنف ٦ كان **يُخفي
+                # الفجوة** عن الكاتب — خرقٌ مباشرٌ لعقد «فجوةٌ معلنة لا
+                # اختلاق». الآن **إلحاقٌ لا استبدال**: الحقائقُ كما هي،
+                # وتحتَها الأرقامُ بمعرّفاتها.
+                facts = (facts + "\n\n[FIGURE_IDS]\n"
+                         + _isolate(_FS.facts_block(_store)))
                 _figure_rule = _FS.FIGURE_ID_RULE
     except Exception as _e:  # noqa: BLE001 — المخزنُ تحسينٌ لا شرطُ كتابة
         log.warning("figure store skipped: %s", _e)

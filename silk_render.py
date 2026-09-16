@@ -128,6 +128,26 @@ def _decision(top: dict | None) -> dict:
 CONFIDENCE_DISCIPLINE_FLAG = "SILK_CONFIDENCE_DISCIPLINE"
 
 
+def _oldest_fact_year(result: object) -> "int | None":
+    """أقدمُ سنةِ حقيقةٍ يستند إليها هذا العرض — من `silk_staleness.fact_year`
+    وحدَه (المصدرُ البنيويّ القائم) لا من النثر. `None` حين لا سنةَ مرصودة."""
+    try:
+        from silk_staleness import fact_year
+    except Exception:  # noqa: BLE001
+        return None
+    years: list = []
+    dr = (result or {}).get("deep_research") or {} \
+        if isinstance(result, dict) else {}
+    for m in (dr.get("missions") or {}).values():
+        findings = ((m.get("findings") if isinstance(m, dict)
+                     else getattr(m, "findings", None)) or [])
+        for f in findings:
+            y = fact_year(f)
+            if isinstance(y, int) and 1900 < y < 2200:
+                years.append(y)
+    return min(years) if years else None
+
+
 def confidence_discipline() -> bool:
     """هل رايةُ الصنف ٨ مفعّلة؟ — سقفُ النطاق وعرضُ حساب الدرجة."""
     return os.environ.get(CONFIDENCE_DISCIPLINE_FLAG, "").strip().lower() in (
@@ -187,7 +207,8 @@ def _score_arithmetic_line(arith: dict, lang: str = "ar") -> str:
 
 
 def decision_basis(ed: dict, displayed_confidence: object = None,
-                   lang: str = "ar") -> "dict | None":
+                   lang: str = "ar",
+                   oldest_fact_year: object = None) -> "dict | None":
     """أساسُ الحكم **جاهزاً للعرض** — بنيةٌ واحدة يستهلكها كلُّ سطحِ عميل.
 
     > **الموجة Z · البند Z-06.** الأعمدةُ الخمسة وقاعدتُها والحجّةُ المضادّة
@@ -302,6 +323,24 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
             from silk_style_contract import confidence_band_label
             out["confidence_band"] = confidence_band_label(
                 out["confidence_pct"], lang, cap=_cap)
+        # (د) **قِدَمُ البيانات يُقرَأ ولا يُمَسّ الرقم**. المراجعةُ الذاتية
+        #     للفرق (البند ٥٨) كشفت أنّ `CONFIDENCE_AGE_DECAY` جدولٌ معلَنٌ
+        #     **بلا قارئٍ في الإنتاج** — أي أنّ الصنفَ ٨ ادّعى تحلُّلاً لا
+        #     يجري. الآن: يُعرَض الخصمُ سطراً مسمّىً من أقدم سنةٍ مرصودةٍ
+        #     فعلاً، والثقةُ المخزَّنة كما هي (نمطُ سقفِ التسمية نفسِه).
+        _oldest = oldest_fact_year
+        if isinstance(_oldest, int) and _oldest > 1900:
+            import datetime as _dt
+            _age = max(0, _dt.date.today().year - int(_oldest))
+            _keep = _D.age_decay_factor(_age)
+            if _keep < 1.0:
+                out["confidence_age_year"] = int(_oldest)
+                out["confidence_age_years"] = _age
+                out["confidence_age_haircut_pct"] = round(
+                    (1.0 - _keep) * 100, 1)
+                out["confidence_age_note"] = _t(
+                    "confidence_age_haircut", year=int(_oldest), age=_age,
+                    pct=out["confidence_age_haircut_pct"])
         _opt = ed.get("weights_option") or "A"
         _arith = _D.score_arithmetic(pillars,
                                      _D.WEIGHT_OPTIONS.get(_opt) or {})
@@ -3338,7 +3377,8 @@ def build_view(result: dict, lang: str = "ar") -> dict:
         # المحرّك الخام، فلا يظهر رقمان في مستندٍ واحد.
         decision["basis"] = decision_basis(
             ed_top, (((result.get("deep_research") or {}).get("verdict")
-                      or {}).get("confidence")), lang)
+                      or {}).get("confidence")), lang,
+            oldest_fact_year=_oldest_fact_year(result))
     cp = _competitive_position(top)
     view_markets = []
     for row in markets:

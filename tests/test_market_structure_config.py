@@ -660,3 +660,138 @@ def test_c16_the_kenya_corpus_is_not_blocked_by_that_false_negative():
         f["check"] for f in out["findings"]]
     assert not [f for f in out["findings"]
                 if f["check"] == "pricing_contradiction_flagged"]
+
+
+# ═══ أقفالُ المراجعة الذاتية للفرق (البند ٥٨) — عشرُ ملاحظاتٍ عولجت ═══
+
+def test_review_figure_store_never_hides_a_declared_gap_from_the_writer():
+    """**الأخطر**: تفعيلُ رايةِ الصنف ٦ كان **يستبدل** كتلةَ الحقائق كلَّها
+    بمخزنِ الأرقام — وهو يحفظ الأرقامَ وحدَها — فتسقط الفجواتُ المعلنة
+    (`value=None`) والاكتشافاتُ النصّية من موجّه الكاتب. أي أنّ حارسَ تعارضِ
+    الأرقام كان يُخفي الفجوة: خرقٌ لعقد «فجوةٌ معلنة لا اختلاق». إلحاقٌ لا
+    استبدال."""
+    src = _repo("silk_ai_judge.py")
+    assert 'facts = (facts + "\\n\\n[FIGURE_IDS]\\n"' in src
+    assert 'facts = _isolate(_FS.facts_block(_store))' not in src
+
+
+def test_review_echo_exemptions_are_normalized_so_none_is_dead():
+    """المقارنةُ تجري على الكلمةِ المطبَّعة والقائمةُ مكتوبةٌ غيرَ مطبَّعة —
+    فعشرون مدخلاً كانت ميتةً (كلُّ ما فيه ة/أ/إ/ى)، منها استثناءاتٌ قائمةٌ
+    قبل هذه الموجة («عبوة»، «أسبوع»، «وحدة»)."""
+    import silk_quality_gate as G
+    assert all(G._norm_ar(w) in G._ECHO_UNIT_NORM for w in G._ECHO_UNIT_WORDS)
+    assert G._norm_ar("عبوة") in G._ECHO_UNIT_NORM
+    assert G._check_template_interpolation(
+        "## 7. التنظيم\nتشترط الهيئة الغربية تسجيلاً، وتطبّق الهيئة الشرقية "
+        "فحصاً.", "ar") == []
+
+
+def test_review_a_real_small_share_is_never_displayed_as_zero():
+    """سقفُ المنزلتين كان يطبع حصةً مرصودةً 0.004% صفراً — **صفرٌ مختلَق**
+    يصل سطحَ العميل، وهو خرقٌ للمبدأ المؤسِّس لا عيبُ تنسيق."""
+    import silk_narrative as N
+    import silk_reports as R
+    assert N.fmt_pct(0.004) == "0.004%"
+    assert N.fmt_number(0.0004) == "0.0004"
+    assert R._readable_number(0.0004) == "0.0004"
+    assert N.fmt_pct(0) == "0%"            # الصفرُ الحقيقيُّ يبقى صفراً
+    assert N.fmt_pct(12.416666) == "12.42%"   # والسقفُ يعمل فوق العتبة
+    assert N.fmt_number(0.6789) == "0.68"
+
+
+def test_review_a_whole_number_share_with_a_decimal_zero_is_matched():
+    """`(?<![\\d.])30\\s*%` لا يُطابِق «30.0%» وهي صيغةُ الريبو للحصص
+    الصحيحة — فكان الفحصُ الحاجبُ (الصنف ٦) يصمت (عائلةُ الدرس ٩٨)."""
+    import silk_quality_gate as G
+    assert G._rendered_figure_positions("الحصة 30.0% في الملخص", 30.0)
+    assert G._rendered_figure_positions("الحصة 30% هنا", 30.0)
+    assert not G._rendered_figure_positions("عام 2010 كان", 10.0)
+
+
+def test_review_leak_report_names_the_section_that_holds_the_leak():
+    """التطبيعُ يحذف حروفاً ويطوي المسافات، فمواضعُ المطابقة لا تطابق مواضعَ
+    الأصل — وبلاغٌ يشير إلى موضعٍ خطأ يُرسِل المشغّلَ إلى قسمٍ سليم."""
+    import silk_quality_gate as G
+    n, idx = G._norm_map("الهيئةُ  المصرية ـ للرقابة")
+    assert n == G._norm_ar("الهيئةُ  المصرية ـ للرقابة") and len(idx) == len(n)
+    s, sidx = G._norm_map("أحمدُ إلى آخره", soft=True)
+    assert s == G._norm_token("أحمدُ إلى آخره") and len(sidx) == len(s)
+    body = ("## 1. الخلاصة التنفيذية\nنصٌّ سليمٌ بتشكيلٍ كثيرٍ جداً مثل "
+            "الهيئةُ المصريةُ للرقابةِ الصحيةِ.\n\n## 9. تقييم المخاطر\n"
+            "تعذّر الاستدعاء من واجهة المصدر فلم تصل معادلة محسوبة مسبقاً.")
+    out = G._check_reader_language_leak(body, "ar")
+    assert out and all("تقييم المخاطر" in f["note"] for f in out), out
+
+
+def test_review_prose_immunity_covers_only_the_activity_filter():
+    """التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ صحّةِ عنوانٍ ولا وجودِ
+    اتصال — فالحصانةُ كانت تتجاوز الجغرافيا والحشو أيضاً."""
+    import silk_reports as R
+    dr = {"market": {"iso3": "NGA", "name_en": "Nigeria",
+                     "name_ar": "نيجيريا"},
+          "report": {"text": "نوصي بشركة النيل للتوزيع وشركة الأمل للتجارة."}}
+    leads = [{"name": "شركة النيل للتوزيع", "category": "auto parts store",
+              "address": "لاغوس، نيجيريا", "phone": "1"},
+             {"name": "شركة الأمل للتجارة", "category": "distributor",
+              "address": "القاهرة، مصر", "phone": "2"}]
+    with _env(SILK_MARKET_STRUCTURE_CONFIG="1"):
+        names = [x["name"] for x in R._clean_leads(leads, dr)]
+    assert "شركة النيل للتوزيع" in names     # نشاطٌ مستبعَدٌ لكنّ المتن سمّاها
+    assert "شركة الأمل للتجارة" not in names  # عنوانٌ في دولةٍ أخرى ⇒ يُسقَط
+
+
+def test_review_displayed_arithmetic_matches_the_engine_bit_for_bit():
+    """الجمعُ كان على القوّة **المُدوَّرة** (٣ منازل) و`decide._score` يجمع
+    غيرَ المُدوَّرة — فتختلف الدرجةُ المعروضةُ عن العنوان بنقطةٍ في بعض
+    التوليفات. حسابٌ يخالف الدرجةَ أسوأُ من حسابٍ غائب."""
+    import random
+    import silk_decision as D
+    random.seed(11)
+    W = D.WEIGHT_OPTIONS["A"]
+    for _ in range(5000):
+        pil = {n: {"value": round(random.random(), 3)} for n in W}
+        got = D.score_arithmetic(pil, W)["score"]
+        contrib = wsum = 0.0
+        for n, w in W.items():
+            v = pil[n]["value"]
+            v = 1.0 - v if n == "competition" else v
+            contrib += w * v
+            wsum += w
+        assert got == round(contrib / wsum, 3)
+
+
+def test_review_the_published_age_decay_table_now_has_a_reader():
+    """الجدولُ كان معلَناً **بلا قارئٍ في الإنتاج** — أي أنّ الصنفَ ٨ ادّعى
+    تحلُّلاً لا يجري. يُعرَض الآن سطراً مسمّىً من أقدم سنةٍ مرصودةٍ فعلاً،
+    والثقةُ المخزَّنة كما هي (نمطُ سقفِ التسمية نفسِه)."""
+    import silk_render as R
+    with block_network():
+        blob = _blob("nadec_yemen_dairy")
+    assert R._oldest_fact_year(blob) == 2013
+    ed = {"schema": "silk.decision/v1", "pillars": {"market": {"value": 0.5}},
+          "conditions": []}
+    with _env(SILK_CONFIDENCE_DISCIPLINE=None):
+        off = R.decision_basis(ed, 0.5, "ar", oldest_fact_year=2013) or {}
+    with _env(SILK_CONFIDENCE_DISCIPLINE="1"):
+        on = R.decision_basis(ed, 0.5, "ar", oldest_fact_year=2013) or {}
+        fresh = R.decision_basis(ed, 0.5, "ar", oldest_fact_year=2025) or {}
+    assert "confidence_age_note" not in off        # خلف الراية حصراً
+    assert on["confidence_age_haircut_pct"] == 40.0
+    assert on["confidence_age_year"] == 2013
+    assert "2013" in on["confidence_age_note"]
+    assert "confidence_age_note" not in fresh      # سنتان فأقل: بلا خصم
+    assert off.get("confidence_pct") == on.get("confidence_pct")
+
+
+def test_review_connector_finding_names_its_own_paragraph_section():
+    """`body.find(أوّلُ كلمةٍ)` يُطابِق أوّلَ ورودٍ في المستند كلِّه، فكلمةٌ
+    شائعةٌ تُرجِع موضعاً في قسمٍ آخر ويُسمّى قسمٌ سليم."""
+    import silk_quality_gate as G
+    body = ("## 1. الخلاصة\nفي السوق طلبٌ قائم. وهذا يعني فرصةً. وهذا يعني "
+            "حاجةً للتحقق.\n\n## 6. المشهد التنافسي\nفي السوق منافسون، وهذا "
+            "يعني ضغطاً. وهذا يعني هامشاً أقل.")
+    out = G._check_connector_repeated_in_paragraph(body, "ar")
+    assert len(out) == 2
+    assert "الخلاصة" in out[0]["note"]
+    assert "المشهد التنافسي" in out[1]["note"]
