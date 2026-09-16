@@ -4571,6 +4571,13 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    235: lambda: (
+        _needles("silk_i18n.py", "def repair_interpolation",
+                 "def tidy_punctuation", "_EMPTY_SUFFIX", "def _is_blank")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_template_interpolation", "_ECHO_UNIT_WORDS")(),
+        _needles("silk_style_contract.py", "REFERENTIAL_INTEGRITY_RULE")(),
+        _needles("tests/test_lessons_enforcement.py", '(235, ')()),
     234: lambda: (
         _needles("silk_style_contract.py", "FORBIDDEN_READER_PHRASES",
                  "CONTEXTUAL_READER_TOKENS", "SYSTEM_SENSE_CUES",

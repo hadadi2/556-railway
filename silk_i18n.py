@@ -837,15 +837,194 @@ TERMS: dict[str, dict[str, str]] = {
 }
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٢ (موجة عيوب التقرير) — خانةٌ فارغة لا تكسر جملة
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «الشريحة المحسوبة أعلاه رغم غياب رقم لحجمها»، و«استند هذا
+# الحكم إلى شرطين مفتوحين» بلا شرطين. الجذرُ: القوالبُ تفترض امتلاءَ كلّ
+# خانة، فخانةٌ فارغةٌ تتركُ أثرَها المكانيكيّ في الجملة.
+#
+# القياسُ (لا التخمين): **٦٣ من ٨٦** زوجَ (قالب، لغة) ذي خانةٍ ينكسر عند
+# تفريغ خاناته — نقطتان متدلّيتان، قوسان فارغان، فراغٌ مزدوج، ترقيمٌ يتيم.
+#
+# العلاجُ طبقتان، لأنّ العطبَ نوعان:
+#   (أ) **عطبٌ مكانيكيّ** يُصلَح حتمياً بلا معرفةِ معنى: `repair_interpolation`
+#       — نفسُ نمط `silk_render._ORPHAN_LEAD_COMMA_RE`/`_EMPTY_CITATION_GROUP_RE`.
+#   (ب) **جملةٌ تفقد معناها** بفقد خانتها («الثقة لأن .»، «أقوى الجوانب «»
+#       عند %») — لا يُصلِحها تنظيفٌ: تحتاج **صيغةَ فراغٍ نحوية صريحة**،
+#       تُسجَّل بمفتاحٍ مرافق `<key>_empty` يختاره `t()` تلقائياً.
+#
+# ولا يُمَسّ أيُّ نداءٍ قائم: المسارُ الجديد لا يعمل إلّا حين تكون خانةٌ
+# **فارغةً فعلاً** — وهي الحالةُ التي كانت تُنتِج النصَّ المكسور.
+
+_EMPTY_SUFFIX = "_empty"
+
+# قوسٌ/علامةُ اقتباسٍ فارغةٌ بعد فقدِ خانتها.
+_EMPTY_WRAP_RE = re.compile(
+    "«\\s*»|\\(\\s*\\)|\\[\\s*\\]|\u201c\\s*\u201d|\"\\s*\"")
+# نقطتان تتلوهما نهايةُ الجملة أو علامةُ ترقيم — «ينقصه: .» / «تصنيف HS:».
+# نقاطُ الحذف بعد النقطتين ترقيمٌ مشروع («WITS unavailable: ...») —
+# تُستثنى صريحاً (قياسٌ: حارس test_legacy_datapoint_shape).
+_DANGLING_COLON_RE = re.compile(r"\s*:\s*(?!\.{2,}|\u2026)(?=[.،؛,;]|\Z)")
+# فاصلةٌ/شرطةٌ يتيمة تركتها خانةٌ فارغة.
+_ORPHAN_SEP_RE = re.compile(r"(?:\A|(?<=\s))[،؛,;]\s*(?=[.،؛,;]|\Z)")
+_ORPHAN_DASH_RE = re.compile(r"\s+[—–]\s*(?=[.،؛,;]|\Z)")
+# «(%)» أو «%» عارية بلا رقمها، و«من 100» بلا درجتها لا تُصلَّح مكانيكياً —
+# مكانُها صيغةُ الفراغ الصريحة؛ هنا يُنظَّف القوسُ وحده.
+_BARE_PCT_WRAP_RE = re.compile(r"\(\s*%\s*\)")
+# فراغان آخرَ السطر فاصلُ أسطرٍ مقصودٌ في ماركداون — يُستثنى صريحاً.
+_MULTISPACE_RE = re.compile(r"[ \t]{2,}(?!$)", re.M)
+# فراغٌ قبل نقاطِ حذفٍ مشروع («WITS unavailable: ...») — يُستثنى صريحاً
+# (قياسٌ: حارس test_legacy_datapoint_shape_still_counted_unchanged).
+_SPACE_BEFORE_PUNCT_RE = re.compile(r"[ \t]+(?!\.{2,}|\u2026)(?=[.،؛,;؟!])")
+
+
+def _is_blank(value: object) -> bool:
+    """خانةٌ فارغةٌ فعلاً — `None` أو نصٌّ خالٍ. الصفرُ **ليس** فراغاً."""
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def tidy_punctuation(text: str) -> str:
+    """المجموعةُ **الآمنةُ على النثر الحرّ** من الإصلاح المكانيكيّ.
+
+    قوسٌ فارغ، فراغٌ مزدوج، وفراغٌ قبل علامة ترقيم — ثلاثةٌ لا تكون مقصودةً
+    في أيّ نثرٍ عربيٍّ أو إنجليزيّ سليم، فتُصلَح حتمياً حيثما وقعت.
+
+    **لا** تلمس النقطتين المتدلّيتين: «التوصية:» آخرَ سطرٍ عنوانٌ مشروع،
+    وحذفُه إفسادٌ لا إصلاح. تلك حالةُ الخانةِ الفارغة وحدها
+    (`repair_interpolation`) — قناتان لأنّ ما يَصحّ داخل قالبٍ مفرَّغ لا
+    يَصحّ على جملةٍ كتبها الكاتب.
+    """
+    if not text:
+        return text
+    out = _EMPTY_WRAP_RE.sub("", text)
+    out = _BARE_PCT_WRAP_RE.sub("", out)
+    out = _MULTISPACE_RE.sub(" ", out)
+    out = _SPACE_BEFORE_PUNCT_RE.sub("", out)
+    return out
+
+
+def repair_interpolation(text: str) -> str:
+    """أصلِح العطبَ المكانيكيّ الذي تتركه **خانةٌ فارغة** — حتميّ، بلا معنى.
+
+    الآمنُ على النثر (`tidy_punctuation`) زائداً ما يَصحّ داخل قالبٍ مفرَّغ
+    وحده: النقطتان المتدلّيتان والشرطةُ والفاصلةُ اليتيمتان.
+
+    دالّةٌ عامّة كي يستهلكها `silk_quality_gate._check_template_interpolation`
+    والاختبارُ **نفسَها** — فلا قاعدةُ فحصٍ تخالف قاعدةَ إصلاح.
+    """
+    if not text:
+        return text
+    out = _DANGLING_COLON_RE.sub("", text)
+    out = _ORPHAN_DASH_RE.sub("", out)
+    out = _ORPHAN_SEP_RE.sub("", out)
+    return tidy_punctuation(out).strip()
+
+
+# ── الصنف ٢: صيغُ الفراغ النحوية الصريحة · explicit empty-state variants ────
+# تسعةُ قوالبَ لا يُصلِحها تنظيفٌ مكانيكيّ لأنها **تدّعي رقماً**: «قوة هذه
+# الفرصة في تقييمنا من 100» جملةٌ تقول شيئاً عن لا شيء. القاعدة: الغيابُ
+# يُقال بما ينقص وبأثره على القرار — لا جملةٌ مبتورة ولا صفرٌ مختلَق (عقدُ
+# عدم الاختلاق نفسُه). تُسجَّل هنا في `TERMS` فيمرّ عليها اختبارُ تكافؤ
+# اللغتين القائم كأيّ مفتاح.
+TERMS.update({
+    "coverage_good_empty": {
+        "ar": "نسبةُ الأرقام المسنودة إلى مصدرٍ منشور غيرُ محسوبة في هذه "
+              "التشغيلة — تُقرأ مصادرُ كلّ رقم من قسم «المراجع».",
+        "en": "The share of figures traceable to a published source was not "
+              "computed for this study — read each figure's source under "
+              "“References”."},
+    "coverage_low_empty": {
+        "ar": "نسبةُ الأرقام المسنودة إلى مصدرٍ منشور غيرُ محسوبة في هذه "
+              "التشغيلة — تُقرأ مصادرُ كلّ رقم من قسم «المراجع».",
+        "en": "The share of figures traceable to a published source was not "
+              "computed for this study — read each figure's source under "
+              "“References”."},
+    "coverage_intro_empty": {
+        "ar": "لم يُحسَب مدى التغطية خلف أرقام هذه الدراسة في هذه التشغيلة. "
+              "مصادرُ كلّ قيمةٍ مجموعةٌ في قسم «المراجع» ختام التقرير — "
+              "تُقرأ منه مباشرةً بدل نسبةٍ إجمالية غير متاحة.",
+        "en": "The coverage behind this study's figures was not computed here. "
+              "Each value's source is collected under “References” "
+              "at the end of the report — read it there instead of an "
+              "unavailable summary percentage."},
+    "coverage_named_sources_empty": {
+        "ar": "وعلى مستوى الإسناد: نسبةُ القيم الحاملة مصدراً عمومياً مسمّى "
+              "غيرُ محسوبة في هذه التشغيلة؛ وما لم نرصد له مصدراً يُذكَر "
+              "فجوةً صريحة كما هو.",
+        "en": "On sourcing: the share of values carrying a named public "
+              "source was not computed for this study; anything without an "
+              "observed source is still stated as an explicit gap."},
+    "decision_rule_lead_empty": {
+        "ar": "قاعدة الحكم مُعلنة قبل النظر في الأرقام: نوصي بالمضي حين تبلغ "
+              "قوة الفرصة عتبتَها المُعلنة وقد تحقّقنا من حدٍّ أدنى من "
+              "بياناتها وبلا شروط مفتوحة؛ ونرفض حين تنزل دون عتبة الرفض أو "
+              "عند اختلال أمان السوق؛ وما بينهما دخول مشروط بشروط مسمّاة "
+              "أدناه. عتباتُ هذه التشغيلة غير متاحة للعرض.",
+        "en": "The decision rule, stated before the numbers were weighed: we "
+              "recommend proceeding when the opportunity strength reaches its "
+              "stated threshold with a minimum share of its data verified and "
+              "no open conditions; we decline below the rejection threshold or "
+              "when market safety breaks down; anything in between is a "
+              "conditional entry, with the conditions named below. This study's "
+              "thresholds are not available for display."},
+    "decision_weighted_line_empty": {
+        "ar": "قوةُ هذه الفرصة غيرُ محسوبة في هذه التشغيلة — الجوانبُ "
+              "المحسوبة دون الحدّ الأدنى للتقييم، فلا درجةَ تُعرَض ولا "
+              "تُخمَّن.",
+        "en": "This opportunity's strength was not computed for this study — "
+              "the scored aspects are below the minimum needed to rate it, so "
+              "no score is shown and none is guessed."},
+    "counter_case_computed_empty": {
+        "ar": "لا تُبنى حجةٌ مضادة من جانبٍ واحد: مقارنةُ أقوى الجوانب "
+              "بأضعفها تحتاج جانبين محسوبين على الأقل، وهما غيرُ متاحين في "
+              "هذه التشغيلة.",
+        "en": "A counter-case cannot be built from a single aspect: "
+              "contrasting the strongest with the weakest needs at least two "
+              "scored aspects, and those are not available in this study."},
+    "hs_caveat_box_empty": {
+        "ar": "تنبيه: وصفُ رمز HS المستخدَم لا يشمل صفة المنتج المميّزة — "
+              "الأرقام الموسومة بنجمة (*) تُقرأ في سياق هذا التنبيه حتى "
+              "تأكيد الرمز الصحيح.",
+        "en": "Notice: the description of the HS code used does not cover the "
+              "product's distinguishing attribute — figures marked with an "
+              "asterisk (*) are to be read in the light of this notice until "
+              "the correct code is confirmed."},
+    "eco_pricing_warning_empty": {
+        "ar": "تحذير: تعارضٌ تسعيريٌّ مرصود بين أقصى سعر مصنع قابل للمنافسة "
+              "ومتوسط سعر الاستيراد، وطرفُ المقارنة غيرُ محسوب في هذه "
+              "التشغيلة — لا يصلح هذا الرقم أساساً للتفاوض.",
+        "en": "Warning: a pricing contradiction was observed between the "
+              "maximum competitive ex-factory price and the average import "
+              "price, and one side of the comparison is not computed for this "
+              "study — this figure must not be used as a negotiating baseline."},
+})
+
+
 def t(key: str, lang: str = DEFAULT_LANG, **fmt: object) -> str:
     """التسمية القانونية لمفهومٍ بلغةٍ بعينها.
 
     مفتاحٌ غير مسجَّل يرفع `KeyError` — عمداً: النصّ الناقص يجب أن يُكتشَف في
     الاختبار لا أن يظهر للعميل كمفتاحٍ خام أو سلسلةٍ فارغة. اختبار تكافؤ
     المفاتيح يضمن أن كل مفتاحٍ يحمل اللغتين معاً.
+
+    الصنف ٢: إن كانت إحدى الخانات **فارغةً فعلاً**، تُقدَّم صيغةُ الفراغ
+    النحوية `<key>_empty` إن كانت مسجَّلة؛ وإلّا يُصلَح العطبُ المكانيكيّ
+    حتمياً. بلا خانةٍ فارغة لا يتغيّر شيءٌ في المسار القائم.
     """
+    lng = normalize(lang)
+    if fmt and any(_is_blank(v) for v in fmt.values()):
+        alt = TERMS.get(key + _EMPTY_SUFFIX)
+        if alt and (alt.get(lng) or "").strip():
+            # صيغةُ الفراغ قد تحمل خاناتٍ أخرى ممتلئة — تُحشى بما توفّر.
+            filled = {k: v for k, v in fmt.items() if not _is_blank(v)}
+            try:
+                return alt[lng].format(**filled) if filled else alt[lng]
+            except (KeyError, IndexError):
+                return alt[lng]
+        return repair_interpolation(TERMS[key][lng].format(**fmt))
     row = TERMS[key]
-    text = row[normalize(lang)]
+    text = row[lng]
     return text.format(**fmt) if fmt else text
 
 

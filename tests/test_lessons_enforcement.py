@@ -207,6 +207,12 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٣٥ — المرساةُ السلوكية: كلُّ قالبٍ يصمد بخاناتٍ فارغة، والاستثناءاتُ
+    # المُعايَرة لا تُطلِق، وقناتا الإصلاح مِعيارُهما مختلف.
+    (235, "tests/test_report_quality_reader_layer.py",
+     ["def test_c2_every_template_survives_all_slots_empty",
+      "def test_c2_measured_exemptions_do_not_fire",
+      "def test_c2_prose_criterion_differs_from_the_slot_criterion"]),
     # ٢٣٤ — المرساةُ السلوكية: إعادةُ إنتاجِ التسريب من طرفٍ إلى طرف في
     # وورد العميل، وصفرُ إنذارٍ كاذب على المدوّنات العشر.
     (234, "tests/test_report_quality_reader_layer.py",
@@ -503,6 +509,16 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٣٥ — خانةٌ فارغة تكسر جملة: صيغُ الفراغ + قناتا الإصلاح بمِعيارَيهما
+    # + قاعدةُ سلامة الإحالة في الموجّه + الفحصُ الحتميّ.
+    (235, "silk_i18n.py",
+     ["def repair_interpolation", "def tidy_punctuation", "_EMPTY_SUFFIX",
+      "def _is_blank", "_empty\": {"]),
+    (235, "silk_quality_gate.py",
+     ["def _check_template_interpolation", "_ECHO_UNIT_WORDS",
+      "_ECHO_COMPARISON_RE", "template_interpolation"]),
+    (235, "silk_style_contract.py",
+     ["REFERENTIAL_INTEGRITY_RULE", "def referential_integrity_rule"]),
     # ٢٣٤ — لغةُ النظام تصل القارئ: المصدرُ الواحد للقوائم (يقرؤه الموجّهُ
     # والمراجعُ والبوابة)، والفحصُ الحتميّ، وعلاجُ «مُصنَّف آلياً» في العرض.
     (234, "silk_style_contract.py",

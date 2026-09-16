@@ -1456,6 +1456,12 @@ def _strip_internal_plumbing(text: str | None,
     text = _ORPHAN_LEAD_COMMA_RE.sub(r"\1", text)
     text = _ORPHAN_TAIL_COMMA_RE.sub(r"\1", text)
     text = _EMPTY_CITATION_GROUP_RE.sub("", text)
+    # الصنف ٢ (موجة عيوب التقرير): المجموعةُ الآمنة على النثر من إصلاح أثرِ
+    # الخانة الفارغة — قوسٌ فارغ، فراغٌ مزدوج، فراغٌ قبل علامةِ ترقيم. امتدادٌ
+    # لعلاج البند 13 أعلاه بنفس منطقه (لا فاصلةَ يتيمةً تُطبَع أبداً)، ومصدرُ
+    # القاعدة واحدٌ يقرؤه الفحصُ أيضاً فلا يتباعد إصلاحٌ عن فحص.
+    import silk_i18n as _i18n_tidy
+    text = _i18n_tidy.tidy_punctuation(text)
     # البند 23: لغة آلية بناء الملاحق تتحول لصياغة قارئ.
     text = _SYSTEM_MECHANICS_RE.sub(r"\1", text)
     # الصنف ١: «مُصنَّفٌ آلياً» → «مُصنَّفٌ بلا مراجعة بشرية» (المعنى للقارئ).

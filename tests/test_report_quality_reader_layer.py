@@ -301,3 +301,155 @@ def test_c1_auto_classified_phrase_becomes_reader_language_deterministically():
         out = silk_render._AUTO_CLASSIFIED_RE.sub(
             r"\1\2 بلا مراجعة بشرية", raw)
         assert must in out and "آلياً" not in out, raw
+
+
+# ════════════════ الصنف ٢ — خانةٌ فارغة تكسر جملة ════════════════
+
+_SLOT_RE = __import__("re").compile(r"\{([a-zA-Z_][a-zA-Z_0-9]*)\}")
+
+# ما لا يكون مقصوداً في أيّ نصٍّ معروضٍ سليم — نفسُ معايير قاعدة البوابة.
+_INTERP_DEFECTS = (
+    ("خانةٌ لم تُحشَ", __import__("re").compile(r"[{}]")),
+    ("قوسٌ فارغ", __import__("re").compile("«\\s*»|\\(\\s*\\)|\\[\\s*\\]")),
+    ("نقطتان متدلّيتان",
+     __import__("re").compile(r":\s*(?:$|[.،؛,;])", __import__("re").M)),
+    ("فراغٌ مزدوج", __import__("re").compile(r"[ \t]{2,}(?!$)",
+                                             __import__("re").M)),
+    ("ترقيمٌ يتيم",
+     __import__("re").compile(r"[—–]\s*(?:$|[.،؛,;])|،\s*[،.]|,\s*[,.]",
+                              __import__("re").M)),
+    ("نسبةٌ بلا رقمها",
+     __import__("re").compile(r"(?<![\d٠-٩])%")),
+)
+
+
+def _slotted_pairs() -> list:
+    """كلُّ (مفتاح، لغة) يحمل خانةً — عدا صيغِ الفراغ نفسها."""
+    import silk_i18n as I
+    out = []
+    for key, row in I.TERMS.items():
+        if key.endswith(I._EMPTY_SUFFIX):
+            continue
+        for lang in ("ar", "en"):
+            tpl = row.get(lang)
+            if isinstance(tpl, str) and _SLOT_RE.search(tpl):
+                out.append((key, lang, sorted(set(_SLOT_RE.findall(tpl)))))
+    return out
+
+
+def test_c2_every_template_survives_all_slots_empty():
+    """**إعادةُ إنتاجٍ مُقاسة:** كان ٦٣ من ٨٦ زوجاً ينكسر بتفريغ خاناته.
+
+    القاعدة: أيُّ قالبٍ يُعرَض بخاناتٍ فارغة يخرج جملةً سليمة — إمّا بصيغةِ
+    فراغٍ نحوية صريحة (`<key>_empty`) أو بإصلاحٍ مكانيكيّ حتميّ.
+    """
+    import silk_i18n as I
+    pairs = _slotted_pairs()
+    assert len(pairs) >= 80, f"عددُ القوالب ذاتِ الخانات انخفض ({len(pairs)}) — تحقّق"
+    broken = []
+    for key, lang, slots in pairs:
+        out = I.t(key, lang, **{s: "" for s in slots})
+        hits = [name for name, rx in _INTERP_DEFECTS if rx.search(out)]
+        if hits:
+            broken.append((key, lang, hits, " ".join(out.split())[:70]))
+    assert broken == [], broken
+
+
+def test_c2_empty_variant_wins_over_mechanical_repair_when_registered():
+    """جملةٌ تدّعي رقماً لا يُصلِحها تنظيف — تُقدَّم صيغةُ الفراغ الصريحة."""
+    import silk_i18n as I
+    out = I.t("decision_weighted_line", "ar", score="", conf="")
+    assert "من 100" not in out, "الجملةُ ما زالت تدّعي درجةً غير محسوبة"
+    from silk_quality_gate import _norm_ar
+    assert _norm_ar("غير محسوبة") in _norm_ar(out)
+    # وبخانةٍ ممتلئةٍ لا يتغيّر شيء — المسارُ القائم سليم.
+    full = I.t("decision_weighted_line", "ar", score=65, conf=80)
+    assert "65" in full and "80" in full and "من 100" in full
+
+
+def test_c2_zero_slot_calls_are_untouched():
+    """عقدُ عدم المساس: بلا خانةٍ فارغة، `t()` كما كانت حرفاً."""
+    import silk_i18n as I
+    assert I.t("pillar_col", "ar") == "الجانب"
+    assert I.t("limit_hs_classification", "ar", detail="رمز غير مؤكّد") == \
+        "تصنيف HS: رمز غير مؤكّد"
+    # والصفرُ ليس فراغاً — رقمٌ مشروع.
+    assert "0" in I.t("cond_pillar_weak", "ar", pillar="المنافسة", pct=0)
+
+
+def test_c2_prose_criterion_differs_from_the_slot_criterion():
+    """قناتان بمِعيارَيهما: شرطةٌ آخرَ سطرٍ في نثرٍ مطويّ **ليست** عطباً.
+
+    قياسٌ على مدوّنة Nadec: «… (UHT) —» سطرٌ تكمله الجملةُ التالية. معيارُ
+    القالب يراها يتيمة؛ معيارُ النثر لا. قناةٌ بمعيارٍ خاطئ تُنتِج إنذاراً
+    كاذباً في كلّ تقريرٍ مطويِّ الأسطر."""
+    import silk_i18n as I
+    wrapped = "رمز HS 040110 (حليب طازج دسمه ≤1%)، بينما المنتج كامل الدسم —"
+    assert I.tidy_punctuation(wrapped) == wrapped
+    assert I.repair_interpolation("تصنيف HS:") == "تصنيف HS"
+    assert I.tidy_punctuation("التوصية:") == "التوصية:"
+
+
+def test_c2_gate_catches_each_defect_family():
+    from silk_quality_gate import _check_template_interpolation as chk
+    for text in (
+            "## 1. الخلاصة\nالسوق {label} يستوعب الصنف.",
+            "## 2. المنهجية\nاعتمدنا مصادر رسمية () في هذا التقرير.",
+            "## 3. السوق\nينقصه:",
+            "## 4. الأرقام\nالشريحة المحسوبة أعلاه رغم أن حجمها غير محسوب.",
+            "## 5. المنافسة\nثم السعودية بالحصة السعودية البالغة 10.44%."):
+        out = chk(text)
+        assert out, text
+        assert all(f["check"] == "template_interpolation" for f in out)
+
+
+def test_c2_measured_exemptions_do_not_fire():
+    """ثلاثةُ استثناءاتٍ مُعايَرةٌ على خطّ الأساس — لا تخميناً."""
+    from silk_quality_gate import _check_template_interpolation as chk
+    for text in (
+            # وحدةٌ مكرّرة في سلّم أسعار — تكرارُها شرطُ المقارنة.
+            "## 4. الأسعار\n0.85 دينار/لتر مقابل 0.55 دينار/لتر للمحلية.",
+            "## 3. السوق\n7.12 مليون دولار مقابل 2.09 مليون دولار.",
+            # شرحٌ مقحوم داخل قوس — قناةُ الصنف ٤ لا هذه.
+            "## 6. المنافسة\nمؤشر التركّز HHI (مؤشر يقيس تركّز السوق).",
+            # نثرٌ مطويٌّ بشرطةٍ آخرَ السطر.
+            "## 2. المنهجية\nرمز HS 040110 (حليب طازج) —\nبينما المنتج كامل.",
+            # جدولٌ وعنوانٌ — فراغُ المحاذاة مقصود.
+            "## 7. الجدول\n| الجانب | قوّته |\n|---|---|\n| السوق | 89% |"):
+        assert chk(text) == [], text
+
+
+def test_c2_zero_false_positives_across_every_canonical_blob():
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    with block_network():
+        for key in _canonical_keys():
+            mod, fn = B.CANONICAL_BLOBS[key]
+            blob = getattr(importlib.import_module(mod), fn)()
+            out = G.run_quality_gate(silk_render.build_view(blob))
+            hits = [f["note"] for f in out["findings"]
+                    if f["check"] == "template_interpolation"]
+            assert hits == [], (key, hits)
+
+
+def test_c2_rule_is_one_source_and_wired_into_the_gate():
+    import inspect
+
+    import silk_quality_gate as G
+    import silk_style_contract as S
+    for name in ("WRITER_STYLE_CONTRACT", "ACADEMIC_WRITER_CONTRACT"):
+        assert S.REFERENTIAL_INTEGRITY_RULE in getattr(S, name), name
+    for name in ("WRITER_STYLE_CONTRACT_EN", "ACADEMIC_WRITER_CONTRACT_EN"):
+        assert S.REFERENTIAL_INTEGRITY_RULE_EN in getattr(S, name), name
+    assert "_check_template_interpolation" in inspect.getsource(
+        G.run_quality_gate)
+    assert "template_interpolation" not in G.FAIL_TRIGGER_CHECKS
+
+
+def test_c2_render_layer_repairs_prose_punctuation_deterministically():
+    """الإصلاحُ في طبقة العرض لا في تذكّر النموذج (امتدادُ علاج البند 13)."""
+    import silk_render
+    out = silk_render._strip_internal_plumbing(
+        "بقيمة 7.12 مليون دولار سنوياً ، بمعدّل نموّ موجب . ومصادر رسمية ()")
+    assert "سنوياً ،" not in out and "موجب ." not in out and "()" not in out

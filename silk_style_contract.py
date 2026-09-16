@@ -230,6 +230,46 @@ READER_LANGUAGE_RULE_EN = (
 )
 
 
+# ── الصنف ٢ (موجة عيوب التقرير): سلامةُ الإحالة · referential integrity ─────
+# القوالبُ مُصلَحةٌ حتمياً (`silk_i18n.t` + صيغُ الفراغ)، لكنّ الكاتبَ يركّب
+# جملاً من النوع نفسِه بنفسه — «ثم السعودية بالحصة السعودية»، و«الشريحة
+# المحسوبة أعلاه» لشريحةٍ أُعلِن أن حجمها غير محسوب. لا قالبَ يُصلَح فيها،
+# فالقاعدةُ توجيهٌ والفحصُ إنفاذ (`_check_template_interpolation`).
+REFERENTIAL_INTEGRITY_RULE = (
+    "**سلامةُ الإحالة (إلزامي — لا تُحِل إلى ما لم يُعرَض):**\n"
+    "- **لا «أعلاه» ولا «أدناه» لرقمٍ أو شريحةٍ أعلنتَ أنها «غير محسوبة» "
+    "أو «غير متاحة».** إن لم يُحسَب فقُل ما ينقص لحسابه، لا تُحِل القارئَ "
+    "إلى فراغ.\n"
+    "- **العددُ المذكور يطابق المعدود**: لا «شرطين مفتوحين» ثم شرطٌ واحد "
+    "في القائمة. اكتب العددَ من القائمة التي ستسردها، أو اسرِدها بلا عدد.\n"
+    "- **لا تُعِد اسمَ الكيان داخل وصفِه**: «ثم السعودية بحصة 10.44%» لا "
+    "«ثم السعودية بالحصة السعودية البالغة 10.44%».\n"
+    "- **لا تشرح مصطلحاً بين قوسين وسط الجملة** بكلمةٍ من المصطلح نفسِه "
+    "(«مؤشر التركّز (مؤشر يقيس التركّز)») — التعريفُ مرّةً واحدة في "
+    "المنهجية، والمتنُ يستعمل المعنى لا الاسمَ ثم شرحَه."
+)
+
+REFERENTIAL_INTEGRITY_RULE_EN = (
+    "**Referential integrity (mandatory — never point at what was not "
+    "shown):**\n"
+    "- No \"above\" or \"below\" for a figure or segment you declared "
+    "\"not computed\" or \"not available\". If it was not computed, say "
+    "what is missing to compute it; do not send the reader to an empty spot.\n"
+    "- A stated count must match what you then list: never \"two open "
+    "conditions\" followed by one. Take the number from the list you are "
+    "about to write, or list them without a count.\n"
+    "- Never repeat an entity's name inside its own description.\n"
+    "- Never gloss a term mid-sentence with a word from the term itself — "
+    "define it once in the methodology and use the meaning in the body."
+)
+
+
+def referential_integrity_rule(lang: str = "ar") -> str:
+    """قاعدةُ سلامة الإحالة بلغة التقرير — مصدرٌ واحد للموجّه والفحص."""
+    return REFERENTIAL_INTEGRITY_RULE_EN if str(lang).lower().startswith("en") \
+        else REFERENTIAL_INTEGRITY_RULE
+
+
 def reader_language_rule(lang: str = "ar") -> str:
     """القاعدةُ بلغة التقرير — مصدرٌ واحد للموجّه والمراجع والفحص."""
     return READER_LANGUAGE_RULE_EN if str(lang).lower().startswith("en") \
@@ -518,6 +558,8 @@ ACADEMIC_WRITER_CONTRACT = (
     + "\n\n" + PLAIN_LANGUAGE_RULE
     # الصنف ١ (موجة عيوب التقرير): بُعدُ «من يقرأ» — إلحاقٌ لا استبدال.
     + "\n\n" + READER_LANGUAGE_RULE
+    # الصنف ٢: لا إحالةَ إلى ما لم يُعرَض، ولا عددٌ يخالف معدودَه.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE
 )
 
 
@@ -556,6 +598,8 @@ WRITER_STYLE_CONTRACT = (
     + "\n\n" + PLAIN_LANGUAGE_RULE
     # الصنف ١ (موجة عيوب التقرير): بُعدُ «من يقرأ» — إلحاقٌ لا استبدال.
     + "\n\n" + READER_LANGUAGE_RULE
+    # الصنف ٢: لا إحالةَ إلى ما لم يُعرَض، ولا عددٌ يخالف معدودَه.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE
 )
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -647,6 +691,8 @@ WRITER_STYLE_CONTRACT_EN = (
     + "\n\n" + PLAIN_LANGUAGE_RULE_EN
     # الصنف ١ (موجة عيوب التقرير) — المرآةُ الإنجليزية، إلحاقٌ لا استبدال.
     + "\n\n" + READER_LANGUAGE_RULE_EN
+    # الصنف ٢ — المرآةُ الإنجليزية.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE_EN
 )
 
 ACADEMIC_WRITER_CONTRACT_EN = (
@@ -676,6 +722,8 @@ ACADEMIC_WRITER_CONTRACT_EN = (
     + "\n\n" + PLAIN_LANGUAGE_RULE_EN
     # الصنف ١ (موجة عيوب التقرير) — المرآةُ الإنجليزية، إلحاقٌ لا استبدال.
     + "\n\n" + READER_LANGUAGE_RULE_EN
+    # الصنف ٢ — المرآةُ الإنجليزية.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE_EN
 )
 
 

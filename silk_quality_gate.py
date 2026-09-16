@@ -3860,6 +3860,136 @@ def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
     return findings
 
 
+# ══════════ الصنف ٢ (موجة عيوب التقرير) — خانةٌ فارغة تكسر جملة ══════════
+# بلاغُ المالك: «ثم السعودية بالحصة السعودية البالغة 10.44%»، و«الشريحة
+# المحسوبة أعلاه رغم غياب رقم لحجمها»، و«استند هذا الحكم إلى شرطين مفتوحين»
+# بلا شرطين.
+#
+# العلاجُ الحتميّ في القوالب نفسها (`silk_i18n.t` + `repair_interpolation` +
+# صيغُ الفراغ `<key>_empty` — من ٦٣ زوجاً مكسوراً إلى صفر). وهذا الفحصُ
+# حارسُ انحدارٍ له **وحارسٌ أصليّ لنثر الكاتب**: النموذجُ يركّب جملاً كهذه
+# بنفسه، ولا قالبَ يُصلَح فيها.
+#
+# تحذيريّ. القاعدةُ الواحدة: `silk_i18n.repair_interpolation` هي مِعيارُ
+# «سليم» — فلا قاعدةُ فحصٍ تخالف قاعدةَ إصلاح.
+_UNRENDERED_SLOT_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z_0-9]{0,30}\}")
+# إحالةٌ مكانيّة («أعلاه»/«أدناه») بجوار إعلانِ غياب: الإحالةُ تَعِد بشيءٍ
+# أُعلِن أنه غيرُ موجود — «الشريحة المحسوبة أعلاه رغم غياب رقم لحجمها».
+_SPATIAL_REF_RE = re.compile(r"أعلاه|أدناه|above|below", re.I)
+_GAP_WORDS_NEAR = ("غير محسوب", "غير متاح", "لا نعرفه بعد", "not computed",
+                   "not available", "not known yet")
+_SPATIAL_GAP_WINDOW = 60
+# صدى الكيان: الاسمُ نفسُه مكرّراً داخل وصفِه («السعودية بالحصة السعودية»).
+# ≥٤ محارف كي لا تُلتقَط أدواتٌ وحروفُ جرّ، والنافذةُ ثلاثُ كلماتٍ بينهما.
+_ECHO_WORD_RE = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
+_ECHO_MAX_GAP = 3
+# **ثلاثةُ استثناءاتٍ قِياسية، لا تخميناً** (مُعايَرةٌ على خطّ الأساس):
+# (١) وحداتُ القياس والعملات: «0.85 دينار/لتر مقابل 0.55 دينار/لتر» مقارنةٌ
+#     سليمة يجب أن تتكرّر فيها الوحدة — إنذارٌ كاذبٌ في كلّ سلّم أسعار.
+_ECHO_UNIT_WORDS = frozenset({
+    "دينار", "ريال", "دولار", "يورو", "درهم", "جنيه", "دينارا", "ريالا",
+    "كجم", "كيلوغرام", "كيلو", "غرام", "لتر", "طن", "عبوة", "وحدة", "قطعة",
+    "شهر", "سنة", "سنوياً", "سنويا", "يوم", "أسبوع", "مليون", "مليار", "ألف",
+})
+# (٢) رابطُ مقارنةٍ بين الورودين ⇒ تكرارٌ مقصودٌ لطرفَي المقارنة.
+_ECHO_COMPARISON_RE = re.compile(
+    r"مقابل|مقارنةً|مقارنة|بينما|في حين|أمام|versus|vs\.?|compared", re.I)
+# (٣) الورودُ الثاني داخل قوسٍ ⇒ شرحٌ مقحوم: عيبٌ حقيقيّ لكنه من عائلةِ
+#     المسرد (الصنف ٤ — «مصطلحٌ يُستعمل بلا تعريف»، ويحظره أصلاً
+#     `PLAIN_LANGUAGE_RULE`: «ولا شرحَ بين قوسين وسط الجملة»). يُترك لقناته
+#     كي لا يُبلِّغ فحصان عيباً واحداً بتسميتين.
+_ECHO_PAREN_RE = re.compile(r"[\(（][^\)）]*$")
+
+
+def _check_template_interpolation(text: str, lang: str = "ar") -> list[dict]:
+    """`template_interpolation` (الصنف ٢، تحذيريّ): جملةٌ كسرتها خانةٌ فارغة
+    أو إحالةٌ إلى ما أُعلِن غائباً أو صدى كيانٍ في وصفِه.
+
+    أربعُ قنوات:
+
+    1. **خانةٌ لم تُحشَ** — `{label}` حرفياً في نصٍّ معروض.
+    2. **أثرٌ مكانيكيّ** — قوسٌ فارغ/نقطتان متدلّيتان/فراغٌ مزدوج، مُقاساً
+       بأن `silk_i18n.repair_interpolation` تُغيّر السطر. مِعيارٌ واحد
+       للإصلاح والفحص، فلا تتباعد قاعدتان.
+    3. **إحالةٌ إلى غائب** — «أعلاه/أدناه» على مسافةٍ قريبة من إعلانِ غياب.
+    4. **صدى كيان** — الاسمُ نفسُه داخل وصفِه («بالحصة السعودية» بعد
+       «السعودية»)، بحدِّ كلمةٍ ونافذةٍ ثلاثِ كلمات.
+    """
+    if not text:
+        return []
+    from silk_i18n import repair_interpolation, tidy_punctuation
+    body = _split_off_appendix(text)
+    findings: list[dict] = []
+    seen: set = set()
+
+    def _add(kind: str, detail: str, pos: int) -> None:
+        sig = (kind, detail)
+        if sig in seen:
+            return
+        seen.add(sig)
+        findings.append({
+            "check": "template_interpolation", "repairable": True,
+            "note": (f"{kind} — القسم «{_reader_section_of(body, pos)}»: "
+                     f"…{_reader_snippet(body, pos, pos + len(detail))}…")})
+
+    m = _UNRENDERED_SLOT_RE.search(body)
+    if m:
+        _add(f"خانةُ قالبٍ لم تُحشَ «{m.group(0)}»", m.group(0), m.start())
+    # مِعيارُ القالب (`repair_interpolation`) يُقاس على **سطرٍ كاملٍ بذاته**:
+    # نقطتان متدلّيتان آخرَ سطرٍ لا يتلوه متنٌ = خانةٌ فُرِّغت فعلاً.
+    for raw in body.splitlines():
+        s = raw.strip()
+        if not s or s.startswith(("#", "|", ">")):
+            continue
+        if repair_interpolation(s) != tidy_punctuation(s) \
+                and s.rstrip().endswith((":", "：")):
+            _add("نقطتان متدلّيتان — خانةٌ فُرِّغت بلا صيغةِ فراغٍ نحوية",
+                 s[:40], body.find(raw))
+
+    for line in body.splitlines():
+        stripped = line.strip()
+        # الجداول والعناوين تُستثنى: فراغُ المحاذاة فيها مقصودٌ لا عطب.
+        if not stripped or stripped.startswith(("#", "|", ">")):
+            continue
+        # **المِعيارُ الآمنُ على النثر** لا معيارُ القالب: شرطةٌ آخرَ سطرٍ
+        # في نثرٍ مطويّ وسطُ جملةٍ لا أثرُ خانةٍ فارغة (قياسٌ على مدوّنة
+        # Nadec). والقناتان بمِعيارَيهما أصدقُ من قناةٍ بمعيارٍ واحد خاطئ.
+        if tidy_punctuation(stripped) != stripped:
+            _add("أثرُ خانةٍ فارغة (قوسٌ فارغ/نقطتان متدلّيتان/فراغٌ مزدوج)",
+                 stripped[:40], body.find(line))
+
+    for m in _SPATIAL_REF_RE.finditer(body):
+        lo = max(0, m.start() - _SPATIAL_GAP_WINDOW)
+        hi = min(len(body), m.end() + _SPATIAL_GAP_WINDOW)
+        window = _norm_ar(body[lo:hi])
+        gap = next((g for g in _GAP_WORDS_NEAR if _norm_ar(g) in window), None)
+        if gap:
+            _add(f"إحالةٌ «{m.group(0)}» إلى ما أُعلِن «{gap}»",
+                 m.group(0), m.start())
+
+    for line in body.splitlines():
+        if line.strip().startswith(("#", "|", ">")):
+            continue
+        words = [(w.group(0), w.start()) for w in _ECHO_WORD_RE.finditer(line)]
+        norm = [_norm_ar(w) for w, _ in words]
+        for i, w in enumerate(norm):
+            if w in _ECHO_UNIT_WORDS:
+                continue
+            for j in range(i + 1, min(i + 1 + _ECHO_MAX_GAP, len(norm))):
+                if norm[j] != w or j == i + 1:
+                    continue
+                between = line[words[i][1] + len(words[i][0]):words[j][1]]
+                if _ECHO_COMPARISON_RE.search(between):
+                    break
+                # الورودُ الثاني داخل قوسٍ ⇒ شرحٌ مقحوم (قناةُ الصنف ٤).
+                if _ECHO_PAREN_RE.search(line[:words[j][1]]):
+                    break
+                _add(f"صدى كيانٍ داخل وصفِه «{words[i][0]}»",
+                     words[i][0], body.find(line) + words[i][1])
+                break
+    return findings
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -4447,6 +4577,10 @@ def run_quality_gate(view: dict) -> dict:
     # تحذيريّ، وبلاغُه يحمل القسمَ والنصَّ. يقرأ قوائمه من
     # `silk_style_contract` (المصدرُ الذي يقرؤه الموجّهُ والمراجعُ أيضاً).
     findings += _check_reader_language_leak(text, _lang)
+    # الصنف ٢ (موجة عيوب التقرير): جملةٌ كسرتها خانةٌ فارغة، أو إحالةٌ إلى ما
+    # أُعلِن غائباً، أو صدى كيانٍ في وصفِه — تحذيريّ. مِعيارُ «سليم» هو
+    # `silk_i18n.repair_interpolation` نفسُها (قاعدةُ الإصلاح = قاعدةُ الفحص).
+    findings += _check_template_interpolation(text, _lang)
     findings += _check_absence_vocabulary(text)
     # D4 (دراسة #12): مفردات الغياب على **أسطح العرض** أيضاً — جدول الأعمدة
     # («لم يُرصَد بعد») وشروط القرار وحدود التقرير قوائم view لا يمر عليها
