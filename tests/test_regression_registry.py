@@ -4571,6 +4571,15 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    240: lambda: (
+        _needles("silk_figure_store.py", "def decision_reading",
+                 "FIGURE_ID_RULE", "_METHOD_RANK", "def enabled")(),
+        _needles("silk_quality_gate.py", "def effective_fail_triggers",
+                 "def _check_metric_value_divergence")(),
+        _needles("silk_ai_judge.py", "silk_figure_store")(),
+        _absent("silk_quality_gate.py",
+                'f["check"] in FAIL_TRIGGER_CHECKS for f in non_repairable')(),
+        _needles("tests/test_lessons_enforcement.py", '(240, ')()),
     239: lambda: (
         _needles("silk_quality_gate.py", "_OTHER_UNIVERSE_CTX_RE",
                  "def _fmt_gate_num", "بيانات المرآة")(),

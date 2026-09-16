@@ -207,6 +207,13 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٠ — المرساةُ السلوكية: الشدةُ تتبع الراية، وتسميةُ الفرق ليست عيباً،
+    # وصفرُ حجبٍ جديد على المدوّنات والرايةُ مفعّلة.
+    (240, "tests/test_report_quality_logic_layer.py",
+     ["def test_c6_divergence_severity_follows_the_flag",
+      "def test_c6_naming_the_difference_is_correct_not_a_defect",
+      "def test_c6_flag_off_changes_nothing_in_the_fail_set",
+      "def test_c6_no_hard_fail_on_any_canonical_blob_with_the_flag_on"]),
     # ٢٣٩ — المرساةُ السلوكية: المدوّنةُ لم تَعُد محجوبةً بتناقضٍ كاذب،
     # والتناقضُ الحقيقيّ ما زال يحجب، والتثبيتةُ الموجَبة تُطلِق فعلاً.
     (239, "tests/test_report_quality_reader_layer.py",
@@ -539,6 +546,17 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٤٠ — هويةُ الرقم: المخزن، قاعدةُ قراءةِ القرار، حقنُ المعرّف في
+    # الموجّه خلف الراية، ومجموعةُ الحجب المحسوبة عند الحكم.
+    (240, "silk_figure_store.py",
+     ["def build", "def decision_reading", "def classify",
+      "def facts_block", "FIGURE_ID_RULE", "def enabled",
+      "_METHOD_OF_METRIC", "_METHOD_RANK"]),
+    (240, "silk_quality_gate.py",
+     ["def effective_fail_triggers", "_FLAGGED_FAIL_TRIGGERS",
+      "def _check_metric_value_divergence",
+      "def _check_shared_value_across_entities"]),
+    (240, "silk_ai_judge.py", ["silk_figure_store", "FIGURE_ID_RULE"]),
     # ٢٣٩ — المراجعةُ الذاتية بعد الجولة الأولى: تضييقُ فحصٍ حاجبٍ يُطلِق على
     # الصحيح، وبلاغٌ يمرّ على المنسِّق، وعتبةٌ تُعايَر بفصلٍ مقيس، وتثبيتةٌ
     # موجَبةٌ واحدة تُثبِت أنّ القواعدَ تصطاد نثرَ كاتبٍ طبيعيّ.

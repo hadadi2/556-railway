@@ -2508,6 +2508,30 @@ FAIL_TRIGGER_CHECKS = frozenset({
 })
 
 
+# ── الجولة الثانية: مجموعةُ الحجبِ الفعّالة · flag-gated fail triggers ──────
+# قرار المالك 2026-08-19 «لا حجب جديداً» يبقى سارياً على الإنتاج: الفحوصُ
+# الجديدة تحجب **فقط** حين تُفعَّل رايتُها صريحاً. و`FAIL_TRIGGER_CHECKS`
+# نفسُها **لا تُمَسّ** — عشراتُ الاختبارات تقرؤها عقداً ثابتاً — فتُحسَب
+# المجموعةُ الفعّالة عند الحكم: مطفأةً = المجموعةُ الأصلية حرفياً.
+_FLAGGED_FAIL_TRIGGERS: tuple = (
+    # (اسمُ الفحص، الوحدةُ التي تحمل رايتَه)
+    ("metric_value_divergence", "silk_figure_store"),
+)
+
+
+def effective_fail_triggers() -> frozenset:
+    """مجموعةُ الفحوص الحاجبة الآن — الثابتة زائداً ما تُفعِّله الرايات."""
+    extra = set()
+    for check, module in _FLAGGED_FAIL_TRIGGERS:
+        try:
+            mod = __import__(module)
+            if mod.enabled():
+                extra.add(check)
+        except Exception:  # noqa: BLE001 — رايةٌ غيرُ قابلةٍ للقراءة = مطفأة
+            continue
+    return FAIL_TRIGGER_CHECKS | extra
+
+
 _HHI_VALUE_RE = re.compile(r"HHI[^\d\n]{0,25}(\d+(?:[.,]\d+)?)")
 
 
@@ -4630,6 +4654,140 @@ def _check_connector_repeated_in_paragraph(text: str,
     return findings[:3]
 
 
+# ══════ الصنف ٦ (موجة عيوب التقرير) — قيمتان لمؤشرٍ واحد ══════
+# بلاغُ المالك: «الحصة السعودية 10.44% في الملخّص و12.42% في الجدول»،
+# و«10.44% هي أيضاً حصةُ الصين لعام 2023». رقمٌ واحدٌ بقراءتين، وقراءةٌ
+# واحدة لكيانين.
+#
+# الجذرُ (`silk_ai_judge._facts`): الأرقامُ تصل الكاتبَ **نصّاً بلا هوية**،
+# فلا شيء يربط رقماً في §1 برقمٍ في §6. العلاجُ `silk_figure_store`:
+# معرّفٌ ثابتٌ لكلّ قراءة، وقاعدةٌ واحدةٌ موثَّقة تختار قراءةَ القرار.
+#
+# **خلف رايةٍ مطفأةٍ افتراضياً** (`SILK_FIGURE_STORE`): الفحصُ لا يدخل
+# مجموعةَ الحجب إلّا بها (قرار المالك: لا حجب جديداً بلا راية). وحين تُطفأ
+# يبقى تحذيرياً — يُقاس ولا يحجب.
+
+# إفصاحٌ يسمّي الفرقَ بين قراءتين ⇒ ذكرُهما معاً صحيحٌ لا تعارض.
+_DIVERGENCE_DISCLOSED_RE = re.compile(
+    r"مرآة|المرآة|تصريح\s+مباشر|مباشرة|فجوة|فارق|الفارق|مقابل|بينما"
+    r"|لنفس\s+السنة|سنة\s+أخرى|mirror|directly\s+reported|gap\b",
+    re.IGNORECASE)
+_DIVERGENCE_WINDOW = 220
+
+
+def _rendered_figure_positions(body: str, value: float) -> list:
+    """مواضعُ ظهورِ قيمةٍ في النثر.
+
+    `_significant_number_mentions` يشترط ≥1000 كي لا يُطابِق رقماً صغيراً
+    مصادفةً — والحصصُ والنِّسَب (10.44) دونه. فالقيمُ الصغيرة تُطابَق
+    **بحرفها متبوعةً بعلامة نسبة** حصراً: قيدٌ يمنع مطابقةَ «10» من «2010».
+    """
+    if abs(value) >= 1000:
+        return _significant_number_mentions(body, value) or []
+    out: list = []
+    for form in {f"{value:g}", f"{value:.2f}".rstrip("0").rstrip(".")}:
+        if len(form) < 2:
+            continue
+        for m in re.finditer(
+                rf"(?<![\d.]){re.escape(form)}\s*[%٪]", body):
+            out.append((m.start(), m.end()))
+            break
+    return out
+
+
+def _check_metric_value_divergence(view: dict, dr: dict) -> list[dict]:
+    """`metric_value_divergence` (الصنف ٦): قراءتان لمؤشرٍ واحد تُعرَضان في
+    التقرير **بلا تسميةِ الفرق**.
+
+    حاجبٌ حين رايةُ `SILK_FIGURE_STORE` مفعّلة، وتحذيريٌّ بدونها.
+
+    وذكرُ قراءتين **مع تسميةِ الفرق** صحيحٌ ومطلوب — تمييزُ المباشر عن
+    المرآة عقدٌ محفوظ، وقد أثبت الصنف ١١ أنّ معاقبتَه كانت تحجب تقارير
+    سليمة. فالشرطُ غيابُ الإفصاح لا وجودُ قراءتين.
+    """
+    import silk_figure_store as FS
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    store = FS.build(dr.get("missions"), dr.get("analyst"))
+    blocking = FS.enabled()
+    findings: list[dict] = []
+    for metric, ids in (store.get("by_metric") or {}).items():
+        if len(ids) < 2:
+            continue
+        figs = {f["id"]: f for f in store["figures"]}
+        shown: list = []
+        for fid in ids:
+            fig = figs[fid]
+            for lo, hi in _rendered_figure_positions(body, fig["value"]):
+                shown.append((lo, hi, fig))
+                break
+        # قيمٌ **متمايزة** معروضة — تكرارُ القيمة نفسِها ليس تعارضاً.
+        distinct = {round(f["value"], 6) for _, _, f in shown}
+        if len(shown) < 2 or len(distinct) < 2:
+            continue
+        shown.sort(key=lambda t: (t[0], t[1]))   # بالموضع لا بالقاموس
+        lo = max(0, shown[0][0] - 40)
+        hi = min(len(body), shown[-1][1] + 40)
+        span = body[lo:hi]
+        if len(span) <= _DIVERGENCE_WINDOW * 2 \
+                and _DIVERGENCE_DISCLOSED_RE.search(span):
+            continue
+        near = body[max(0, shown[0][0] - _DIVERGENCE_WINDOW):
+                    shown[0][1] + _DIVERGENCE_WINDOW]
+        if _DIVERGENCE_DISCLOSED_RE.search(near):
+            continue
+        vals = "، ".join(f"{f['id']}={_fmt_gate_num(f['value'])}"
+                         for _, _, f in shown[:3])
+        findings.append({
+            "check": "metric_value_divergence",
+            "repairable": not blocking,
+            "note": (f"قراءتان أو أكثر للمؤشّر «{metric}» معروضتان في "
+                     f"التقرير بلا تسميةِ الفرق: {vals} — سمِّ الفرق "
+                     "(سنةٌ أخرى، تصريحٌ مباشر مقابل مرآة) أو اعرض قراءةً "
+                     "واحدةً هي قراءةُ القرار "
+                     f"({store['decision_reading'].get(metric)})")})
+    return findings[:3]
+
+
+# ── تحذيرٌ مرافق: قيمةٌ واحدة لكيانين في قسمٍ واحد ──────────────────────────
+# «10.44% هي أيضاً حصةُ الصين لعام 2023» — تطابقٌ يكاد يكون نسخاً، ويستحقّ
+# سؤالاً لا حجباً (قد يتطابق رقمان صدقاً).
+_ENTITY_SHARE_RE = re.compile(
+    r"([^\W\d_]{3,})\s*[:،]?\s*"
+    r"(?:بحصة|حصة|بنسبة|عند|تبلغ|البالغة)?\s*"
+    r"(\d{1,3}(?:\.\d+)?)\s*[%٪]")
+# روابطُ بدايةِ الكلمة تُسقَط من الاسم المُبلَّغ («والصين» → «الصين»).
+_ENTITY_LEAD_CONJ_RE = re.compile(r"^[وف]")
+
+
+def _check_shared_value_across_entities(dr: dict) -> list[dict]:
+    """`shared_value_across_entities` (الصنف ٦، تحذيريّ دائماً): نسبةٌ واحدة
+    منسوبةٌ لكيانين مختلفين في القسم نفسِه."""
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    findings: list[dict] = []
+    for name, sect in _report_sections(body):
+        seen: dict = {}
+        for m in _ENTITY_SHARE_RE.finditer(sect or ""):
+            ent = _ENTITY_LEAD_CONJ_RE.sub("", " ".join(m.group(1).split()))
+            pct = m.group(2)
+            prior = seen.get(pct)
+            if prior and _norm_ar(prior) != _norm_ar(ent):
+                findings.append({
+                    "check": "shared_value_across_entities",
+                    "repairable": True,
+                    "note": (f"النسبةُ {pct}% منسوبةٌ لكيانين في القسم "
+                             f"«{name}»: «{prior}» و«{ent}» — تطابقٌ يستحقّ "
+                             "مراجعةً (قد يكون نسخاً لا صدفة)")})
+                break
+            seen.setdefault(pct, ent)
+        if findings:
+            break
+    return findings
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -5230,6 +5388,11 @@ def run_quality_gate(view: dict) -> dict:
     # الصنف ٥ (موجة عيوب التقرير): إعادةُ صياغةٍ عبر الأقسام، وتكرارُ
     # الرابط داخل الفقرة — قناتان لا يبلغهما `_check_repeated_span`
     # (نطاقُه الفقرة وتكرارُه حرفيّ) ولا عدّادُ `_check_style` المستنديّ.
+    # الصنف ٦ (موجة عيوب التقرير): قراءتان لمؤشرٍ واحد بلا تسميةِ الفرق —
+    # حاجبٌ خلف رايةِ `SILK_FIGURE_STORE` وتحذيريٌّ بدونها؛ ونسبةٌ واحدة
+    # لكيانين تحذيرٌ دائم.
+    findings += _check_metric_value_divergence(view, dr)
+    findings += _check_shared_value_across_entities(dr)
     findings += _check_cross_section_near_duplicate(text)
     findings += _check_connector_repeated_in_paragraph(text, _lang)
     findings += _check_authority_naming_drift(view, dr, _lang)
@@ -5393,7 +5556,7 @@ def run_quality_gate(view: dict) -> dict:
     severe = non_repairable + guard_fired
     if not findings:
         verdict = PASS
-    elif any(f["check"] in FAIL_TRIGGER_CHECKS for f in non_repairable) \
+    elif any(f["check"] in effective_fail_triggers() for f in non_repairable) \
             or guard_fired:
         verdict = FAIL
     else:

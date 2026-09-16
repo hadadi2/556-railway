@@ -1213,11 +1213,27 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
             "\n\n" + (EPISTEMIC_VERB_RULE_EN if lang == "en"
                       else EPISTEMIC_VERB_RULE), "")
     facts = _isolate(_facts(list(mission_reports.values())))
+    # الصنف ٦ (موجة عيوب التقرير) — **خلف رايةٍ مطفأةٍ افتراضياً**: الأرقامُ
+    # تصل الكاتبَ بمعرّفاتٍ ثابتة ([F1]، [F2]…) فيصير تعارضُ قراءتين قابلاً
+    # للكشف بدل أن يُنسَخ الرقمُ مرّتين بقيمتين. بلا الراية يبقى مسارُ
+    # `_facts` كما هو حرفياً — لا معرّفٌ ولا قاعدةٌ إضافية في الموجّه.
+    _figure_rule = ""
+    try:
+        import silk_figure_store as _FS
+        if _FS.enabled():
+            _store = _FS.build(mission_reports)
+            if (_store.get("figures") or []):
+                facts = _isolate(_FS.facts_block(_store))
+                _figure_rule = _FS.FIGURE_ID_RULE
+    except Exception as _e:  # noqa: BLE001 — المخزنُ تحسينٌ لا شرطُ كتابة
+        log.warning("figure store skipped: %s", _e)
     sections = "\n".join(f"{i}. {s}" for i, s
                          in enumerate(report_sections(lang), 1))
     parts = [
         f"المنتج: {_isolate(product)}. السوق: {_isolate(market_name)}.",
         contract,
+        # الصنف ٦: قاعدةُ هويةِ الرقم — فارغةٌ بلا الراية فلا تُغيّر الموجّه.
+        *([_figure_rule] if _figure_rule else []),
         "قارن أسعار عروض تطابق نوع المنتج وشكله الفعلي فقط. لا تغيّر اسم "
         "منتج في المصدر لكي يبدو مطابقاً: الطحينة ليست الحلاوة الطحينية، "
         "والحليب السائل ليس مسحوق الحليب. اعتمد عروض بعثة التسعير المقبولة؛ "
