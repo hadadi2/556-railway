@@ -118,6 +118,23 @@
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },
+  "kenya_honey": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.324,
+      "market": 0.731,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.46,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
   "kuwait_peanut_butter": {
     "computed_pillars": 2,
     "engine_confidence": null,
@@ -132,6 +149,23 @@
       "risk": null
     },
     "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "libya_tahini": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.352,
+      "market": 0.756,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.49,
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },

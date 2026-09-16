@@ -4571,6 +4571,23 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    249: lambda: (
+        _needles("silk_quality_gate.py", "def _flat_ar")(),
+        _absent("silk_quality_gate.py",
+                "if (_norm_ar(_PRICING_WARNING_NEEDLE) not in plain")(),
+        _needles("tests/test_lessons_enforcement.py", '(249, ')()),
+    248: lambda: (
+        _needles("silk_quality_gate.py", "_ECHO_UNIT_WORDS",
+                 "def _hs6_registered")(),
+        _needles("tools/canonical_kenya_honey.py", "PVoC")(),
+        _needles("tests/test_lessons_enforcement.py", '(248, ')()),
+    247: lambda: (
+        _needles("silk_quality_gate.py", "def _named_gateways",
+                 "_GENERIC_GATEWAY_WORDS")(),
+        _needles("tools/canonical_libya_tahini.py", "ميناء بنغازي")(),
+        _absent("silk_quality_gate.py",
+                "gates = sorted(set(_NAMED_GATEWAY_RE.findall(text)))")(),
+        _needles("tests/test_lessons_enforcement.py", '(247, ')()),
     246: lambda: (
         _needles("silk_market_structure.py", "def scheme_belongs_to",
                  "def market_currency", "NO_COUNTRY_OWNER", "def enabled")(),

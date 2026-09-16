@@ -98,6 +98,21 @@
   "skipped_checks": [],
   "verdict": "FAIL"
  },
+ "kenya_honey": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "markdown_artifacts",
+   "observed_value_declared_unavailable",
+   "observed_value_declared_unavailable",
+   "unclassified_product_attribute"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
  "kuwait_peanut_butter": {
   "findings": [
    "agent_empty",
@@ -114,6 +129,23 @@
   "language_quality": [],
   "skipped_checks": [],
   "verdict": "FAIL"
+ },
+ "libya_tahini": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "broad_hs_scope_undisclosed",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "lead_outside_activity_allowlist",
+   "markdown_artifacts",
+   "observed_value_declared_unavailable",
+   "target_region_missing_in_multi_authority"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
  },
  "morocco_juice": {
   "findings": [

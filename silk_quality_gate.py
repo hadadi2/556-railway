@@ -295,6 +295,20 @@ def _norm_ar(s: object) -> str:
     return re.sub(r"[ \t]+", " ", t).lower()
 
 
+# ── الصنف ١٦: عبارةٌ إلزاميةٌ يكسرها سطرٌ جديد · wrapped mandatory literal ──
+# **العيبُ المرصود:** تقريرٌ يحمل التحذيرَ الإلزاميّ «…ولا يصلح هذا الرقم
+# أساساً\nللتفاوض» — والفحصُ يُبلِّغ غيابَه، لأنّ `_norm_ar` يطوي المسافاتَ
+# والجدولةَ فقط لا **الأسطرَ** (وهو تصميمٌ مقصود: فحوصٌ كثيرةٌ تقطع على
+# الأسطر). فعبارةٌ إلزاميةٌ متعدّدةُ الكلمات لا تُطابَق أبداً إذا لفَّها
+# الكاتبُ على سطرين — ومعاقبةُ الإفصاح عيبٌ أخطرُ من غيابه (الدرس 239).
+#
+# `_flat_ar` للحضورِ الحرفيّ وحدَه: طيُّ كلِّ فراغٍ بما فيه السطرُ الجديد.
+# لا يُستعمَل حيث يكون السطرُ حدّاً دلالياً (قطعُ الفقرات، رؤوسُ الجداول).
+def _flat_ar(s: object) -> str:
+    """نصٌّ مطبَّعٌ **بطيّ كلّ فراغ** — لمطابقةِ حضورِ عبارةٍ إلزامية."""
+    return re.sub(r"\s+", " ", _norm_ar(s)).strip()
+
+
 def _dangling_cross_reference_en(text: str) -> list[dict]:
     """مرآةُ الإحالة المعلَّقة على الإنجليزية (البند G-06) — نفسُ المعيار."""
     findings = []
@@ -3747,6 +3761,34 @@ def _check_zero_fx_volatility(view: dict) -> list[dict]:
 # ومرفأُ أخرى). بالبوّابتين: صفرُ إطلاقةٍ على المدوّنات الأربعَ عشرة.
 _NAMED_GATEWAY_RE = re.compile(
     r"(?:ميناء|مرفأ|منفذ|معبر|مطار)\s+([^\s،.؛()]{3,})")
+# الصنف ١٤ (مراجعةُ الجولة الثالثة): الإبرةُ كانت تبتلع الكلمةَ العامّة —
+# «منفذ الدخول» تُقرَأ بوّابةً اسمُها «الدخول»، فيصير لتقريرٍ ذي مرفأٍ واحدٍ
+# بوّابتان ويُطلِق الحارسُ على الصحيح. الكلماتُ العامّة **مُستبعَدةٌ
+# بالاسم**، والاسمُ العلَمُ وحدَه يُعَدّ بوّابة.
+_GENERIC_GATEWAY_WORDS = frozenset({
+    "الدخول", "دخول", "الرئيس", "الرئيسي", "الرئيسية", "الوحيد", "الوحيدة",
+    "البري", "البرّي", "البحري", "البحرية", "الجوي", "الجويّ", "الحدودي",
+    "الحدودية", "المستهدف", "المستهدفة", "المحدد", "المحددة", "النظامي",
+    "النظامية", "المعتمد", "المعتمدة", "الجمركي", "الجمركية",
+})
+
+
+def _named_gateways(text: str) -> list:
+    """بوّاباتُ الدخول **المسمّاةُ باسمٍ علَم** في المتن — مرتَّبةً بلا تكرار.
+
+    الكلمةُ العامّةُ بعد الإبرة ليست اسماً: «منفذ الدخول»/«الميناء الرئيس»
+    وصفٌ لا تسمية. قِياسُ المراجعة الثالثة: بلا هذا الاستبعاد صار لتقرير
+    ليبيا ثلاثُ «بوّابات» إحداها «الدخول».
+    """
+    out = []
+    for g in _NAMED_GATEWAY_RE.findall(text or ""):
+        name = g.strip()
+        if not name or _norm_ar(name) in {_norm_ar(w)
+                                          for w in _GENERIC_GATEWAY_WORDS}:
+            continue
+        if name not in out:
+            out.append(name)
+    return sorted(out)
 _TARGET_REGION_DISCLOSURE = ("الإقليم المستهدف", "المنطقة المستهدفة",
                              "منفذ الدخول المستهدف", "الإقليم الخاضع",
                              "تحت سلطة", "target region")
@@ -3775,7 +3817,7 @@ def _check_target_region_missing(view: dict, dr: dict,
     quals = {row["qual"] for row in mentions.values()} if mentions else set()
     if len(quals) < 2:
         return []
-    gates = sorted(set(_NAMED_GATEWAY_RE.findall(text)))
+    gates = _named_gateways(text)
     if len(gates) < 2:
         return []
     if any(d in text for d in _TARGET_REGION_DISCLOSURE):
@@ -3813,6 +3855,16 @@ _HS_BREADTH_DISCLOSURE = ("أوسع من", "فئة أوسع", "فئةً أوسع
                           "category context")
 
 
+def _hs6_registered(hs: str) -> bool:
+    """هل البندُ السداسيُّ مسجَّلٌ بوصفه الخاصّ في المرجع؟ — وإلّا فالوصفُ
+    المُعاد هو وصفُ بنده الرباعيّ (تدرّجُ `definition` الداخليّ)."""
+    try:
+        import silk_hs_reference
+        return str(hs) in getattr(silk_hs_reference, "_HS6", {})
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _check_broad_hs_scope_undisclosed(view: dict) -> list[dict]:
     """`broad_hs_scope_undisclosed` (الصنف ١٠، تحذيريّ): البندُ الجمركيُّ
     يغطّي فئةً أوسع من المنتج، والمتنُ لا يُفصِح.
@@ -3842,7 +3894,12 @@ def _check_broad_hs_scope_undisclosed(view: dict) -> list[dict]:
             defn = str(definition(hs) or "")
             if defn and any(m in defn for m in _HS_BREADTH_MARKS):
                 broad = True
-                why = f"وصفُ البند الرسميّ «{defn[:60]}» علامةُ سلّة"
+                # مرجعُ الوصف يتدرّج ٦→٤ داخلياً، فيُقال **من أيّ مستوىً**
+                # جاء الدليل: بندٌ غيرُ مسجَّلٍ سداسياً يُحكَم بوصف بنده
+                # الرباعيّ — تقريبٌ مُعلَنٌ لا استنتاجٌ صامت.
+                lvl = ("وصفُ البند الرسميّ" if str(definition(hs)) == defn
+                       and _hs6_registered(hs) else "وصفُ البند الرباعيّ")
+                why = f"{lvl} «{defn[:60]}» علامةُ سلّة"
         except Exception:  # noqa: BLE001
             pass
     if not broad:
@@ -4004,9 +4061,11 @@ def _check_pricing_contradiction_flagged(view: dict) -> list[dict]:
     findings = []
     # المطابقة عبر المُطبِّع الواحد (`_norm_ar`) على الطرفين — «أساساً»
     # المنوَّنة على نصٍّ مجرَّد كانت لا تلتقي أبداً (حادثة هذا الفحص نفسه).
-    plain = _norm_ar(text)
-    if (_norm_ar(_PRICING_WARNING_NEEDLE) not in plain
-            and _PRICING_WARNING_NEEDLE_EN not in plain):
+    # الصنف ١٦: الحضورُ الحرفيُّ يُقاس على نصٍّ مطويِّ الأسطر — التحذيرُ
+    # الملفوفُ على سطرين كان يُبلَّغ غائباً وهو حاضر.
+    plain = _flat_ar(text)
+    if (_flat_ar(_PRICING_WARNING_NEEDLE) not in plain
+            and _flat_ar(_PRICING_WARNING_NEEDLE_EN) not in plain):
         findings.append({
             "check": "pricing_contradiction_flagged", "repairable": False,
             "note": ("المحرك رصد أن أقصى سعر المصنع أدنى بنسبة "
@@ -4522,6 +4581,15 @@ _ECHO_UNIT_WORDS = frozenset({
     "دينار", "ريال", "دولار", "يورو", "درهم", "جنيه", "دينارا", "ريالا",
     "كجم", "كيلوغرام", "كيلو", "غرام", "لتر", "طن", "عبوة", "وحدة", "قطعة",
     "شهر", "سنة", "سنوياً", "سنويا", "يوم", "أسبوع", "مليون", "مليار", "ألف",
+    # الصنف ١٥ (مراجعةُ الجولة الثالثة): **رأسٌ عامٌّ قبل اسمٍ علَم** يتكرّر
+    # بالضرورة حين يُعَدّ كيانان — «ميناء طرابلس أو ميناء بنغازي» عربيةٌ
+    # سليمة، و«الهيئة الغربية… الهيئة الشرقية» كذلك. الفحصُ أطلق عليها
+    # صدىً. والاستبعادُ بالرأسِ العامِّ لا بقاعدةِ «تابعٌ مختلف»: تلك
+    # جُرِّبت في الصنف ٢ فأسكتت العيبَ المرصود نفسَه («السعودية بالحصة
+    # السعودية») — فالمعالجةُ بقائمةٍ مقيسةٍ لا بحدسٍ عامّ.
+    "ميناء", "مرفأ", "منفذ", "معبر", "مطار", "هيئة", "الهيئة", "وزارة",
+    "الوزارة", "شركة", "مؤسسة", "جمعية", "بنك", "سوق", "مدينة", "محافظة",
+    "إقليم", "منطقة", "ولاية",
 })
 # (٢) رابطُ مقارنةٍ بين الورودين ⇒ تكرارٌ مقصودٌ لطرفَي المقارنة.
 _ECHO_COMPARISON_RE = re.compile(

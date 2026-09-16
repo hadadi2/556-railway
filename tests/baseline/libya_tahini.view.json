@@ -1,0 +1,673 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق ليبيا (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 6400000",
+  "أفضل باب دخول: موزّع جملة"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 32,
+  "note": "32 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": 2024,
+      "note": "واردات 2024",
+      "retrieved_at": "2026-09-10",
+      "source": "UN Comtrade",
+      "value": 6400000
+     }
+    ],
+    "entry_cost": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "التعريفة المطبَّقة",
+      "retrieved_at": "2026-09-10",
+      "source": "WITS",
+      "value": 15.0
+     }
+    ],
+    "entry_door": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "باب الدخول",
+      "retrieved_at": "2026-09-10",
+      "source": "بحث ويب",
+      "value": "موزّع جملة"
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.7,
+      "confidence_badge": "◐ ثانوي",
+      "note": "سعر رف منافس دينار/كجم",
+      "retrieved_at": "2026-09-10",
+      "source": "بحث ويب",
+      "value": 9.5
+     }
+    ],
+    "swot": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "خطر تشغيلي",
+      "retrieved_at": "2026-09-10",
+      "source": "UN Comtrade",
+      "value": "تعدد الجهات الرقابية"
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "ليبيا مراقبة — البوابة غير محسومة."
+  },
+  "caveat_box": "",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": false,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": {
+    "basis": "retail",
+    "category": "طحينة",
+    "currency": "دينار",
+    "fx_date": "",
+    "fx_rate": null,
+    "gaps": [
+     "التحويل kg→litre يتطلب الكثافة لفئة «طحينة» — غير مسجّل في سجل الثوابت؛ أضفه بمصدره أو صرّح بالخاصية المفقودة",
+     "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
+    ],
+    "note": "أدنى سعر رف منافس مرصود",
+    "per_kg": 9.5,
+    "per_litre": null,
+    "per_unit": 9.5,
+    "raw_value": 9.5,
+    "source": "سعر رف تجزئة لعبوة 1 كجم، دينار",
+    "value_usd": null
+   },
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "confirm": "عرض شحن رسمي + جدول رسوم الجهة التنظيمية للسوق",
+     "confirm_time": "أسبوع عمل",
+     "method": "بضاعة الشحنة التجريبية (تكلفتك × وحدات الحاوية) (الشحن بلا سعر ممر متحقق — مداه أوسع من ±50% فيُستبعد من المجموع ويُغلق بعرض أسعار) (رسوم التسجيل غير متحققة — خارج المجموع ومعلنة)",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "range": {
+      "high": 82863,
+      "low": 82863
+     },
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "دينار",
+     "value": 82863,
+     "width_pct": 0
+    },
+    {
+     "confirm": "تثبيت سعر بيع فعلي من أول مفاوضة مستورد",
+     "confirm_time": "مع أول عرض سعر جاد",
+     "method": "كلفة الدخول ÷ هامش الوحدة (أقصى سعر مصنع منافس − تكلفتك)",
+     "months_at_capacity": {
+      "high": 3.6,
+      "low": 3.6
+     },
+     "name": "نقطة التعادل",
+     "range": {
+      "high": 32434.24,
+      "low": 32434.24
+     },
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 32434.24,
+     "width_pct": 0
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "confirm": "شرط إعادة/تصريف في أول عقد يقلّص السقف فعلياً",
+     "confirm_time": "بند تفاوضي في أول عقد",
+     "method": "كلفة الدخول كلها عرضة للفقد في أسوأ حالة (بضاعة + شحن غير مستردّين)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "range": {
+      "high": 82863,
+      "low": 82863
+     },
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "دينار",
+     "value": 82863,
+     "width_pct": 0
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": false,
+   "gaps": [
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي"
+   ],
+   "hhi": 1760.0,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": {
+    "max_exw_usd": 1.1659,
+    "note": "تحذير: أقصى سعر مصنع قابل للمنافسة (1.1659 دولار/كجم) أدنى بنسبة 43.1% من متوسط سعر الاستيراد المرصود (2.05 دولار/كجم) — المنافسة السعرية غير قائمة عملياً في هذه الفئة، ولا يصلح هذا الرقم أساساً للتفاوض",
+    "reference_import_price_usd_kg": 2.05,
+    "shortfall_pct": 43.1
+   },
+   "product_form": "معجون لزج في عبوة زجاجية",
+   "reverse_solve": {
+    "currency": "دينار",
+    "formula": "EXW_max = سعر الرف ÷ [(1+شحن)(1+تعرفة)(1+هامش الموزّع)(1+هامش التجزئة)(1+ضريبة)]",
+    "fx_rate": 4.85,
+    "headline_scenario": "متوسط",
+    "max_exw": 5.6548,
+    "max_exw_usd": 1.1659,
+    "parameters": [
+     "التعرفة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
+     "الضريبة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
+     "نسبة الشحن (معلمة معلنة قابلة للتعديل)",
+     "هامش الموزّع (معلمة معلنة قابلة للتعديل)",
+     "هامش التجزئة (معلمة معلنة قابلة للتعديل)"
+    ],
+    "scenarios": [
+     {
+      "distributor_pct": 10.0,
+      "freight_pct": 5.0,
+      "max_exw": 7.1523,
+      "retailer_pct": 15.0,
+      "scenario": "منخفض"
+     },
+     {
+      "distributor_pct": 20.0,
+      "freight_pct": 12.0,
+      "max_exw": 5.6548,
+      "retailer_pct": 25.0,
+      "scenario": "متوسط"
+     },
+     {
+      "distributor_pct": 30.0,
+      "freight_pct": 25.0,
+      "max_exw": 4.1758,
+      "retailer_pct": 40.0,
+      "scenario": "مرتفع"
+     }
+    ],
+    "shelf_price": 9.5,
+    "unit": "كجم"
+   },
+   "unlock_note": null,
+   "waterfall": [
+    {
+     "is_parameter": false,
+     "name": "سعر المصنع (EXW)",
+     "note": "USD",
+     "value": 3.1
+    },
+    {
+     "is_parameter": true,
+     "name": "الشحن (12% من EXW)",
+     "note": "معلمة معلنة قابلة للتعديل — من سيناريو الشحن",
+     "value": 0.372
+    },
+    {
+     "is_parameter": true,
+     "name": "التكلفة الواصلة (بعد تعرفة 0.0%)",
+     "note": "معلمة معلنة قابلة للتعديل — التعرفة غير متاحة — بلا جمارك",
+     "value": 3.472
+    },
+    {
+     "is_parameter": true,
+     "name": "سعر الموزّع (+20%)",
+     "note": "معلمة معلنة قابلة للتعديل — هامش الموزّع",
+     "value": 4.166
+    },
+    {
+     "is_parameter": true,
+     "name": "سعر التجزئة قبل الضريبة (+25%)",
+     "note": "معلمة معلنة قابلة للتعديل — هامش التجزئة",
+     "value": 5.208
+    },
+    {
+     "is_parameter": true,
+     "name": "سعر الرف (+ضريبة 0.0%)",
+     "note": "معلمة معلنة قابلة للتعديل — الضريبة غير متاحة — صفر معلن",
+     "value": 5.208
+    }
+   ]
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في ليبيا",
+    "met": false
+   }
+  ],
+  "gap_register": [],
+  "glossary": [],
+  "hs_confirmation": {
+   "code_desc": "طحينة",
+   "confirmed": true,
+   "hs_code": "200819",
+   "missing_terms": [],
+   "overlap": 1.0,
+   "product_terms": [
+    "طحينه"
+   ],
+   "reason": "وصف الرمز يشمل صفات المنتج المميّزة",
+   "shared_terms": [
+    "طحينه"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "20",
+   "confirmed": null,
+   "heading": "2008",
+   "hs6": "200819",
+   "official_description": "Nuts and other seeds; whether or not containing added sugar, other sweetening matter or spirit (excluding ground-nuts except in mixtures)",
+   "subheading": "200819"
+  },
+  "hs_flagged": false,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [
+    {
+     "address": "طرابلس، ليبيا",
+     "category": "تاجر جملة",
+     "doc_level": "◐ مرصود عبر خرائط قوقل",
+     "email": "",
+     "maps_link": "",
+     "name": "شركة الساحل للتجارة",
+     "phone": "+218 21 000000",
+     "rating": "4.2",
+     "review_count": "31",
+     "source": "google_maps_scraper",
+     "website": ""
+    },
+    {
+     "address": "بنغازي، ليبيا",
+     "category": "متجر قطع غيار",
+     "doc_level": "◐ مرصود عبر خرائط قوقل",
+     "email": "",
+     "maps_link": "",
+     "name": "مؤسسة النخبة لقطع الغيار",
+     "phone": "+218 61 000000",
+     "rating": "3.9",
+     "review_count": "12",
+     "source": "google_maps_scraper",
+     "website": ""
+    }
+   ],
+   "note": "",
+   "path": "scraper"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [],
+  "market": {
+   "iso2": "LY",
+   "iso3": "LBY",
+   "m49": 434,
+   "name_ar": "ليبيا",
+   "name_en": "Libya"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "مؤشر التركّز",
+      "retrieved_at": "2026-09-10",
+      "source": "UN Comtrade",
+      "value": 1760
+     },
+     {
+      "confidence": 0.8,
+      "note": "حصة تركيا %",
+      "retrieved_at": "2026-09-10",
+      "source": "UN Comtrade",
+      "value": 34.0
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "مؤشر تركّز 1760",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "customs_requirements": {
+    "failed": false,
+    "findings": [],
+    "label": "الاشتراطات الجمركية",
+    "name": "LLMMissionAgent",
+    "summary": "تسجيل المستورد لدى الجهة الرقابية",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "عدد السكان 2024",
+      "retrieved_at": "2026-09-10",
+      "source": "World Bank",
+      "value": 6900000
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMMissionAgent",
+    "summary": "سكان 6.9 مليون نسمة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "logistics": {
+    "failed": false,
+    "findings": [],
+    "label": "اللوجستيات",
+    "name": "LLMMissionAgent",
+    "summary": "بوّابتان بحريتان بإجراءات مستقلة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.7,
+      "note": "سعر رف تجزئة لعبوة 1 كجم، دينار",
+      "retrieved_at": "2026-09-10",
+      "source": "بحث ويب",
+      "value": 9.5
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "سعر رف تجزئة مرصود 9.5 دينار/كجم (12/12)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.7,
+      "data_year": 2024,
+      "note": "سعر الصرف الرسمي مقابل الدولار 2024",
+      "retrieved_at": "2026-09-10",
+      "source": "World Bank",
+      "value": 4.85
+     }
+    ],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "سعر الصرف الرسمي 4.85 دينار للدولار",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "التعريفة المطبَّقة %",
+      "retrieved_at": "2026-09-10",
+      "source": "WITS",
+      "value": 15.0
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMMissionAgent",
+    "summary": "تعريفة مطبَّقة 15%",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "واردات مصرَّحة 2024",
+      "retrieved_at": "2026-09-10",
+      "source": "UN Comtrade",
+      "value": 6400000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "متوسط سعر استيراد دولار/كجم 2024",
+      "retrieved_at": "2026-09-10",
+      "source": "UN Comtrade",
+      "value": 2.05
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات 6.4 مليون وسعر حدود 2.05 دولار/كجم (68/68)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "سعر رف تجزئة لعبوة 1 كجم، دينار",
+    "reason": "",
+    "value": 9.5
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "طحينة",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 2,
+   "text": "## 1. الخلاصة التنفيذية\nالتوصية: مراقبة السوق. قاعدة الحكم قبل الأرقام: نوصي بالدخول حين يكتمل جانبا\nالطلب والربحية ويكون منفذ الدخول محسوماً؛ وهنا الطلب مرصود والربحية موجبة،\nلكن منفذ الدخول غير محسوم. واردات ليبيا المصرَّحة من الطحينة 6.4 مليون دولار\nلعام 2024.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. أدخل المصدّر تكلفة إنتاج\nالكيلوغرام، ورُصد سعر رف منافس واحد موثّق.\n\n## 3. نظرة عامة على السوق وحجمه\nالواردات المصرَّحة 6.4 مليون دولار (2024). متوسط سعر الاستيراد الحدودي\n2.05 دولار للكيلوغرام.\n\n## 4. ديناميكيات السوق\nعدد السكان 6.9 مليون نسمة. الطحينة سلعة يومية في السلة الغذائية.\n\n## 5. تحليل المستهلك والطلب\nسعر الرف المنافس المرصود 9.5 دينار للكيلوغرام في متجر تجزئة حضري.\n\n## 6. المشهد التنافسي\nالمورّدون: تركيا 34%، مصر 21%، السعودية 7%. مؤشر التركّز 1760.\n\n## 7. التنظيم والوصول للسوق\nتشترط الهيئة الغربية للرقابة على الأغذية تسجيل المستورد قبل الإفراج، بينما\nتطبّق الهيئة الشرقية للمواصفات إجراءات فحص مختلفة على الشحنات الواردة إليها.\nالرسوم الجمركية المطبَّقة 15% وفق WITS. الوسم بالعربية إلزامي.\n\n## 8. اللوجستيات وسلسلة الإمداد\nالشحن البحري يدخل عبر ميناء طرابلس أو ميناء بنغازي، ولكل منهما إجراءات\nتخليص مستقلة. زمن العبور غير متاح من مصدر منسَّق.\n\n## 9. تقييم المخاطر\nتعدد الجهات الرقابية هو الخطر الأول: قائمة اشتراطات من جهة لا تُغني عن\nاشتراطات الأخرى، والتكلفة تختلف بحسب البوابة. وحين تُحسب سلسلة التكلفة\nكاملةً بالرسوم المطبَّقة، يقع أقصى سعر مصنع قابل للمنافسة دون متوسط سعر\nالاستيراد المرصود — ولا يصلح هذا الرقم أساساً للتفاوض.\n\n## 10. التوصيات الاستراتيجية\nأقوى حجة ضد هذا الحكم: الطلب مرصود والهامش موجب، ومن يرى البوابة تفصيلاً\nتشغيلياً قد يوصي بالدخول الآن. نردّ بأن البوابة ليست تفصيلاً: الرسوم\nوالإجراءات والوكيل كلها تتبعها، وكلفة الخطأ فيها شحنة كاملة.\n### أرقام القرار\nتفصيل البنود الخمسة في جدول أرقام القرار: الشحنة التجريبية، وكلفة الدخول\nحتى أول شحنة، ونقطة التعادل، والزمن إلى أول فاتورة، وسقف الخسارة.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. حسم البوابة والجهة الرقابية التابعة لها. 2. تسجيل المستورد. 3. عرض شحن\nرسمي للممر المختار.\n\n## 11. الملاحق\nUN Comtrade، البنك الدولي، WITS، بحث ويب.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "lby-shape",
+  "verdict": {
+   "ai": {
+    "reasoning": "البوابة والجهة الرقابية غير محسومتين.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.49,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "200819",
+  "origin": "SAU",
+  "product": "طحينة",
+  "target_market": "ليبيا"
+ },
+ "hs_code": "200819",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "طحينة",
+ "provenance": [
+  {
+   "attempted": 6,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 6,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.7,
+   "contributed": 3,
+   "failures": [],
+   "source": "بحث ويب",
+   "tail": " — ثقة المرصود 70–80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.7,
+   "contributed": 2,
+   "failures": [],
+   "source": "World Bank",
+   "tail": " — ثقة المرصود 70–80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [],
+   "source": "WITS",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

@@ -788,7 +788,13 @@ def test_c9_flag_on_only_appends_provenance_to_the_derived_row():
     # بلا تكلفةٍ مُدخَلة (الشحنةُ التجريبية وحدها)، وثلاثةٌ في مدوّنتَي
     # الجولة الثانية (تكلفةٌ مُدخَلة ⇒ كلفةُ الدخول وسقفُ المخاطرة أيضاً)،
     # وصفرٌ في `fettuccine` (فئةٌ بلا وحدةِ سوقٍ مسجّلة فلا بندَ محسوب).
-    expected = {k: 3 if k in ("india_honey", "morocco_juice")
+    # العددُ **مقيسٌ لكلّ مدوّنة**: بندٌ محسوبٌ واحدٌ حيث لا تكلفةَ مُدخَلة
+    # (الشحنةُ التجريبية وحدها)، وثلاثةٌ حيث أُدخِلت تكلفةٌ بعملةٍ مختلفةٍ
+    # عن سعر الرف (فالتعادلُ فجوة)، **وأربعةٌ** حيث اتّحدت العملتان فحُسِب
+    # التعادلُ أيضاً (ليبيا)، وصفرٌ في `fettuccine` (فئةٌ بلا وحدةِ سوق).
+    _three = ("india_honey", "morocco_juice", "kenya_honey")
+    expected = {k: 4 if k == "libya_tahini"
+                else 3 if k in _three
                 else 0 if k == "fettuccine" else 1
                 for k in _canonical_keys()}
     assert changed == expected, changed
@@ -959,6 +965,9 @@ def test_c12_guard_fires_exactly_on_readable_but_unread_inputs():
     expected = {("egypt_olive_oil", "التعرفة"),
                 ("india_honey", "التعرفة"),
                 ("india_honey", "عملة السعر المرصود"),
+                ("kenya_honey", "التعرفة"),
+                ("kenya_honey", "عملة السعر المرصود"),
+                ("libya_tahini", "التعرفة"),
                 ("morocco_juice", "التعرفة")}
     with block_network():
         fired = set()
@@ -996,7 +1005,8 @@ def test_c12_flag_changes_only_the_three_measured_markets():
         with _env(SILK_RECOGNITION_VOCABULARY="1"):
             on = {k: exw(k) for k in _canonical_keys()}
     assert {k for k in off if off[k] != on[k]} == {
-        "egypt_olive_oil", "india_honey", "morocco_juice"}
+        "egypt_olive_oil", "india_honey", "morocco_juice",
+        "kenya_honey", "libya_tahini"}
     assert (off["morocco_juice"], on["morocco_juice"]) == (8.631, 6.9048)
     assert round(off["morocco_juice"] / 1.25, 4) == on["morocco_juice"]
     assert (off["egypt_olive_oil"], on["egypt_olive_oil"]) == (88.0952,

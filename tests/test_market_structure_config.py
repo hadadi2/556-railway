@@ -385,23 +385,41 @@ def test_border_price_guard_is_dormant_until_a_range_is_configured():
     assert G._check_border_price_out_of_range(v) == []
 
 
-def test_the_six_guards_fire_on_no_canonical_blob_in_either_flag_state():
-    """شرطُ القبول: صفرُ إطلاقةٍ على الأربعَ عشرة بالرايتين، وحكمُ البوابة
-    نفسُه — القاعدةُ التي تُطلِق على الصحيح لا تُشحَن (الصنف ١١)."""
+def test_the_guards_fire_only_where_the_defect_is_real_and_verbatim():
+    """الإطلاقاتُ **محصورةٌ حرفياً** على المدوّنات الستّ عشرة: مدوّنةُ ليبيا
+    (المراجعةُ الذاتية للجولة الثالثة) تحمل العيوبَ الثلاثة بقصد — سلطتان
+    وبوّابتان بلا إقليم، وبندٌ واسعٌ غيرُ مُعلَن، ونشاطٌ لا صلةَ له —
+    وخمسَ عشرةَ مدوّنةً **صفرٌ**. والقاعدةُ التي تُطلِق على الصحيح لا
+    تُشحَن (الصنف ١١)، والصمتُ وحدَه لا يُثبِت أنّ القاعدةَ حيّة."""
     import silk_quality_gate as G
-    fired: dict = {}
+    expected_off = {
+        "libya_tahini": {"target_region_missing_in_multi_authority",
+                         "broad_hs_scope_undisclosed",
+                         "lead_outside_activity_allowlist"}}
+    # مفعّلةً: مِصفاةُ النشاط **تُسقِط** الجهةَ فعلاً، فيصمت حارسُها —
+    # صمتُه هنا هو الفكسُ يعمل، لا قاعدةٌ نائمة.
+    expected_on = {
+        "libya_tahini": {"target_region_missing_in_multi_authority",
+                         "broad_hs_scope_undisclosed"}}
+    off: dict = {}
+    on: dict = {}
     with block_network():
         for key in _canonical_keys():
             with _env(SILK_MARKET_STRUCTURE_CONFIG=None):
                 g_off = G.run_quality_gate(_view(key))
             with _env(SILK_MARKET_STRUCTURE_CONFIG="1"):
                 g_on = G.run_quality_gate(_view(key))
-            hits = [f["check"] for f in g_off["findings"] + g_on["findings"]
-                    if f["check"] in _NEW_CHECKS]
-            if hits:
-                fired[key] = hits
+            h_off = {f["check"] for f in g_off["findings"]
+                     if f["check"] in _NEW_CHECKS}
+            h_on = {f["check"] for f in g_on["findings"]
+                    if f["check"] in _NEW_CHECKS}
+            if h_off:
+                off[key] = h_off
+            if h_on:
+                on[key] = h_on
             assert g_off["verdict"] == g_on["verdict"], key
-    assert fired == {}, fired
+    assert off == expected_off, off
+    assert on == expected_on, on
 
 
 # ════════════════ تغييراتُ السلوك — كلُّها خلف الراية ════════════════
@@ -515,3 +533,130 @@ def test_flag_off_changes_no_surface_on_any_canonical_blob():
             if issues:
                 problems[key] = issues
     assert problems == {}, problems
+
+
+# ═══ الصنفان ١٤ و١٥ — مراجعةُ الجولة الثالثة الذاتية ═══
+
+def test_c14_a_generic_word_is_not_a_named_gateway():
+    """**العيبُ المرصود في حارسي أنا**: «منفذ الدخول» قُرِئت بوّابةً اسمُها
+    «الدخول»، فصار لتقريرٍ ذي مرفأٍ واحدٍ ثلاثُ بوّابات — وحارسٌ يُضخِّم
+    عدَّه بنفسه يُطلِق على الصحيح (عائلةُ الصنف ١١).
+
+    القياسُ على مدوّنةٍ حقيقية: تقريرُ ليبيا كان يُبلِّغ «الدخول»، «بنغازي»،
+    «طرابلس» — وصار يُبلِّغ الاسمين العلَمين وحدَهما."""
+    import silk_quality_gate as G
+    assert G._named_gateways(
+        "الشحن عبر ميناء طرابلس أو ميناء بنغازي، ومنفذ الدخول يُحسم لاحقاً."
+    ) == ["بنغازي", "طرابلس"]
+    # مرفأٌ واحدٌ + وصفٌ عامّ ⇒ بوّابةٌ واحدة (فلا يُطلِق الحارس).
+    assert G._named_gateways(
+        "الشحن عبر ميناء العقبة ومنفذ الدخول البري.") == ["العقبة"]
+    with block_network():
+        v = _view("libya_tahini")
+    dr = v.get("deep_research") or {}
+    out = G._check_target_region_missing(v, dr, "ar")
+    assert len(out) == 1
+    assert "الدخول»" not in out[0]["note"], out[0]["note"]
+    assert "طرابلس" in out[0]["note"] and "بنغازي" in out[0]["note"]
+
+
+def test_c15_a_generic_head_before_two_proper_names_is_not_an_echo():
+    """**العيبُ المرصود**: «ميناء طرابلس أو ميناء بنغازي» عربيةٌ سليمة، وفحصُ
+    صدى الكيان (الصنف ٢) أطلق عليها — وكذلك «الهيئة الغربية… الهيئة
+    الشرقية». الرأسُ العامُّ قبل اسمٍ علَمٍ **يتكرّر بالضرورة** حين يُعَدّ
+    كيانان.
+
+    والمعالجةُ بقائمةِ رؤوسٍ مقيسةٍ لا بقاعدةِ «تابعٌ مختلف» — تلك جُرِّبت
+    في الصنف ٢ فأسكتت العيبَ المرصود نفسَه («ثم السعودية بالحصة السعودية»)."""
+    import silk_quality_gate as G
+    ok = ("## 8. اللوجستيات\nالشحن البحري يدخل عبر ميناء طرابلس أو ميناء "
+          "بنغازي، ولكل منهما إجراءات تخليص مستقلة.")
+    hits = [f for f in G._check_template_interpolation(ok, "ar")
+            if "صدى" in f.get("note", "")]
+    assert hits == [], hits
+    # والعيبُ الحقيقيُّ من عائلة الصنف ٢ ما زال يُرصَد — لا إسكاتَ عامّ.
+    bad = "## 3. السوق\nثم السعودية بالحصة السعودية المرصودة."
+    assert any("صدى" in f.get("note", "")
+               for f in G._check_template_interpolation(bad, "ar"))
+    # وعلى المدوّنة الحقيقية: صفرُ إطلاقةِ صدىً بعد التضييق.
+    with block_network():
+        v = _view("libya_tahini")
+    text = ((v.get("deep_research") or {}).get("report") or {}).get("text")
+    assert not [f for f in G._check_template_interpolation(text, "ar")
+                if "صدى" in f.get("note", "")]
+
+
+def test_c10_breadth_note_says_which_level_supplied_the_evidence():
+    """مرجعُ الوصف يتدرّج ٦→٤ داخلياً، فبندٌ غيرُ مسجَّلٍ سداسياً يُحكَم
+    بوصف بنده الرباعيّ — **تقريبٌ يُقال** لا استنتاجٌ صامت. مقيسٌ: 200819
+    ليس في المرجع السداسيّ و200811 فيه."""
+    import silk_quality_gate as G
+    assert G._hs6_registered("200811") is True
+    assert G._hs6_registered("200819") is False
+    with block_network():
+        out = G._check_broad_hs_scope_undisclosed(_view("libya_tahini"))
+    assert len(out) == 1 and "الرباعيّ" in out[0]["note"], out
+
+
+def test_the_lead_filter_removes_what_the_guard_warned_about():
+    """المسارُ كاملاً على مدوّنةٍ حقيقية: مطفأةً يُحذَّر من النشاط، ومفعّلةً
+    **يُسقَط** من الجدول — فصمتُ الحارس هو الفكسُ لا نومُه."""
+    import silk_quality_gate as G
+    with block_network():
+        with _env(SILK_MARKET_STRUCTURE_CONFIG=None):
+            v_off = _view("libya_tahini")
+            names_off = [x.get("name") for x in
+                         ((v_off["deep_research"].get("importer_leads")
+                           or {}).get("leads") or [])]
+            hit_off = [f["check"] for f in G.run_quality_gate(v_off)["findings"]
+                       if f["check"] == "lead_outside_activity_allowlist"]
+        with _env(SILK_MARKET_STRUCTURE_CONFIG="1"):
+            v_on = _view("libya_tahini")
+            names_on = [x.get("name") for x in
+                        ((v_on["deep_research"].get("importer_leads")
+                          or {}).get("leads") or [])]
+            hit_on = [f["check"] for f in G.run_quality_gate(v_on)["findings"]
+                      if f["check"] == "lead_outside_activity_allowlist"]
+    assert "مؤسسة النخبة لقطع الغيار" in names_off and hit_off
+    assert "مؤسسة النخبة لقطع الغيار" not in names_on and not hit_on
+    assert "شركة الساحل للتجارة" in names_on      # نشاطٌ ذو صلة يبقى
+
+
+def test_c16_a_mandatory_warning_survives_a_line_wrap():
+    """**العيبُ المرصود — والأخطرُ في هذه المراجعة**: تقريرُ كينيا يحمل
+    التحذيرَ الإلزاميّ «…ولا يصلح هذا الرقم أساساً\\nللتفاوض»، والفحصُ
+    الحاجبُ يُبلِّغ **غيابَه** فيُحجَب تقريرٌ أفصحَ كما يجب — لأنّ
+    `_norm_ar` يطوي المسافةَ والجدولةَ لا السطرَ الجديد.
+
+    في الإنتاج يكتب الكاتبُ نثراً ملفوفاً، فأيُّ لفٍّ للعبارة عند حدّ السطر
+    كان يقلب الإفصاحَ إلى حجب — معاقبةُ الإفصاح (سابقةُ الدرس 239)."""
+    import silk_quality_gate as G
+    dr = {"economics": {"pricing_contradiction": {
+        "shortfall_pct": 25.3, "max_exw_usd": 2.54,
+        "reference_import_price_usd_kg": 3.4, "note": "تحذير"}},
+        "report": {"text": ""}}
+    wrapped = ("يقع أقصى سعر مصنع قابل للمنافسة دون متوسط سعر الاستيراد "
+               "المرصود — ولا يصلح هذا الرقم أساساً\nللتفاوض.")
+    dr["report"]["text"] = wrapped
+    assert G._check_pricing_contradiction_flagged(
+        {"deep_research": dr}) == []
+    # وغيابُه الحقيقيُّ ما زال يُرصَد — لا إسكاتَ عامّ.
+    dr["report"]["text"] = "أقصى سعر مصنع قابل للمنافسة 2.54 دولار/كجم."
+    out = G._check_pricing_contradiction_flagged({"deep_research": dr})
+    assert any(f["check"] == "pricing_contradiction_flagged" for f in out)
+    # والمطوِّي لا يُستعمَل حيث السطرُ حدٌّ دلاليّ — دالّةٌ منفصلة بالاسم.
+    # المطوِّي يطبّع الألفَ كنظيره ويطوي السطر؛ والأصليُّ يُبقي السطر.
+    assert G._flat_ar("أ\nب  ج") == "ا ب ج"
+    assert G._norm_ar("أ\nب") == "ا\nب"
+
+
+def test_c16_the_kenya_corpus_is_not_blocked_by_that_false_negative():
+    """حارسُ انحدارٍ على مدوّنةٍ حقيقية: كينيا مع رايةِ الصنف ١٢ مفعّلةً
+    (فيُحسَب التناقضُ التسعيريُّ فعلاً) تبقى `PASS-WITH-WARNINGS`."""
+    import silk_quality_gate as G
+    with block_network(), _env(SILK_RECOGNITION_VOCABULARY="1"):
+        out = G.run_quality_gate(_view("kenya_honey"))
+    assert out["verdict"] == "PASS-WITH-WARNINGS", [
+        f["check"] for f in out["findings"]]
+    assert not [f for f in out["findings"]
+                if f["check"] == "pricing_contradiction_flagged"]

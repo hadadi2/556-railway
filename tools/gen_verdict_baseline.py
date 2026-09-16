@@ -51,6 +51,11 @@ CANONICAL_BLOBS = {
     "india_honey": ("canonical_india_honey", "india_honey_research_blob"),
     "morocco_juice": ("canonical_morocco_juice",
                       "morocco_juice_research_blob"),
+    # الجولةُ الثالثة (المراجعةُ الذاتية بعدها): ليبيا (سلطتان بحكم الواقع
+    # وبوّابتا دخولٍ مسمّيتان — شكلُ حارسِ الإقليم) وكينيا (ثلاثةُ أصنافِ
+    # أنظمةِ مطابقةٍ في تقريرٍ واحد: قُطريٌّ ومشتركُ الاسم ودوليّ).
+    "libya_tahini": ("canonical_libya_tahini", "libya_tahini_research_blob"),
+    "kenya_honey": ("canonical_kenya_honey", "kenya_honey_research_blob"),
     "fettuccine": ("canonical_fettuccine", "fettuccine_research_blob"),
     "germany_dates": ("canonical_germany_dates", "germany_dates_research_blob"),
     "japan_honey": ("canonical_japan_honey", "japan_honey_research_blob"),

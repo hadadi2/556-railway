@@ -207,6 +207,18 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٤٩ — عبارةٌ إلزاميةٌ يكسرها سطرٌ جديد: مطبِّعُ الحضورِ الحرفيّ.
+    (249, "tests/test_market_structure_config.py",
+     ["def test_c16_a_mandatory_warning_survives_a_line_wrap",
+      "def test_c16_the_kenya_corpus_is_not_blocked_by_that_false_negative"]),
+    # ٢٤٧/٢٤٨ — مراجعةُ الجولة الثالثة: بلاغُ الحارس دليلٌ يُقرَأ، والرأسُ
+    # العامُّ ليس صدىً — والاستثناءُ بقائمةٍ مقيسةٍ لا بحدسٍ نحويّ.
+    (247, "tests/test_market_structure_config.py",
+     ["def test_c14_a_generic_word_is_not_a_named_gateway",
+      "def test_the_lead_filter_removes_what_the_guard_warned_about"]),
+    (248, "tests/test_market_structure_config.py",
+     ["def test_c15_a_generic_head_before_two_proper_names_is_not_an_echo",
+      "def test_c10_breadth_note_says_which_level_supplied_the_evidence"]),
     # ٢٤٦ — المرساةُ السلوكية: الحارسُ يُضيَّق بقياسٍ لا بتقدير، والنظامُ
     # الأجنبيُّ يُرصَد والمنشأُ يُعفى، والمخطَّطُ يرفض المجهول، والرايةُ
     # تحكم السلوكَ وحدَه.
@@ -215,7 +227,7 @@ _TEST_ANCHORS = [
       "def test_regime_guard_fires_on_a_foreign_scheme_and_spares_origin",
       "def test_an_unknown_top_level_section_no_longer_passes_silently",
       "def test_the_module_carries_no_country_or_hs_literal",
-      "def test_the_six_guards_fire_on_no_canonical_blob_in_either_flag_state",
+      "def test_the_guards_fire_only_where_the_defect_is_real_and_verbatim",
       "def test_flag_off_changes_no_surface_on_any_canonical_blob"]),
     # ٢٤٥ — المرساةُ السلوكية: الخانةُ المرصودة تُعاد ثمّ تُصلَح، والمرجعُ
     # لا يسأل الراية، والحارسُ يصمت بالبناء، وصفرُ مسٍّ بالبيانات.
@@ -593,6 +605,15 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    (249, "silk_quality_gate.py", ["def _flat_ar", "_flat_ar(text)"]),
+    # ٢٤٧/٢٤٨ — تضييقُ حارسَين بقائمتين مقيستين لا بحدس.
+    (247, "silk_quality_gate.py",
+     ["def _named_gateways", "_GENERIC_GATEWAY_WORDS"]),
+    (248, "silk_quality_gate.py", ["_ECHO_UNIT_WORDS", "def _hs6_registered"]),
+    (247, "tools/canonical_libya_tahini.py",
+     ["def libya_tahini_research_blob", "ميناء بنغازي"]),
+    (248, "tools/canonical_kenya_honey.py",
+     ["def kenya_honey_research_blob", "PVoC"]),
     # ٢٤٦ — بنيةُ السوق تهيئةً: الوحدةُ القارئة، وسجلُّ الأنظمة، والمخطَّطُ
     # الجديد مع رفضِ المجهول، والحرّاسُ الستّة، ومبدِّلُ تعليمةِ البعثة.
     (246, "silk_market_structure.py",
