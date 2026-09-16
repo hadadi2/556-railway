@@ -359,9 +359,9 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "أقوى ما يُقال ضدّ هذا الحكم",
         "en": "The strongest case against this decision"},
     "counter_case_computed": {
-        "ar": "أقوى عمود «{strong}» عند {strong_pct}% يشدّ نحو الدخول، "
+        "ar": "أقوى الجوانب «{strong}» عند {strong_pct}% يشدّ نحو الدخول، "
               "وأضعفها «{weak}» عند {weak_pct}% يشدّ ضدّه. اعتُمد الحكم على "
-              "الأعمدة مجتمعةً بأوزانها المعلنة، لا على عمودٍ واحد.",
+              "الجوانب مجتمعةً بأوزانها المعلنة، لا على جانبٍ واحد.",
         "en": "The strongest pillar, {strong}, at {strong_pct}% pulls toward "
               "entry; the weakest, {weak}, at {weak_pct}% pulls against it. "
               "The decision follows the pillars together under their stated "
@@ -495,9 +495,13 @@ TERMS: dict[str, dict[str, str]] = {
     "limit_mission_uncited": {
         "ar": "فرصة {label} بلا نتائج مبنية على استشهاد: {detail}",
         "en": "{label}: no citation-backed findings — {detail}"},
+    # الصنف ١ (موجة عيوب التقرير): «تقاطع المحلل» اسمُ بنيةٍ داخلية لا
+    # يعرفها القارئ ولا يتصرّف بها — الجانبُ نفسه وأثرُ نقصه هما ما يُقال.
     "limit_analyst_thin": {
-        "ar": "تقاطع المحلل بلا أدلة كافية: {label}",
-        "en": "Insufficient evidence for the analyst intersection: {label}"},
+        "ar": "{label}: الأدلة المتاحة لا تكفي لحكمٍ في هذا الجانب — "
+              "يُقرأ بما هو، لا يُبنى عليه قرار.",
+        "en": "{label}: the available evidence does not support a judgement "
+              "on this aspect — read it as context, do not decide on it."},
     "limit_unresolved_note": {
         "ar": "ملاحظة مراجع لم تُعالَج: {detail}",
         "en": "Reviewer note left unaddressed: {detail}"},

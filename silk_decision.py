@@ -373,7 +373,7 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
     conditions: list[str] = []
     for name in missing_pillars:
         # D4 (البند 16): مفردات الغياب القانونية على سطح الشروط أيضاً.
-        conditions.append(f"عمود {_AR[name]} غائب (غير متاح: "
+        conditions.append(f"جانب {_AR[name]} غائب (غير متاح: "
                           f"{_parts_ar(pillars[name]['missing'])}) "
                           "— أكمل مصادره قبل قرار نهائي")
     for name, p in pillars.items():
@@ -385,7 +385,7 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
             # سدّ تسريب (الطبقة ٨): كسر عشري خام على وجه التقرير ("ضعيف
             # (0.37)") — نسبة مئوية بشرية بدله، شقيقة إصلاح سطر «لماذا»
             # أعلاه لنفس السبب (لا رقم آلي خام يصل العميل).
-            conditions.append(f"عمود {_AR[name]} ضعيف ({round(eff * 100)}%) "
+            conditions.append(f"جانب {_AR[name]} ضعيف ({round(eff * 100)}%) "
                               f"— {p['basis']}")
     if pillars["regulatory"].get("eligibility_gate"):
         conditions.insert(0, "بوابة أهلية أمامية مفتوحة (منشأة معتمدة EU 2017/625) "
@@ -605,7 +605,7 @@ def counter_case(decision: dict) -> dict:
               for k, v in pillars.items()
               if isinstance((v or {}).get("value"), (int, float))]
     if not scored:
-        return {"case": "لا أعمدة محسوبة تُبنى منها حجة مضادة — البيانات "
+        return {"case": "لا جوانب محسوبة تُبنى منها حجة مضادة — البيانات "
                         "غير كافية أصلاً.",
                 "rebuttal": ""}
     # البند 8 (أمر إصلاح المحرّك): «أقوى الأعمدة X وأضعفها X» بعمودٍ واحد
@@ -619,7 +619,7 @@ def counter_case(decision: dict) -> dict:
     strongest = max(scored, key=lambda t: t[1])
     conds = decision.get("conditions") or []
     if verdict == "GO":
-        case = (f"أقوى حجة ضد المضيّ: أضعف الأعمدة «{_AR.get(weakest[0], weakest[0])}» "
+        case = (f"أقوى حجة ضد المضيّ: أضعف الجوانب «{_AR.get(weakest[0], weakest[0])}» "
                 f"عند {round(weakest[1] * 100)}%"
                 + (f"، مع {len(conds)} شرطاً مفتوحاً" if conds else "")
                 + " — لو كان هذا العمود هو الحاكم وحده لتغيّر القرار.")
@@ -627,21 +627,21 @@ def counter_case(decision: dict) -> dict:
                     f"{_pct(decision.get('score'))} تجاوزت عتبة المضيّ "
                     f"({_pct(_GO)}) عبر الأعمدة مجتمعة بأوزانها المعلنة، "
                     f"والثقة {_pct(decision.get('confidence'))} فوق الحد "
-                    "الأدنى — عمود ضعيف واحد لا يعكس القرار ما لم يبلغ "
+                    "الأدنى — جانب ضعيف واحد لا يعكس القرار ما لم يبلغ "
                     "بوابة الخطر الحرجة.")
     elif verdict == "NO-GO":
-        case = (f"أقوى حجة ضد الرفض: أقوى الأعمدة "
+        case = (f"أقوى حجة ضد الرفض: أقوى الجوانب "
                 f"«{_AR.get(strongest[0], strongest[0])}» عند "
                 f"{round(strongest[1] * 100)}% يشير إلى فرصة قائمة.")
         rebuttal = (f"لماذا لم تُعتمد: الدرجة الموزونة "
                     f"{_pct(decision.get('score'))} دون عتبة الرفض "
-                    f"({_pct(_NOGO)}) أو أطلقت بوابة الخطر الحرجة — عمود "
+                    f"({_pct(_NOGO)}) أو أطلقت بوابة الخطر الحرجة — جانب "
                     "قوي واحد لا يعوّض بنية القرار الكاملة.")
     else:
-        case = (f"أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى "
+        case = (f"أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب "
                 f"«{_AR.get(strongest[0], strongest[0])}» "
                 f"({round(strongest[1] * 100)}%) يدعم مضيّاً كاملاً، ومن جهةٍ "
-                f"العمود الأضعف «{_AR.get(weakest[0], weakest[0])}» "
+                f"أضعفها «{_AR.get(weakest[0], weakest[0])}» "
                 f"({round(weakest[1] * 100)}%) يدعم رفضاً.")
         rebuttal = ("لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي "
                     "والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام "

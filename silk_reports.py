@@ -5212,8 +5212,8 @@ def render_docx(view: dict, path: str) -> str:
         for f in cp.get("feasibility_threads") or []:
             p = doc.add_paragraph()
             p.add_run(f"ضد {f['competitor']}: ").bold = True
-            p.add_run(f"سعر مرصود {_fmt(f['observed_price'])} — هامشك عند "
-                      f"المضاهاة {f['margin_at_match_pct']}% وعند البيع "
+            p.add_run(f"سعر مرصود {_fmt(f['observed_price'])} — هامشك إن "
+                      f"سعّرت مثله {f['margin_at_match_pct']}% وعند البيع "
                       f"أقل 10% {f['margin_at_10pct_below']}%")
             for gap in f.get("assumptions_and_gaps") or []:
                 doc.add_paragraph(gap, style="List Bullet")
@@ -5836,7 +5836,7 @@ def render_markdown(view: dict) -> str:
         L.append(f"- التغطية: {cp.get('coverage')}")
         for f in cp.get("feasibility_threads") or []:
             L.append(f"- ضد {f['competitor']}: سعر مرصود "
-                     f"{_fmt(f['observed_price'])} — هامشك عند المضاهاة "
+                     f"{_fmt(f['observed_price'])} — هامشك إن سعّرت مثله "
                      f"{f['margin_at_match_pct']}% وعند البيع أقل 10% "
                      f"{f['margin_at_10pct_below']}%")
             for gap in f.get("assumptions_and_gaps") or []:

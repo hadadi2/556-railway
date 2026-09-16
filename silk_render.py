@@ -1068,6 +1068,12 @@ _ORPHAN_TAIL_COMMA_RE = re.compile(r"\s*[،,;]\s*[/／]?\s*([\)）])")
 # لصياغة قارئ بإسقاط «آلياً» من عبارات الإحالة (المعنى يبقى صحيحاً).
 _SYSTEM_MECHANICS_RE = re.compile(
     r"(يرد أسفل هذا القسم|تلي هذا القسم|يلي هذا القسم|يليان|تليان)\s+آلياً")
+# الصنف ١ (موجة عيوب التقرير): «مُصنَّفٌ آلياً» تقول **كيف عمل النظام**، وما
+# يحتاجه القارئ هو **ماذا يعني ذلك لقراره**: أن الرمز لم يُراجَع بشرياً. نفسُ
+# علاج البند 23 أعلاه (صياغةُ قارئ بلا فقدِ معنى) مطبَّقاً على الصيغة الفعلية
+# التي تصل المتن. يُحفَظ الحرفُ السابق (مُصنَّف/صُنِّف/حُسِم) والتالي.
+_AUTO_CLASSIFIED_RE = re.compile(
+    r"(مُصنَّف|مصنَّف|مصنف|صُنِّف|صنِّف|حُسِم|حسم)(\S*)\s+آليّ?اً")
 # HF4.1 (تسريب سلسلةٍ إنجليزيةٍ داخلية إلى §5 — تقرير قطر): ملاحظةُ الحكم
 # المبدئيّ ثنائيةُ اللغة («Preliminary only; missing sources flagged, not
 # estimated. تنبيه: …») — النصفُ الإنجليزيّ داخليٌّ لا يصل العميل. يُزال
@@ -1452,6 +1458,8 @@ def _strip_internal_plumbing(text: str | None,
     text = _EMPTY_CITATION_GROUP_RE.sub("", text)
     # البند 23: لغة آلية بناء الملاحق تتحول لصياغة قارئ.
     text = _SYSTEM_MECHANICS_RE.sub(r"\1", text)
+    # الصنف ١: «مُصنَّفٌ آلياً» → «مُصنَّفٌ بلا مراجعة بشرية» (المعنى للقارئ).
+    text = _AUTO_CLASSIFIED_RE.sub(r"\1\2 بلا مراجعة بشرية", text)
     # §٢ (تدقيق «تحليل #1» DZA): تنسيق «**» شارد + رقم ثقة عربي خام — راجع
     # تعليقات الثوابت أعلاه لماذا لا يُمَسّ "## "/"### ".
     text = _strip_stray_markdown(text)
@@ -3364,7 +3372,7 @@ def render_text(view: dict) -> str:
         L.append(f"  التغطية: {cp.get('coverage')}")
         for f in cp.get("feasibility_threads") or []:
             L.append(f"  ضد {f['competitor'][:40]}: سعر مرصود "
-                     f"{f['observed_price']} — هامشك عند المضاهاة "
+                     f"{f['observed_price']} — هامشك إن سعّرت مثله "
                      f"{f['margin_at_match_pct']}% وعند البيع أقل 10% "
                      f"{f['margin_at_10pct_below']}%")
         for t in cp.get("competitor_threads") or []:

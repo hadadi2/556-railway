@@ -3744,6 +3744,122 @@ def _check_system_language_leak(text: str) -> list[dict]:
 # انبعاثهما في طبقة العرض نفسها (silk_render/silk_reports/silk_economics)
 # إلى الثنائية القانونية، وبعد حلّ تناقض الموجّه الذاتي (كان يفرض «وزن غير
 # مذكور» في خلايا الأسعار ويحظر «غير مذكور» بعدها بأسطر).
+# ══════════ الصنف ١ (موجة عيوب التقرير) — لغةُ النظام تصل القارئ ══════════
+# بلاغُ المالك: عباراتٌ كُتبت لمطوّرٍ وصلت صاحبَ القرار. الفحصُ الحتميّ هو
+# الحارسُ **الوحيد الممكن** لسبعٍ من العشر المرصودة: لا قالبَ في هذا
+# المستودع يُنتجها، فهي من نثر الكاتب (النموذج) — وما لا قالبَ له لا يُصلَح
+# إلّا بقاعدةٍ تُفحَص على كلّ تقرير. القوائمُ مصدرُها الواحد
+# `silk_style_contract` (يستهلكها الموجّهُ والمراجعُ أيضاً) فلا تتباعد نسختان.
+#
+# **المنطقةُ العمياء المُعلَنة (نمط الدرس 172):** قائمةٌ محدودة — لغةُ نظامٍ
+# جديدةٌ غيرُ مُدرَجة لا تُلتقَط. وقاعدةُ الإدراج سؤالُ الدرس 176 عند كلّ
+# إضافة: **من يؤلّف هذه العبارة؟** إن كان قالباً فالقالبُ يُصلَح أوّلاً
+# والقاعدةُ حارسُ انحدارٍ له؛ وإن كان النموذجَ فالقاعدةُ هي الإنفاذ.
+#
+# تحذيريّ لا حاجب (قرار المالك 2026-08-19: لا حجب جديداً بلا راية)، ويعيد
+# القسمَ والنصَّ لكلّ إطلاقة كما طلب البلاغ.
+_READER_LEAK_WINDOW = 40        # نصفُ نافذة قرينة المعنى التقنيّ (محارف)
+
+
+def _reader_section_of(text: str, pos: int) -> str:
+    """عنوانُ أقرب قسمٍ فوق الموضع — «القسم» في بلاغ الإطلاقة."""
+    head = ""
+    for m in _HEADING_RE.finditer(text, 0, max(pos, 0)):
+        head = m.group(1).strip()
+    return head or "قبل أول عنوان"
+
+
+def _reader_snippet(text: str, start: int, end: int) -> str:
+    """مقتطفٌ يقرؤه المشغّل — النصُّ حول الإطلاقة بلا أسطر."""
+    lo = max(0, start - 45)
+    return " ".join(text[lo:end + 45].split())
+
+
+def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
+    """`reader_language_leak` (الصنف ١، تحذيريّ): لغةُ نظامٍ داخلية في نصٍّ
+    يقرؤه صاحبُ القرار.
+
+    ثلاثُ قنواتٍ بشدّةِ يقينٍ متفاوتة، ولذلك لا تُخلَط:
+
+    1. **عباراتٌ حرفية** (`FORBIDDEN_READER_PHRASES`) — لا سياقَ يشفع لها.
+    2. **رموزٌ خام** (`HARD_READER_TOKENS`) — بحدِّ كلمةٍ للّاتينيّ كي لا
+       يُلتقَط `null` من داخل كلمة.
+    3. **مفرداتٌ ذاتُ معنيين** (`CONTEXTUAL_READER_TOKENS`) — تُطلِق **فقط**
+       بقرينةِ معنى تقنيّ قريبة. هذا شرطُ صدقٍ لا تسامح: «معادلة» وردت ١١
+       مرّة في خطّ الأساس كلُّها **مأمورٌ بها** في معيار الكتابة («معادلة
+       التعادل = كلفة الدخول ÷ هامش الوحدة»)، فحظرُها عارياً يُطلِق على كلّ
+       تقريرٍ صحيح؛ و«واجهة» كانت تُلتقَط من داخل «مواجهة» بلا حدِّ كلمة.
+
+    الملاحقُ مستثناةٌ (`_split_off_appendix`): الملحقُ التقنيّ سطحُ مدقّقٍ
+    لا سطحُ قارئ — نفسُ استثناءِ `_check_decimal_precision`. وبلاغُ كلّ
+    إطلاقةٍ يحمل **القسمَ والنصَّ** كما طلب البلاغ، وإطلاقةٌ واحدة لكلّ
+    مفردةٍ (لا ضجيجَ تكرارٍ لنفس العبارة).
+    """
+    if not text:
+        return []
+    from silk_style_contract import (CONTEXTUAL_READER_TOKENS,
+                                     FORBIDDEN_READER_PHRASES,
+                                     HARD_READER_TOKENS, READER_TOKEN_ALLOW,
+                                     SYSTEM_SENSE_CUES)
+    body = _split_off_appendix(text)
+    plain = _norm_ar(body)
+    findings: list[dict] = []
+    covered: list[tuple] = []          # مدياتُ العبارات المُبلَّغة
+
+    def _add(hit: str, start: int, end: int, why: str) -> None:
+        covered.append((start, end))
+        findings.append({
+            "check": "reader_language_leak", "repairable": True,
+            "note": (f"لغةُ نظامٍ داخلية في نصٍّ يقرؤه صاحبُ القرار: «{hit}» "
+                     f"— القسم «{_reader_section_of(body, start)}»: "
+                     f"…{_reader_snippet(body, start, end)}… ({why})")})
+
+    def _inside_reported(pos: int) -> bool:
+        return any(lo <= pos < hi for lo, hi in covered)
+
+    # (١) العباراتُ الحرفية أوّلاً — فتغطّي رموزَها فلا يُبلَّغ الرمزُ مرّتين.
+    for phrase in FORBIDDEN_READER_PHRASES:
+        i = plain.find(_norm_ar(phrase))
+        if i >= 0:
+            _add(phrase, i, i + len(phrase), "عبارةٌ محظورة حرفياً")
+
+    # (٢) الرموزُ الخام — حدُّ كلمةٍ للّاتينيّ الأبجديّ، ومطابقةٌ نصّيةٌ لغيره
+    # (`{`/`}`/`N/A` رموزٌ لا كلمات، والعربيُّ يُطبَّع أوّلاً).
+    for tok in HARD_READER_TOKENS:
+        if tok.isascii() and tok.isalpha():
+            m = re.search(rf"(?<![A-Za-z]){re.escape(tok)}(?![A-Za-z])",
+                          body, re.I)
+            span = (m.start(), m.end()) if m else None
+        else:
+            hay, needle = ((plain, _norm_ar(tok)) if not tok.isascii()
+                           else (body, tok))
+            i = hay.find(needle)
+            span = (i, i + len(needle)) if i >= 0 else None
+        if span and not _inside_reported(span[0]):
+            _add(tok, span[0], span[1],
+                 "رمزٌ خام لا معنى له عند القارئ")
+
+    # (٣) المفرداتُ ذاتُ المعنيين — بقرينةٍ فقط، وإطلاقةٌ واحدة لكلّ مفردة.
+    for tok in CONTEXTUAL_READER_TOKENS:
+        ntok = _norm_ar(tok)
+        for m in re.finditer(rf"(?<![^\W\d_]){re.escape(ntok)}(?![^\W\d_])",
+                             plain):
+            if _inside_reported(m.start()):
+                continue
+            lo = max(0, m.start() - _READER_LEAK_WINDOW)
+            hi = min(len(plain), m.end() + _READER_LEAK_WINDOW)
+            window = plain[lo:hi]
+            if any(_norm_ar(a) in window for a in READER_TOKEN_ALLOW):
+                continue
+            cue = next((c for c in SYSTEM_SENSE_CUES
+                        if _norm_ar(c) in window), None)
+            if cue:
+                _add(tok, m.start(), m.end(),
+                     f"بمعناها التقنيّ — قرينةُ «{cue}» بجوارها")
+                break
+    return findings
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -4327,6 +4443,10 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_empty_citation(text)
     findings += _check_dead_table(text)
     findings += _check_system_language_leak(text)
+    # الصنف ١ (موجة عيوب التقرير): لغةُ نظامٍ داخلية تصل صاحبَ القرار —
+    # تحذيريّ، وبلاغُه يحمل القسمَ والنصَّ. يقرأ قوائمه من
+    # `silk_style_contract` (المصدرُ الذي يقرؤه الموجّهُ والمراجعُ أيضاً).
+    findings += _check_reader_language_leak(text, _lang)
     findings += _check_absence_vocabulary(text)
     # D4 (دراسة #12): مفردات الغياب على **أسطح العرض** أيضاً — جدول الأعمدة
     # («لم يُرصَد بعد») وشروط القرار وحدود التقرير قوائم view لا يمر عليها

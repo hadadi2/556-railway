@@ -21,8 +21,8 @@
           "value": 60000000.0,
           "source": "UN Comtrade",
           "confidence": 0.9,
-          "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-09",
-          "retrieved_at": "2026-09-09T09:00:14+00:00",
+          "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-16",
+          "retrieved_at": "2026-09-16T12:06:26+00:00",
           "status": "",
           "data_year": 2023,
           "source_ids": [],
@@ -38,7 +38,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "Saudi share 30.0%",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -54,7 +54,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "no income data for CHN 2023",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -70,7 +70,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "supplier HHI over 3 suppliers",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -114,7 +114,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.0,
           "note": "سوق CHN (موثّق جزئياً) غير مغطى بالمرجع الثابت بعد — تحقق محلياً (verify locally)",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -136,7 +136,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.8,
           "note": "مرجع طبقة ١ (اتجاه الخروج) — مطلوبة لأغلب الأسواق لإثبات المنشأ والتفضيلات",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -158,7 +158,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
           "note": "مرجع طبقة ١ (اتجاه الخروج) — بعض أسواق الوجهة تشترط شهادة صحية/حلال من المصدر؛ اعتماد المنشأة أوروبياً يمر عبر SFDA",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -180,7 +180,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
           "note": "مرجع طبقة ١ (اتجاه الخروج) — اختياري داعم لا إلزامي جمركياً",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -209,7 +209,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "الاستقرار السياسي (WGI) — PV.EST (CHN): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "fetch_failed",
           "data_year": null,
           "source_ids": [],
@@ -225,7 +225,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "جودة التنظيم (WGI) — RQ.EST (CHN): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "fetch_failed",
           "data_year": null,
           "source_ids": [],
@@ -241,7 +241,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "الأداء اللوجستي (LPI) — LP.LPI.OVRL.XQ (CHN): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "fetch_failed",
           "data_year": null,
           "source_ids": [],
@@ -257,7 +257,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "تقلب العملة يتطلب سلسلة PA.NUS.FCRF (٣+ سنوات) — شغّل جامع worldbank (tools/refresh.py)",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -287,7 +287,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -303,7 +303,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -319,7 +319,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -333,8 +333,8 @@
             ],
             "rejected": [],
             "coverage": 0.6,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "competitor": {
             "agent": "competitor",
@@ -351,7 +351,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -367,7 +367,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -383,7 +383,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -418,7 +418,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -431,8 +431,8 @@
             ],
             "rejected": [],
             "coverage": 0.8,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:19+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:30+00:00"
           },
           "regulatory": {
             "agent": "regulatory",
@@ -471,7 +471,7 @@
                 "sources": [
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.8,
                     "url": null
                   }
@@ -487,7 +487,7 @@
                 "sources": [
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.8,
                     "url": null
                   }
@@ -503,7 +503,7 @@
                 "sources": [
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.8,
                     "url": null
                   }
@@ -512,12 +512,12 @@
               }
             ],
             "gaps": [
-              "tariff_applied_pct: WITS غير متاح الآن (ConnectionError) لـHS080410 SAU←CHN 2023 — أعد المحاولة لاحقاً. | وWTO TTD أيضاً غير متاح: WTO TTD غير مُهيَّأ (WTO_TTD_API_KEY غير مضبوط) — فجوة معلنة، لا محاولة جلب بلا مفتاح"
+              "tariff_applied_pct: WITS غير متاح الآن (ConnectionError) لـHS080410 SAU←CHN 2023 — أعد المحاولة لاحقاً. | وWTO TTD أيضاً غير متاح: WTO TTD غير مُهيَّأ (WTO_TTD_API_KEY غير مضبوط) — فجوة معلنة، لا محاولة جلب بلا مفتاح | ومصدر ITC Market Access Map: لم تُستخرج نسبة رقمية آلياً من ITC Market Access Map لسنة 2023. تحقق من الرسوم العادية والتفضيلية على HS080410 من SAU إلى CHN عبر الرابط: https://www.macmap.org/en/query/results?product=080410&exporter=SAU&importer=CHN. الضريبة على القيمة المضافة والرسوم الأخرى تُراجع منفصلة عن التعرفة."
             ],
             "rejected": [],
             "coverage": 0.75,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "pricing": {
             "agent": "pricing",
@@ -534,7 +534,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -550,7 +550,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.85,
                     "url": null
                   }
@@ -565,8 +565,8 @@
             ],
             "rejected": [],
             "coverage": 0.4,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:18+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:31+00:00"
           },
           "risk": {
             "agent": "risk",
@@ -583,7 +583,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -599,8 +599,8 @@
             ],
             "rejected": [],
             "coverage": 0.2,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "consumer_demand": {
             "agent": "consumer_demand",
@@ -649,8 +649,8 @@
             ],
             "rejected": [],
             "coverage": 0.33,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:18+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "supplier": {
             "agent": "supplier",
@@ -664,8 +664,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "logistics": {
             "agent": "logistics",
@@ -682,8 +682,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           }
         },
         "coverage": 0.39,
@@ -835,9 +835,9 @@
           }
         ],
         "conditions": [
-          "عمود أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
-          "عمود شدة المنافسة ضعيف (37%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)",
-          "عمود الملاءمة التنظيمية ضعيف (38%) — متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
+          "جانب أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
+          "جانب شدة المنافسة ضعيف (37%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)",
+          "جانب الملاءمة التنظيمية ضعيف (38%) — متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
         ],
         "first_steps": [
           "أغلق بنود قائمة الاشتراطات بنداً بنداً بمرجعها الرسمي",
@@ -846,7 +846,7 @@
         "why": "الدرجة الموزونة 64% في النطاق الشرطي والثقة منخفضة (31%) دون الحد الأدنى (60%) وشروط مفتوحة (3)",
         "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — الأعمدة الغائبة شروط معلنة، لا تخمين",
         "counter_case": {
-          "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ العمود الأضعف «شدة المنافسة» (37%) يدعم رفضاً.",
+          "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (37%) يدعم رفضاً.",
           "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
         }
       },
@@ -898,7 +898,7 @@
           2023
         ],
         "source": "UN Comtrade",
-        "retrieved_at": "2026-09-09",
+        "retrieved_at": "2026-09-16",
         "note": "بيانات غير كافية لخط الاتجاه — 0/5 سنة مرصودة (insufficient data for a trend)"
       },
       "jury": {
@@ -917,8 +917,8 @@
             "value": 60000000.0,
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
-            "note": "HS080410 total imports (World) to market 156 2023, USD — من المخزن، جُلبت أصلاً 2026-09-09",
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
+            "note": "HS080410 total imports (World) to market 156 2023, USD — من المخزن، جُلبت أصلاً 2026-09-16",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
             "status": "",
             "data_year": null,
             "source_ids": [],
@@ -938,8 +938,8 @@
             },
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
-            "note": "HS080410 imports to CHN 2023; share 50.0% — من المخزن، جُلبت أصلاً 2026-09-09",
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
+            "note": "HS080410 imports to CHN 2023; share 50.0% — من المخزن، جُلبت أصلاً 2026-09-16",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -959,8 +959,8 @@
             },
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
-            "note": "HS080410 imports to CHN 2023; share 30.0% — من المخزن، جُلبت أصلاً 2026-09-09",
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
+            "note": "HS080410 imports to CHN 2023; share 30.0% — من المخزن، جُلبت أصلاً 2026-09-16",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -980,8 +980,8 @@
             },
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
-            "note": "HS080410 imports to CHN 2023; share 20.0% — من المخزن، جُلبت أصلاً 2026-09-09",
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
+            "note": "HS080410 imports to CHN 2023; share 20.0% — من المخزن، جُلبت أصلاً 2026-09-16",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -1013,8 +1013,8 @@
           "value": 20000000.0,
           "source": "UN Comtrade",
           "confidence": 0.9,
-          "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-09",
-          "retrieved_at": "2026-09-09T09:00:14+00:00",
+          "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-16",
+          "retrieved_at": "2026-09-16T12:06:26+00:00",
           "status": "",
           "data_year": 2023,
           "source_ids": [],
@@ -1030,7 +1030,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "Saudi share 100.0%",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1046,7 +1046,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "no income data for ARE 2023",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1062,7 +1062,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "supplier HHI over 1 suppliers",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1100,7 +1100,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
           "note": "مرجع طبقة ١ — تحقق من الجهة المعتمدة بالسوق قبل الشحن؛ مزامنة ربع سنوية",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1122,7 +1122,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
           "note": "مرجع طبقة ١ — الفئات الخاضعة تتغير؛ تحقق من اللائحة الفنية للفئة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1144,7 +1144,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
           "note": "مرجع طبقة ١ — راجع متطلبات البطاقة المحدثة للفئة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1166,7 +1166,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
           "note": "مرجع طبقة ١ — الإجراء يختلف بين الإمارات (دبي: منتجي)؛ تحقق محلياً",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1188,7 +1188,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.8,
           "note": "مرجع طبقة ١ (اتجاه الخروج) — مطلوبة لأغلب الأسواق لإثبات المنشأ والتفضيلات",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1210,7 +1210,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
           "note": "مرجع طبقة ١ (اتجاه الخروج) — بعض أسواق الوجهة تشترط شهادة صحية/حلال من المصدر؛ اعتماد المنشأة أوروبياً يمر عبر SFDA",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1232,7 +1232,7 @@
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
           "note": "مرجع طبقة ١ (اتجاه الخروج) — اختياري داعم لا إلزامي جمركياً",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1321,7 +1321,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "الاستقرار السياسي (WGI) — PV.EST (ARE): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "fetch_failed",
           "data_year": null,
           "source_ids": [],
@@ -1337,7 +1337,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "جودة التنظيم (WGI) — RQ.EST (ARE): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "fetch_failed",
           "data_year": null,
           "source_ids": [],
@@ -1353,7 +1353,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "الأداء اللوجستي (LPI) — LP.LPI.OVRL.XQ (ARE): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "fetch_failed",
           "data_year": null,
           "source_ids": [],
@@ -1369,7 +1369,7 @@
           "source": "World Bank",
           "confidence": 0.0,
           "note": "تقلب العملة يتطلب سلسلة PA.NUS.FCRF (٣+ سنوات) — شغّل جامع worldbank (tools/refresh.py)",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "status": "",
           "data_year": null,
           "source_ids": [],
@@ -1399,7 +1399,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1415,7 +1415,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1431,7 +1431,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1445,8 +1445,8 @@
             ],
             "rejected": [],
             "coverage": 0.6,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "competitor": {
             "agent": "competitor",
@@ -1463,7 +1463,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1479,7 +1479,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1495,7 +1495,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1518,7 +1518,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1531,8 +1531,8 @@
             ],
             "rejected": [],
             "coverage": 0.8,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:20+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:32+00:00"
           },
           "regulatory": {
             "agent": "regulatory",
@@ -1599,7 +1599,7 @@
                 "sources": [
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.7,
                     "url": null
                   }
@@ -1615,7 +1615,7 @@
                 "sources": [
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.7,
                     "url": null
                   }
@@ -1631,7 +1631,7 @@
                 "sources": [
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.7,
                     "url": null
                   }
@@ -1647,7 +1647,7 @@
                 "sources": [
                   {
                     "source": "GCC secretariat",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.75,
                     "url": null
                   }
@@ -1658,8 +1658,8 @@
             "gaps": [],
             "rejected": [],
             "coverage": 1.0,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:18+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "pricing": {
             "agent": "pricing",
@@ -1676,7 +1676,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1692,7 +1692,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade (مخزن الحقائق)",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.85,
                     "url": null
                   }
@@ -1707,8 +1707,8 @@
             ],
             "rejected": [],
             "coverage": 0.4,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:22+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:33+00:00"
           },
           "risk": {
             "agent": "risk",
@@ -1725,7 +1725,7 @@
                 "sources": [
                   {
                     "source": "UN Comtrade",
-                    "retrieved_at": "2026-09-09",
+                    "retrieved_at": "2026-09-16",
                     "confidence": 0.9,
                     "url": null
                   }
@@ -1741,8 +1741,8 @@
             ],
             "rejected": [],
             "coverage": 0.2,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "consumer_demand": {
             "agent": "consumer_demand",
@@ -1791,8 +1791,8 @@
             ],
             "rejected": [],
             "coverage": 0.33,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:18+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "supplier": {
             "agent": "supplier",
@@ -1806,8 +1806,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           },
           "logistics": {
             "agent": "logistics",
@@ -1824,8 +1824,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-09T09:00:17+00:00",
-            "finished_at": "2026-09-09T09:00:17+00:00"
+            "started_at": "2026-09-16T12:06:29+00:00",
+            "finished_at": "2026-09-16T12:06:29+00:00"
           }
         },
         "coverage": 0.42,
@@ -1975,8 +1975,8 @@
           }
         ],
         "conditions": [
-          "عمود أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
-          "عمود شدة المنافسة ضعيف (0%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)؛ المورّد المهيمن سعوديّ — منطق الدخول الفعلي دفاعُ حصةٍ قائمة عبر القناة القائمة (علمٌ مستقل لا يعدّل الدرجة)"
+          "جانب أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
+          "جانب شدة المنافسة ضعيف (0%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)؛ المورّد المهيمن سعوديّ — منطق الدخول الفعلي دفاعُ حصةٍ قائمة عبر القناة القائمة (علمٌ مستقل لا يعدّل الدرجة)"
         ],
         "first_steps": [
           "سوق مركّز: ادخل عبر موزّع قائم من مرشّحي التوريد المرصودين بدل البناء المباشر"
@@ -1984,7 +1984,7 @@
         "why": "الدرجة الموزونة 59% في النطاق الشرطي والثقة منخفضة (34%) دون الحد الأدنى (60%) وشروط مفتوحة (2)",
         "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — الأعمدة الغائبة شروط معلنة، لا تخمين",
         "counter_case": {
-          "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى «الملاءمة التنظيمية» (94%) يدعم مضيّاً كاملاً، ومن جهةٍ العمود الأضعف «شدة المنافسة» (0%) يدعم رفضاً.",
+          "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «الملاءمة التنظيمية» (94%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (0%) يدعم رفضاً.",
           "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
         }
       },
@@ -2036,7 +2036,7 @@
           2023
         ],
         "source": "UN Comtrade",
-        "retrieved_at": "2026-09-09",
+        "retrieved_at": "2026-09-16",
         "note": "بيانات غير كافية لخط الاتجاه — 0/5 سنة مرصودة (insufficient data for a trend)"
       },
       "jury": {
@@ -2055,8 +2055,8 @@
             "value": 20000000.0,
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
-            "note": "HS080410 total imports (World) to market 784 2023, USD — من المخزن، جُلبت أصلاً 2026-09-09",
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
+            "note": "HS080410 total imports (World) to market 784 2023, USD — من المخزن، جُلبت أصلاً 2026-09-16",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
             "status": "",
             "data_year": null,
             "source_ids": [],
@@ -2076,8 +2076,8 @@
             },
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
-            "note": "HS080410 imports to ARE 2023; share 100.0% — من المخزن، جُلبت أصلاً 2026-09-09",
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
+            "note": "HS080410 imports to ARE 2023; share 100.0% — من المخزن، جُلبت أصلاً 2026-09-16",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -2182,7 +2182,7 @@
       "hs_code": "080410",
       "origin": "SAU",
       "target_market": "China",
-      "date": "2026-09-09",
+      "date": "2026-09-16",
       "coverage_pct": 42.1
     },
     "product": "تمور",
@@ -2201,7 +2201,7 @@
       "score": 0.636,
       "why": "الدرجة الموزونة 64% في النطاق الشرطي والثقة منخفضة (31%) دون الحد الأدنى (60%) وشروط مفتوحة (3)",
       "counter_case": {
-        "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ العمود الأضعف «شدة المنافسة» (37%) يدعم رفضاً.",
+        "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (37%) يدعم رفضاً.",
         "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
       },
       "market": "China",
@@ -2252,7 +2252,7 @@
         "score_line": "قوة هذه الفرصة في تقييمنا 64 من 100، وقد تحقّقنا مباشرة من نحو 31% من البيانات خلف هذا التقييم.",
         "rule_line": "قاعدة الحكم مُعلنة قبل النظر في الأرقام: نوصي بالمضي حين تبلغ قوة الفرصة 65 من 100 فأعلى وقد تحقّقنا من 60% من بياناتها فأعلى وبلا شروط مفتوحة؛ ونرفض حين تنزل القوة دون 45 أو عند اختلال أمان السوق؛ وما بينهما دخول مشروط بشروط مسمّاة أدناه.",
         "counter_case_head": "أقوى ما يُقال ضدّ هذا الحكم",
-        "counter_case_line": "أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ العمود الأضعف «شدة المنافسة» (37%) يدعم رفضاً. لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
+        "counter_case_line": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (37%) يدعم رفضاً. لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
       }
     },
     "dynamics": null,
@@ -2295,11 +2295,12 @@
         "components_detail": [
           {
             "name": "market_size",
+            "display_name": "حجم واردات السوق",
             "value": 60000000.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
-            "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-09",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
+            "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-16",
             "status": "",
             "unit": "",
             "url": "https://comtradeplus.un.org/",
@@ -2309,10 +2310,11 @@
           },
           {
             "name": "saudi_position",
+            "display_name": "الحصة السعودية",
             "value": 30.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "note": "Saudi share 30.0%",
             "status": "",
             "unit": "",
@@ -2323,10 +2325,11 @@
           },
           {
             "name": "demand_capacity",
+            "display_name": "دخل الفرد",
             "value": null,
             "source": "World Bank",
             "confidence": 0.0,
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "note": "no income data for CHN 2023",
             "status": "",
             "unit": "",
@@ -2337,10 +2340,11 @@
           },
           {
             "name": "competition",
+            "display_name": "تركّز الموردين",
             "value": 0.38,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "note": "supplier HHI over 3 suppliers",
             "status": "",
             "unit": "",
@@ -2403,7 +2407,7 @@
             2023
           ],
           "source": "UN Comtrade",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "note": "بيانات غير كافية لخط الاتجاه — 0/5 سنة مرصودة (insufficient data for a trend)"
         },
         "prices": [],
@@ -2435,7 +2439,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "الاستقرار السياسي (WGI) — PV.EST (CHN): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "fetch_failed",
             "data_year": null,
             "unit": "",
@@ -2449,7 +2453,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "جودة التنظيم (WGI) — RQ.EST (CHN): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "fetch_failed",
             "data_year": null,
             "unit": "",
@@ -2463,7 +2467,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "الأداء اللوجستي (LPI) — LP.LPI.OVRL.XQ (CHN): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "fetch_failed",
             "data_year": null,
             "unit": "",
@@ -2477,7 +2481,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "تقلب العملة يتطلب سلسلة PA.NUS.FCRF (٣+ سنوات) — شغّل جامع worldbank (tools/refresh.py)",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "",
             "data_year": null,
             "unit": "",
@@ -2612,7 +2616,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2628,7 +2632,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2644,7 +2648,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2658,8 +2662,8 @@
               ],
               "rejected": [],
               "coverage": 0.6,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "competitor": {
               "agent": "competitor",
@@ -2676,7 +2680,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2692,7 +2696,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2708,7 +2712,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2743,7 +2747,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2756,8 +2760,8 @@
               ],
               "rejected": [],
               "coverage": 0.8,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:19+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:30+00:00"
             },
             "regulatory": {
               "agent": "regulatory",
@@ -2796,7 +2800,7 @@
                   "sources": [
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.8,
                       "url": null
                     }
@@ -2812,7 +2816,7 @@
                   "sources": [
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.8,
                       "url": null
                     }
@@ -2828,7 +2832,7 @@
                   "sources": [
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.8,
                       "url": null
                     }
@@ -2837,12 +2841,12 @@
                 }
               ],
               "gaps": [
-                "tariff_applied_pct: WITS غير متاح الآن (ConnectionError) لـHS080410 SAU←CHN 2023 — أعد المحاولة لاحقاً. | وWTO TTD أيضاً غير متاح: WTO TTD غير مُهيَّأ (WTO_TTD_API_KEY غير مضبوط) — فجوة معلنة، لا محاولة جلب بلا مفتاح"
+                "tariff_applied_pct: WITS غير متاح الآن (ConnectionError) لـHS080410 SAU←CHN 2023 — أعد المحاولة لاحقاً. | وWTO TTD أيضاً غير متاح: WTO TTD غير مُهيَّأ (WTO_TTD_API_KEY غير مضبوط) — فجوة معلنة، لا محاولة جلب بلا مفتاح | ومصدر ITC Market Access Map: لم تُستخرج نسبة رقمية آلياً من ITC Market Access Map لسنة 2023. تحقق من الرسوم العادية والتفضيلية على HS080410 من SAU إلى CHN عبر الرابط: https://www.macmap.org/en/query/results?product=080410&exporter=SAU&importer=CHN. الضريبة على القيمة المضافة والرسوم الأخرى تُراجع منفصلة عن التعرفة."
               ],
               "rejected": [],
               "coverage": 0.75,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "pricing": {
               "agent": "pricing",
@@ -2859,7 +2863,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2875,7 +2879,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.85,
                       "url": null
                     }
@@ -2890,8 +2894,8 @@
               ],
               "rejected": [],
               "coverage": 0.4,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:18+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:31+00:00"
             },
             "risk": {
               "agent": "risk",
@@ -2908,7 +2912,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -2924,8 +2928,8 @@
               ],
               "rejected": [],
               "coverage": 0.2,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "consumer_demand": {
               "agent": "consumer_demand",
@@ -2974,8 +2978,8 @@
               ],
               "rejected": [],
               "coverage": 0.33,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:18+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "supplier": {
               "agent": "supplier",
@@ -2989,8 +2993,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "logistics": {
               "agent": "logistics",
@@ -3007,8 +3011,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             }
           },
           "coverage": 0.39,
@@ -3160,9 +3164,9 @@
             }
           ],
           "conditions": [
-            "عمود أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
-            "عمود شدة المنافسة ضعيف (37%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)",
-            "عمود الملاءمة التنظيمية ضعيف (38%) — متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
+            "جانب أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
+            "جانب شدة المنافسة ضعيف (37%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)",
+            "جانب الملاءمة التنظيمية ضعيف (38%) — متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
           ],
           "first_steps": [
             "أغلق بنود قائمة الاشتراطات بنداً بنداً بمرجعها الرسمي",
@@ -3171,7 +3175,7 @@
           "why": "الدرجة الموزونة 64% في النطاق الشرطي والثقة منخفضة (31%) دون الحد الأدنى (60%) وشروط مفتوحة (3)",
           "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — الأعمدة الغائبة شروط معلنة، لا تخمين",
           "counter_case": {
-            "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ العمود الأضعف «شدة المنافسة» (37%) يدعم رفضاً.",
+            "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «جاذبية السوق» (89%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (37%) يدعم رفضاً.",
             "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
           }
         },
@@ -3222,11 +3226,12 @@
         "components_detail": [
           {
             "name": "market_size",
+            "display_name": "حجم واردات السوق",
             "value": 20000000.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-09T09:00:14+00:00",
-            "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-09",
+            "retrieved_at": "2026-09-16T12:06:26+00:00",
+            "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-16",
             "status": "",
             "unit": "",
             "url": "https://comtradeplus.un.org/",
@@ -3236,10 +3241,11 @@
           },
           {
             "name": "saudi_position",
+            "display_name": "الحصة السعودية",
             "value": 100.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "note": "Saudi share 100.0%",
             "status": "",
             "unit": "",
@@ -3250,10 +3256,11 @@
           },
           {
             "name": "demand_capacity",
+            "display_name": "دخل الفرد",
             "value": null,
             "source": "World Bank",
             "confidence": 0.0,
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "note": "no income data for ARE 2023",
             "status": "",
             "unit": "",
@@ -3264,10 +3271,11 @@
           },
           {
             "name": "competition",
+            "display_name": "تركّز الموردين",
             "value": 1.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "note": "supplier HHI over 1 suppliers",
             "status": "",
             "unit": "",
@@ -3330,7 +3338,7 @@
             2023
           ],
           "source": "UN Comtrade",
-          "retrieved_at": "2026-09-09",
+          "retrieved_at": "2026-09-16",
           "note": "بيانات غير كافية لخط الاتجاه — 0/5 سنة مرصودة (insufficient data for a trend)"
         },
         "prices": [],
@@ -3350,7 +3358,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "الاستقرار السياسي (WGI) — PV.EST (ARE): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "fetch_failed",
             "data_year": null,
             "unit": "",
@@ -3364,7 +3372,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "جودة التنظيم (WGI) — RQ.EST (ARE): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "fetch_failed",
             "data_year": null,
             "unit": "",
@@ -3378,7 +3386,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "الأداء اللوجستي (LPI) — LP.LPI.OVRL.XQ (ARE): تعذّر الجلب (حد معدل/شبكة) — أعد المحاولة",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "fetch_failed",
             "data_year": null,
             "unit": "",
@@ -3392,7 +3400,7 @@
             "source": "World Bank",
             "confidence": 0.0,
             "note": "تقلب العملة يتطلب سلسلة PA.NUS.FCRF (٣+ سنوات) — شغّل جامع worldbank (tools/refresh.py)",
-            "retrieved_at": "2026-09-09",
+            "retrieved_at": "2026-09-16",
             "status": "",
             "data_year": null,
             "unit": "",
@@ -3527,7 +3535,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3543,7 +3551,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3559,7 +3567,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3573,8 +3581,8 @@
               ],
               "rejected": [],
               "coverage": 0.6,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "competitor": {
               "agent": "competitor",
@@ -3591,7 +3599,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3607,7 +3615,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3623,7 +3631,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3646,7 +3654,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3659,8 +3667,8 @@
               ],
               "rejected": [],
               "coverage": 0.8,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:20+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:32+00:00"
             },
             "regulatory": {
               "agent": "regulatory",
@@ -3727,7 +3735,7 @@
                   "sources": [
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.7,
                       "url": null
                     }
@@ -3743,7 +3751,7 @@
                   "sources": [
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.7,
                       "url": null
                     }
@@ -3759,7 +3767,7 @@
                   "sources": [
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.7,
                       "url": null
                     }
@@ -3775,7 +3783,7 @@
                   "sources": [
                     {
                       "source": "GCC secretariat",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.75,
                       "url": null
                     }
@@ -3786,8 +3794,8 @@
               "gaps": [],
               "rejected": [],
               "coverage": 1.0,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:18+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "pricing": {
               "agent": "pricing",
@@ -3804,7 +3812,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3820,7 +3828,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade (مخزن الحقائق)",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.85,
                       "url": null
                     }
@@ -3835,8 +3843,8 @@
               ],
               "rejected": [],
               "coverage": 0.4,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:22+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:33+00:00"
             },
             "risk": {
               "agent": "risk",
@@ -3853,7 +3861,7 @@
                   "sources": [
                     {
                       "source": "UN Comtrade",
-                      "retrieved_at": "2026-09-09",
+                      "retrieved_at": "2026-09-16",
                       "confidence": 0.9,
                       "url": null
                     }
@@ -3869,8 +3877,8 @@
               ],
               "rejected": [],
               "coverage": 0.2,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "consumer_demand": {
               "agent": "consumer_demand",
@@ -3919,8 +3927,8 @@
               ],
               "rejected": [],
               "coverage": 0.33,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:18+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "supplier": {
               "agent": "supplier",
@@ -3934,8 +3942,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             },
             "logistics": {
               "agent": "logistics",
@@ -3952,8 +3960,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-09T09:00:17+00:00",
-              "finished_at": "2026-09-09T09:00:17+00:00"
+              "started_at": "2026-09-16T12:06:29+00:00",
+              "finished_at": "2026-09-16T12:06:29+00:00"
             }
           },
           "coverage": 0.42,
@@ -4103,8 +4111,8 @@
             }
           ],
           "conditions": [
-            "عمود أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
-            "عمود شدة المنافسة ضعيف (0%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)؛ المورّد المهيمن سعوديّ — منطق الدخول الفعلي دفاعُ حصةٍ قائمة عبر القناة القائمة (علمٌ مستقل لا يعدّل الدرجة)"
+            "جانب أمان السوق (المخاطر) غائب (غير متاح: الاستقرار السياسي، جودة التنظيم، أداء اللوجستيات، استقرار العملة) — أكمل مصادره قبل قرار نهائي",
+            "جانب شدة المنافسة ضعيف (0%) — متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)؛ المورّد المهيمن سعوديّ — منطق الدخول الفعلي دفاعُ حصةٍ قائمة عبر القناة القائمة (علمٌ مستقل لا يعدّل الدرجة)"
           ],
           "first_steps": [
             "سوق مركّز: ادخل عبر موزّع قائم من مرشّحي التوريد المرصودين بدل البناء المباشر"
@@ -4112,7 +4120,7 @@
           "why": "الدرجة الموزونة 59% في النطاق الشرطي والثقة منخفضة (34%) دون الحد الأدنى (60%) وشروط مفتوحة (2)",
           "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — الأعمدة الغائبة شروط معلنة، لا تخمين",
           "counter_case": {
-            "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى «الملاءمة التنظيمية» (94%) يدعم مضيّاً كاملاً، ومن جهةٍ العمود الأضعف «شدة المنافسة» (0%) يدعم رفضاً.",
+            "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «الملاءمة التنظيمية» (94%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (0%) يدعم رفضاً.",
             "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
           }
         },
