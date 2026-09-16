@@ -4571,6 +4571,16 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    237: lambda: (
+        _needles("silk_style_contract.py", "def activity_label_ar",
+                 "METHODOLOGY_DEFINITIONS_ORDER", "AUTHORITY_HEADS")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_authority_naming_drift",
+                 "_ACCUSATIVE_TANWEEN_RE",
+                 "def _check_defined_term_without_definition")(),
+        _needles("silk_profiles.py", "multi_authority")(),
+        _needles("silk_reports.py", "activity_label_ar")(),
+        _needles("tests/test_lessons_enforcement.py", '(237, ')()),
     236: lambda: (
         _needles("silk_narrative.py", "def fmt_number", "def fmt_score",
                  "def fmt_amount", "def fmt_observed_at",

@@ -4227,6 +4227,199 @@ def _check_observation_date_equals_run_date(view: dict) -> list[dict]:
     return []
 
 
+# ══════ الصنف ٤ (موجة عيوب التقرير) — انزياحُ التسمية والمصطلح ══════
+# بلاغُ المالك: «الحكومة الحوثية» و«السلطات الحوثية» و«الحكومة» لجهةٍ واحدة
+# في تقريرٍ واحد؛ وتسمياتُ نشاطٍ إنجليزية في جدولٍ عربيّ؛ ومصطلحاتٌ بلا تعريف.
+#
+# **التسمياتُ الإنجليزية مغطّاةٌ أصلاً بحاجز** (`language_consistency`) —
+# مقيسٌ على «| Import export company |». فلا قاعدةَ ثانيةً لها هنا: عيبٌ
+# واحدٌ بتسميتين يُضاعِف الضجيجَ ولا يزيد تغطية. الفكسُ (جدولُ الترجمة عند
+# حدِّ العرض) في `silk_style_contract.activity_label_ar`.
+#
+# والقاعدتان أدناه تحذيريّتان، وتعملان **بلا انتظارِ تهيئة**: تسمياتُ السلطة
+# المحيَّدة تُهيَّأ في `data/market_profiles.json` وتصير التسميةَ المفضَّلة
+# متى حضرت، لكنّ كشفَ الانزياح مبنيٌّ على نصّ التقرير نفسِه — فلا يكون
+# الحارسُ نائماً بانتظار بياناتٍ لم تُهيَّأ بعد (سابقةُ الدرس 98).
+
+# جهةٌ مُنسَبة: رأسٌ رسميّ + نسبةٌ تُعرِّفه («الحكومة الحوثية»، «سلطات عدن»).
+_AUTHORITY_QUALIFIED_RE = re.compile(
+    r"(الحكومة|حكومة|السلطات|السلطة|سلطات|الإدارة|إدارة|الهيئة|هيئة)"
+    r"\s+((?:ال)?[^\W\d_]{3,}[\u064b-\u0652]?)")
+# رأسٌ عارٍ بلا نسبة: «وتفرض الحكومة رسماً» — مبهمٌ حين تُذكر جهتان.
+_AUTHORITY_BARE_RE = re.compile(
+    r"(?<![^\W\d_])(الحكومة|السلطات|السلطة)(?![^\W\d_])")
+# نِسَبٌ لا تُعرِّف جهةً: صفةٌ عامّة أو كلمةُ ربطٍ تلي الرأسَ مصادفةً.
+_AUTHORITY_GENERIC_QUAL = frozenset({
+    "المحلية", "المحلي", "الرسمية", "الرسمي", "المعنية", "المختصة",
+    "المركزية", "الوطنية", "الاتحادية", "الجديدة", "نفسها", "هناك",
+    "التي", "الذي", "قد", "لم", "لا", "أن", "إن", "على", "في", "من",
+    "بأن", "بأنه", "ذاتها", "المضيفة", "المستوردة", "المصدرة",
+})
+
+
+# اسمٌ منصوبٌ منوَّن («قيداً»، «رسماً»، «تصريحاً») مفعولُ الفعل لا نسبةُ
+# الجهة — إشارةٌ صرفيةٌ عربيةٌ حقيقية، وهي بعينها ما أخطأت به الصيغةُ الأولى
+# («وتفرض الحكومة قيداً ثالثاً» عُدَّت جهةً ثالثة).
+_ACCUSATIVE_TANWEEN_RE = re.compile("(?:\u064b|\u0627\u064b|\u064b\u0627)$")
+
+
+def _authority_mentions(body: str) -> dict:
+    """{النسبة المُطبَّعة → {الرؤوسُ المستعملة معها}} — حتميّ، بلا معجم.
+
+    الرؤوسُ تُحفَظ **بهجائها الأصليّ** للعرض (التطبيعُ للمطابقة لا للبلاغ:
+    «الحكمه» في رسالةٍ يقرؤها مشغّلٌ خطأٌ في ذاته).
+    """
+    generic = {_norm_ar(g).replace("ال", "", 1)
+               for g in _AUTHORITY_GENERIC_QUAL}
+    out: dict = {}
+    for m in _AUTHORITY_QUALIFIED_RE.finditer(body):
+        head, qual = m.group(1), m.group(2)
+        if qual in _AUTHORITY_GENERIC_QUAL:
+            continue
+        if _norm_ar(qual).replace("ال", "", 1) in generic:
+            continue
+        if _ACCUSATIVE_TANWEEN_RE.search(qual):
+            continue
+        key = _norm_ar(qual)
+        out.setdefault(key, {"qual": qual, "heads": {}})
+        out[key]["heads"].setdefault(_norm_ar(head), head)
+    return out
+
+
+# المرآةُ الإنجليزية — قفلُ التكافؤ (`test_no_undeclared_arabic_only_check`)
+# التقطَ أن الصيغةَ الأولى عربيةُ المِجَسّ وحدها، فتخمُد صامتةً على تقريرٍ
+# إنجليزيّ والمشغّلُ يقرأ PASS ويظنّه قياساً. والعيبُ نفسُه قائمٌ بالإنجليزية
+# («the Houthi government» / «the Houthi authorities»)، فالمرآةُ أصدقُ من
+# إعلانِ خمود.
+_AUTHORITY_QUALIFIED_EN_RE = re.compile(
+    r"\b(government|authorities|authority|administration)\s+"
+    r"(?:of\s+)?([A-Z][A-Za-z'-]{2,})"
+    r"|\b([A-Z][A-Za-z'-]{2,})\s+"
+    r"(government|authorities|authority|administration)\b")
+_AUTHORITY_BARE_EN_RE = re.compile(
+    r"\bthe\s+(government|authorities)\b(?!\s+of\b)", re.I)
+_AUTHORITY_GENERIC_QUAL_EN = frozenset({
+    "Local", "Official", "Central", "National", "Federal", "Competent",
+    "Relevant", "Host", "Importing", "Exporting", "The",
+})
+
+
+def _authority_mentions_en(body: str) -> dict:
+    """نظيرُ `_authority_mentions` للإنجليزية — {النسبة → {الرؤوس}}."""
+    out: dict = {}
+    for m in _AUTHORITY_QUALIFIED_EN_RE.finditer(body):
+        head = (m.group(1) or m.group(4) or "").lower()
+        qual = m.group(2) or m.group(3) or ""
+        if not head or not qual or qual in _AUTHORITY_GENERIC_QUAL_EN:
+            continue
+        out.setdefault(qual, {"qual": qual, "heads": {}})
+        # الترتيبُ الطبيعيّ إنجليزياً «Houthi government» لا «government
+        # Houthi» — البلاغُ يقرؤه مشغّلٌ، فلا يُقلَب.
+        out[qual]["heads"].setdefault(head, f"{qual} {head}")
+    return out
+
+
+def _check_authority_naming_drift(view: dict, dr: dict,
+                                  lang: str = "ar") -> list[dict]:
+    """`authority_naming_drift` (الصنف ٤، تحذيريّ): جهةٌ واحدة بتسميتين، أو
+    رأسٌ عارٍ («الحكومة») حيث يذكر التقريرُ جهتين مُنسَبتين.
+
+    القارئُ لا يعرف أيَّ جهةٍ تعني عند تعدّد السلطات، وهو فرقٌ عمليّ: كلُّ
+    جهةٍ تتحكّم بمنفذٍ وقيودٍ ورسومٍ مختلفة. التسمياتُ المفضَّلة تُهيَّأ في
+    `data/market_profiles.json` (`authorities`) وتُذكَر في البلاغ حين تحضر.
+    """
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    findings: list[dict] = []
+    en = str(lang).lower().startswith("en")
+    mentions = (_authority_mentions_en(body) if en
+                else _authority_mentions(body))
+    for row in mentions.values():
+        if len(row["heads"]) > 1:
+            findings.append({
+                "check": "authority_naming_drift", "repairable": True,
+                "note": (f"جهةٌ واحدة («{row['qual']}») مُسمَّاةٌ بأكثر من "
+                         f"رأسٍ في التقرير: "
+                         # القيمةُ المحفوظة جاهزةٌ للعرض بلغتها: العربيةُ
+                         # تحفظ الرأسَ وحده والإنجليزيةُ تحفظ الترتيبَ كاملاً.
+                         + "، ".join(
+                             f"«{h}»" if " " in h else f"«{h} {row['qual']}»"
+                             for h in sorted(row["heads"].values()))
+                         + " — تسميةٌ واحدةٌ محيَّدةٌ للتقرير كلّه")})
+            break
+    if len(mentions) >= 2:
+        bare = (_AUTHORITY_BARE_EN_RE if en
+                else _AUTHORITY_BARE_RE).search(body)
+        if bare:
+            names = "، ".join(f"«{r['qual']}»" for r in
+                              list(mentions.values())[:3])
+            preferred = _configured_authorities(view)
+            tail = (f" التسمياتُ المُهيَّأة لهذا السوق: {preferred}."
+                    if preferred else
+                    " ولا تسمياتَ مُهيَّأة لهذا السوق في "
+                    "data/market_profiles.json — تُهيَّأ موثَّقةً.")
+            findings.append({
+                "check": "authority_naming_drift", "repairable": True,
+                "note": (f"«{bare.group(1)}» بلا نسبةٍ تُعرِّفها بينما يذكر "
+                         f"التقريرُ جهتين أو أكثر ({names}) — القارئُ لا "
+                         "يعرف أيَّ جهةٍ تعني، وكلُّ جهةٍ منفذٌ وقيودٌ "
+                         "ورسومٌ مختلفة." + tail)})
+    return findings
+
+
+def _configured_authorities(view: dict) -> str:
+    """تسمياتُ السلطة المُهيَّأة لسوق التقرير — نصٌّ للعرض أو فراغ."""
+    try:
+        import silk_profiles
+        iso3 = str(((view or {}).get("market") or {}).get("iso3") or "").upper()
+        prof = silk_profiles.market_profile(iso3) if iso3 else None
+        rows = (prof or {}).get("authorities") or []
+        names = [str(silk_profiles.cited_value(r) or "").strip()
+                 for r in rows if r]
+        return "، ".join(f"«{n}»" for n in names if n)
+    except Exception:  # noqa: BLE001 — التهيئةُ تحسينُ بلاغٍ لا شرطُ فحص
+        return ""
+
+
+def _check_defined_term_without_definition(view: dict, dr: dict) -> list[dict]:
+    """`defined_term_without_definition` (الصنف ٤، تحذيريّ): مصطلحٌ مُعرَّفٌ
+    في المسرد يُستعمَل في المتن بلا أن يصل تعريفُه أيَّ سطحٍ يقرؤه القارئ.
+
+    التعريفاتُ الثابتة (المرآة/عتباتُ التركّز/سعرُ الحدود/نسبةُ التحقّق)
+    تُبنى حتمياً في `silk_render._apply_merchant_language` وتُعرَض في
+    «مسرد المصطلحات». هذا حارسُ انحدارٍ لذلك المسار: مصطلحٌ في المتن بلا
+    مدخلٍ في `view["deep_research"]["glossary"]` يعني أنّ بانيَ المسرد لم
+    يمرّ على هذا النصّ (سطحُ عرضٍ ثانٍ يتباعد — العطبُ الذي تسدّه الموجة).
+    """
+    from silk_style_contract import METHODOLOGY_DEFINITIONS_ORDER
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    plain = _norm_ar(body)
+    defined = {_norm_ar(str((g or {}).get("term") or ""))
+               for g in (dr.get("glossary") or [])}
+    seen_gloss: set = set()
+    missing: list = []
+    for term, definition in METHODOLOGY_DEFINITIONS_ORDER:
+        if definition in seen_gloss:
+            continue
+        if _norm_ar(term) not in plain:
+            continue
+        seen_gloss.add(definition)
+        if not any(_norm_ar(term) in d or d in _norm_ar(term)
+                   for d in defined if d):
+            missing.append(term)
+    if not missing:
+        return []
+    return [{"check": "defined_term_without_definition", "repairable": True,
+             "note": ("مصطلحٌ مُستعمَلٌ في المتن بلا تعريفه في المسرد: "
+                      + "، ".join(f"«{t}»" for t in missing[:4])
+                      + " — التعريفُ سطرٌ واحدٌ ثابتٌ يُعرَض حين يَرِد "
+                        "المصطلح (silk_style_contract."
+                        "METHODOLOGY_DEFINITIONS)")}]
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -4821,6 +5014,11 @@ def run_quality_gate(view: dict) -> dict:
     # الصنف ٣ (موجة عيوب التقرير): عرضُ الأرقام والوحدات والتواريخ — أربعُ
     # قواعدَ تحذيرية، حرّاسُ انحدارٍ للمُنسِّق الواحد وحرّاسٌ أصليّون لنثرِ
     # الكاتب الذي لا يمرّ عليه.
+    # الصنف ٤ (موجة عيوب التقرير): تسميةُ الجهة الواحدة، والمصطلحُ بلا
+    # تعريفه — تحذيريّتان. تسمياتُ النشاط الإنجليزية يغطّيها
+    # `language_consistency` الحاجز أصلاً، فلا قاعدةَ ثانيةً لها.
+    findings += _check_authority_naming_drift(view, dr, _lang)
+    findings += _check_defined_term_without_definition(view, dr)
     findings += _check_score_format_drift(text)
     findings += _check_amount_without_currency(text)
     findings += _check_stale_data_without_year(dr, text)

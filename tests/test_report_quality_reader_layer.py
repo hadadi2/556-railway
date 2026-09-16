@@ -617,3 +617,195 @@ def test_c3_rules_are_wired_and_warning_only():
                   "stale_data_without_year",
                   "observation_date_equals_run_date"):
         assert check not in G.FAIL_TRIGGER_CHECKS, check
+
+
+# ════════════ الصنف ٤ — انزياحُ التسمية والمصطلح ════════════
+
+def test_c4_one_authority_two_names_is_caught():
+    """**العيبُ المرصود حرفياً**: «الحكومة الحوثية» و«السلطات الحوثية»."""
+    from silk_quality_gate import _check_authority_naming_drift as chk
+    dr = {"report": {"text": "## 7. التنظيم والوصول للسوق\n"
+                             "فرضت الحكومة الحوثية قيوداً على الاستيراد. "
+                             "وتشترط السلطات الحوثية تصريحاً مسبقاً."}}
+    out = chk({}, dr)
+    assert out and out[0]["check"] == "authority_naming_drift"
+    # البلاغُ يحمل الهجاءَ الأصليّ لا المُطبَّع («الحكمه» خطأٌ في ذاته).
+    assert "الحكومة الحوثية" in out[0]["note"]
+    assert "السلطات الحوثية" in out[0]["note"]
+
+
+def test_c4_bare_government_is_caught_only_when_two_authorities_exist():
+    """«الحكومة» عارية مبهمةٌ **حين تتعدّد الجهات** لا دائماً — الفرقُ عمليّ:
+    كلُّ جهةٍ منفذٌ وقيودٌ ورسومٌ مختلفة."""
+    from silk_quality_gate import _check_authority_naming_drift as chk
+    two = {"report": {"text": "## 7. التنظيم\nتفرض حكومة صنعاء رسماً، "
+                              "وتشترط سلطات عدن تصريحاً. وتفرض الحكومة "
+                              "قيداً ثالثاً."}}
+    out = chk({}, two)
+    assert out and "بلا نسبةٍ" in out[0]["note"]
+    # جهةٌ واحدةٌ مسمّاة ⇒ لا إبهام.
+    one = {"report": {"text": "## 7. التنظيم\nتفرض حكومة صنعاء رسماً."}}
+    assert chk({}, one) == []
+
+
+def test_c4_accusative_objects_are_not_mistaken_for_authorities():
+    """تضييقٌ جاء من القياس: «تفرض الحكومة قيداً» — «قيداً» مفعولُ الفعل لا
+    نسبةُ جهة، والتنوينُ إشارةٌ صرفيةٌ عربيةٌ حقيقية. وبلا هذا التضييق
+    كانت القاعدةُ تعدّ ثلاثَ «جهات» في جملةٍ فيها جهتان."""
+    from silk_quality_gate import _check_authority_naming_drift as chk
+    objects = {"report": {"text": "## 7. التنظيم\nتفرض الحكومة قيداً "
+                                  "وتشترط السلطة تصريحاً ورسماً."}}
+    assert chk({}, objects) == []
+    generic = {"report": {"text": "## 7. التنظيم\nتشترط الجهة المعنية "
+                                  "تصريحاً، وتفرض السلطات المحلية رسماً."}}
+    assert chk({}, generic) == []
+
+
+def test_c4_authority_config_is_validated_when_present():
+    """تهيئةٌ مُدقَّقة لا تفريعٌ في الشيفرة: سوقٌ مُعلَنةٌ متعدّدةَ السلطات
+    لا تُقبَل بأقلّ من تسميتين موثَّقتين — وإلّا صار الإعلانُ ادّعاءً."""
+    import copy
+
+    import silk_profiles as P
+    assert P.validate_all() == [], "الأسواقُ المُهيَّأة صارت غيرَ صالحة"
+    base = P.market_profile("QAT")
+    assert base, "مدخلُ QAT مفقود"
+    cited = {"source_url": "https://example.org", "review_date": "2026-09-16"}
+    bad = copy.deepcopy(base)
+    bad["multi_authority"] = dict(cited, value=True)
+    bad["authorities"] = [dict(cited, value="جهة أ")]
+    errs = P.validate_market("QAT", bad)
+    assert any("multi_authority=true" in x for x in errs), errs
+    # تسميةٌ بلا استشهاد مرفوضةٌ كأيّ حقيقةٍ أخرى.
+    uncited = copy.deepcopy(base)
+    uncited["authorities"] = [{"value": "جهة أ"}]
+    assert any("authorities[0].source_url" in x
+               for x in P.validate_market("QAT", uncited))
+    # وحضورُ التسميتين موثَّقتين يمرّ.
+    good = copy.deepcopy(base)
+    good["multi_authority"] = dict(cited, value=True)
+    good["authorities"] = [dict(cited, value="جهة أ"), dict(cited, value="جهة ب")]
+    assert P.validate_market("QAT", good) == []
+
+
+def test_c4_english_activity_labels_are_translated_at_the_display_boundary():
+    """«Import export company» و«Food broker» في جدولٍ عربيّ — العيبُ المرصود.
+
+    الترجمةُ عند حدِّ العرض لا في طبقة الجلب (البيانات الخام كما هي)، ومن
+    جدولٍ واحد. وغيرُ المُدرَجة **تمرّ بحالها** فيلتقطها حاجزُ اتساق اللغة
+    بدل أن تُستَر بترجمةٍ مختلَقة — نفسُ منطقِ العملة في الصنف ٣.
+    """
+    from silk_reports import _clean_leads
+    from silk_style_contract import activity_label_ar
+    assert activity_label_ar("Import export company") == "شركة استيراد وتصدير"
+    assert activity_label_ar("Food broker") == "وسيط أغذية"
+    assert activity_label_ar("IMPORT_EXPORT_COMPANY") == "شركة استيراد وتصدير"
+    assert activity_label_ar("Nut Roastery") == "Nut Roastery", "لا ترجمةَ مخمَّنة"
+    rows = [{"name": "شركة الخليج للتجارة", "category": "Import export company",
+             "address": "الكويت", "phone": "+96512345678"},
+            {"name": "مؤسسة النور", "category": "Food broker",
+             "address": "الكويت", "phone": "+96512345679"}]
+    out = _clean_leads(rows, {"market": {"iso3": "KWT", "name_en": "Kuwait",
+                                         "name_ar": "الكويت"}})
+    assert [r["category"] for r in out] == ["شركة استيراد وتصدير",
+                                            "وسيط أغذية"]
+
+
+def test_c4_english_activity_label_is_already_blocked_by_the_language_gate():
+    """عيبٌ واحدٌ بحارسٍ واحد: القاعدةُ الحاجزة القائمة تكفي، فلا ثانيةَ له.
+
+    يُقاس لا يُفترَض — وإلّا صار «مغطّى» ادّعاءً كادّعاءات السجلّ التي
+    صحّحها الدرس 186."""
+    from silk_quality_gate import _check_language_consistency
+    table = ("## 12. قائمة مستوردين وموزعين\n"
+             "| الاسم | النشاط |\n|---|---|\n"
+             "| شركة الخليج | Import export company |\n")
+    out = _check_language_consistency(table, "ar", {})
+    assert out and out[0]["check"] == "language_consistency"
+    import silk_quality_gate as G
+    assert "language_consistency" in G.FAIL_TRIGGER_CHECKS, "الحارسُ حاجز"
+
+
+def test_c4_definitions_render_only_when_the_term_appears():
+    """تعريفٌ ثابتٌ من سطرٍ واحد **يُعرَض حين يَرِد المصطلح** — لا مسرداً
+    كاملاً في كلّ تقرير، ولا شرحاً مقحوماً وسطَ الجملة."""
+    import silk_render
+    text = ("واردات المرآة تفوق البيانات المباشرة، وسعر الحدود 2.1 دولار، "
+            "ونسبة التحقّق 64%.")
+    _, gloss = silk_render._apply_merchant_language(text)
+    terms = {g["term"] for g in gloss}
+    assert {"المرآة", "البيانات المباشرة", "سعر الحدود"} <= terms, terms
+    assert any("التحق" in t for t in terms)
+    # هجاءان لمصطلحٍ واحد لا يُنتجان تعريفين في مسردٍ واحد.
+    glosses = [g["gloss"] for g in gloss]
+    assert len(glosses) == len(set(glosses)), glosses
+    # ونصٌّ بلا أيّ مصطلحٍ لا يحمل مسرداً.
+    _, empty = silk_render._apply_merchant_language(
+        "التوصية: ادخل بشحنة تجريبية بحجم 2 طن.")
+    assert empty == []
+
+
+def test_c4_gate_catches_a_term_used_without_its_definition():
+    from silk_quality_gate import \
+        _check_defined_term_without_definition as chk
+    undef = {"report": {"text": "## 3. السوق\nبيانات المرآة أعلى من "
+                                "البيانات المباشرة."}, "glossary": []}
+    out = chk({}, undef)
+    assert out and out[0]["check"] == "defined_term_without_definition"
+    defined = dict(undef, glossary=[{"term": "بيانات المرآة", "gloss": "…"},
+                                    {"term": "البيانات المباشرة",
+                                     "gloss": "…"}])
+    assert chk({}, defined) == []
+
+
+def test_c4_zero_false_positives_across_every_canonical_blob():
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    new = ("authority_naming_drift", "defined_term_without_definition")
+    with block_network():
+        for key in _canonical_keys():
+            mod, fn = B.CANONICAL_BLOBS[key]
+            blob = getattr(importlib.import_module(mod), fn)()
+            out = G.run_quality_gate(silk_render.build_view(blob))
+            hits = [f["note"] for f in out["findings"]
+                    if f["check"] in new]
+            assert hits == [], (key, hits)
+
+
+def test_c4_rules_are_wired_and_warning_only():
+    import inspect
+
+    import silk_quality_gate as G
+    src = inspect.getsource(G.run_quality_gate)
+    assert "_check_authority_naming_drift" in src
+    assert "_check_defined_term_without_definition" in src
+    for check in ("authority_naming_drift",
+                  "defined_term_without_definition"):
+        assert check not in G.FAIL_TRIGGER_CHECKS, check
+
+
+def test_c4_authority_rule_has_an_english_mirror():
+    """قفلُ التكافؤ (`test_no_undeclared_arabic_only_check_survives`) التقطَ
+    أنّ الصيغةَ الأولى عربيةُ المِجَسّ وحدها — فتخمُد صامتةً على تقريرٍ
+    إنجليزيّ والمشغّلُ يقرأ PASS ويظنّه قياساً.
+
+    والعيبُ قائمٌ بالإنجليزية أيضاً («the Houthi government» / «the Houthi
+    authorities»)، فالمرآةُ أصدقُ من إعلانِ خمود. والبلاغُ بترتيبٍ طبيعيّ
+    إنجليزياً لا مقلوباً."""
+    from silk_quality_gate import _check_authority_naming_drift as chk
+    drift = {"report": {"text": "## 7. Regulation\nThe Houthi government "
+                                "imposed import limits. The Houthi "
+                                "authorities require a prior permit."}}
+    out = chk({}, drift, "en")
+    assert out and out[0]["check"] == "authority_naming_drift"
+    assert "Houthi government" in out[0]["note"]
+    assert "Houthi authorities" in out[0]["note"]
+    bare = {"report": {"text": "## 7. Regulation\nThe Sanaa authorities "
+                               "charge a fee and the Aden government "
+                               "requires a permit. The government also "
+                               "adds a levy."}}
+    assert chk({}, bare, "en")
+    single = {"report": {"text": "## 7. Regulation\nThe Sanaa authorities "
+                                 "charge a fee on shipments."}}
+    assert chk({}, single, "en") == []

@@ -207,6 +207,14 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٣٧ — المرساةُ السلوكية: المنصوبُ المنوَّن ليس جهةً، والتهيئةُ مُدقَّقة،
+    # والحاجزُ القائم يكفي للتسمية الإنجليزية (مقيسٌ لا مُفترَض).
+    (237, "tests/test_report_quality_reader_layer.py",
+     ["def test_c4_accusative_objects_are_not_mistaken_for_authorities",
+      "def test_c4_authority_config_is_validated_when_present",
+      "def test_c4_english_activity_label_is_already_blocked_by_the_language_gate",
+      "def test_c4_definitions_render_only_when_the_term_appears",
+      "def test_c4_authority_rule_has_an_english_mirror"]),
     # ٢٣٦ — المرساةُ السلوكية: العائلاتُ الخمس تتّفق، والدرجةُ صيغةٌ واحدة،
     # والعملةُ لا تُخمَّن، وإطلاقةُ خطّ الأساس الوحيدة مُعدَّدةٌ كي لا تنمو.
     (236, "tests/test_report_quality_reader_layer.py",
@@ -516,6 +524,22 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٣٧ — انزياحُ التسمية: جدولُ الترجمة، التعريفاتُ المشروطة، تهيئةُ
+    # السلطات ومُدقِّقُها، وكشفُ الانزياح بالإشارة الصرفية.
+    (237, "silk_style_contract.py",
+     ["ACTIVITY_LABEL_AR", "def activity_label_ar",
+      "METHODOLOGY_DEFINITIONS", "METHODOLOGY_DEFINITIONS_ORDER",
+      "AUTHORITY_HEADS"]),
+    (237, "silk_quality_gate.py",
+     ["def _check_authority_naming_drift", "_ACCUSATIVE_TANWEEN_RE",
+      "def _check_defined_term_without_definition",
+      "def _configured_authorities",
+      # المرآةُ الإنجليزية — قفلُ التكافؤ التقطَ غيابَها.
+      "_AUTHORITY_QUALIFIED_EN_RE", "def _authority_mentions_en"]),
+    (237, "silk_profiles.py", ["multi_authority", "authorities"]),
+    (237, "silk_render.py",
+     ["METHODOLOGY_DEFINITIONS_ORDER", "def _norm_for_terms"]),
+    (237, "silk_reports.py", ["activity_label_ar"]),
     # ٢٣٦ — مُنسِّقُ العرض الواحد: الدوالُّ القانونية، وإعادةُ توجيه العائلات
     # المتوازية إليه بأسمائها القائمة، وأربعُ قواعدَ تحرس انحدارَه.
     (236, "silk_narrative.py",

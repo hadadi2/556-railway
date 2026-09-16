@@ -2122,6 +2122,17 @@ def _already_explained_nearby(s: str, end: int, gloss: str) -> bool:
     return len(following_words & gloss_words) >= 2
 
 
+_TERM_DIACRITICS_RE = re.compile("[\u064b-\u0652\u0670\u0640]")
+_TERM_ALEF_RE = re.compile("[أإآ]")
+
+
+def _norm_for_terms(s: object) -> str:
+    """تطبيعٌ خفيفٌ لمطابقة مصطلحٍ عربيّ داخل نثرٍ مُشكَّل — حركاتٌ وتطويلٌ
+    وهمزاتٌ تُوحَّد (نظيرُ `silk_quality_gate._norm_ar` عند حدّ العرض)."""
+    out = _TERM_DIACRITICS_RE.sub("", str(s or ""))
+    return _TERM_ALEF_RE.sub("ا", out).replace("ى", "ي").replace("ة", "ه")
+
+
 def _apply_merchant_language(text: "str | None") -> "tuple[str, list]":
     """B1 (SPEC-v2): نفّذ عقد لغة التاجر حتمياً على سرد التقرير في النموذج
     الواحد. يعيد (النص المشروح، قائمة المسرد) فيرثهما كل مخرَج (md/docx)
@@ -2159,11 +2170,36 @@ def _apply_merchant_language(text: "str | None") -> "tuple[str, list]":
         s = s[:m.end()] + f" ({gloss})" + s[m.end():]
     s = re.sub(r"[ \t]{2,}", " ", s)
 
+    # الصنف ٤ (موجة عيوب التقرير): مصطلحاتٌ **عربية** تُستعمَل بلا تعريف
+    # (المرآة، عتباتُ التركّز، سعرُ الحدود، نسبةُ التحقّق). `GLOSSARY_ORDER`
+    # مبنيٌّ على اختصاراتٍ لاتينية فلا يبلغها. التعريفُ يُضاف **إلى المسرد
+    # نفسه** حين يَرِد المصطلح — لا مسارَ عرضٍ ثانٍ، ولا شرحٌ مقحومٌ وسطَ
+    # الجملة (يحظره `PLAIN_LANGUAGE_RULE`، وهو بعينه عيبُ «مؤشر التركّز HHI
+    # (مؤشر يقيس تركّز السوق…)» الذي رصده الصنف ٢).
+    from silk_style_contract import METHODOLOGY_DEFINITIONS_ORDER
+    _plain = _norm_for_terms(s)
+    for term, definition in METHODOLOGY_DEFINITIONS_ORDER:
+        if _norm_for_terms(term) in _plain:
+            used.append((term, definition))
+
     seen: dict = {}
+    # **إزالةُ تكرارِ التعريف لا المصطلح**: «نسبة التحقّق» و«نسبة التحقق»
+    # هجاءان لمصطلحٍ واحد (مفاتيحُ مطابقةٍ لا مصطلحاتٌ مستقلّة)، وإدراجُهما
+    # يُظهِر التعريفَ نفسَه مرّتين في مسردٍ واحد — وهو بعينه عيبُ التكرار
+    # الذي تسدّه هذه الموجة.
+    by_gloss: dict = {}
     for term, gloss in used:
+        if gloss in by_gloss:
+            continue
+        by_gloss[gloss] = term
         seen.setdefault(term, gloss)
+
+    def _pos(term: str) -> int:
+        i = _plain.find(_norm_for_terms(term))
+        return i if i >= 0 else len(_plain)
+
     glossary = [{"term": t, "gloss": g}
-                for t, g in sorted(seen.items(), key=lambda kv: s.find(kv[0]))]
+                for t, g in sorted(seen.items(), key=lambda kv: _pos(kv[0]))]
     return s, glossary
 
 

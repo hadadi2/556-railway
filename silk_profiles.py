@@ -179,6 +179,24 @@ def validate_market(iso3: str, prof: dict) -> list:
     # (قد تكون فارغة). HIGH-5: كلُّ فئةٍ ∈ PRODUCTION_CATEGORIES (لا انحرافَ مفرد).
     _enum(prof.get("domestic_production"), PRODUCTION_CATEGORIES,
           f"{iso3}.domestic_production", e, is_list=True)
+
+    # ── الصنف ٤/١٠ (موجة عيوب التقرير): سلطاتُ السوق ─────────────────────
+    # **اختياريّ** كي لا يُبطِل الأسواقَ المُهيَّأة أصلاً، ومُدقَّقٌ متى حضر:
+    # سوقٌ مُعلَنةٌ متعدّدةَ السلطات لا تُقبَل بأقلّ من تسميتين موثَّقتين —
+    # وإلّا صار الإعلانُ ادّعاءً بلا محتوى. التسمياتُ محيَّدةٌ وموثَّقةٌ
+    # كأيّ حقيقةٍ أخرى؛ ولا اسمَ دولةٍ ولا جهةٍ في ملفِّ منطق (مبدأُ هذه
+    # الوحدة: إضافةُ سوقٍ = مدخلٌ + استشهادات).
+    auth = prof.get("authorities")
+    multi = prof.get("multi_authority")
+    if multi is not None:
+        _check_cited(multi, f"{iso3}.multi_authority", e)
+    if auth is not None:
+        _check_cited_list(auth, f"{iso3}.authorities", e, min_len=1)
+    if isinstance(multi, dict) and multi.get("value") is True:
+        n = len(auth) if isinstance(auth, list) else 0
+        if n < 2:
+            e.append(f"{iso3}.multi_authority=true يلزمه "
+                     f"authorities بتسميتين موثَّقتين على الأقل (وُجد {n})")
     return e
 
 

@@ -5487,6 +5487,12 @@ def _clean_leads(leads: list, dr: dict) -> list:
     iso3 = (market.get("iso3") or "").upper()
     tnames = {(market.get("name_en") or "").strip().lower(),
               (market.get("name_ar") or "").strip().lower()}
+    # الصنف ٤ (موجة عيوب التقرير): تسميةُ النشاط تأتي من تصنيفِ المصدر
+    # الخارجي بالإنجليزية («Import export company») فتصل جدولاً عربياً.
+    # الترجمةُ عند حدِّ العرض — لا في طبقة الجلب (البيانات الخام كما هي)،
+    # ومن جدولٍ واحد يقرؤه الفحصُ أيضاً. غيرُ المُدرَجة تمرّ بحالها فيلتقطها
+    # حاجزُ اتساق اللغة القائم بدل أن تُستَر بترجمةٍ مختلَقة.
+    from silk_style_contract import activity_label_ar
     out = []
     for lead in leads or []:
         lead = clean_contact(lead, iso3)
@@ -5499,6 +5505,9 @@ def _clean_leads(leads: list, dr: dict) -> list:
             continue
         if _address_wrong_geo(lead.get("address"), iso3, tnames):  # البند ٤
             continue
+        if lead.get("category"):
+            lead = dict(lead)
+            lead["category"] = activity_label_ar(lead["category"])
         out.append(lead)
     return out
 
