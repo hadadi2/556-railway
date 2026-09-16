@@ -4571,6 +4571,15 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    236: lambda: (
+        _needles("silk_narrative.py", "def fmt_number", "def fmt_score",
+                 "def fmt_amount", "def fmt_observed_at",
+                 "def past_tense_projection", "CURRENCY_AR")(),
+        _needles("silk_quality_gate.py", "def _check_score_format_drift",
+                 "def _check_amount_without_currency",
+                 "def _check_stale_data_without_year")(),
+        _absent("silk_narrative.py", 'f"{n / 1e6:.1f} مليون دولار"')(),
+        _needles("tests/test_lessons_enforcement.py", '(236, ')()),
     235: lambda: (
         _needles("silk_i18n.py", "def repair_interpolation",
                  "def tidy_punctuation", "_EMPTY_SUFFIX", "def _is_blank")(),

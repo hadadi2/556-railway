@@ -514,32 +514,162 @@ def internal_ar(token: object) -> str:
             or _AGENT_KEY_AR.get(s) or s)
 
 
-def fmt_money(v: object) -> str:
-    """مبلغ بالدولار مقروء — 48.5 مليون دولار / 789 ألف دولار؛ الغائب «—»."""
-    if v is None:
-        return GAP
-    try:
-        n = float(v)
-    except (TypeError, ValueError):
-        return str(v)
-    if abs(n) >= 1e9:
-        return f"{n / 1e9:.1f} مليار دولار"
-    if abs(n) >= 1e6:
-        return f"{n / 1e6:.1f} مليون دولار"
-    if abs(n) >= 1e3:
-        return f"{n / 1e3:.0f} ألف دولار"
-    return f"{n:,.0f} دولار"
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٣ (موجة عيوب التقرير) — مُنسِّقُ العرض الواحد · the one display formatter
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «36,234,200.146 مقابل 26730»، والدرجةُ تظهر 65 و0.65 و65%،
+# وأرقامٌ بلا وحدةٍ ولا سنة، وبياناتُ 2018 بلا سنةٍ مطبوعة، وتوقّعُ 2024
+# بصيغةِ المستقبل في 2026، وتاريخُ التشغيل مطبوعاً مكانَ تاريخ الرصد.
+#
+# الجذرُ المُقاس: **لا مُنسِّقَ واحد**. خمسُ عائلاتٍ متوازية تُنسِّق الأرقام —
+# `silk_narrative.fmt_money`/`fmt_pct` هنا، و`silk_reports._fmt`
+# (`{:,.0f}`) و`_readable_number` (منزلةٌ واحدة)، و`silk_decision._pct`،
+# وعشرُ صيغِ `{:,.0f}` مضمَّنةٍ داخل بوابة الجودة نفسها. عائلةٌ لكلّ مُصدِّر
+# ⇒ رقمٌ واحد بأشكالٍ عدّة في مستندٍ واحد.
+#
+# القاعدةُ هنا **مصدرٌ واحد**، وكلُّ مُستهلِكٍ يشير إليها بأسمائه القائمة
+# كما هي (صفرُ تغييرٍ في أيّ سطح API).
+
+SCORE_MAX = 100          # صيغةُ الدرجة الوحيدة: «N من SCORE_MAX»
+PCT_MAX_DP = 2           # النسبةُ بمنزلتين عشريتين كحدٍّ أقصى
+AMOUNT_MAX_DP = 2        # المقاديرُ الكبيرة بمنزلتين
+OBSERVED_UNKNOWN_AR = "تاريخ الرصد غير معروف"
+OBSERVED_UNKNOWN_EN = "observation date unknown"
 
 
-def fmt_pct(v: object, signed: bool = False) -> str:
-    if v is None:
-        return GAP
+def _as_float(v: object) -> "float | None":
+    """رقمٌ أو `None` — لا استثناءَ يُسقِط عرضاً."""
+    if v is None or isinstance(v, bool):
+        return None
     try:
-        n = float(v)
+        return float(v)
     except (TypeError, ValueError):
-        return str(v)
+        return None
+
+
+def _trim_zeros(s: str) -> str:
+    """أزِل الأصفارَ الزائدة بعد الفاصلة: «4.40» → «4.4»، «4.00» → «4»."""
+    return s.rstrip("0").rstrip(".") if "." in s else s
+
+
+def fmt_number(v: object, dp: int = AMOUNT_MAX_DP) -> str:
+    """رقمٌ للعرض: فاصلُ آلافٍ دائماً، وحدٌّ أقصى للمنازل العشرية.
+
+    «36234200.146» → «36,234,200.15»، و«26730» → «26,730». فاصلُ الآلاف ليس
+    تجميلاً: بلاغُ المالك قارَن الرقمين فعلاً، وأحدُهما بلا فاصلٍ يُقرأ خطأً.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    return _trim_zeros(f"{n:,.{max(0, int(dp))}f}")
+
+
+def fmt_pct(v: object, signed: bool = False, dp: int = PCT_MAX_DP) -> str:
+    """نسبةٌ مئوية بمنزلتين كحدٍّ أقصى — «84.05%» تصير «84.05%» و«84.0%» «84%».
+
+    كانت `{n:g}` فتُخرِج «12.416666666666666%» من قسمةٍ غير منتهية.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
     sign = "+" if (signed and n > 0) else ""
-    return f"{sign}{n:g}%"
+    return f"{sign}{_trim_zeros(f'{n:,.{max(0, int(dp))}f}')}%"
+
+
+def fmt_score(v: object) -> str:
+    """**الصيغةُ الوحيدة** للدرجة: «65 من 100».
+
+    يقبل الكسرَ 0–1 والعددَ 0–100 معاً ويوحّدهما — العلّةُ المرصودة أنّ نفسَ
+    الدرجة ظهرت «65» و«0.65» و«65%» في تقريرٍ واحد. الكسرُ ≤1 يُضرَب في 100؛
+    وهو تمييزٌ آمنٌ لأنّ درجةً معروضةً بـ«1 من 100» لا معنى لها عملياً،
+    والحدُّ موثَّقٌ هنا لا مخفيّ.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    if 0.0 <= n <= 1.0:
+        n *= SCORE_MAX
+    return f"{round(n)} من {SCORE_MAX}"
+
+
+def fmt_amount(v: object, currency: object = None,
+               dp: int = AMOUNT_MAX_DP) -> str:
+    """مبلغٌ **بعملته** — «48.53 مليون دولار»، و«789 ألف يورو»، و«1,234 SAR».
+
+    العملةُ وسيطٌ صريح: مبلغٌ بلا عملةٍ عيبٌ في ذاته (الصنف ٩)، فلا تُخمَّن
+    هنا ولا تُفترَض بالدولار. غيابُها يُخرِج الرقمَ وحده كي **تُلتقَطه**
+    قاعدةُ البوابة بدل أن يُستَر بعملةٍ مختلَقة.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    cur = str(currency or "").strip()
+    label = CURRENCY_AR.get(cur.upper(), cur)
+    a = abs(n)
+    if a >= 1e9:
+        body = f"{_trim_zeros(f'{n / 1e9:,.{dp}f}')} مليار"
+    elif a >= 1e6:
+        body = f"{_trim_zeros(f'{n / 1e6:,.{dp}f}')} مليون"
+    else:
+        # لا فرعَ «ألف»: «1,234 ريال» أصدقُ من «1 ألف ريال» — فاصلُ الآلاف
+        # يحفظ الرقم كما هو، والاختزالُ يفقد دقّةً بلا مكسبِ قراءة.
+        body = fmt_number(n, dp)
+    return f"{body} {label}".strip() if label else body
+
+
+# العملاتُ التي يَرِد نصُّها عربياً — ما ليس هنا يُطبَع برمزه ISO كما هو
+# (لا تخمينَ اسمٍ عربيٍّ لعملةٍ غير مُسجَّلة).
+CURRENCY_AR = {
+    "USD": "دولار", "EUR": "يورو", "SAR": "ريال", "GBP": "جنيه إسترليني",
+    "AED": "درهم", "QAR": "ريال قطري", "KWD": "دينار كويتي",
+    "JOD": "دينار أردني", "DZD": "دينار جزائري", "YER": "ريال يمني",
+    "JPY": "ين", "NGN": "نايرا", "INR": "روبية", "EGP": "جنيه مصري",
+}
+
+
+def fmt_year(v: object) -> str:
+    """سنةٌ للعرض — بلا فاصلِ آلاف («2024» لا «2,024»)."""
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    return str(int(round(n)))
+
+
+def fmt_observed_at(v: object, lang: str = "ar") -> str:
+    """تاريخُ الرصد — يُطبَع **إن وُجد في البيانات فقط**.
+
+    عند غيابه يُقال ذلك صريحاً، ولا يُستعار تاريخُ التشغيل: بلاغُ المالك أن
+    تاريخَ التشغيل طُبِع مكانَ تاريخِ الرصد، فقرأ القارئُ بياناتَ 2018
+    كأنها رُصدت اليوم. ساعةُ خطِّ التجميع ليست معطىً.
+    """
+    s = str(v or "").strip()
+    if not s:
+        return (OBSERVED_UNKNOWN_EN if str(lang).lower().startswith("en")
+                else OBSERVED_UNKNOWN_AR)
+    return s
+
+
+def past_tense_projection(year: object, today_year: "int | None" = None) -> bool:
+    """هل مضت سنةُ التوقّع؟ — «يُتوقَّع أن يبلغ في 2024» مكتوبةً في 2026 خطأٌ
+    زمنيّ يصل القارئ. القرارُ هنا، والصياغةُ عند المُصدِّر."""
+    n = _as_float(year)
+    if n is None:
+        return False
+    if today_year is None:
+        import datetime
+        today_year = datetime.date.today().year
+    return int(n) < int(today_year)
+
+
+def fmt_money(v: object) -> str:
+    """مبلغٌ بالدولار مقروء — الاسمُ القائم، والمنطقُ من المُنسِّق الواحد.
+
+    الصنف ٣: كانت هذه نسخةً ثانيةً من قواعد المقادير (منزلةٌ واحدة للمليون،
+    واختزالُ «ألف» بلا عشور) تتباعد عن `silk_reports._readable_number`
+    و`_fmt`. صارت غلافاً لـ`fmt_amount(v, "USD")` — مصدرٌ واحد، وسطحُ النداء
+    كما هو حرفياً لكلّ مُستهلِك.
+    """
+    return fmt_amount(v, "USD")
 
 
 def confidence_phrase(c: object, lang: str = "ar") -> str:

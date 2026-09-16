@@ -207,6 +207,13 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٣٦ — المرساةُ السلوكية: العائلاتُ الخمس تتّفق، والدرجةُ صيغةٌ واحدة،
+    # والعملةُ لا تُخمَّن، وإطلاقةُ خطّ الأساس الوحيدة مُعدَّدةٌ كي لا تنمو.
+    (236, "tests/test_report_quality_reader_layer.py",
+     ["def test_c3_all_competing_formatters_now_share_one_source",
+      "def test_c3_score_has_exactly_one_form",
+      "def test_c3_amount_carries_its_currency_and_never_invents_one",
+      "def test_c3_new_rules_fire_once_on_the_canonical_set"]),
     # ٢٣٥ — المرساةُ السلوكية: كلُّ قالبٍ يصمد بخاناتٍ فارغة، والاستثناءاتُ
     # المُعايَرة لا تُطلِق، وقناتا الإصلاح مِعيارُهما مختلف.
     (235, "tests/test_report_quality_reader_layer.py",
@@ -509,6 +516,17 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    # ٢٣٦ — مُنسِّقُ العرض الواحد: الدوالُّ القانونية، وإعادةُ توجيه العائلات
+    # المتوازية إليه بأسمائها القائمة، وأربعُ قواعدَ تحرس انحدارَه.
+    (236, "silk_narrative.py",
+     ["def fmt_number", "def fmt_pct", "def fmt_score", "def fmt_amount",
+      "def fmt_year", "def fmt_observed_at", "def past_tense_projection",
+      "SCORE_MAX", "CURRENCY_AR"]),
+    (236, "silk_quality_gate.py",
+     ["def _check_score_format_drift", "def _check_amount_without_currency",
+      "def _check_stale_data_without_year",
+      "def _check_observation_date_equals_run_date"]),
+    (236, "silk_reports.py", ["from silk_narrative import fmt_number"]),
     # ٢٣٥ — خانةٌ فارغة تكسر جملة: صيغُ الفراغ + قناتا الإصلاح بمِعيارَيهما
     # + قاعدةُ سلامة الإحالة في الموجّه + الفحصُ الحتميّ.
     (235, "silk_i18n.py",

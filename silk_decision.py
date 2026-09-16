@@ -145,7 +145,12 @@ def _pct(x: object) -> str:
     غلاف تقرير العميل بعد أن صار حكمُ المحرّك هو المُقدَّم (Z-01) — فسدُّ
     التسريب لازمٌ عند المنشأ لا في العارض.
     """
-    return f"{round(float(x) * 100)}%" if isinstance(x, (int, float)) else "—"
+    # الصنف ٣: النسبةُ من المُنسِّق الواحد — صفرُ تغييرٍ في المخرَج (كسرٌ
+    # 0–1 × 100 مقرَّباً لعددٍ صحيح) بمصدرٍ واحد للقاعدة.
+    if not isinstance(x, (int, float)) or isinstance(x, bool):
+        return "—"
+    from silk_narrative import fmt_pct
+    return fmt_pct(round(float(x) * 100), dp=0)
 
 
 def _clip(x: float) -> float:

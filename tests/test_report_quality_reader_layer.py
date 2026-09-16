@@ -453,3 +453,167 @@ def test_c2_render_layer_repairs_prose_punctuation_deterministically():
     out = silk_render._strip_internal_plumbing(
         "بقيمة 7.12 مليون دولار سنوياً ، بمعدّل نموّ موجب . ومصادر رسمية ()")
     assert "سنوياً ،" not in out and "موجب ." not in out and "()" not in out
+
+
+# ════════════ الصنف ٣ — عرضُ الأرقام والوحدات والتواريخ ════════════
+
+def test_c3_one_formatter_thousands_separator_and_two_decimals():
+    """**العيبُ المرصود حرفياً**: «36,234,200.146 مقابل 26730».
+
+    أحدُهما بفاصلِ آلافٍ بلا عشور والآخرُ بلا فاصلٍ أصلاً — المقارنةُ بينهما
+    تُقرأ خطأً. المُنسِّقُ الواحد يعطي الاثنين شكلاً واحداً.
+    """
+    import silk_narrative as N
+    assert N.fmt_number(36234200.146) == "36,234,200.15"
+    assert N.fmt_number(26730) == "26,730"
+    assert N.fmt_number(None) == N.GAP
+    assert N.fmt_number("نص") == "نص"
+
+
+def test_c3_percentages_are_capped_at_two_decimals():
+    """«12.416666666666666%» كانت تخرج من `{n:g}` — الحدُّ منزلتان."""
+    import silk_narrative as N
+    assert N.fmt_pct(12.416666666666666) == "12.42%"
+    assert N.fmt_pct(84.05) == "84.05%"
+    assert N.fmt_pct(84.0) == "84%"
+    assert N.fmt_pct(-3.5, signed=True) == "-3.5%"
+    assert N.fmt_pct(3.5, signed=True) == "+3.5%"
+    assert N.fmt_pct(None) == N.GAP
+
+
+def test_c3_score_has_exactly_one_form():
+    """الدرجةُ ظهرت 65 و0.65 و65% في تقريرٍ واحد — صيغةٌ واحدة الآن."""
+    import silk_narrative as N
+    assert N.fmt_score(0.65) == "65 من 100"
+    assert N.fmt_score(65) == "65 من 100"
+    assert N.fmt_score(0.65) == N.fmt_score(65), "الكسرُ والعددُ صيغةٌ واحدة"
+    assert N.fmt_score(None) == N.GAP
+
+
+def test_c3_amount_carries_its_currency_and_never_invents_one():
+    """العملةُ وسيطٌ صريح: غيابُها يُخرِج الرقمَ عارياً **كي يُلتقَط**، لا
+    يُستَر بعملةٍ مختلَقة (عقدُ عدم الاختلاق نفسُه)."""
+    import silk_narrative as N
+    assert N.fmt_amount(48530000, "USD") == "48.53 مليون دولار"
+    assert N.fmt_amount(7120000, "EUR") == "7.12 مليون يورو"
+    assert N.fmt_amount(1234, "SAR") == "1,234 ريال"
+    assert N.fmt_amount(1234) == "1,234", "لا عملةَ مفترضة"
+    # رمزٌ ISO غيرُ مُسجَّلٍ عربياً يمرّ كما هو — لا تخمينَ اسم.
+    assert N.fmt_amount(1000, "CHF") == "1,000 CHF"
+
+
+def test_c3_observation_date_is_never_borrowed_from_the_clock():
+    import silk_narrative as N
+    assert N.fmt_observed_at("") == "تاريخ الرصد غير معروف"
+    assert N.fmt_observed_at(None, "en") == "observation date unknown"
+    assert N.fmt_observed_at("2024-03-01") == "2024-03-01"
+
+
+def test_c3_elapsed_projection_year_is_detectable():
+    """«يُتوقَّع أن يبلغ في 2024» مكتوبةً في 2026 خطأٌ زمنيّ يصل القارئ."""
+    import silk_narrative as N
+    assert N.past_tense_projection(2024, today_year=2026) is True
+    assert N.past_tense_projection(2026, today_year=2026) is False
+    assert N.past_tense_projection(2030, today_year=2026) is False
+    assert N.past_tense_projection(None) is False
+
+
+def test_c3_all_competing_formatters_now_share_one_source():
+    """خمسُ عائلاتٍ متوازية صارت مصدراً واحداً — بأسمائها القائمة كما هي."""
+    import silk_narrative as N
+    from silk_decision import _pct
+    from silk_reports import _fmt, _readable_number
+    assert _fmt(36234200.146) == N.fmt_number(36234200.146)
+    assert _readable_number(38000000.0) == N.fmt_amount(38000000.0)
+    assert N.fmt_money(48530000) == N.fmt_amount(48530000, "USD")
+    # `_pct` عقدُها كسرٌ 0–1 بلا منازل — المخرَجُ كما كان حرفياً.
+    assert _pct(0.65) == "65%" and _pct(None) == "—"
+
+
+def test_c3_gate_catches_score_format_drift():
+    from silk_quality_gate import _check_score_format_drift as chk
+    drift = ("## 1. الخلاصة التنفيذية\nقوة الفرصة 65 من 100.\n"
+             "## 4. أساس الحكم\nالدرجة 0.65 لهذه السوق.")
+    out = chk(drift)
+    assert out and out[0]["check"] == "score_format_drift"
+    assert chk("## 1. الخلاصة\nقوة الفرصة 65 من 100.") == []
+
+
+def test_c3_gate_catches_amount_without_currency_but_not_units():
+    from silk_quality_gate import _check_amount_without_currency as chk
+    assert chk("## 3. السوق\nيستورد السوق 7.12 مليون سنوياً من الصنف.")
+    # عملةٌ قريبة ⇒ سليم؛ وسياقٌ غيرُ ماليٍّ ⇒ سليم.
+    assert chk("## 3. السوق\nيستورد السوق 7.12 مليون دولار سنوياً.") == []
+    assert chk("## 5. المستهلك\nعدد السكان 38 مليون نسمة.") == []
+    assert chk("## 8. اللوجستيات\nطاقةُ المصنع 2 مليون طن سنوياً.") == []
+
+
+def test_c3_gate_catches_a_stale_figure_mentioned_without_its_year():
+    """إنفاذُ البند 2.1 من إفصاح جودة البيانات — كان أمراً بلا حارس."""
+    from silk_quality_gate import _check_stale_data_without_year as chk
+    dr = {"report": {"text": "## 1. الخلاصة\nدخل الفرد 1106 دولار سنوياً."},
+          "missions": {"eco": {"findings": [
+              {"value": 1106, "data_year": 2013, "source": "World Bank"}]}},
+          "analyst": {"by_category": {}}}
+    out = chk(dr)
+    assert out and out[0]["check"] == "stale_data_without_year"
+    # نفسُ الرقم بسنته المطبوعة قريباً ⇒ سليم.
+    dr2 = dict(dr, report={"text": "## 1. الخلاصة\nدخل الفرد 1106 دولار "
+                                   "وفق بيانات 2013."})
+    assert chk(dr2) == []
+    # ودليلٌ متقادِمٌ **لا يذكره المتن** لا يُلام عليه التقرير.
+    dr3 = dict(dr, report={"text": "## 1. الخلاصة\nالتوصية: تمهّل."})
+    assert chk(dr3) == []
+
+
+def test_c3_gate_catches_observation_date_equal_to_the_run_date():
+    from silk_quality_gate import \
+        _check_observation_date_equals_run_date as chk
+    same = {"date": "2026-09-16", "deep_research": {
+        "report": {"text": "تاريخ الرصد 2026-09-16 لسعر الرف."}}}
+    assert chk(same) and chk(same)[0]["check"] == \
+        "observation_date_equals_run_date"
+    diff = {"date": "2026-09-16", "deep_research": {
+        "report": {"text": "تاريخ الرصد 2024-03-01 لسعر الرف."}}}
+    assert chk(diff) == []
+
+
+def test_c3_new_rules_fire_once_on_the_canonical_set_and_it_is_a_true_positive():
+    """شرطُ القبول مع **استثناءٍ واحدٍ مُعلَن**: إطلاقةٌ حقيقية لا كاذبة.
+
+    مدوّنةُ اليمن تذكر «دخل الفرد 1106 دولار» من بيانات 2013 في الخلاصة
+    التنفيذية بلا سنةٍ مطبوعة — وهو **العيبُ المرصود حرفياً** («بيانات
+    2018 بلا سنةٍ مطبوعة»). القاعدةُ صادقة، والمدوّنةُ مجمّدةٌ بقرار مالك
+    فلا تُعدَّل نثراً لتمرير موجة. الإطلاقةُ مُعدَّدةٌ هنا كي لا تنمو صامتة.
+    """
+    import silk_quality_gate as G
+    import silk_render
+    from tools import gen_verdict_baseline as B
+    new = ("score_format_drift", "amount_without_currency",
+           "stale_data_without_year", "observation_date_equals_run_date")
+    hits: dict = {}
+    with block_network():
+        for key in _canonical_keys():
+            mod, fn = B.CANONICAL_BLOBS[key]
+            blob = getattr(importlib.import_module(mod), fn)()
+            out = G.run_quality_gate(silk_render.build_view(blob))
+            got = sorted(f["check"] for f in out["findings"]
+                         if f["check"] in new)
+            if got:
+                hits[key] = got
+    assert hits == {"yemen": ["stale_data_without_year"]}, hits
+
+
+def test_c3_rules_are_wired_and_warning_only():
+    import inspect
+
+    import silk_quality_gate as G
+    src = inspect.getsource(G.run_quality_gate)
+    for fn in ("_check_score_format_drift", "_check_amount_without_currency",
+               "_check_stale_data_without_year",
+               "_check_observation_date_equals_run_date"):
+        assert fn in src, fn
+    for check in ("score_format_drift", "amount_without_currency",
+                  "stale_data_without_year",
+                  "observation_date_equals_run_date"):
+        assert check not in G.FAIL_TRIGGER_CHECKS, check

@@ -122,11 +122,18 @@ def _stamp_degraded_banner(doc, view: dict, lang: str = "ar") -> None:
 
 
 def _fmt(v: object) -> str:
-    """تنسيق قيمة للعرض — display formatting (None = فجوة معلنة)."""
+    """تنسيق قيمة للعرض — display formatting (None = فجوة معلنة).
+
+    الصنف ٣ (موجة عيوب التقرير): كان `{:,.0f}` يبتر المنازل العشرية للمقادير
+    الكبيرة ويترك الصغيرة بلا فاصلِ آلاف — فظهر «36,234,200» بجوار «26730».
+    المنطقُ الآن من المُنسِّق الواحد `silk_narrative.fmt_number`، والاسمُ
+    والسلوكُ للأنواع غير الرقمية كما هما حرفياً.
+    """
     if v is None:
         return "—"
-    if isinstance(v, (int, float)) and not isinstance(v, bool) and abs(v) >= 1000:
-        return f"{v:,.0f}"
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        from silk_narrative import fmt_number
+        return fmt_number(v) if abs(v) >= 1000 else str(v)
     return str(v)
 
 
@@ -3775,14 +3782,15 @@ def _readable_number(v: object) -> str:
         n = float(v)
     except (TypeError, ValueError):
         return str(v)
+    # الصنف ٣: المنطقُ من المُنسِّق الواحد بلا عملة (الوحدةُ تأتي من
+    # الملاحظة كما يقول العقدُ أعلاه) — «38 مليون»، «1,234»، «0.67».
+    from silk_narrative import fmt_amount, fmt_number
     a = abs(n)
-    if a >= 1e9:
-        return f"{n / 1e9:.1f} مليار".replace(".0 ", " ")
     if a >= 1e6:
-        return f"{n / 1e6:.1f} مليون".replace(".0 ", " ")
+        return fmt_amount(n)
     if a >= 1e3:
-        return f"{n:,.0f}"
-    return f"{n:g}"
+        return fmt_number(n, 0)
+    return fmt_number(n)
 
 
 def _client_readable_fact(value: object, note: object) -> "str | None":

@@ -3990,6 +3990,243 @@ def _check_template_interpolation(text: str, lang: str = "ar") -> list[dict]:
     return findings
 
 
+# ══════ الصنف ٣ (موجة عيوب التقرير) — عرضُ الأرقام والوحدات والتواريخ ══════
+# بلاغُ المالك: «36,234,200.146 مقابل 26730»؛ والدرجةُ 65 و0.65 و65% في
+# تقريرٍ واحد؛ وأرقامٌ بلا وحدةٍ ولا سنة؛ وبياناتُ 2018 بلا سنةٍ مطبوعة؛
+# وتوقّعُ 2024 بصيغةِ المستقبل في 2026؛ وتاريخُ التشغيل مكانَ تاريخِ الرصد.
+#
+# الجذرُ (خمسُ عائلاتِ تنسيقٍ متوازية) مُصلَحٌ بمُنسِّقٍ واحد في
+# `silk_narrative`. وهذه أربعُ قواعدَ تحذيرية — حرّاسُ انحدارٍ له، وحرّاسٌ
+# أصليّون لنثر الكاتب الذي لا يمرّ على مُنسِّق.
+
+# (١) تعدّدُ صيغِ الدرجة: نفسُ القيمة بصيغتين.
+_SCORE_OF_100_RE = re.compile(r"(\d{1,3}(?:\.\d+)?)\s*(?:من|/|out of)\s*100")
+_SCORE_WORD_RE = re.compile(
+    r"(?:قوة (?:هذه )?الفرصة|الدرجة الموزونة|الدرجة|opportunity strength"
+    r"|weighted score)[^\d\n]{0,25}(\d{1,3}(?:\.\d+)?)\s*(%|٪)?")
+_SCORE_FRACTION_RE = re.compile(
+    r"(?:قوة (?:هذه )?الفرصة|الدرجة)[^\d\n]{0,25}(0\.\d+)")
+
+# (٢) مقدارٌ كبير بلا عملة: «مليون/مليار» أو رقمٌ ≥ أربع خانات في جملةِ مالٍ
+# بلا رمزِ عملةٍ أو اسمِها قريباً.
+_MAGNITUDE_WORD_RE = re.compile(r"\b(?:مليون|مليار|ألف)\b|\b(?:million|billion)\b")
+_CURRENCY_NEAR_RE = re.compile(
+    r"دولار|يورو|ريال|درهم|دينار|جنيه|نايرا|روبية|ين\b"
+    r"|\b(?:USD|EUR|SAR|AED|QAR|KWD|JOD|DZD|YER|JPY|NGN|INR|EGP|GBP)\b"
+    r"|[$€£¥]", re.I)
+# كلماتُ سياقٍ غير ماليّ: مقدارٌ عن سكّانٍ أو أطنانٍ أو وحداتٍ لا يحتاج عملة.
+_NON_MONEY_CTX_RE = re.compile(
+    r"نسمة|سكان|السكان|طن|أطنان|كجم|كيلوغرام|لتر|عبوة|قطعة|وحدة|زيارة"
+    r"|استعلام|بحث|مصنع|منشأة|شركة|نقطة|درجة|tonne|kg|litre|liter|units?"
+    r"|population|searches", re.I)
+_MONEY_WINDOW = 55
+
+# (٣) بياناتٌ أقدمُ من ثلاثِ سنواتٍ تقود جملةً بلا سنةٍ مطبوعة.
+_STALE_YEARS_DEFAULT = 3
+_ANY_YEAR_RE = re.compile(r"\b(19\d\d|20\d\d)\b")
+
+# (٤) تاريخُ رصدٍ يساوي تاريخَ التشغيل — ساعةُ خطِّ التجميع ليست معطىً.
+_OBSERVED_LABEL_RE = re.compile(
+    r"(?:تاريخ (?:ال)?رصد|رُصد (?:في|بتاريخ)|observ(?:ed|ation) date)"
+    r"[^\d\n]{0,20}(\d{4}-\d{2}-\d{2})")
+
+
+_STALE_YEAR_WINDOW = 90
+
+
+def _as_number(v: object) -> "float | None":
+    """رقمٌ من قيمةِ دليلٍ — أو `None` (بلا استثناءٍ يُسقِط الفحص)."""
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    try:
+        return float(str(v).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _significant_number_mentions(body: str, num: float) -> list:
+    """مواضعُ ذكرِ الرقم في النثر بصيغتَي العرض المعتادتين.
+
+    الرقمُ يُعرَض إمّا كاملاً بفاصلِ آلاف («7,120,000») أو مختزلاً بمقداره
+    («7.12 مليون»). لا تُلتقَط الأرقامُ الصغيرة (< 1000) كي لا يُطابَق
+    «2» من نصٍّ آخر — الرقمُ الصغير يُميَّز بقيمته لا بذاته.
+    """
+    if abs(num) < 1000:
+        return []
+    out: list = []
+    cands = {f"{num:,.0f}", f"{num:.0f}"}
+    if abs(num) >= 1e6:
+        cands.add(f"{num / 1e6:,.2f}".rstrip("0").rstrip("."))
+        cands.add(f"{num / 1e6:,.1f}".rstrip("0").rstrip("."))
+    if abs(num) >= 1e9:
+        cands.add(f"{num / 1e9:,.2f}".rstrip("0").rstrip("."))
+    for c in cands:
+        if len(c) < 3:
+            continue
+        i = body.find(c)
+        if i >= 0:
+            out.append((i, i + len(c)))
+    return out
+
+
+def _check_score_format_drift(text: str) -> list[dict]:
+    """`score_format_drift` (الصنف ٣، تحذيريّ): الدرجةُ بأكثر من صيغة.
+
+    الصيغةُ المعتمدة واحدة: «N من 100» (`silk_narrative.fmt_score`). ظهورُ
+    كسرٍ 0–1 أو نسبةٍ مئوية للدرجة نفسِها في التقرير خلطُ مقاييس — البلاغ
+    المرصود: 65 و0.65 و65% لنفس الدرجة.
+    """
+    if not text:
+        return []
+    body = _split_off_appendix(text)
+    forms: dict = {}
+    for m in _SCORE_OF_100_RE.finditer(body):
+        forms.setdefault("من 100", m.group(0).strip())
+    for m in _SCORE_FRACTION_RE.finditer(body):
+        forms.setdefault("كسر 0–1", m.group(0).strip())
+    for m in _SCORE_WORD_RE.finditer(body):
+        if m.group(2):                       # نسبةٌ مئوية للدرجة
+            forms.setdefault("نسبة مئوية", m.group(0).strip())
+    if len(forms) < 2:
+        return []
+    shown = "، ".join(f"«{v}» ({k})" for k, v in forms.items())
+    return [{"check": "score_format_drift", "repairable": True,
+             "note": ("الدرجةُ معروضةٌ بأكثر من صيغة في تقريرٍ واحد: " + shown
+                      + " — الصيغةُ المعتمدة واحدة: «N من 100» "
+                        "(silk_narrative.fmt_score)")}]
+
+
+def _check_amount_without_currency(text: str) -> list[dict]:
+    """`amount_without_currency` (الصنف ٣، تحذيريّ): مقدارٌ ماليٌّ بلا عملته.
+
+    يُفحَص بالسياق لا عارياً: «38 مليون نسمة» و«2,500 طن» مقاديرُ مشروعةٌ
+    بلا عملة، و«2500» قيمةُ مؤشرِ تركّزٍ لا مال. القاعدةُ تُطلِق حين يكون
+    المقدارُ في سياقٍ ماليٍّ صريح بلا رمزِ عملةٍ قريب.
+    """
+    if not text:
+        return []
+    body = _split_off_appendix(text)
+    findings: list[dict] = []
+    seen: set = set()
+    for m in _MAGNITUDE_WORD_RE.finditer(body):
+        lo = max(0, m.start() - _MONEY_WINDOW)
+        hi = min(len(body), m.end() + _MONEY_WINDOW)
+        window = body[lo:hi]
+        if _CURRENCY_NEAR_RE.search(window) or _NON_MONEY_CTX_RE.search(window):
+            continue
+        frag = " ".join(window.split())[:70]
+        if frag in seen:
+            continue
+        seen.add(frag)
+        findings.append({
+            "check": "amount_without_currency", "repairable": True,
+            "note": (f"مقدارٌ بلا عملةٍ ولا وحدةٍ معلَنة: «{m.group(0)}» — "
+                     f"القسم «{_reader_section_of(body, m.start())}»: "
+                     f"…{frag}…")})
+    return findings[:5]
+
+
+def _check_stale_data_without_year(dr: dict, text: str = "") -> list[dict]:
+    """`stale_data_without_year` (الصنف ٣، تحذيريّ): **قيمةٌ** من بياناتٍ
+    أقدمَ من ثلاثِ سنواتٍ مذكورةٌ في النثر بلا سنتها المطبوعة قريباً.
+
+    القارئُ لا يستطيع تقديرَ صلاحيةِ رقمٍ لا يعرف سنته؛ و«بيانات 2018 بلا
+    سنةٍ مطبوعة» هي العلّةُ المرصودة حرفياً.
+
+    **الشرطُ قيمةٌ مذكورةٌ لا سنةٌ موجودةٌ في الأدلة** (تضييقٌ جاء من
+    القياس): مدوّنةُ الكويت تحمل دليلاً من 2021 لا يذكره المتنُ أصلاً —
+    ومطالبةُ تقريرٍ بطبعِ سنةِ رقمٍ لم يستعمله لومٌ على ما لم يفعل. فتُقرَأ
+    قيمةُ كلّ حقيقةٍ متقادِمة، ويُطلَق الفحصُ حين تظهر القيمةُ في النثر
+    ولا تظهر سنةٌ في نافذتها.
+
+    **وهذه القاعدةُ إنفاذُ ما كان الموجّهُ يأمر به بلا حارس:** البند 2.1 من
+    «إفصاح جودة البيانات» (`silk_ai_judge.deep_report`) يُلزِم الكاتبَ بحملِ
+    وسمِ السنة «حيثما ذكرت تلك الحقيقة في السرد… كي لا تُقرأ كأنها راهنة»
+    — ولم يكن شيءٌ يتحقّق منه. قاعدةٌ في موجّهٍ بلا فحصٍ أمنيةٌ لا قاعدة.
+    """
+    body = _split_off_appendix(text or _report_text(dr))
+    if not body:
+        return []
+    try:
+        cutoff = int(os.environ.get("SILK_STALE_DATA_YEARS",
+                                    _STALE_YEARS_DEFAULT))
+    except ValueError:
+        cutoff = _STALE_YEARS_DEFAULT
+    import datetime
+    now = datetime.date.today().year
+    # حقائقُ الأدلة بقِيَمها وسنواتها — نفسُ منبعِ `_stale_years_in_view`.
+    facts: list = []
+    for m in (dr.get("missions") or {}).values():
+        facts.extend((m or {}).get("findings") or [])
+    for dps in ((dr.get("analyst") or {}).get("by_category") or {}).values():
+        facts.extend(dps or [])
+    findings: list[dict] = []
+    seen: set = set()
+    for f in facts:
+        if not isinstance(f, dict):
+            continue
+        yr = f.get("data_year")
+        val = f.get("value")
+        if not (isinstance(yr, (int, float)) and not isinstance(yr, bool)):
+            continue
+        yr = int(yr)
+        if now - yr <= cutoff:
+            continue
+        num = _as_number(val)
+        if num is None:
+            continue
+        for m in _significant_number_mentions(body, num):
+            win = body[max(0, m[0] - _STALE_YEAR_WINDOW):
+                       m[1] + _STALE_YEAR_WINDOW]
+            if _ANY_YEAR_RE.search(win):
+                continue
+            key = (yr, m[0])
+            if key in seen:
+                continue
+            seen.add(key)
+            findings.append({
+                "check": "stale_data_without_year", "repairable": True,
+                "note": (f"رقمٌ من بيانات {yr} (أقدمُ من {cutoff} سنوات) "
+                         f"مذكورٌ بلا سنته — القسم "
+                         f"«{_reader_section_of(body, m[0])}»: "
+                         f"…{_reader_snippet(body, m[0], m[1])}…")})
+            break
+    return findings[:5]
+
+
+def _check_observation_date_equals_run_date(view: dict) -> list[dict]:
+    """`observation_date_equals_run_date` (الصنف ٣، تحذيريّ): تاريخُ الرصد
+    المطبوع يساوي تاريخَ تشغيل التقرير.
+
+    ساعةُ خطِّ التجميع ليست معطىً: تاريخٌ يساوي تاريخَ التشغيل يعني — على
+    الأرجح — أنه **استُعير** من الساعة لا من المصدر، فيقرأ القارئُ بياناتٍ
+    قديمةً كأنها رُصدت اليوم. يُقارَن بـ`view["date"]` لا بساعةِ الفحص، كي
+    لا يطلق الفحصُ على تقريرٍ قديمٍ يُعاد قراءته.
+    """
+    if not isinstance(view, dict):
+        return []
+    run = str(view.get("date") or "").strip()
+    if not run:
+        return []
+    dr = view.get("deep_research") or {}
+    body = _report_text(dr)
+    surfaces = [body] + [str(x) for x in (dr.get("limits") or [])]
+    for blob in surfaces:
+        for m in _OBSERVED_LABEL_RE.finditer(blob or ""):
+            if m.group(1) == run:
+                return [{
+                    "check": "observation_date_equals_run_date",
+                    "repairable": True,
+                    "note": (f"تاريخُ الرصد المطبوع ({m.group(1)}) يساوي "
+                             "تاريخَ تشغيل التقرير — ساعةُ التشغيل ليست "
+                             "معطىً؛ يُطبَع تاريخُ الرصد إن وُجد في "
+                             "البيانات، وإلّا يُقال «تاريخ الرصد غير "
+                             "معروف» (silk_narrative.fmt_observed_at)")}]
+    return []
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -4581,6 +4818,13 @@ def run_quality_gate(view: dict) -> dict:
     # أُعلِن غائباً، أو صدى كيانٍ في وصفِه — تحذيريّ. مِعيارُ «سليم» هو
     # `silk_i18n.repair_interpolation` نفسُها (قاعدةُ الإصلاح = قاعدةُ الفحص).
     findings += _check_template_interpolation(text, _lang)
+    # الصنف ٣ (موجة عيوب التقرير): عرضُ الأرقام والوحدات والتواريخ — أربعُ
+    # قواعدَ تحذيرية، حرّاسُ انحدارٍ للمُنسِّق الواحد وحرّاسٌ أصليّون لنثرِ
+    # الكاتب الذي لا يمرّ عليه.
+    findings += _check_score_format_drift(text)
+    findings += _check_amount_without_currency(text)
+    findings += _check_stale_data_without_year(dr, text)
+    findings += _check_observation_date_equals_run_date(view)
     findings += _check_absence_vocabulary(text)
     # D4 (دراسة #12): مفردات الغياب على **أسطح العرض** أيضاً — جدول الأعمدة
     # («لم يُرصَد بعد») وشروط القرار وحدود التقرير قوائم view لا يمر عليها

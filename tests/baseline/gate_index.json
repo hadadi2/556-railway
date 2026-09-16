@@ -132,6 +132,7 @@
    "exec_summary_recommendation_first",
    "markdown_artifacts",
    "narrative_confidence_mismatch",
+   "stale_data_without_year",
    "vintage_expired_facts_present"
   ],
   "language_quality": [],
