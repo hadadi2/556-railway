@@ -4571,6 +4571,15 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    253: lambda: (
+        _needles("silk_style_contract.py", "def human_voice",
+                 "FILLER_PHRASES", "HUMAN_VOICE_FLAG")(),
+        _needles("tests/test_mandated_literals_cross_reference.py",
+                 "FILLER_PHRASES")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_robotic_stock_phrase")(),
+        _absent("api.py", 'المضبوط "academic"')(),
+        _needles("tests/test_lessons_enforcement.py", '(253, ')()),
     250: lambda: (
         _needles("silk_quality_gate.py",
                  "_BORDER_ABOVE_SHELF_RATIO = 1.25")(),

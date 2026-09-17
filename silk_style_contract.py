@@ -562,6 +562,133 @@ EPISTEMIC_VERB_RULE = (
     "مُعلمَن بفعل تقريري أبداً — الفعل هو وسم الطبقة الوحيد المسموح."
 )
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصوت البشري · human voice — خلف `SILK_HUMAN_VOICE` المطفأة افتراضياً
+# ════════════════════════════════════════════════════════════════════════════
+# طلب المالك: «Humanized اريد الكتابة» (ردودي **ونص التقارير** معاً).
+#
+# **ما ثبت بالقياس لا بالحدس:** الصوت الآليّ في التقارير **من كتابتنا** لا من
+# النموذج. كل عبارة جاهزة في القائمة أدناه **مأمورٌ بها في هذا الملف نفسه**:
+# «توصي الدراسة بـ» و«يُوصى بـ» في `WRITING_STANDARD_RULE` §السجل المهني،
+# و«والأثرُ العمليّ» و«ومن ثمّ» بين بدائل الروابط في `READER_LANGUAGE_RULE`،
+# و«تشير النتائج إلى» و«تخلص الدراسة إلى» و«توضح البيانات» في
+# `ACADEMIC_WRITER_CONTRACT`، و«ينبغي التعامل مع» مثالُ `PROFESSIONAL_TONE_RULE`
+# الحرفيّ. فالعلاج إعطاءُ بديلٍ طبيعيٍّ لكلّ واحدة، لا لومُ الكاتب.
+#
+# **وحدُّ القياس معلَن:** عدُّ هذه العبارات في المدوّنات الست عشرة أعطى اثنتين
+# في أكبر مدوّنة وصفراً في اثنتي عشرة — لأنّ المدوّنات نصوصٌ مكتوبةٌ باليد لا
+# خرجُ كلود حيّ. فكلّ عتبةٍ تُبنى على هذا القياس **محدودةٌ ومُعلنةٌ كذلك**، لا
+# مبنيّةٌ على قياسِ إنتاجٍ حقيقيّ (لا وجود له في الريبو).
+HUMAN_VOICE_FLAG = "SILK_HUMAN_VOICE"
+
+# (العبارة الجاهزة، البديل الطبيعي) — ما يقرؤه **الموجّه** ليعطي بديلاً.
+# **مأخذُ المراجعة الذاتية (الأخطر):** «ينبغي التعامل مع» كانت هنا — وهي صدرُ
+# `MEASURED_TONE_HINT` الحرفيّ، وهو **مُخرَجٌ إلزاميّ مُسجَّل**
+# (`silk_ai_judge.MANDATED_OUTPUT_LITERALS`) يُفرضه المراجعُ نفسُه. فمنعُها
+# يأمر الكاتبَ بإسقاط تحذيرٍ واجب — عقابُ الإفصاح (الدرس ٢٣٩). أُزيلت.
+# وأُزيل كذلك تكرارُ «يوصى بـ» بشكلَيه: عادةٌ واحدةٌ كانت تستهلك خانتين.
+STOCK_PHRASES: tuple = (
+    ("توصي الدراسة بـ", "ننصح بـ"),
+    ("يُوصى بـ", "الأفضل أن"),
+    ("تشير النتائج إلى", "الأرقام تقول"),
+    ("تخلص الدراسة إلى", "الخلاصة"),
+    ("توضح البيانات", "البيانات تُظهر"),
+    ("وهذا يعني", "أي أنّ"),
+    ("والأثر العملي", "عملياً"),
+    ("من الجدير بالذكر", "ولاحظ أنّ"),
+    ("في هذا السياق", "وهنا"),
+    ("بناءً على ما سبق", "من كل ما سبق"),
+    ("تجدر الإشارة", "ولاحظ"),
+)
+
+# ما تعدّه **البوابة** — حشوٌ محضٌ لا يأمر به عقدٌ ولا يفرضه مراجع. والفرقُ
+# مقصود: الصيغُ التي يأمر بها `WRITING_STANDARD_RULE` أو
+# `ACADEMIC_WRITER_CONTRACT` («توصي الدراسة بـ»، «تشير النتائج إلى»…) لا
+# تُحتسَب عيباً — الكاتبُ أطاع عقدَه، والعلاجُ في العقد لا في لومه.
+FILLER_PHRASES: tuple = (
+    "وهذا يعني",
+    "والأثر العملي",
+    "من الجدير بالذكر",
+    "في هذا السياق",
+    "بناءً على ما سبق",
+    "تجدر الإشارة",
+)
+
+
+def stock_phrases() -> tuple:
+    """العباراتُ الجاهزة كما يراها **الموجّه** (بلا بدائلها)."""
+    return tuple(p for p, _alt in STOCK_PHRASES)
+
+
+def filler_phrases() -> tuple:
+    """الحشوُ الذي تعدّه **البوابة** — لا يأمر به عقدٌ ولا يفرضه مراجع."""
+    return FILLER_PHRASES
+
+
+_HUMAN_VOICE_EXAMPLES = "؛ ".join(
+    "«" + p + "» ⇒ «" + alt + "»" for p, alt in STOCK_PHRASES[:8])
+
+HUMAN_VOICE_RULE = (
+    "**الصوت البشري (إلزامي — يتقدّم على صياغة السجل التقريري أعلاه حيث "
+    "يتعارضان، وعلى شيءٍ واحدٍ فقط: النبرة. لا يمسّ رقماً ولا مصدراً ولا "
+    "أفعالَ طبقات الأدلة):**\n"
+    "- **خاطِب القارئ**: «أمامك سوق تستورد 6.4 مليون دولار» أفضل من «توصي "
+    "الدراسة بملاحظة أنّ حجم الاستيراد بلغ…». هو صاحبُ القرار، فاكتب له لا "
+    "عنه.\n"
+    "- **افتح الخلاصة بأهمّ جملة بصياغتك** لا بقالبٍ ثابت. والترتيبُ يبقى "
+    "إلزامياً (القرار، ثم أرقامه، ثم أول خطوة، ثم الشرط الحاجب) وسقفُ "
+    "المئة والخمسين كلمة كما هو.\n"
+    "- **العبارات الجاهزة ممنوعة** — لكلٍّ بديلها: " + _HUMAN_VOICE_EXAMPLES
+    + ".\n"
+    "- **نوِّع الإيقاع**: جملةٌ من ثلاث كلمات مسموحةٌ ومطلوبةٌ حين تُفيد "
+    "(«الطلب مرصود.»)، تتبعها جملةٌ أطول تشرح. التساوي في الطول هو ما يجعل "
+    "النصَّ آلياً.\n"
+    "- **لا يبدأ سطران متتاليان بالتركيب نفسه** (لا «ويُلاحَظ… ويُلاحَظ…»).\n"
+    "- **وليس هذا إذناً بالتهويل**: منعُ المبالغة والشحنة العاطفية قائمٌ كما "
+    "هو، ولا استعارةَ تصف رقماً. بشريٌّ يعني طبيعياً لا متحمّساً."
+)
+
+HUMAN_VOICE_RULE_EN = (
+    "**Human voice (mandatory — outranks the report-register phrasing above "
+    "where they clash, and only on tone: it touches no figure, no source "
+    "and no evidence-layer verb):**\n"
+    "- Address the reader directly: \"you are looking at a market that "
+    "imports $6.4m\" beats \"the study recommends noting that imports "
+    "reached...\".\n"
+    "- Open the summary with your most important sentence, not a fixed "
+    "template. The order stays mandatory (decision, its figures, first "
+    "step, blocking condition) and so does the 150-word cap.\n"
+    "- No stock formulas: not \"it is worth noting\", \"in this context\", "
+    "\"the findings indicate\", \"the study concludes\".\n"
+    "- Vary the rhythm: a three-word sentence is allowed and wanted where "
+    "it earns its place. Uniform sentence length is what reads robotic.\n"
+    "- No two consecutive lines may open with the same construction.\n"
+    "- This is not licence to hype: the ban on alarmist and emotive "
+    "phrasing stands, and no metaphor may describe a figure."
+)
+
+
+def human_voice() -> bool:
+    """هل رايةُ الصوت البشريّ مفعّلة؟ — تقبل `on` كنظرائها في الريبو
+    (مأخذُ المراجعة الذاتية: `SILK_HUMAN_VOICE=on` كانت تمرّ صامتةً بلا أثر)."""
+    import os as _os
+    raw = _os.environ.get(HUMAN_VOICE_FLAG, "").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def human_voice_rule() -> str:
+    """قاعدةُ الصوت البشري كما تُحقَن فعلاً — فراغٌ حين تكون الرايةُ مطفأة
+    (الافتراض)، فيبقى الموجّهُ حرفياً كما كان. نمطُ `epistemic_rule` نفسُه."""
+    import os as _os
+    return HUMAN_VOICE_RULE if human_voice() else ""
+
+
+def human_voice_rule_en() -> str:
+    """نظيرتُها الإنجليزية — نفسُ الراية."""
+    import os as _os
+    return HUMAN_VOICE_RULE_EN if human_voice() else ""
+
+
 def epistemic_rule() -> str:
     """قاعدة الأفعال كما تُحقَن فعلاً — صمّام إطفاء فوري في الإنتاج
     (`SILK_EPISTEMIC_VERBS_ENABLED=0`) يعيد سلوك ما قبل الموجة ٦ حرفياً."""
