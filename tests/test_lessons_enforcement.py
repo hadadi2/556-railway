@@ -207,6 +207,24 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٥٧–٢٥٨ — الموجة الرابعة: أرقامُ القياس تخرج من نسخة العميل، وسلسلةُ
+    # الواردات تُقرَأ بدل أن تُرمى.
+    (257, "tests/test_client_metric_privacy.py",
+     ["def test_flag_off_view_and_prompt_are_byte_identical",
+      "def test_hidden_list_is_declared_once_and_reaches_the_view",
+      "def test_writer_prompt_has_no_metric_and_no_gate_needle",
+      "def test_raw_confidence_sanitizer_strips_instead_of_relabelling",
+      "def test_presence_conditional_checks_are_real_and_still_fire",
+      "def test_client_metric_exposure_fires_on_a_leak_and_is_silent_when_clean"]),
+    (258, "tests/test_imports_spotlight.py",
+     ["def test_series_is_read_from_the_tool_shape_and_gaps_are_declared",
+      "def test_single_year_has_no_trend_and_says_so",
+      "def test_amount_false_precision_fixer_rounds_only_large_amounts",
+      "def test_facts_block_shows_two_decimals_but_the_stored_value_is_untouched"]),
+    (258, "tests/test_report_charts_data.py",
+     ["def test_charts_are_pure_data_with_source_year_and_note",
+      "def test_charted_values_have_a_fact_behind_them",
+      "def test_page_chart_renderer_obeys_the_five_rules"]),
     # ٢٥٤–٢٥٦ — الموجّهُ لا يخالف بوّابته، وحارسٌ يُطلِق فعلاً، وسنةُ كلّ رقم.
     (254, "tests/test_prose_blocker_prompt_parity.py",
      ["def test_capped_band_reaches_the_writer_prompt",
@@ -634,6 +652,17 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    (257, "silk_render.py", ["CLIENT_HIDDEN_METRICS",
+                             "def client_metric_privacy",
+                             "_AR_RAW_CONF_STRIP_RE"]),
+    (257, "silk_quality_gate.py", ["PRESENCE_CONDITIONAL_CHECKS",
+                                   "def _check_client_metric_exposure"]),
+    (257, "silk_ai_judge.py", ["def _confidence_mention_rule"]),
+    (258, "silk_deep_pillars.py", ["def import_series",
+                                   "def top_supplier_shares"]),
+    (258, "silk_render.py", ["def _fix_amount_false_precision",
+                             "def _imports_view", "def _charts_view"]),
+    (258, "silk_quality_gate.py", ["def _check_amount_false_precision"]),
     (254, "silk_quality_gate.py",
      ["PROSE_LITERAL_BLOCKERS", "NON_LITERAL_FLAGGED_BLOCKERS"]),
     (254, "silk_narrative.py", ['cap: "str | None" = None',

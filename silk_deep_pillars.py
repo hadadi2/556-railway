@@ -720,6 +720,124 @@ def build_components(dr: dict) -> dict:
     return out
 
 
+# ── الموجة الرابعة (الدرس ٢٥٨): السلسلةُ الزمنية تصل ثم تُرمى ─────────────
+# بعثةُ `trade_flow` تأمر خمسَ سنواتٍ صراحةً (`silk_missions`)، والأداةُ
+# `_tool_comtrade_imports` تُصدِر نقطةً لكلّ سنة بـ`data_year`، وكلُّها تصل
+# `_metric_findings` — ثم `_numeric_with_source` يختار الأحدثَ **ويطرح البقيّة**.
+# هنا تُقرَأ نفسُ القائمة وتُجمَع بالسنة: صفرُ نداءٍ جديد وصفرُ إنفاق.
+
+def import_series(missions: dict) -> dict:
+    """وارداتُ السوق بالسنوات من حقائق بعثة التدفّق — {series, years_missing,
+    growth_pct, cagr_pct}.
+
+    * لكلّ سنةٍ نقطةٌ واحدة: المباشرُ (ثقة ٠٫٩) يفوز على المرآة (٠٫٦)، وعلى
+      التساوي البنيويُّ (`data_year`) على المستخرَج من الملاحظة.
+    * السنةُ التي تعذّر جلبُها (`fetch_failed`/`no_record` في ملاحظة الأداة)
+      تُعلَن في `years_missing` **ولا تُقدَّر ولا تُملأ صفراً** — عقدُ عدم
+      الاختلاق حرفياً؛ والنموُّ يُحسَب من المرصود وحده (`silk_trend`).
+    * نفسُ إبرة `tam_usd` ومداه: سعرُ الوحدة («متوسط سعر استيراد») يسقط
+      بالمدى، والسنةُ لا تُقرَأ حجماً.
+    """
+    findings = _metric_findings(missions or {}, "trade_flow")
+    words = _KW.get("tam_usd", ())
+    lo, hi = _RANGE.get("tam_usd", (float("-inf"), float("inf")))
+    best: dict = {}
+    missing: dict = {}
+    for f in findings:
+        val, note = _fv(f), _fnote(f)
+        if isinstance(val, bool):
+            continue
+        blob = f"{note} {val if isinstance(val, str) else ''}"
+        if words and not any(_metric_text(w) in _metric_text(blob)
+                             for w in words):
+            continue
+        status = str((f.get("status") if isinstance(f, dict)
+                      else getattr(f, "status", "")) or "")
+        if val is None:
+            # فجوةٌ مُعلَنةٌ من الأداة نفسها — السنةُ من ملاحظتها.
+            if status in ("fetch_failed", "no_record"):
+                years = [int(m.group(1)) for m in _NOTE_YEAR_RE.finditer(note)]
+                if years:
+                    missing.setdefault(max(years), status)
+            continue
+        if not isinstance(val, (int, float)) or not (lo <= float(val) <= hi):
+            continue
+        dy = (f.get("data_year") if isinstance(f, dict)
+              else getattr(f, "data_year", None))
+        year = _fact_year(f, allow_note_year=True)
+        if not year:
+            continue
+        src = str((f.get("source") if isinstance(f, dict)
+                   else getattr(f, "source", "")) or "")
+        mirrored = (status == "mirrored" or "مرآة" in src
+                    or "mirror" in src.lower())
+        try:
+            conf = float(f.get("confidence") if isinstance(f, dict)
+                         else getattr(f, "confidence", 0) or 0)
+        except (TypeError, ValueError):
+            conf = 0.0
+        # المفاضلةُ داخل السنة: مباشرٌ قبل مرآة، ثمّ بنيويٌّ قبل نثري، ثمّ الأعلى ثقة.
+        rank = (0 if not mirrored else 1, 0 if dy is not None else 1, -conf)
+        cur = best.get(year)
+        if cur is None or rank < cur[0]:
+            best[year] = (rank, {"year": int(year), "value": float(val),
+                                 "source": src or "UN Comtrade",
+                                 "confidence": conf, "mirrored": mirrored})
+    series = [best[y][1] for y in sorted(best)]
+    years_missing = sorted(y for y in missing if y not in best)
+    growth = cagr = None
+    if len(series) >= 2:
+        try:
+            from silk_trend import cagr_pct, growth_pct
+            pairs = [(p["year"], p["value"]) for p in series]
+            growth, cagr = growth_pct(pairs), cagr_pct(pairs)
+        except Exception:  # noqa: BLE001 — النموُّ تحسينٌ لا شرط
+            growth = cagr = None
+    return {"series": series, "years_missing": years_missing,
+            "growth_pct": growth, "cagr_pct": cagr}
+
+
+def top_supplier_shares(missions: dict) -> tuple:
+    """(صفوفُ حصص الدول المورِّدة، النتيجةُ المصدر) من ملخّص `comtrade_competitors`
+    **المُهيكل حصراً** — نفسُ مفاضلة `_structured_competition` (مباشرٌ ثمّ
+    الأحدثُ سنةً ثمّ الوصول). كلُّ صفّ: `{partner, share, saudi}` (لا
+    `value_usd`: الملخّصُ لا يحمله فلا حقلَ يُوهِم بسلسلةٍ لا وجودَ لها) والحصّةُ
+    خارج ٠–١٠٠ تُسقَط. لا ملخّصَ = ([], None) — لا استخراجَ نثرياً."""
+    findings = _metric_findings(missions or {}, "competitors")
+    best = None
+    for order, f in enumerate(findings):
+        v = _fv(f)
+        if not (isinstance(v, dict) and v.get("top_suppliers")):
+            continue
+        src = str((f.get("source") if isinstance(f, dict)
+                   else getattr(f, "source", "")) or "")
+        mirrored = ("مرآة" in src or "mirror" in src.lower()
+                    or "مرآة" in _fnote(f))
+        try:
+            year = int(v.get("year") or 0) or _fact_year(f)
+        except (TypeError, ValueError):
+            year = _fact_year(f)
+        key = (0 if not mirrored else 1, -(year or 0), order)
+        if best is None or key < best[0]:
+            best = (key, v, src, year)
+    if best is None:
+        return [], None
+    rows = []
+    for r in (best[1].get("top_suppliers") or []):
+        if not isinstance(r, dict):
+            continue
+        p = str(r.get("partner") or "").strip()
+        try:
+            share = float(r["share"]) if r.get("share") is not None else None
+        except (TypeError, ValueError):
+            share = None
+        if not p or share is None or not (0.0 <= share <= 100.0):
+            continue
+        rows.append({"partner": p, "share": share,
+                     "saudi": ("سعود" in p or "saudi" in p.lower())})
+    return rows, {"source": best[2] or "UN Comtrade", "year": best[3]}
+
+
 def coverage_of(dr: dict) -> float:
     """تغطيةُ البعثات — نسبةُ ما نجح منها فعلاً، لا عددُها المُعلَن.
 

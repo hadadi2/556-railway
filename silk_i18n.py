@@ -846,6 +846,71 @@ TERMS: dict[str, dict[str, str]] = {
 }
 
 
+# ── الموجة الرابعة (تقريرٌ تنفيذيّ): وارداتُ السوق والرسومُ بلغة القارئ ──────
+# لا مصطلحَ قياسٍ داخليّ هنا عمداً (لا «درجة الثقة» ولا score/confidence): هذه
+# السلاسل تصل متنَ العميل ويحرسها `_client_forbidden_hits`.
+TERMS.update({
+    "imports_head": {
+        "ar": "واردات السوق من هذا الصنف",
+        "en": "The market's imports of this product"},
+    "imports_value_line": {
+        "ar": "واردات السوق من هذا الصنف بلغت {amount} في {year} وفق {source}.",
+        "en": "The market imported {amount} of this product in {year}, "
+              "according to {source}."},
+    "imports_growth_line": {
+        "ar": "{phrase}.",
+        "en": "Imports {verb} {growth} between {first_year} and {last_year} "
+              "— a compound annual rate of {cagr}."},
+    # لا نقطتين رأسيتين قبل خانةٍ قد تفرغ (اختبار «كلّ قالبٍ ينجو بخاناتٍ فارغة»).
+    "imports_saudi_line": {
+        "ar": "نصيب السعودية من هذه الواردات {pct} ({year}).",
+        "en": "Saudi Arabia holds {pct} of these imports ({year})."},
+    "imports_saudi_line_noyear": {
+        "ar": "نصيب السعودية من هذه الواردات {pct} (سنة الحصة لم يذكرها "
+              "المصدر).",
+        "en": "Saudi Arabia holds {pct} of these imports (the source does not "
+              "state the year of this share)."},
+    "imports_growth_line_nocagr": {
+        "ar": "{phrase}.",
+        "en": "Imports {verb} {growth} between {first_year} and {last_year}; "
+              "the compound annual rate is not computed for this series."},
+    "imports_trend_not_computed": {
+        "ar": "سنتان فأكثر مرصودتان لكن النمو لم يُحسب لهذه السلسلة.",
+        "en": "Two or more years are observed, but growth is not computed "
+              "for this series."},
+    "imports_single_year_note": {
+        "ar": "سنة واحدة مرصودة ({year}) — لا يُرسَم مسار بلا سنتين على الأقل.",
+        "en": "Only one year observed ({year}) — no trend is drawn without "
+              "at least two years."},
+    "imports_gap_years_note": {
+        "ar": "سنوات لم يُجلب رقمها: {years} — لم تُقدَّر ولم تُملأ.",
+        "en": "Years without a fetched figure: {years} — not estimated, "
+              "not filled in."},
+    "imports_mirrored_note": {
+        "ar": "قيمة {years} مقدَّرة من تصريحات الشركاء التجاريين (مرآة) — "
+              "أقل يقيناً من تصريح مباشر.",
+        "en": "The {years} value is estimated from trading partners' "
+              "declarations (mirror data) — less certain than a direct "
+              "declaration."},
+    "chart_imports_trend": {
+        "ar": "واردات السوق بالسنوات (دولار)",
+        "en": "Market imports by year (USD)"},
+    "chart_supplier_shares": {
+        "ar": "حصص الدول المورِّدة لهذه السوق (%)",
+        "en": "Supplying countries' shares of this market (%)"},
+    "chart_saudi_highlight_note": {
+        "ar": "حصة السعودية مميَّزة بالذهبي.",
+        "en": "Saudi Arabia's share is highlighted in gold."},
+    "chart_saudi_absent_note": {
+        "ar": "السعودية ليست بين أكبر المورِّدين المرصودين لهذه السوق.",
+        "en": "Saudi Arabia is not among this market's observed top "
+              "suppliers."},
+    "imports_col_year": {"ar": "السنة", "en": "Year"},
+    "imports_col_value": {"ar": "قيمة الواردات", "en": "Import value"},
+})
+
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # الصنف ٢ (موجة عيوب التقرير) — خانةٌ فارغة لا تكسر جملة
 # ════════════════════════════════════════════════════════════════════════════

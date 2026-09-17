@@ -361,10 +361,34 @@ def _call_tools(system: str, messages: list, tools: list | None = None,
                                    else {}))
 
 
+def _fact_display_value(v: object, on: bool = True) -> object:
+    """قيمةُ حقيقةٍ **للعرض في الموجّه**: مبلغٌ عائمٌ ≥ ألف بأكثر من منزلتين
+    يُقرَّب إلى منزلتين (خلف راية الواردات — تُقرَأ مرّةً في `_facts` وتُمرَّر
+    `on`، لا في كلّ قيمة: مراجعة الشيفرة #5)؛ القاموسُ يُعالَج بمفاتيحه؛ وكلُّ
+    ما عداه يمرّ كما هو. لا يمسّ الكائنَ الأصليّ."""
+    if not on or isinstance(v, bool):
+        return v
+    if isinstance(v, float) and abs(v) >= 1000 and round(v, 2) != v:
+        return round(v, 2)
+    if isinstance(v, dict):
+        return {k: _fact_display_value(x, on) for k, x in v.items()}
+    return v
+
+
 def _facts(reports: list) -> str:
     """حوّل تقارير الوكلاء إلى حقائق نصّية موسومة — agents' findings as tagged facts."""
     lines: list[str] = []
     seen_raw: set[str] = set()
+    # الموجة الرابعة (الدرس ٢٥٨): «51,358,600.874» وصلت المتنَ لأن الكاتبَ
+    # ينسخ الرقمَ الخامَ من هذه الكتلة حرفياً. خلف رايةِ الواردات تُعرَض
+    # المبالغُ الكبيرة (≥ ألف) بمنزلتين كحدٍّ أقصى — **الرقمُ المخزَّن كما هو**،
+    # وعقدُ الإسناد يقبل تقريبَ العرض (نصفُ آخِر خانة).
+    try:
+        import silk_render as _R
+        _spot = bool(_R.imports_spotlight())
+    except Exception:  # noqa: BLE001 — العرضُ الخامُ هو الافتراض
+        _spot = False
+    _disp = lambda v: _fact_display_value(v, _spot)  # noqa: E731
     # القاعدة العامة (قرار المالك): الحقيقة المتقادِمة تُذيَّل بوسم الإفصاح
     # عند جمعها للكاتب. الاستيراد مرّة واحدة (لا لكل نقطة — مراجعة الشيفرة #5).
     try:
@@ -379,7 +403,7 @@ def _facts(reports: list) -> str:
         for dp in getattr(rep, "findings", []) or []:
             raw = getattr(dp, "raw_evidence", ())
             for source_row in raw:
-                source_text = json.dumps(source_row, sort_keys=True, ensure_ascii=False, default=str)
+                source_text = json.dumps(_disp(source_row), sort_keys=True, ensure_ascii=False, default=str)
                 if source_text not in seen_raw:
                     seen_raw.add(source_text)
                     lines.append("- بيانات المصدر المحفوظة: " + source_text)
@@ -397,7 +421,7 @@ def _facts(reports: list) -> str:
                     except Exception:  # noqa: BLE001
                         stale = ""
                 lines.append(
-                    f"- [{name}] {val} | المصدر: {getattr(dp, 'source', '?')} | "
+                    f"- [{name}] {_disp(val)} | المصدر: {getattr(dp, 'source', '?')} | "
                     f"ثقة {getattr(dp, 'confidence', '?')} | "
                     f"{getattr(dp, 'note', '')}{stale}")
     return "\n".join(lines) or "(لا حقائق)"
@@ -1060,9 +1084,11 @@ def _summarize_verdict(verdict: dict, gap_sources: list | None = None,
     # يتغيّر في الموجّه حرفٌ واحد. **والنسبةُ لا تُمَسّ**، التسميةُ وحدها.
     _cap = None
     _cap_reason = ""
+    _priv = False
     try:
         import silk_render as _R
-        if _R.confidence_discipline():
+        _priv = _R.client_metric_privacy()
+        if _R.confidence_discipline() and not _priv:
             import silk_decision as _D
             _cap = _D.confidence_band_cap(pillars, conditions)
             if _cap:
@@ -1082,9 +1108,23 @@ def _summarize_verdict(verdict: dict, gap_sources: list | None = None,
                     "(النسبة الرقمية كما هي؛ التسمية وحدها مسقَّفة)")
     except Exception as _e:  # noqa: BLE001 — السقفُ تحسينٌ لا شرطُ كتابة
         log.warning("confidence band cap skipped for writer prompt: %s", _e)
-    parts = [
-        f"الحكم: {verdict_ar(verdict_token)}",
-        f"الثقة: {confidence_phrase(confidence, cap=_cap)}",
+    # ── الموجة الرابعة (الدرس ٢٥٧): أرقامُ القياس لا تصل الكاتبَ أصلاً ──
+    # قرارُ المالك: درجةُ الثقة (تسميةً ونسبةً) والدرجةُ الكلية ونسبةُ التحقّق
+    # تخرج من نسخة العميل. **المنعُ عند المنبع**: نصٌّ لم يستلم الرقمَ لا
+    # يكتبه — وهذا يُسقِط عائلةَ الحجب (الدرس ٢٥٤) من الوجود عملياً بدل أن
+    # يُوفِّق بينها. يحلّ محلَّ سطر الثقة **تعليمةٌ** تُصاغ بلا لفظِ أيّ
+    # عبارةٍ تحجبها البوّابة (القفل: tests/test_client_metric_privacy.py).
+    parts = [f"الحكم: {verdict_ar(verdict_token)}"]
+    if _priv:
+        # الصياغةُ بلا لفظِ أيّ إبرةٍ تلتقطها البوّابةُ أو حارسُ docx العميل
+        # («نسبة التحقق»، «الدرجة الرقمية»، «درجة الثقة») — الدرس ٢٥٤ نفسُه.
+        parts.append(
+            "ثقة الحكم (تسميةً أو نسبة) والدرجة من مئة ونسبة تحقّق البيانات "
+            "لا تُذكر في المتن إطلاقاً — اشرح الحكم بأسبابه المرصودة وشروطه "
+            "المفتوحة فقط")
+    else:
+        parts.append(f"الثقة: {confidence_phrase(confidence, cap=_cap)}")
+    parts += [
         f"عدد المؤشرات المرصودة المساهمة: {len(v.get('contributing_findings') or [])}",
         f"الفجوات المعلنة: {gaps}",
     ]
@@ -1101,6 +1141,22 @@ def _summarize_verdict(verdict: dict, gap_sources: list | None = None,
     if ai.get("reasoning"):
         parts.append(f"تعليل التوليف: {ai['reasoning']}")
     return " | ".join(parts)
+
+
+def _confidence_mention_rule() -> str:
+    """قيدُ ذكرِ الثقة في متن الكاتب — يُقرَأ **عند بناء الموجّه** (نمطُ
+    `epistemic_rule`): بلا خصوصيةٍ النصُّ القائم حرفياً؛ ومعها لا ذكرَ لأيّ
+    مقياسٍ داخليّ (الموجة الرابعة، الدرس ٢٥٧)."""
+    try:
+        import silk_render as _R
+        if _R.client_metric_privacy():
+            return ("لا تذكر ثقة الحكم (تسميةً أو نسبة) ولا الدرجة من مئة "
+                    "ولا نسبة تحقّق البيانات في أي موضع من المتن — الحكم "
+                    "يُشرح بأسبابه وشروطه فقط.")
+    except Exception:  # noqa: BLE001 — القيدُ القائم هو الافتراض
+        pass
+    return ("درجة الثقة الوحيدة المسموح ذكرها هي المذكورة أعلاه حرفياً — لا "
+            "تخترع نسبة ثقة أو تسمية نطاق أخرى.")
 
 
 # فئة المنتج من فصل HS — product-category awareness (المرحلة: مقترح ٤).
@@ -1374,8 +1430,7 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         # الدرس ٢٥٤: أعمدةُ القرار وشروطُه تُمرَّران كي يصل الكاتبَ سقفُ
         # تسمية الثقة نفسُه الذي تفرضه البوابةُ عليه — لا تسميةٌ أعلى.
         f"{_isolate(_summarize_verdict(verdict, _mission_declared_gaps(mission_reports), pillars=_ed.get('pillars'), conditions=_ed.get('conditions')))}. "
-        "درجة الثقة الوحيدة المسموح ذكرها هي المذكورة أعلاه حرفياً — لا "
-        "تخترع نسبة ثقة أو تسمية نطاق أخرى.",
+        + _confidence_mention_rule(),
         f"مسوّدة المحلل الشامل (خمس تقاطعات + SWOT):\n{_isolate(analyst_summary)}",
         f"حقائق البعثات الاثنتي عشرة (لا تتجاوزها، كل رقم من هنا فقط):\n{facts}",
     ]
@@ -2031,10 +2086,11 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         "اذكر البسط والمقام كلاً على حدة بدل قسمتهما.\n\n"
         "قاعدة صارمة أخرى (بلاغ حي — 'درجات ثقة تبدو بلا سند تتخلّل السرد'): "
         "**لا تكتب رقم ثقة خاماً في أي فقرة سردية أو نقطة إطلاقاً** (ممنوع "
-        "مثل 'ثقة 0.6' أو '(0.8)' داخل الجملة) — طبقة العرض تحوّل كل استشهاد "
+        "كلمة ثقة متبوعةً بكسر عشري، أو كسرٌ عشري بين قوسين، داخل الجملة) "
+        "— طبقة العرض تحوّل كل استشهاد "
         "لشارة أدلة (✓ موثّق / ◐ ثانوي / ○ غير متحقق) تلقائياً؛ اكتب الادّعاء "
-        "ومصدره بالاسم فقط (مثال: 'وفق UN Comtrade' لا 'وفق UN Comtrade "
-        "بثقة 0.9'). أرقام الثقة الكاملة تصل قارئها عبر الملحق التقني "
+        "ومصدره بالاسم فقط (مثال: 'وفق UN Comtrade' بلا أيّ كسرٍ عشريّ "
+        "للثقة بعدها). أرقام الثقة الكاملة تصل قارئها عبر الملحق التقني "
         "المبني آلياً، لا عبر نثرك. بنفس المنطق: **لا كلمة 'الدرجة' أو "
         "'النتيجة الرقمية' أو أي لغة خوارزمية أخرى (score/محرّك/وزن) في "
         "متن السرد** — هذا تقرير حكم تجاري لا مخرجات نظام تصنيف؛ درجات "

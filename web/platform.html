@@ -3143,6 +3143,13 @@ function viewReportBtn(s) {
       const out = await api("/studies/" + s.id + "/report");
       const v = out.view || {};
       const dr = v.deep_research || null;
+      /* الموجة الرابعة: أرقامُ القياس الداخليّ (الدرجة/الثقة/التحقّق/ثقة
+         المكوّن) تخرج من نسخة العميل بقرار المالك. القائمةُ **من الخادم**
+         (`silk_render.CLIENT_HIDDEN_METRICS` عبر `view.client_hidden_metrics`)
+         لا من راية تُقرَأ هنا — نفسُ المصدر الذي يقرؤه docx العميل، فلا
+         خريطتان تتباعدان. المخفيّ يُسقَط سطراً/عموداً كاملاً لا «—». */
+      const _hid = Array.isArray(v.client_hidden_metrics) ? v.client_hidden_metrics : [];
+      const _hide = (m) => _hid.indexOf(m) >= 0;
       let html = "";
       /* شارة الحكم — لعرض deep_research حصراً (verdict_label/tone يشتقّهما
          silk_render). المسار السريع بلا شارة عمداً: v.brief يحمل سطر التوصية
@@ -3244,7 +3251,7 @@ function viewReportBtn(s) {
         if (_b.rule_line)
           html += '<p class="hint" style="margin:0 0 8px">' +
                   esc(_b.rule_line) + "</p>";
-        if (_b.score_line)
+        if (_b.score_line && !_hide("score"))
           html += '<p style="margin:0 0 10px">' + esc(_b.score_line) + "</p>";
         const prows = Array.isArray(_b.pillars) ? _b.pillars : [];
         if (prows.length) {
@@ -3272,45 +3279,76 @@ function viewReportBtn(s) {
           html += "<label>" + esc(_b.counter_case_head) + "</label>" +
             '<p style="margin:0 0 10px">' + esc(_b.counter_case_line) + "</p>";
       }
+      /* ── الموجة الرابعة (البند ٢): وارداتُ السوق من هذا الصنف ────────
+         البنيةُ جاهزةٌ من `silk_render._imports_view` (deep_research.imports)
+         — رقمٌ بسنته ومصدره، ومسارٌ بسنتين فأكثر، ونصيبُ السعودية؛ والسنةُ
+         التي تعذّر جلبُها تُقال ولا تُملأ. لا مفتاح = لا كتلة. */
+      const _imp = dr && dr.imports;
+      if (_imp && _imp.value_line) {
+        html += "<label>" + esc(_imp.head || "") + "</label>" +
+          '<p style="margin:0 0 6px"><b>' + esc(_imp.value_line) + "</b></p>";
+        ["growth_line", "saudi_line"].forEach((k) => {
+          if (_imp[k]) html += '<p style="margin:0 0 6px">' + esc(_imp[k]) + "</p>";
+        });
+        ["mirror_line", "note", "gap_line"].forEach((k) => {
+          if (_imp[k]) html += '<p class="hint" style="margin:0 0 6px">' + esc(_imp[k]) + "</p>";
+        });
+      }
       const mkts = Array.isArray(v.markets) ? v.markets : [];
-      if (mkts.length) {
+      /* الموجة الرابعة: مخطّطُ الدرجة يُسقَط مع إخفائها — إخفاءُ رقمٍ نصّاً
+         ورسمُه بيانياً تناقض. رسومُ التقرير (البند ٣) مِعلاقٌ مستقلّ. */
+      if (mkts.length && !_hide("score")) {
         /* مخطط الأعمدة يُحقَن بعد فتح النافذة (SVG عبر DOM لا نصّ). */
         html += "<label>" + ar_en("الأسواق بيانياً", "Markets, charted") +
           '</label><div data-role="rep-chart"></div>';
       }
+      const _charts = dr && Array.isArray(dr.charts) ? dr.charts : [];
+      if (_charts.length)
+        html += "<label>" + ar_en("الرسوم البيانية", "Charts") +
+          '</label><div data-role="rep-charts"></div>';
+      const _showScore = !_hide("score"), _showConf = !_hide("confidence");
       if (mkts.length) {
+       /* جدولُ الأسواق المرتَّبة يسقط كاملاً حين يُخفى عموداه — وجدولُ
+          المكوّنات (القيم/المصادر/السنوات، الدرس ٢٥٦) يبقى مستقلاً عنه
+          (مراجعة §58: كان متداخلاً فيه فاختفى مع الخصوصية). */
+       if (_showScore || _showConf) {
         html += "<label>" + ar_en("الأسواق المرتَّبة", "Ranked markets") +
           "</label><div class=\"tbl\"><table><thead><tr><th>" +
-          ar_en("السوق", "Market") + "</th><th>" + ar_en("الدرجة", "Score") +
-          "</th><th>" + ar_en("الثقة", "Confidence") +
-          "</th></tr></thead><tbody>";
+          ar_en("السوق", "Market") + "</th>" +
+          (_showScore ? "<th>" + ar_en("الدرجة", "Score") + "</th>" : "") +
+          (_showConf ? "<th>" + ar_en("الثقة", "Confidence") + "</th>" : "") +
+          "</tr></thead><tbody>";
         mkts.slice(0, 8).forEach((m) => {
           /* مفاتيح صفّ السوق في build_view هي country/score (ملاحظة §58:
              name/total_score كانت تعرض «—» لكل صف). */
           const score = m.score != null ? m.score : m.total_score;
           html += "<tr><td>" + esc(m.country || m.name || "—") + "</td>" +
-            '<td><span class="num">' +
-            (score != null ? Number(score).toFixed(2) : "—") +
-            '</span></td><td><span class="num">' +
-            (m.confidence != null ? Math.round(m.confidence * 100) + "%" : "—") +
-            "</span></td></tr>";
+            (_showScore ? '<td><span class="num">' +
+              (score != null ? Number(score).toFixed(2) : "—") + "</span></td>" : "") +
+            (_showConf ? '<td><span class="num">' +
+              (m.confidence != null ? Math.round(m.confidence * 100) + "%" : "—") +
+              "</span></td>" : "") +
+            "</tr>";
         });
         html += "</tbody></table></div>";
+       }
         /* مكوّنات أفضل سوق بمصادرها — الثقة هي البُعد القابل للمقارنة
            (القيم بوحدات مختلفة فلا تُرسَم على محور واحد — قاعدة dataviz)؛
            كل رقم بمصدره، والغائب «غير متاح» لا صفر مختلَق (D4). */
         const comps = Array.isArray(mkts[0].components_detail)
           ? mkts[0].components_detail : [];
+        const _showCC = !_hide("component_confidence");
         if (comps.length) {
           html += "<label>" + ar_en("مكوّنات أفضل سوق ومصادرها",
             "Top market's components and sources") +
             '</label><div class="tbl"><table><thead><tr><th>' +
             ar_en("المكوّن", "Component") + "</th><th>" +
-            ar_en("القيمة", "Value") + "</th><th>" +
+            ar_en("القيمة", "Value") + "</th>" +
             /* البند ٣ (لغة الزائر): «الثقة» مصطلح قياس داخلي — العنوان
-               يقول معناه: كم تحقّقنا من هذا الرقم. */
-            ar_en("كم تحقّقنا منه", "How much we verified") + "</th><th>" +
-            ar_en("المصدر", "Source") + "</th></tr></thead><tbody>";
+               يقول معناه: كم تحقّقنا من هذا الرقم. الموجة الرابعة: العمودُ
+               كلُّه يُسقَط عند إخفاء ثقة المكوّنات. */
+            (_showCC ? "<th>" + ar_en("كم تحقّقنا منه", "How much we verified") + "</th>" : "") +
+            "<th>" + ar_en("المصدر", "Source") + "</th></tr></thead><tbody>";
           comps.slice(0, 8).forEach((c) => {
             const conf = c.confidence != null
               ? Math.round(Number(c.confidence) * 100) : null;
@@ -3343,10 +3381,13 @@ function viewReportBtn(s) {
                   "</span>");
             html += "<tr><td>" + esc(c.display_name || c.name || "—") + "</td>" +
               '<td><span class="num">' + esc(val) + "</span>" + unit + "</td>" +
-              '<td><div class="meter" style="min-width:64px"><i style="width:' +
-              (conf != null ? conf : 0) + '%"></i></div><span class="num" ' +
-              'style="font-size:var(--fs-meta)">' + (conf != null ? conf + "%" : "—") +
-              "</span></td><td>" + esc(c.source || "—") + srcYear + "</td></tr>";
+              (_showCC
+                ? '<td><div class="meter" style="min-width:64px"><i style="width:' +
+                  (conf != null ? conf : 0) + '%"></i></div><span class="num" ' +
+                  'style="font-size:var(--fs-meta)">' + (conf != null ? conf + "%" : "—") +
+                  "</span></td>"
+                : "") +
+              "<td>" + esc(c.source || "—") + srcYear + "</td></tr>";
           });
           html += "</tbody></table></div>";
         }
@@ -3403,6 +3444,9 @@ function viewReportBtn(s) {
           iso3: m.iso3, country: m.country || m.name,
           score: m.score != null ? m.score : m.total_score,
           confidence: m.confidence})), "");
+      /* الموجة الرابعة (البند ٣): رسومُ التقرير من بياناتٍ محضة. */
+      const chartsHost = veil.querySelector('[data-role="rep-charts"]');
+      if (chartsHost) renderReportCharts(chartsHost, _charts);
     } catch (e) { tell(ar_en("تعذّر عرض التقرير: ", "Could not show the report: ") + e.message, "err"); }
     b.disabled = false;
   };
@@ -4039,6 +4083,109 @@ function renderStudiesChart(series) {
     }
   });
   host.appendChild(svg);
+}
+
+/* ── الموجة الرابعة (البند ٣): رسومُ التقرير من بياناتٍ محضة ──────────────
+   `deep_research.charts` يبنيها `silk_render._charts_view` — الواجهةُ ترسم
+   ولا تحسب. أعمدةٌ أفقية بقيمةٍ مطبوعةٍ لكلّ صفّ (اللونُ ليس القناةَ الوحيدة)،
+   رسمٌ لكلّ وحدة (لا خلطَ وحداتٍ على محورٍ واحد). نفسُ القيود الخمسة لمخطّط
+   الأسواق: قياسٌ من الحاوية، `direction:ltr` على النصّ، ارتفاعٌ صريح + نسبةُ
+   أبعاد، `height:auto`، وتسمياتُ المحاور 11.5–12px تحت الاستثناء المعلَن.
+   القيمةُ الغائبة «—» بلا عمود، والسلسلةُ الفارغة حالةٌ معلنة لا محورٌ فارغ.
+   الألوانُ من ملف الهوية فقط: أزرقُ الداشبورد للسلسلة، والذهبيُّ (لونُ
+   بياناتٍ لا واجهة) للصفّ المميَّز — حصةُ السعودية. */
+function _chartNum(v, unit) {
+  const n = Number(v);
+  if (unit === "%") return (Math.round(n * 10) / 10) + "%";
+  if (unit === "USD") {
+    const a = Math.abs(n);
+    if (a >= 1e9) return "$" + (Math.round(n / 1e7) / 100) + "B";
+    if (a >= 1e6) return "$" + (Math.round(n / 1e4) / 100) + "M";
+    if (a >= 1e3) return "$" + (Math.round(n / 10) / 100) + "K";
+    return "$" + Math.round(n);
+  }
+  return n.toLocaleString("en-US", {maximumFractionDigits: 2});
+}
+
+function renderReportCharts(host, charts) {
+  host.textContent = "";
+  const list = Array.isArray(charts) ? charts : [];
+  const ICON = "M3 3v18h18M7 16l3.5-4 3 2.5L18 9";
+  if (!list.length) {
+    emptyState(host, ICON, ar_en("لا بيانات كافية لرسمٍ بعد.",
+                                 "Not enough data to chart yet."), "");
+    return;
+  }
+  list.forEach((ch) => {
+    const box = document.createElement("div");
+    box.style.margin = "0 0 12px";
+    const cap = document.createElement("div");
+    cap.className = "prov";
+    cap.style.fontWeight = "600";
+    cap.textContent = ch.title || "";
+    box.appendChild(cap);
+    const rows = (Array.isArray(ch.series) ? ch.series : [])
+      .filter((r) => r && r.label != null);
+    if (!rows.length) {
+      emptyState(box, ICON, ch.note || ar_en("لا بيانات كافية.", "Not enough data."), "");
+      host.appendChild(box);
+      return;
+    }
+    const W = Math.max(300, Math.min(560, Math.round(host.clientWidth || 560)));
+    const H = 8 + rows.length * 26;
+    const known = (r) => r.value != null && !Number.isNaN(Number(r.value));
+    const maxV = Math.max(1e-9, ...rows.map((r) => (known(r) ? Number(r.value) : 0)));
+    const LABELS = rows.map((r) => String(r.label));
+    const LONGEST = Math.max(3, ...LABELS.map((t) => t.length));
+    const GUT = Math.min(Math.round(W * 0.45),
+                         Math.max(84, Math.round(LONGEST * 7 + 12)));
+    const VAL = 76;                                   // خانة القيمة المطبوعة
+    const BAR = Math.max(60, W - GUT - VAL - 16);
+    const svg = _svgEl("svg", {viewBox: "0 0 " + W + " " + H,
+                               width: String(W), height: String(H),
+                               preserveAspectRatio: "xMinYMin meet", role: "img",
+                               "aria-label": ch.title || ""});
+    svg.style.maxWidth = "100%";
+    svg.style.height = "auto";
+    rows.forEach((r, i) => {
+      const y = 4 + i * 26;
+      const v = known(r) ? Number(r.value) : 0;
+      const bw = known(r) ? Math.round((BAR * Math.max(0, v)) / maxV) : 0;
+      const g = _svgEl("g", {});
+      const label = _svgEl("text", {x: W - 8, y: y + 12, "text-anchor": "end",
+        direction: "ltr", "font-size": "12", fill: "#64748B"});
+      label.textContent = LABELS[i];
+      if (LABELS[i].length * 7 > GUT - 10) {
+        label.setAttribute("textLength", String(Math.max(30, GUT - 10)));
+        label.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      }
+      g.appendChild(label);
+      g.appendChild(_svgEl("rect", {x: VAL + 8, y: y, width: String(BAR),
+        height: "16", rx: "4", fill: "#EEF2F7"}));
+      if (bw)
+        g.appendChild(_svgEl("rect", {x: VAL + 8 + (BAR - bw), y: y,
+          width: String(bw), height: "16", rx: "4",
+          fill: r.highlight ? "#C9A227" : "#2563EB",
+          opacity: r.muted ? "0.55" : "1"}));
+      const val = _svgEl("text", {x: VAL, y: y + 12, direction: "ltr",
+        "text-anchor": "end", "font-size": "11.5", fill: "#111827"});
+      val.textContent = known(r) ? _chartNum(v, ch.unit) : "—";
+      g.appendChild(val);
+      const t = _svgEl("title", {});
+      t.textContent = LABELS[i] + " — " +
+        (known(r) ? _chartNum(v, ch.unit)
+                  : ar_en("بلا قيمة", "no value"));
+      g.appendChild(t);
+      svg.appendChild(g);
+    });
+    box.appendChild(svg);
+    /* مصدرُ الرسم وسنتُه وملاحظةُ نقصه تحته حرفياً — رقمٌ بلا مصدرٍ مستحيل. */
+    const prov = document.createElement("div");
+    prov.className = "prov";
+    prov.textContent = [ch.source, ch.year, ch.note].filter(Boolean).join(" · ");
+    box.appendChild(prov);
+    host.appendChild(box);
+  });
 }
 
 function renderHomeStudies(rows) {

@@ -164,6 +164,53 @@ def open_conditions_single() -> bool:
         "1", "true", "yes")
 
 
+# ── الموجة الرابعة (تقريرٌ تنفيذيّ) — ثلاثُ راياتٍ مستقلّة مطفأةٌ افتراضياً ──
+#
+# قرارُ المالك (٢٠٢٦-٠٩-١٧، بعد دراسة ماليزيا المحجوبة): أرقامُ القياس
+# الداخليّ الأربعة (درجةُ ثقة الحكم، نسبةُ التحقّق، ثقةُ كلّ مكوّن، والدرجةُ
+# الكلية من ١٠٠) «لا تفيد القارئ وتفتح بابَ التساؤل على أيّ أساسٍ بُنيت» —
+# فتخرج من **نسخة العميل** وحدَها. المحرّكُ والبوّابةُ وسطحُ المشغّل يقرؤون
+# كلَّ مفتاحٍ كما هو: **لا مفتاحَ يُحذَف ولا رقمَ يتغيّر** — المتغيّرُ الوحيد هو
+# مَن يُعرَض له. وهذا بعينه الحلُّ الجذريّ للحجب الأزليّ (الدرس ٢٥٤): نصٌّ لا
+# يحمل تسميةَ ثقةٍ لا يمكن أن يتناقض معها.
+#
+# ثلاثُ راياتٍ لا واحدة: أمرُ المالك القائم «إذا صار حجب رجّع الرايات» لا
+# يعمل إلا بتفصيلٍ كهذا — تراجعٌ عن واحدةٍ لا يُسقِط البقيّة.
+CLIENT_METRIC_PRIVACY_FLAG = "SILK_CLIENT_METRIC_PRIVACY"
+IMPORTS_SPOTLIGHT_FLAG = "SILK_IMPORTS_SPOTLIGHT"
+REPORT_CHARTS_FLAG = "SILK_REPORT_CHARTS"
+
+# أرقامُ القياس التي تخرج من نسخة العميل عند التفعيل — **أسماءٌ دلالية** لا
+# مفاتيحُ عرض: كلُّ سطحِ عميل (`web/platform.html`، docx العميل) يسأل «هل
+# المقياسُ X مخفيّ؟» بدل أن يحفظ قائمةَ مفاتيحَ تتباعد عن مصدرها.
+CLIENT_HIDDEN_METRICS: tuple = (
+    "score",                  # الدرجةُ الكلية «64 من 100» وسطرُها
+    "confidence",             # درجةُ ثقة الحكم تسميةً ونسبةً
+    "verification",           # نسبةُ التحقّق من البيانات وقسمُ التغطية
+    "component_confidence",   # عمودُ «كم تحقّقنا منه» لكلّ مكوّن
+)
+
+
+def _flag_on(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes",
+                                                        "on")
+
+
+def client_metric_privacy() -> bool:
+    """هل تخرج أرقامُ القياس الداخليّ من نسخة العميل؟ — تُقرَأ عند النداء."""
+    return _flag_on(CLIENT_METRIC_PRIVACY_FLAG)
+
+
+def imports_spotlight() -> bool:
+    """هل تتقدّم وارداتُ السوق (بسلسلتها وسنتها) إلى وجه التقرير؟"""
+    return _flag_on(IMPORTS_SPOTLIGHT_FLAG)
+
+
+def report_charts() -> bool:
+    """هل يُصدِر العرضُ بياناتِ الرسوم البيانية (`deep_research.charts`)؟"""
+    return _flag_on(REPORT_CHARTS_FLAG)
+
+
 def open_conditions(ed: object, cap: "int | None" = None) -> dict:
     """الشروطُ المفتوحة **بعددها الكامل** — المصدرُ الواحد لكلّ سطح.
 
@@ -300,6 +347,11 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
         out["score_line"] = _t("decision_weighted_line",
                                score=out["score_pct"],
                                conf=out["confidence_pct"])
+    # الموجة الرابعة: القائمةُ **إضافيّة** — المفاتيحُ أعلاه تبقى كما هي
+    # للمحرّك والبوّابة وسطح المشغّل؛ سطوحُ العميل تقرأ القائمةَ فتُسقِط
+    # السطرَ/الخليةَ كاملاً (لا «—» ولا نسبةٌ عارية).
+    if client_metric_privacy():
+        out["client_hidden_metrics"] = list(CLIENT_HIDDEN_METRICS)
     # ── الصنف ٨ (موجة عيوب التقرير) — خلف رايةٍ مطفأةٍ افتراضياً ──────────
     # (أ) **سقفُ نطاق الثقة**: لا «عالية» عند عمودٍ أساسيٍّ مجهول أو شرطين
     #     مفتوحين. **الرقمُ لا يُمَسّ** — التسميةُ وحدها تُسقَّف، فلا قيمةَ
@@ -435,10 +487,16 @@ def _brief(decision: dict, cp: dict, lang: str = "ar") -> list[str]:
         label = (_verdict_label(tone, "en")
                  if tone in _VERDICT_LABELS_AR else
                  str(decision.get("verdict") or ""))
-    conf = N.confidence_phrase(decision.get("confidence"), lang)
-    lines = [(f"التوصية: {label} — سوق {market} (ثقة {conf})" if ar else
-              f"Recommendation: {label} — {market} market "
-              f"(confidence {conf})")]
+    if client_metric_privacy():
+        # الموجة الرابعة: المختصرُ سطحُ عميل (يُعرَض في نافذة المنصّة حين
+        # لا نصَّ للكاتب) — التسميةُ والنسبةُ تخرجان منه.
+        lines = [(f"التوصية: {label} — سوق {market}" if ar else
+                  f"Recommendation: {label} — {market} market")]
+    else:
+        conf = N.confidence_phrase(decision.get("confidence"), lang)
+        lines = [(f"التوصية: {label} — سوق {market} (ثقة {conf})" if ar else
+                  f"Recommendation: {label} — {market} market "
+                  f"(confidence {conf})")]
     if cp.get("available"):
         best = cp.get("nearest_beatable")
         if best:
@@ -1381,6 +1439,20 @@ def _strip_stray_markdown(text: str) -> str:
 # للإنجليزية لكن للعربية؛ يستبدل الرقم الخام بعبارة لغوية عبر
 # silk_narrative.confidence_phrase (نفس القيمة، عبارة مقروءة — لا اختلاق).
 _AR_RAW_CONF_RE = re.compile(r"ثقة\s*[:=]?\s*\(?(0\.\d{1,4})\)?")
+# الموجة الرابعة (الدرس ٢٥٧): عند خصوصية أرقام القياس يصير المُصلِحُ **حذفاً**
+# لا إعادةَ صياغة — وإلّا أعاد حقنَ «ثقة متوسطة (64%)» في التقرير الذي
+# ننظّفه منها (مقيسٌ: المُصلِحُ يُصنِّع التسميةَ ليُرضي حارسَ `raw_confidence`).
+# يبتلع البادئةَ («بثقة»/«وثقة») والقوسين المحيطين كي لا يبقى قوسٌ فارغ.
+# مراجعة §58 (ثلاث حالاتٍ مُعاد إنتاجها): بلا حدّ كلمةٍ كانت تأكل «درجة ال»
+# من «درجة الثقة: 0.8»، وتلتهم قوسَ استشهادٍ لا يخصّها. الآن: البادئاتُ
+# («درجة الثقة»/«الثقة»/«بثقة»/«وثقة») تُبتلَع كلمةً كاملةً من حدّها
+# (`(?<!\w)`)، والقوسان لا يُحذَفان إلا **متزاوجَين** حول المقطع كلِّه أو حول
+# الرقم وحدَه، والفاصلةُ التي تسبق المقطعَ داخل قوسٍ تُبتلَع معه كي لا يبقى «،)».
+_CONF_PREFIX = r"(?:درجة\s+)?(?:بال|ال|ب|و)?ثقة\s*[:=]?\s*"
+_AR_RAW_CONF_STRIP_RE = re.compile(
+    r"\s*[\(（]\s*" + _CONF_PREFIX + r"0\.\d{1,4}\s*[\)）]"          # (ثقة 0.9)
+    r"|(?:\s*[،,])?\s*(?<!\w)" + _CONF_PREFIX + r"\(0\.\d{1,4}\)"    # ثقة (0.9)
+    r"|(?:\s*[،,])?\s*(?<!\w)" + _CONF_PREFIX + r"0\.\d{1,4}")       # ثقة 0.9
 
 
 def _ar_conf_repl(m: "re.Match") -> str:
@@ -1641,7 +1713,10 @@ def _strip_internal_plumbing(text: str | None,
     # §٢ (تدقيق «تحليل #1» DZA): تنسيق «**» شارد + رقم ثقة عربي خام — راجع
     # تعليقات الثوابت أعلاه لماذا لا يُمَسّ "## "/"### ".
     text = _strip_stray_markdown(text)
-    text = _AR_RAW_CONF_RE.sub(_ar_conf_repl, text)
+    if client_metric_privacy():
+        text = _AR_RAW_CONF_STRIP_RE.sub("", text)
+    else:
+        text = _AR_RAW_CONF_RE.sub(_ar_conf_repl, text)
     # §2.3 (أمر العمل الرئيس): مفتاح بعثة داخلي (snake_case) تسرَّب في المتن
     # أو جدول الحكم («(consumer_culture)») يُستبدَل باسمه العربي المعروض.
     text = _map_mission_keys(text)
@@ -1664,7 +1739,10 @@ def _strip_internal_plumbing(text: str | None,
     def _conf_value(m: "re.Match") -> str:
         from silk_narrative import confidence_phrase
         return f"درجة الثقة{m.group(1)}{confidence_phrase(float(m.group(2)))}"
-    text = _EN_CONF_VALUE_RE.sub(_conf_value, text)
+    # الموجة الرابعة: عند الخصوصية يُحذَف الرقمُ الخام بلا تسميةٍ بديلة
+    # (`_client_sanitize` يُنظّف القوسَ الفارغ المتخلّف).
+    text = _EN_CONF_VALUE_RE.sub("" if client_metric_privacy() else _conf_value,
+                                 text)
 
     def _ar_conf_value(m: "re.Match") -> str:
         from silk_narrative import confidence_phrase
@@ -1673,7 +1751,8 @@ def _strip_internal_plumbing(text: str | None,
             return f"درجة الثقة {confidence_phrase(float(raw))}"
         except ValueError:
             return "درجة الثقة"
-    text = _AR_CONF_RE.sub(_ar_conf_value, text)
+    text = _AR_CONF_RE.sub("" if client_metric_privacy() else _ar_conf_value,
+                           text)
     text = _EN_FIELD_RE.sub(lambda m: _EN_FIELD_AR[m.group(1)], text)
     from silk_narrative import humanize_technical_note, verdict_ar
     text = _RAW_VERDICT_RE.sub(lambda m: verdict_ar(m.group(1).upper()), text)
@@ -2212,6 +2291,43 @@ def _fix_hhi_false_precision(text: str) -> str:
             return m.group(0)
 
     return _HHI_DECIMAL_FIX_RE.sub(_round, text)
+
+
+# الموجة الرابعة (الدرس ٢٥٨): مبلغٌ بمنازلَ عشريةٍ زائفة — «51,358,600.874»
+# رقمُ استيرادٍ بالدولار بثلاث منازل، مصدرُه `sum(vals)` بلا تقريبٍ في أداة
+# كومتريد ثم نسخُ الكاتبِ له حرفياً من كتلة الحقائق. الرقمُ **المخزَّن لا
+# يُمَسّ**؛ العرضُ وحده يُقرَّب إلى منزلتين (سقفُ `silk_narrative.AMOUNT_MAX_DP`)
+# وعقدُ الإسناد يسمح بذلك صراحةً (`silk_evidence_contract.unsupported_numbers`:
+# نصفُ آخِر خانة). النطاق: مبلغٌ بفواصل آلافٍ أو بخمس خاناتٍ فأكثر — فلا يمسّ
+# نسبةً ولا سعرَ وحدةٍ ولا إحداثيّاً (خاناتها الصحيحة أقلّ).
+_AMOUNT_DECIMAL_FIX_RE = re.compile(
+    r"(?<![\d.,])(\d{1,3}(?:,\d{3})+|\d{5,})\.(\d{3,})(?!\d)")
+
+
+_APPENDIX_HEADING_RE = re.compile(
+    r"^##\s+\d+\.\s*(?:الملاحق|Appendices)\s*$", re.M)
+
+
+def _fix_amount_false_precision(text: str) -> str:
+    """قرِّب أيّ مبلغٍ كبيرٍ بثلاث منازلَ فأكثر إلى منزلتين (عرضٌ لا تخزين) —
+    **في المتن دون الملاحق**: الدقّةُ الكاملة هناك مشروعةٌ (نفسُ حدّ
+    `silk_quality_gate._split_off_appendix`؛ مراجعة §58)."""
+    if not text:
+        return text
+    m = _APPENDIX_HEADING_RE.search(text)
+    if m:
+        return _fix_amount_false_precision(text[:m.start()]) + text[m.start():]
+
+    def _round(m: "re.Match") -> str:
+        whole, frac = m.group(1), m.group(2)
+        try:
+            n = round(float(whole.replace(",", "") + "." + frac), 2)
+        except ValueError:
+            return m.group(0)
+        s = f"{n:,.2f}" if "," in whole else f"{n:.2f}"
+        return s.rstrip("0").rstrip(".") if "." in s else s
+
+    return _AMOUNT_DECIMAL_FIX_RE.sub(_round, text)
 
 
 # الدراسة الحية الرابعة (خلية «سوي سويسرا (نستله)»): بتر-ثم-استئناف بكلمة
@@ -3000,6 +3116,9 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
     _report_text_glossed = _fix_price_column_currency_label(_report_text_glossed)
     # PR B §B9: قرِّب دقّةَ HHI العشرية الوهميّة إلى صحيح قبل التخزين/العرض.
     _report_text_glossed = _fix_hhi_false_precision(_report_text_glossed)
+    # الموجة الرابعة: نفسُ النمط على المبالغ — خلف رايتها.
+    if imports_spotlight():
+        _report_text_glossed = _fix_amount_false_precision(_report_text_glossed)
     # الدراسة الحية الرابعة: بادئة مبتورة تسبق كلمتها الكاملة («سوي سويسرا»)
     # تُطوى بسجل تدقيق (كل رقعة مسجّلة قبل/بعد/موضعاً — شرط المُشرِف).
     _report_text_glossed, _prefix_repairs = \
@@ -3024,7 +3143,7 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
     # (مراجعة §58 #4). النصّ يبقى نظيفاً؛ العلَمان أدناه يقودان شاراتِ المُصدِّرين.
     _report_incomplete = bool(report_out.get("incomplete"))
     _missing_sections = list(report_out.get("missing_sections") or [])
-    return {
+    out = {
         "market": result.get("market"),
         # Wave 2: اسم المنتج المدروس يصل عرض البحث كي يشتقّ منه المُصدِّرُ سطرَ
         # إخلاء المسؤولية بارامتريًّا (لا «التمور السعودية» مثبَّتة) وفلترةَ الجغرافيا.
@@ -3173,6 +3292,157 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
         # {} لتشغيلات سابقة لم تحمله.
         "verdict_consistency": dr.get("verdict_consistency") or {},
     }
+    # الموجة الرابعة: وارداتُ السوق بسلسلتها (البند ٢) وبياناتُ الرسوم (البند
+    # ٣) — مفتاحان **إضافيّان** خلف رايتيهما؛ مطفأتين العرضُ حرفياً كما كان.
+    if imports_spotlight():
+        out["imports"] = _imports_view(result, dr, lang)
+    if report_charts():
+        out["charts"] = _charts_view(result, dr, out.get("imports"), lang)
+    return out
+
+
+def _fmt_usd(n: object, lang: str) -> str:
+    """مبلغٌ بالدولار بلغة التقرير — العربيةُ عبر `fmt_amount` القائم، والإنجليزية
+    بنفس عتبات المقدار (مليون/مليار) كي لا يُقرأ الرقمُ الخامُ بسبعِ خانات."""
+    from silk_narrative import fmt_amount, fmt_number
+    if lang != "en":
+        return fmt_amount(n, "USD")
+    try:
+        v = float(n)
+    except (TypeError, ValueError):
+        return str(n)
+    a = abs(v)
+    if a >= 1e9:
+        return f"USD {v / 1e9:,.2f}".rstrip("0").rstrip(".") + " billion"
+    if a >= 1e6:
+        return f"USD {v / 1e6:,.2f}".rstrip("0").rstrip(".") + " million"
+    return f"USD {fmt_number(v, 0)}"
+
+
+def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
+    """وارداتُ السوق من هذا الصنف **جاهزةً للعرض** — البند ٢ من الموجة الرابعة.
+
+    المصدرُ الواحد `silk_deep_pillars.import_series`: نفسُ حقائق بعثة
+    `trade_flow` التي يقرأ منها عمودُ السوق، **بلا نداءٍ جديد**. السنةُ التي
+    تعذّر جلبُها تُعلَن ولا تُقدَّر؛ سنةٌ واحدةٌ مرصودة = رقمٌ بسنته بلا مسار
+    (لا مسارَ بنقطةٍ واحدة). `None` حين لا رقمَ أصلاً — لا هيكلَ فارغ.
+    """
+    try:
+        import silk_deep_pillars as _P
+        import silk_i18n as _I
+        from silk_narrative import fmt_pct, growth_phrase
+        s = _P.import_series(dr.get("missions") or {})
+    except Exception as e:  # noqa: BLE001 — طبقةُ عرضٍ لا تُسقِط العرض
+        log.warning("imports view skipped: %s", e)
+        return None
+    pts = s.get("series") or []
+    if not pts:
+        return None
+    latest = pts[-1]
+    out = {
+        "head": _I.t("imports_head", lang),
+        "series": pts,
+        "source": latest.get("source") or "UN Comtrade",
+        "latest_year": latest["year"],
+        "latest_value_usd": latest["value"],
+        "value_line": _I.t("imports_value_line", lang,
+                           amount=_fmt_usd(latest["value"], lang),
+                           year=latest["year"],
+                           source=latest.get("source") or "UN Comtrade"),
+        "growth_pct": s.get("growth_pct"),
+        "cagr_pct": s.get("cagr_pct"),
+        "years_missing": s.get("years_missing") or [],
+    }
+    if len(pts) >= 2 and s.get("growth_pct") is not None:
+        g = float(s["growth_pct"])
+        y0, y1 = pts[0]["year"], pts[-1]["year"]
+        has_cagr = s.get("cagr_pct") is not None
+        out["growth_line"] = _I.t(
+            "imports_growth_line" if has_cagr else "imports_growth_line_nocagr",
+            lang,
+            phrase=growth_phrase(s.get("cagr_pct"), g, f"{y0}–{y1}"),
+            verb=("grew" if g >= 0 else "shrank"),
+            growth=fmt_pct(abs(g)), first_year=y0, last_year=y1,
+            cagr=(fmt_pct(s["cagr_pct"]) if has_cagr else ""))
+    elif len(pts) >= 2:
+        # سنتان فأكثر ولا نموَّ محسوب (مراجعة §58): غيابٌ يُقال لا يُسكَت.
+        out["note"] = _I.t("imports_trend_not_computed", lang)
+    if len(pts) < 2:
+        out["note"] = _I.t("imports_single_year_note", lang,
+                           year=latest["year"])
+    if out["years_missing"]:
+        out["gap_line"] = _I.t("imports_gap_years_note", lang,
+                               years="، ".join(str(y) for y in
+                                              out["years_missing"]))
+    if any(p.get("mirrored") for p in pts):
+        out["mirror_line"] = _I.t(
+            "imports_mirrored_note", lang,
+            years="، ".join(str(p["year"]) for p in pts if p.get("mirrored")))
+    # نصيبُ السعودية من هذه الواردات — من مكوّن الصفّ نفسِه (لا حسابَ ثانٍ).
+    comps = (((result.get("markets") or [None])[0]) or {}).get("components") \
+        or {}
+    sp = _dp(comps.get("saudi_position")) if comps.get("saudi_position") else {}
+    if isinstance(sp.get("value"), (int, float)):
+        out["saudi_share_pct"] = float(sp["value"])
+        # مراجعة §58: سنةُ الحصّة سنتُها هي لا سنةُ الواردات — بلا `data_year`
+        # يُقال الرقمُ بلا سنةٍ مُستعارة (لا اختلاقَ سنة).
+        if sp.get("data_year"):
+            out["saudi_line"] = _I.t("imports_saudi_line", lang,
+                                     pct=fmt_pct(sp["value"]),
+                                     year=sp["data_year"])
+        else:
+            out["saudi_line"] = _I.t("imports_saudi_line_noyear", lang,
+                                     pct=fmt_pct(sp["value"]))
+    return out
+
+
+def _charts_view(result: dict, dr: dict, imports: "dict | None",
+                 lang: str) -> list:
+    """بياناتُ الرسوم **محضةً** — البند ٣: الواجهةُ ترسم ولا تحسب.
+
+    كلُّ رسمٍ يحمل مصدرَه وسنتَه وملاحظةَ نقصِه؛ قيمةٌ غائبة تصل `None` (لا
+    صفر) فترسمها الواجهةُ «—» بلا عمود. الرسومُ بلا بياناتٍ لا تُضاف (لا
+    محورَ فارغ). لا خلطَ وحداتٍ على محورٍ واحد: رسمٌ لكلّ وحدة.
+    """
+    import silk_i18n as _I
+    charts: list = []
+    pts = (imports or {}).get("series") or []
+    if pts:
+        charts.append({
+            "id": "imports_trend", "kind": "bars", "unit": "USD",
+            "title": _I.t("chart_imports_trend", lang),
+            "series": [{"label": str(p["year"]), "year": p["year"],
+                        "value": p["value"], "muted": bool(p.get("mirrored"))}
+                       for p in pts],
+            "source": (imports or {}).get("source") or "UN Comtrade",
+            "year": f"{pts[0]['year']}–{pts[-1]['year']}" if len(pts) > 1
+                    else str(pts[-1]["year"]),
+            # مراجعة §58: عمودٌ باهتٌ (مرآة) بلا تعليلٍ على الرسم نفسِه لغز —
+            # السطورُ الثلاثة تُضمّ معاً.
+            "note": " · ".join(x for x in (
+                (imports or {}).get("note"), (imports or {}).get("gap_line"),
+                (imports or {}).get("mirror_line")) if x),
+        })
+    try:
+        import silk_deep_pillars as _P
+        rows, src_f = _P.top_supplier_shares(dr.get("missions") or {})
+    except Exception as e:  # noqa: BLE001
+        log.warning("supplier shares chart skipped: %s", e)
+        rows, src_f = [], None
+    if rows:
+        year = (src_f or {}).get("year")
+        charts.append({
+            "id": "supplier_shares", "kind": "bars", "unit": "%",
+            "title": _I.t("chart_supplier_shares", lang),
+            "series": [{"label": r["partner"], "value": r["share"],
+                        "highlight": bool(r.get("saudi"))} for r in rows],
+            "source": (src_f or {}).get("source") or "UN Comtrade",
+            "year": str(year) if year else "",
+            "note": (_I.t("chart_saudi_highlight_note", lang)
+                     if any(r.get("saudi") for r in rows) else
+                     _I.t("chart_saudi_absent_note", lang)),
+        })
+    return charts
 
 
 def _public_url(source: str) -> str:
@@ -3527,6 +3797,10 @@ def build_view(result: dict, lang: str = "ar") -> dict:
         "year_fell_back": bool(result.get("year_fell_back")),
         "classified": result.get("classified", False),
         "decision": decision,
+        # الموجة الرابعة: القائمةُ على العرض الأعلى أيضاً — الواجهةُ تُسقِط
+        # عمودَ ثقةِ المكوّنات حتى حين لا كتلةَ أساس (لا قرارَ محرّك).
+        **({"client_hidden_metrics": list(CLIENT_HIDDEN_METRICS)}
+           if client_metric_privacy() else {}),
         "dynamics": _sanitized_dynamics(result.get("dynamics")),
         "competitive_position": cp,
         "completeness": _completeness(markets),

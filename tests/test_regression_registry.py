@@ -4582,6 +4582,37 @@ _LESSONS = {
                  "def test_prompt_does_not_contain_what_the_gate_blocks",
                  "def test_every_flagged_blocker_is_classified")(),
         _needles("tests/test_lessons_enforcement.py", '(254, ')()),
+    257: lambda: (
+        _needles("silk_render.py", "CLIENT_HIDDEN_METRICS",
+                 "def client_metric_privacy", "_AR_RAW_CONF_STRIP_RE")(),
+        _needles("silk_ai_judge.py", "def _confidence_mention_rule")(),
+        _needles("silk_quality_gate.py", "PRESENCE_CONDITIONAL_CHECKS",
+                 "def _check_client_metric_exposure")(),
+        _needles("silk_reports.py", "def _client_hidden")(),
+        _needles("web/platform.html", "v.client_hidden_metrics",
+                 'mkts.length && !_hide("score")')(),
+        _needles("tests/test_client_metric_privacy.py",
+                 "def test_raw_confidence_sanitizer_strips_instead_of_"
+                 "relabelling",
+                 "def test_presence_conditional_checks_are_real_and_still_"
+                 "fire")(),
+        _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    258: lambda: (
+        _needles("silk_deep_pillars.py", "def import_series",
+                 "def top_supplier_shares")(),
+        _needles("silk_render.py", "def _fix_amount_false_precision",
+                 "def _imports_view", "def _charts_view")(),
+        _needles("silk_ai_judge.py", "def _fact_display_value")(),
+        _needles("silk_quality_gate.py",
+                 "def _check_amount_false_precision")(),
+        _needles("silk_reports.py", "def _client_imports_section")(),
+        _needles("web/platform.html", "function renderReportCharts(")(),
+        _needles("tests/test_imports_spotlight.py",
+                 "def test_series_is_read_from_the_tool_shape_and_gaps_are_"
+                 "declared")(),
+        _needles("tests/test_report_charts_data.py",
+                 "def test_charted_values_have_a_fact_behind_them")(),
+        _needles("tests/test_lessons_enforcement.py", '(258, ')()),
     255: lambda: (
         _needles("silk_style_contract.py", '"consultant": "مستشار"',
                  '"greengrocer": "بائع خضار وفواكه"')(),

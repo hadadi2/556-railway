@@ -3504,6 +3504,34 @@ def _eco_term(val: object, lang: str) -> str:
     return _ECO_TERM_EN.get(v, v) if lang == "en" else v
 
 
+def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
+    """وارداتُ السوق من هذا الصنف في تقرير العميل — الموجة الرابعة (البند ٢).
+
+    عرضٌ لا بناء: البنيةُ جاهزةٌ من `silk_render._imports_view` (نفسُ ما تقرؤه
+    `web/platform.html`). بلا مفتاح `imports` (الرايةُ مطفأة أو لا رقم) لا
+    شيءَ يُضاف — لا هيكلَ فارغ. الجدولُ بالسنوات يظهر بسنتين فأكثر فقط.
+    """
+    imp = (dr or {}).get("imports") or {}
+    if not imp.get("value_line"):
+        return
+    doc.add_heading(_lang_safe(imp.get("head") or "", lang) or imp.get("head"),
+                    level=2)
+    para = doc.add_paragraph()
+    run = para.add_run(imp["value_line"])
+    run.bold = True
+    for key in ("growth_line", "saudi_line", "mirror_line", "note",
+                "gap_line"):
+        if imp.get(key):
+            doc.add_paragraph(str(imp[key]))
+    pts = [p for p in (imp.get("series") or []) if isinstance(p, dict)]
+    if len(pts) >= 2:
+        from silk_render import _fmt_usd
+        _add_table(doc, [_T("imports_col_year", lang),
+                         _T("imports_col_value", lang)],
+                   [[str(p.get("year")), _fmt_usd(p.get("value"), lang)]
+                    for p in pts])
+
+
 def _client_economics_section(doc, dr: dict, lang: str = "ar") -> None:
     """قسم الاقتصاد في تقرير العميل — الحل العكسي وسيناريوهاته بلغة تجارية
     (الموجة ٣ + سدّ الخياطة): لا اسم أداة ولا مصطلح تشغيلي؛ غياب النموذج =
@@ -3991,6 +4019,15 @@ def _annotate_unverified_entities(text: object, dr: dict) -> str:
     return s
 
 
+def _client_hidden(view: dict) -> frozenset:
+    """أسماءُ المقاييس المخفيّة عن العميل — من العرض (`client_hidden_metrics`،
+    silk_render.CLIENT_HIDDEN_METRICS) لا من الراية مباشرةً: المصدرُ الواحد
+    الذي تقرؤه `web/platform.html` نفسُه، فلا خريطتان تتباعدان."""
+    if not isinstance(view, dict):
+        return frozenset()
+    return frozenset(str(x) for x in (view.get("client_hidden_metrics") or []))
+
+
 def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
     """اعرِض أساسَ الحكم في تقرير العميل — **عرضٌ لا بناء** (الموجة Z، Z-06).
 
@@ -4015,7 +4052,9 @@ def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
     doc.add_heading(basis["head"], level=2)
     if basis.get("rule_line"):
         doc.add_paragraph(basis["rule_line"])
-    if basis.get("score_line"):
+    # الموجة الرابعة: سطرُ «X من 100 وتحقّقنا من Y%» مقياسٌ داخليّ — يُسقَط
+    # كاملاً حين تُعلِن القائمةُ إخفاءَ الدرجة (لا «—» ولا نسبةٌ عارية).
+    if basis.get("score_line") and "score" not in _client_hidden(view):
         doc.add_paragraph(basis["score_line"])
     _add_table(doc, [basis["col_pillar"], basis["col_strength"],
                      basis["col_note"]],
@@ -4144,7 +4183,10 @@ def render_client_docx(view: dict, path: str) -> str:
     # وثقتُه معروضان، والتعليلُ التفصيليّ في سرد الكاتب الإنجليزيّ نفسه.
     if reasoning and silk_i18n.foreign_prose_spans(reasoning, lang):
         reasoning = ""
-    if not reasoning and verdict.get("confidence") is not None:
+    if not reasoning and verdict.get("confidence") is not None \
+            and "confidence" not in _client_hidden(view):
+        # الموجة الرابعة: سطرُ «بدرجة ثقة …» يُسقَط عند الإخفاء — سطرُ
+        # التوصية أعلاه قائم فلا فراغَ صامت.
         # مراجعة شيفرة PR #147: مدوّنة مخزَّنة بلا «note» وقراءةُ كلود
         # مخالفة كانت تُخرج قسم القرار بلا أي فقرة أساس — سطر أساسٍ حتمي
         # من الحقول المحسوبة فقط (لا اختلاق) بدل الغياب الصامت.
@@ -4179,6 +4221,10 @@ def render_client_docx(view: dict, path: str) -> str:
     # ٢-٥) بقية أقسام العميل بالترتيب (بعد الملخص والقرار)
     for client_head in _CLIENT_SECTION_ORDER[2:]:
         doc.add_heading(_client_head_label(client_head, lang), level=1)
+        # الموجة الرابعة (البند ٢): وارداتُ السوق بسنتها ومسارها تفتتح «السوق
+        # بالأرقام» ككتلةٍ حتمية — لا قسمَ جديداً (مرساةُ الأقسام ترتيبية).
+        if client_head == "السوق بالأرقام":
+            _client_imports_section(doc, dr, lang)
         _client_body_or_fallback(doc, buckets[client_head], dr, client_head,
                                  lang)
 
@@ -4198,7 +4244,10 @@ def render_client_docx(view: dict, path: str) -> str:
     # فرقمُ تغطية المصادر لا يبلغ المصنعَ قطّ، ويقرأ أرقامَ التقرير بلا أن
     # يعرف كم منها مُسنَدٌ إلى مصدرٍ رسميّ. القسمُ يُسقِط نفسَه حين لا مؤشّرَ
     # معدود (لا هيكلَ فارغ).
-    _client_confidence_section(doc, dr, lang)
+    # الموجة الرابعة: القسمُ هو بعينه «نسبةُ التحقّق» التي قرّر المالك
+    # إخراجَها من نسخة العميل (وفي متنه «بثقة متوسطة») — يُسقَط عند الإخفاء.
+    if "verification" not in _client_hidden(view):
+        _client_confidence_section(doc, dr, lang)
     # ٦) ما لم يكتمل للقرار والخطوة التالية (صياغة تجارية للفجوات)
     _client_gaps_section(doc, dr, lang)
 
@@ -4737,8 +4786,11 @@ def _academic_summary(doc, view: dict, dr: dict, vtxt: str) -> None:
     from silk_narrative import authoritative_verdict, confidence_phrase
     doc.add_heading("ملخّص الدراسة", level=1)
     _, conf = authoritative_verdict(dr.get("verdict"))
+    # الموجة الرابعة: القالبُ الأكاديميّ سطحُ عميلٍ أيضاً (`?style=academic`).
     conf_txt = (f"، بدرجة ثقة {confidence_phrase(conf)} وفق سُلَّم "
-                "المعايرة المعتمد" if conf is not None else "")
+                "المعايرة المعتمد"
+                if conf is not None and "confidence" not in _client_hidden(view)
+                else "")
     doc.add_paragraph(
         f"التوصية الختامية: {_VERDICT_LABELS_AR[_verdict_tone(vtxt)]}"
         f"{conf_txt}؛ وتفصيلها وشروط إعادة التقييم في قسم «التوصيات» "
@@ -4903,7 +4955,8 @@ def render_academic_docx(view: dict, path: str) -> str:
                   or _verdict_tone(ai.get("verdict")) == _verdict_tone(vtxt))
     basis = ((ai.get("reasoning") if _ai_agrees else "")
              or verdict.get("note") or "")
-    if not basis and verdict.get("confidence") is not None:
+    if not basis and verdict.get("confidence") is not None \
+            and "confidence" not in _client_hidden(view):
         from silk_narrative import confidence_phrase
         basis = (f"حكم المحرّك الحتمي بدرجة ثقة "
                  f"{confidence_phrase(verdict.get('confidence'))} بناءً "

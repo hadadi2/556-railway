@@ -6157,6 +6157,119 @@ def _check_client_view_vocabulary(view: dict) -> list[dict]:
     return []
 
 
+# ── الموجة الرابعة (الدرس ٢٥٧): أرقامُ القياس الداخليّ على سطح العميل ────────
+# قرارُ المالك: درجةُ ثقة الحكم ونسبةُ التحقّق وثقةُ المكوّن والدرجةُ من ١٠٠
+# تخرج من نسخة العميل. المنعُ عند المنبع (`silk_ai_judge._summarize_verdict`)
+# والكتمُ عند العرض (`client_hidden_metrics`) — وهذا **الكشفُ الدائم**: أيُّ
+# سطحٍ ينسى السياسةَ لاحقاً، أو نموذجٌ يكتب التسميةَ من عنده، يُلتقَط بحزمةٍ
+# حمراء لا ببلاغِ مالك. تحذيريٌّ لا حاجب («لا حجب جديداً»)، وخلف الراية:
+# بدونها الأرقامُ معروضةٌ شرعاً فلا معنى لفحص غيابها.
+# مراجعة §58: «40 من 100 شركة» و«ثقة عالية بأنّ…» نثرٌ تجاريّ سليم — فالدرجةُ
+# تُلتقَط بقرينة قياسٍ قبلها، والتسميةُ تُستثنى حين يتبعها ما يجعلها كلاماً
+# عاديّاً لا مقياساً.
+_CLIENT_METRIC_PROBES: tuple = (
+    re.compile(r"(?:قوة|درجة|تقييم|التقييم|نقاط|بدرجة|يبلغ|تبلغ)[^.\n]{0,25}?"
+               r"\d{1,3}\s*من\s*100(?!\s*(?:شركة|مستورد|مستجيب|موزّع|موزع|عيّنة|عينة))"),
+    re.compile(r"(?:ب|و)?ثقة\s*(?:عالية|متوسطة|منخفضة)"
+               r"(?!\s*(?:بأن|بأنّ|لدى|في|من|أن|أنّ|بين|تجاه|نحو))"),
+    re.compile(r"نسبة\s*التحق[قّ]"),
+    re.compile(r"\d{1,3}\s*%\s*من\s*البيانات"),
+    re.compile(r"\b(?:rate|rated|score|rating)[^.\n]{0,25}?\b\d{1,3}\s*(?:/|out of)\s*100\b",
+               re.I),
+    re.compile(r"\b(?:high|medium|low)\s+confidence\b(?!\s+(?:that|in|among|of))",
+               re.I),
+    re.compile(r"\bverification\s+rate\b", re.I),
+    re.compile(r"\bconfidence\s*(?:level|score)?\s*[:=]?\s*\d{1,3}\s*%", re.I),
+)
+
+
+def _check_client_metric_exposure(view: dict, dr: dict) -> list[dict]:
+    """`client_metric_exposure` (الموجة الرابعة — تحذيري خلف
+    `SILK_CLIENT_METRIC_PRIVACY`): مقياسٌ داخليّ («NN من 100»، «بثقة عالية»،
+    «نسبة التحقق»، «NN% من البيانات» ومرآتها الإنجليزية) على سطحٍ يقرؤه
+    العميل — المختصرُ ونصُّ التقرير (بلا ملحقه) وحدودُه. ثنائيُّ المِجَسّ
+    بالبناء (أنماطٌ عربيةٌ وإنجليزية معاً في `_CLIENT_METRIC_PROBES`)."""
+    import silk_render as R
+    if not R.client_metric_privacy() or not isinstance(view, dict):
+        return []
+    # ما يقرؤه **العميل** فقط: `basis.score_line` يبقى في العرض للمشغّل
+    # والبوّابة (لا مفتاحَ يُحذَف) وتُسقِطه سطوحُ العميل بالقائمة — فلا يُفحَص.
+    surfaces = {
+        "brief": "\n".join(str(x) for x in (view.get("brief") or [])),
+        "report": _split_off_appendix(_report_text(dr or {})),
+        "limits": "\n".join(str(x) for x in ((dr or {}).get("limits") or [])),
+    }
+    hits = []
+    for name, blob in surfaces.items():
+        if not blob:
+            continue
+        for pat in _CLIENT_METRIC_PROBES:
+            m = pat.search(blob)
+            if m:
+                hits.append(f"{name}: «{m.group(0)}»")
+                break
+    if not hits:
+        return []
+    return [{"check": "client_metric_exposure", "repairable": True,
+             "note": ("رقمُ قياسٍ داخليّ على سطح العميل رغم سياسة الإخفاء "
+                      "(SILK_CLIENT_METRIC_PRIVACY): " + "؛ ".join(hits)
+                      + " — السطحُ المعنيّ لا يقرأ `client_hidden_metrics` "
+                      "أو الكاتبُ كتب التسميةَ من عنده")}]
+
+
+# فحوصٌ **تقرأ تسميةَ الثقة في النثر** وتصير — مع خصوصية أرقام القياس —
+# خارجَ مسار التوقّع: النثرُ لا يستلم التسميةَ فلا يكتبها. **لا يُحذَف منها
+# شيء** (اثنان في `FAIL_TRIGGER_CHECKS` المجمَّدة تقرؤها عشراتُ الاختبارات
+# عقداً). القرارُ المُسجَّل (الدرس ٩٨ — حارسٌ لا يُطلِق عيب): كلُّها تُعاد
+# قراءتها **حارسَ «صحيحٌ إن ظهر»** — شبكةُ التقاطِ تسريبٍ يكتبه النموذجُ من
+# عنده أو تقريرٍ مخزَّنٍ يُعاد عرضُه، وتبقى قادرةً على الإطلاق على مسارات
+# `/analyze` والأكاديميّ والمشغّل التي تحتفظ بالتسمية. ومع
+# `client_metric_exposure` يكتمل الزوج: صحّةٌ-إن-ظهر + غيابٌ-مطلوب.
+# سجلٌّ تعريفيّ يقرؤه الاختبار (tests/test_client_metric_privacy.py): كلُّ
+# اسمٍ يجب أن يُصدِره فحصٌ قائم، ويجب أن يُطلِق فعلاً على نصٍّ مُسرَّب والرايةُ
+# مفعَّلة.
+PRESENCE_CONDITIONAL_CHECKS: dict = {
+    "confidence_band_mismatch":
+        "حاجبٌ مجمَّد: تسميةٌ لا تطابق رقمها — يُطلِق فقط إن ظهر الزوج",
+    "confidence_value_conflict":
+        "حاجبٌ مجمَّد: نسبتا ثقةٍ مختلفتان — يُطلِق فقط إن ظهرت نسبتان",
+    "narrative_confidence_mismatch":
+        "تحذيري: نسبةُ النثر تخالف نسبةَ الحكم — يُطلِق فقط إن ظهرت نسبة",
+    "high_confidence_with_missing_pillar":
+        "حاجبٌ مُفعَّلٌ براية: «ثقة عالية» مع جانبٍ مجهول — يقرأ العرضَ "
+        "والنثرَ فيبقى قادراً على الإطلاق على تسريبٍ في أيّهما",
+    "client_view_vocabulary":
+        "تحذيري: قاعدةُ «بثقة %» وحدَها تصير مشروطةً بالظهور؛ بقيّةُ مفرداته "
+        "تُطلِق كما كانت",
+}
+
+
+# ── الموجة الرابعة (الدرس ٢٥٨): مبلغٌ بدقّةٍ عشرية زائفة ──────────────────
+# نمطُ `hhi_false_precision` حرفياً على المبالغ: المُصلِحُ
+# `silk_render._fix_amount_false_precision` يقرّب قبل التخزين/العرض، وهذا
+# الفحصُ يلتقط ما فات الإصلاحَ. تحذيريٌّ (لا حجبَ جديداً) وخلف راية الواردات
+# — نفسِ راية المُصلِح — فمطفأةً البوّابةُ حرفياً كما كانت.
+_AMOUNT_DECIMAL_RE = re.compile(
+    r"(?<![\d.,])(?:\d{1,3}(?:,\d{3})+|\d{5,})\.\d{3,}(?!\d)")
+
+
+def _check_amount_false_precision(text: str) -> list[dict]:
+    """`amount_false_precision` — مبلغٌ كبيرٌ (فواصلُ آلافٍ أو ≥٥ خانات) بثلاث
+    منازلَ عشريةٍ فأكثر: دقّةٌ لم تُحسَب فعلاً بهذا التفصيل (رقمُ استيرادٍ
+    بالدولار لا يحمل أجزاءَ السنت)."""
+    import silk_render as R
+    if not text or not R.imports_spotlight():
+        return []
+    # الملاحقُ خارج النطاق — الدقّةُ الكاملة هناك مشروعة (نفسُ حدّ المُصلِح).
+    m = _AMOUNT_DECIMAL_RE.search(_split_off_appendix(text))
+    if not m:
+        return []
+    return [{"check": "amount_false_precision", "repairable": True,
+             "note": (f"مبلغٌ بدقّةٍ عشرية زائفة «{m.group(0)}» — يُعرَض "
+                      "بمنزلتين كحدٍّ أقصى (silk_render._fix_amount_false_"
+                      "precision)؛ الرقمُ المخزَّن لا يُمَسّ")}]
+
+
 def _check_uncomputed_repetition(text: str) -> list[dict]:
     """`uncomputed_repetition` (هدف الدراسة الاحترافية البند ٢ — تحذيري على
     معيار الدرس 135): أكثر من إعلانَي غيابٍ داخل قسم «أرقام القرار» —
@@ -6496,6 +6609,10 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_uncomputed_repetition(text)
     # البند ٣: مصطلح قياس داخلي على أسطح عرض العميل — تحذيري (درس 146).
     findings += _check_client_view_vocabulary(view)
+    # الموجة الرابعة: أرقامُ القياس على سطح العميل رغم سياسة الإخفاء، ومبلغٌ
+    # بدقّةٍ زائفة — تحذيريّان خلف رايتيهما.
+    findings += _check_client_metric_exposure(view, dr)
+    findings += _check_amount_false_precision(text)
     # البند ٧: تقدير بلا حقوله الأربعة أو واسعٌ معه قيمة — تحذيري.
     findings += _check_estimate_fields_complete(view)
     # البند ٤ (هدف الدراسة الاحترافية): الملخص التنفيذي يفتتح بالتوصية
