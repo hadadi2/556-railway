@@ -207,6 +207,12 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٥٣ — الصوتُ البشريّ: الصيغُ الجاهزة مأمورٌ بها في عقودنا نفسِها.
+    (253, "tests/test_report_voice_human.py",
+     ["def test_every_stock_phrase_is_one_our_own_contracts_prescribe",
+      "def test_the_rule_never_touches_the_truth_layer",
+      "def test_the_writer_prompt_is_byte_identical_with_the_flag_off",
+      "def test_no_banned_phrase_collides_with_a_mandated_output"]),
     # ٢٥٠–٢٥٢ — سدُّ الفجوات: حارسٌ بلا فرعٍ مرصودٍ لا يُطلِق، وتشديدُ
     # مطابقةٍ بحسب البند لا السوق، وحدٌّ مُعلَنٌ أوسعَ من قياسه.
     (250, "tests/test_market_structure_config.py",
@@ -616,6 +622,10 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    (253, "silk_style_contract.py",
+     ["def human_voice", "FILLER_PHRASES", "HUMAN_VOICE_FLAG"]),
+    (253, "silk_quality_gate.py",
+     ["def _check_robotic_stock_phrase", "_FILLER_PER_1K_MAX = 12.0"]),
     (250, "silk_quality_gate.py",
      ["_BORDER_ABOVE_SHELF_RATIO = 1.25", "يفوق سعرَ الرفّ"]),
     (251, "silk_ai_judge.py",

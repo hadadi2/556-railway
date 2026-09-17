@@ -126,6 +126,12 @@ def test_c_no_registered_literal_hits_any_gate_blocklist():
         # نصّ المُنتَج النهائي (النائب الصلب + النائب العام).
         "_ARTIFACT_HARD_PLACEHOLDERS": QG._ARTIFACT_HARD_PLACEHOLDERS,
         "_PLACEHOLDER_STRINGS": QG._PLACEHOLDER_STRINGS,
+        # الصوتُ البشريّ (طلب المالك «Humanized»): قائمةُ الحشو التي تعدّها
+        # البوابة وقائمةُ البدائل التي يقرؤها الموجّه. **هذا القفلُ هو ما
+        # كان سيمنع العيبَ**: «ينبغي التعامل مع» دخلت القائمةَ أوّلاً وهي
+        # صدرُ مُخرَجٍ إلزاميّ — فمنعُها يأمر بإسقاط تحذيرٍ واجب.
+        "FILLER_PHRASES": tuple(SC.FILLER_PHRASES),
+        "STOCK_PHRASES": tuple(p for p, _a in SC.STOCK_PHRASES),
     }
     collisions = []
     for lit in AJ.MANDATED_OUTPUT_LITERALS:
