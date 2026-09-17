@@ -327,6 +327,38 @@ _CLIENT_REASONS: dict[str, dict[str, str]] = {
               "إعادة التوليد.",
         "en": "The closing denies data gaps that the body declares. Fix: "
               "regenerate."},
+    # الدرس ٢٥٥ — الأربعةُ المُفعَّلاتُ بالرايات (`_FLAGGED_FAIL_TRIGGERS`)
+    # كانت **بلا صفٍّ واحد** هنا، فقرأ العميلُ الجملةَ العامّة «يُغلقه: إعادة
+    # التوليد» على حاجبٍ **حتميّ** لا تُصلِحه إعادةُ التوليد أبداً — نصيحةٌ
+    # خاطئة تُدخِل صاحبَ القرار في حلقةٍ مغلقة. النصيحةُ تُسمّي المدخلَ
+    # الناقص حين يكون هو السبب.
+    "high_confidence_with_missing_pillar": {
+        "ar": "وُصف الحكمُ بثقةٍ عالية بينما جانبٌ أساسيٌّ من التقييم لا "
+              "نعرفه بعد (الربحية غالباً — تنقصها كلفةُ الوحدة). يُغلقه: "
+              "إدخالُ المدخل الناقص المذكور في «ما يجب إغلاقه قبل "
+              "الالتزام» ثم إعادةُ التقييم — إعادةُ التوليد وحدها لا "
+              "تُغيّره.",
+        "en": "The verdict was described as high-confidence while a core "
+              "side of the assessment is still unknown (usually "
+              "profitability — it needs your unit cost). Fix: supply the "
+              "missing input listed under what must be closed, then "
+              "re-evaluate; regenerating alone will not change it."},
+    "metric_value_divergence": {
+        "ar": "رقمٌ واحد ظهر بقيمتين مختلفتين في التقرير. يُغلقه: إعادة "
+              "التوليد.",
+        "en": "One figure appeared with two different values in the "
+              "report. Fix: regenerate."},
+    "open_conditions_count_mismatch": {
+        "ar": "عددُ الشروط المفتوحة المذكور في النصّ يخالف الشروطَ "
+              "المسمّاة فعلاً. يُغلقه: إعادة التوليد.",
+        "en": "The number of open conditions stated in the text "
+              "contradicts the conditions actually named. Fix: "
+              "regenerate."},
+    "reference_to_nonexistent_figure": {
+        "ar": "التقريرُ يُحيل إلى رقمٍ لا وجود له فيه. يُغلقه: إعادة "
+              "التوليد.",
+        "en": "The report refers to a figure that does not exist in it. "
+              "Fix: regenerate."},
     "intersection_insufficiency": {
         "ar": "التوصيةُ مبنيّةٌ على تقاطعٍ من الأدلة أضعفَ من أن يحملها. "
               "يُغلقه: إعادة التوليد بعد اكتمال المصادر الناقصة.",

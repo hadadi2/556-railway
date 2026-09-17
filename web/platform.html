@@ -3325,12 +3325,28 @@ function viewReportBtn(s) {
             const unit = c.value != null && c.unit
               ? ' <span style="color:var(--ink-soft)">' + esc(c.unit) +
                 "</span>" : "";
+            /* الدرس ٢٥٦ (عائلةُ S-02 على سطحٍ ثالث): `data_year` و`vintage`
+               مُحسوبان في `silk_render.build_view` ويصلان كتلةَ حقائق
+               الكاتب — **ولا يقرؤهما هذا الجدول**. فدرجةُ ٦٤ في دراسةٍ
+               حيّة بُنيت على واردات 2021 بينما سردُها يبني على 2024،
+               والقارئُ لا يملك ما يرى به الفارق: عمودُ المصدر بلا سنة.
+               والسنةُ **المجهولة تُعلَن مجهولةً** لا تُخفى — رقمٌ بلا
+               سنةٍ على وجه القرار أخطرُ من رقمٍ قديمٍ موسوم. */
+            const _yr = c.value != null ? c.data_year : null;
+            const _vint = String(c.vintage || "").trim();
+            const srcYear = c.value == null ? "" :
+              (_yr != null
+                ? ' <span style="color:var(--ink-soft)">· ' + esc(String(_yr)) +
+                  (_vint ? " · " + esc(_vint) : "") + "</span>"
+                : ' <span style="color:var(--warn,#8a5a00)">· ' +
+                  esc(ar_en("بلا سنة", "no year")) +
+                  "</span>");
             html += "<tr><td>" + esc(c.display_name || c.name || "—") + "</td>" +
               '<td><span class="num">' + esc(val) + "</span>" + unit + "</td>" +
               '<td><div class="meter" style="min-width:64px"><i style="width:' +
               (conf != null ? conf : 0) + '%"></i></div><span class="num" ' +
               'style="font-size:var(--fs-meta)">' + (conf != null ? conf + "%" : "—") +
-              "</span></td><td>" + esc(c.source || "—") + "</td></tr>";
+              "</span></td><td>" + esc(c.source || "—") + srcYear + "</td></tr>";
           });
           html += "</tbody></table></div>";
         }

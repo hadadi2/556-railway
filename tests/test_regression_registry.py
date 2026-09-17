@@ -4571,6 +4571,33 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    254: lambda: (
+        _needles("silk_narrative.py",
+                 "confidence_band_label(pct, lang, cap=cap)")(),
+        _needles("silk_ai_judge.py", "سقف تسمية درجة الثقة",
+                 "entry_decision")(),
+        _needles("silk_quality_gate.py", "PROSE_LITERAL_BLOCKERS",
+                 "NON_LITERAL_FLAGGED_BLOCKERS")(),
+        _needles("tests/test_prose_blocker_prompt_parity.py",
+                 "def test_prompt_does_not_contain_what_the_gate_blocks",
+                 "def test_every_flagged_blocker_is_classified")(),
+        _needles("tests/test_lessons_enforcement.py", '(254, ')()),
+    255: lambda: (
+        _needles("silk_style_contract.py", '"consultant": "مستشار"',
+                 '"greengrocer": "بائع خضار وفواكه"')(),
+        _needles("silk_export_gate.py",
+                 '"high_confidence_with_missing_pillar": {')(),
+        _needles("tests/test_report_quality_reader_layer.py",
+                 "def test_lesson255_activity_denylist_is_not_effectively_"
+                 "empty")(),
+        _needles("tests/test_lessons_enforcement.py", '(255, ')()),
+    256: lambda: (
+        _needles("web/platform.html", "c.data_year", "c.vintage",
+                 "بلا سنة")(),
+        _needles("tests/test_approved_silk_interfaces.py",
+                 "def test_lesson256_component_table_shows_the_year_of_each_"
+                 "number")(),
+        _needles("tests/test_lessons_enforcement.py", '(256, ')()),
     253: lambda: (
         _needles("silk_style_contract.py", "def human_voice",
                  "FILLER_PHRASES", "HUMAN_VOICE_FLAG")(),

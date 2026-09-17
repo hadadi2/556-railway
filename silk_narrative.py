@@ -973,11 +973,24 @@ def fmt_money(v: object) -> str:
     return fmt_amount(v, "USD")
 
 
-def confidence_phrase(c: object, lang: str = "ar") -> str:
+def confidence_phrase(c: object, lang: str = "ar",
+                      cap: "str | None" = None) -> str:
     """الثقة كحالة لغوية بنسبة مقروءة — لا كسر عشري خام على وجه التقرير.
 
     الموجة ٠: **النسبة نفسها والنطاق نفسه** في اللغتين — الرقم يخرج من
-    المحرّك الحتمي لا من العارض؛ التسمية وحدها تتبع لغة التقرير."""
+    المحرّك الحتمي لا من العارض؛ التسمية وحدها تتبع لغة التقرير.
+
+    `cap` (الدرس ٢٥٤): سقفُ التسمية من `silk_decision.confidence_band_cap`،
+    يُمرَّر كما هو إلى `confidence_band_label`. **النسبة لا تُمَسّ** — تُطبَع
+    كما وردت من المحرّك؛ التسميةُ وحدها تُسقَّف. بلا تمرير: السلوك حرفياً
+    كما كان (كلُّ مُنادٍ قائمٍ لا يتغيّر عنده حرف).
+
+    لماذا وُجد الوسيط: سقفُ الصنف ٨ كان مُطبَّقاً في `silk_render.build_view`
+    (العرض) وفي بوّابة الجودة (الحجب) **ولم يكن يصل موجّهَ الكاتب** — وهذه
+    الدالّة هي منبعُه الوحيد هناك (`silk_ai_judge._summarize_verdict`). فكان
+    الموجّهُ يُسلّم الكاتبَ «عالية (80%)» ويأمره بعدم ذكر تسميةٍ غيرها، ثم
+    تحجب البوّابةُ التقريرَ على طاعته. عائلة الدرس ٩٨.
+    """
     import silk_i18n
     lang = silk_i18n.normalize(lang)
     if c is None:
@@ -991,7 +1004,7 @@ def confidence_phrase(c: object, lang: str = "ar") -> str:
     # متوسطة 60-79% / منخفضة <60%. العتبات والمشتقّ في سُلَّم المعايرة الواحد
     # (silk_style_contract.confidence_band_label) — لا نسخة محلية قد تتباعد.
     from silk_style_contract import confidence_band_label
-    return f"{confidence_band_label(pct, lang)} ({pct}%)"
+    return f"{confidence_band_label(pct, lang, cap=cap)} ({pct}%)"
 
 
 # عتبات شارة الأدلة — ثابت واحد (P0-B، الموجة ٩): بلاغ حي "درجات ثقة تبدو

@@ -170,3 +170,24 @@ assert.ok([...hosts.kpiGrid.children,...hosts.adminActivity.children].every(x=>x
 '''
     result = subprocess.run(['node','-e',script], capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
+
+
+def test_lesson256_component_table_shows_the_year_of_each_number():
+    """الدرس ٢٥٦ — جدولُ مكوّنات أفضل سوق يعرض **سنةَ** كلّ رقم.
+
+    `data_year`/`vintage` مُحسوبان في `silk_render.build_view` ويصلان كتلةَ
+    حقائق الكاتب، **ولم يقرأهما هذا الجدول**: فدرجةُ ٦٤ في دراسةٍ حيّة
+    (ماليزيا × قهوة محمصة، ٢٠٢٦-٠٩-١٧) بُنيت على واردات 2021 (51,358,600.874)
+    بينما سردُ التقرير نفسِه يبني على 2024 (89.4 مليون) — والقارئُ لا يملك
+    ما يرى به الفارقَ لأن عمودَ المصدر بلا سنة. عائلةُ الدرس ٩٨/S-02:
+    حسابٌ يُنتَج ثمّ لا يقرؤه أحد.
+    """
+    page = (ROOT / "web/platform.html").read_text()
+    assert "c.data_year" in page, "الجدولُ لا يقرأ سنةَ المكوّن"
+    assert "c.vintage" in page, "الجدولُ لا يقرأ تحذيرَ قِدَم المكوّن"
+    # السنةُ المجهولة تُعلَن مجهولةً — لا تُخفى (عقدُ عدم الاختلاق). والصيغةُ
+    # من المعجم الموحَّد: «غير متاح» (لا وجودَ للرقم) — و«غير مرصود» محظورةٌ
+    # في `silk_quality_gate._ABSENCE_FORBIDDEN`، أطلقت على صياغتي الأولى.
+    assert "بلا سنة" in page
+    # العرضُ في خليةِ المصدر نفسِها: الرقمُ وسنتُه ومصدرُه يُقرآن معاً.
+    assert 'esc(c.source || "—") + srcYear' in page

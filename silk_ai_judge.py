@@ -1019,7 +1019,9 @@ def _mission_declared_gaps(mission_reports: dict) -> list[str]:
     return out
 
 
-def _summarize_verdict(verdict: dict, gap_sources: list | None = None) -> str:
+def _summarize_verdict(verdict: dict, gap_sources: list | None = None,
+                       pillars: object = None,
+                       conditions: object = None) -> str:
     """ملخّص حكم نظيف للحقن في برومبت الكاتب — سدّ تسريب: كان الكود يُلقي
     قاموس الحكم الخام عبر json.dumps(default=str) في البرومبت، فيظهر تمثيل
     بايثون الخام لكائنات DataPoint الحيّة (contributing_findings) وأسماء
@@ -1047,9 +1049,42 @@ def _summarize_verdict(verdict: dict, gap_sources: list | None = None) -> str:
         gaps = verification_gap_line(v, _real)
     except Exception:  # noqa: BLE001 — طبقة كتابة لا تُسقط التحليل
         gaps = ", ".join(internal_ar(g) for g in v.get("data_gaps", [])) or "لا شيء"
+    # ── الدرس ٢٥٤: السقفُ يصل الكاتبَ لا العرضَ وحدَه ──────────────────
+    # كان هذا السطرُ يُسلّم الكاتبَ التسميةَ **غيرَ المسقَّفة** («عالية
+    # (80%)») ثم يأمره الموجّهُ بألّا يذكر تسميةً أخرى، ثم تحجب بوّابةُ
+    # الجودة التقريرَ كلَّه على `high_confidence_with_missing_pillar` —
+    # أي أن الحارسَ يُطلِق على طاعةِ أمرِنا نفسِه، وإعادةُ التوليد لا
+    # تُصلِحه لأن السببَ حتميّ. المصدرُ الواحد للسقف هو
+    # `silk_decision.confidence_band_cap` (لا منطقَ ثانٍ هنا)، وخلفَ نفس
+    # الرايةِ القائمة `silk_render.confidence_discipline` — مطفأةً لا
+    # يتغيّر في الموجّه حرفٌ واحد. **والنسبةُ لا تُمَسّ**، التسميةُ وحدها.
+    _cap = None
+    _cap_reason = ""
+    try:
+        import silk_render as _R
+        if _R.confidence_discipline():
+            import silk_decision as _D
+            _cap = _D.confidence_band_cap(pillars, conditions)
+            if _cap:
+                _missing = _D.missing_core_pillars(pillars)
+                _why = (f"جانب «{_D.pillar_label(_missing[0])}» مجهول"
+                        if _missing else
+                        f"{len(conditions or [])} شروط مفتوحة")
+                # **الصياغةُ لا تحتوي العبارةَ الممنوعةَ نفسَها.** قياسٌ
+                # على هذا السطر: كتابةُ النهي بلفظه («لا تكتب ثقة عالية»)
+                # تُدخِل العبارةَ الممنوعةَ في الموجّه، فتُطلِق البوّابةُ
+                # على موجّهِنا نفسِه ويصير النهيُ مادّةً قابلةً للنسخ.
+                # القفلُ في `tests/test_prose_blocker_prompt_parity.py`.
+                _cap_reason = (
+                    f"سقف تسمية درجة الثقة: «متوسطة» لأن {_why} — "
+                    "استعمل التسمية المسقَّفة المذكورة أعلاه حرفياً في كل "
+                    "موضع تصف فيه الثقة، ولا تستعمل أيّ تسميةٍ أعلى منها "
+                    "(النسبة الرقمية كما هي؛ التسمية وحدها مسقَّفة)")
+    except Exception as _e:  # noqa: BLE001 — السقفُ تحسينٌ لا شرطُ كتابة
+        log.warning("confidence band cap skipped for writer prompt: %s", _e)
     parts = [
         f"الحكم: {verdict_ar(verdict_token)}",
-        f"الثقة: {confidence_phrase(confidence)}",
+        f"الثقة: {confidence_phrase(confidence, cap=_cap)}",
         f"عدد المؤشرات المرصودة المساهمة: {len(v.get('contributing_findings') or [])}",
         f"الفجوات المعلنة: {gaps}",
     ]
@@ -1061,6 +1096,8 @@ def _summarize_verdict(verdict: dict, gap_sources: list | None = None) -> str:
                      _parts_ar(v["decision_missing_components"]) +
                      "؛ لا تصفها في المتن بأنها مرصودة أو محسوبة، "
                      "ولا تستنتج قيماً لها من مسودة المحلل")
+    if _cap_reason:
+        parts.append(_cap_reason)
     if ai.get("reasoning"):
         parts.append(f"تعليل التوليف: {ai['reasoning']}")
     return " | ".join(parts)
@@ -1199,7 +1236,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                 product_card: dict | None = None,
                 on_attempt: "Callable[[], None] | None" = None,
                 seed_draft: str | None = None,
-                revision_draft: str | None = None) -> str | None:
+                revision_draft: str | None = None,
+                entry_decision: dict | None = None) -> str | None:
     """اكتب تقرير البحث العميق — the 11-section international-structure report
     (وكيل الكتابة، الموجة ١٠ — أسلوب Euromonitor/ESOMAR).
 
@@ -1307,6 +1345,7 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         log.warning("derived provenance rule skipped: %s", _e)
     sections = "\n".join(f"{i}. {s}" for i, s
                          in enumerate(report_sections(lang), 1))
+    _ed = entry_decision if isinstance(entry_decision, dict) else {}
     parts = [
         f"المنتج: {_isolate(product)}. السوق: {_isolate(market_name)}.",
         contract,
@@ -1332,7 +1371,9 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         f"الحكم المعتمد (قيد إلزامي — يُمنَع إصدار أي توصية مختلفة أو "
         f"«توصية أولية» موازية؛ اشرح هذا الحكم وقيّده فقط، وأي سيناريو "
         f"بديل يُصاغ كشرط قلبٍ افتراضي لا كتوصية): "
-        f"{_isolate(_summarize_verdict(verdict, _mission_declared_gaps(mission_reports)))}. "
+        # الدرس ٢٥٤: أعمدةُ القرار وشروطُه تُمرَّران كي يصل الكاتبَ سقفُ
+        # تسمية الثقة نفسُه الذي تفرضه البوابةُ عليه — لا تسميةٌ أعلى.
+        f"{_isolate(_summarize_verdict(verdict, _mission_declared_gaps(mission_reports), pillars=_ed.get('pillars'), conditions=_ed.get('conditions')))}. "
         "درجة الثقة الوحيدة المسموح ذكرها هي المذكورة أعلاه حرفياً — لا "
         "تخترع نسبة ثقة أو تسمية نطاق أخرى.",
         f"مسوّدة المحلل الشامل (خمس تقاطعات + SWOT):\n{_isolate(analyst_summary)}",
@@ -2772,7 +2813,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                           lang: str = "ar",
                           product_card: dict | None = None,
                           seed_draft: str | None = None,
-                          importer_leads: dict | None = None) -> dict:
+                          importer_leads: dict | None = None,
+                          entry_decision: dict | None = None) -> dict:
     """حلقة الكتابة والمراجعة — Writer → Reviewer.
 
     `lang` (الموجة ٠): لغة التقرير المولَّد — تُمرَّر للكاتب والمراجع معاً فلا
@@ -2833,7 +2875,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                         hs_confirmation=hs_confirmation, style=style,
                         lang=lang, product_card=product_card,
                         on_attempt=lambda: _stage("writer"),
-                        seed_draft=seed_draft)
+                        seed_draft=seed_draft,
+                        entry_decision=entry_decision)
     draft = _decision_language(draft)
     if not draft:
         out = {"report": None, "review_cycles": 0, "unresolved_notes": [],
@@ -2892,7 +2935,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             hs_confirmation=hs_confirmation, style=style,
                             lang=lang, product_card=product_card,
                             on_attempt=lambda: _stage("writer"),
-                            revision_draft=draft)
+                            revision_draft=draft,
+                            entry_decision=entry_decision)
         if fixed:
             fixed = _decision_language(fixed)
             if _writer_incomplete(fixed, lang):

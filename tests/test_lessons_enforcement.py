@@ -207,6 +207,18 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٥٤–٢٥٦ — الموجّهُ لا يخالف بوّابته، وحارسٌ يُطلِق فعلاً، وسنةُ كلّ رقم.
+    (254, "tests/test_prose_blocker_prompt_parity.py",
+     ["def test_capped_band_reaches_the_writer_prompt",
+      "def test_flag_off_prompt_is_byte_identical",
+      "def test_prompt_does_not_contain_what_the_gate_blocks",
+      "def test_every_flagged_blocker_is_classified"]),
+    (255, "tests/test_report_quality_reader_layer.py",
+     ["def test_lesson255_activity_denylist_is_not_effectively_empty",
+      "def test_lesson255_live_labels_from_the_blocked_malaysia_study",
+      "def test_lesson255_normalised_and_translated_forms_agree"]),
+    (256, "tests/test_approved_silk_interfaces.py",
+     ["def test_lesson256_component_table_shows_the_year_of_each_number"]),
     # ٢٥٣ — الصوتُ البشريّ: الصيغُ الجاهزة مأمورٌ بها في عقودنا نفسِها.
     (253, "tests/test_report_voice_human.py",
      ["def test_every_stock_phrase_is_one_our_own_contracts_prescribe",
@@ -622,6 +634,13 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    (254, "silk_quality_gate.py",
+     ["PROSE_LITERAL_BLOCKERS", "NON_LITERAL_FLAGGED_BLOCKERS"]),
+    (254, "silk_narrative.py", ['cap: "str | None" = None',
+                                "confidence_band_label(pct, lang, cap=cap)"]),
+    (255, "silk_style_contract.py", ['"consultant": "مستشار"',
+                                     '"greengrocer": "بائع خضار وفواكه"']),
+    (256, "web/platform.html", ["c.data_year", "بلا سنة"]),
     (253, "silk_style_contract.py",
      ["def human_voice", "FILLER_PHRASES", "HUMAN_VOICE_FLAG"]),
     (253, "silk_quality_gate.py",
