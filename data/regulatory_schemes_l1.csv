@@ -1,0 +1,33 @@
+# مرجع أنظمة المطابقة L1 — scheme→owner registry (الصنف ١٠ من موجة عيوب التقرير).
+# الغرض: اسمُ النظام مفتاحاً، ومالكُه (دولةً أو كتلةً) قيمةً — كي يُعرَف أنّ نظاماً
+#   مذكوراً في تقريرٍ لا يخصّ سوقَ الهدف. المفتاحُ النظامُ لا السوق، فيعمل الحارسُ
+#   على الأسواق كلِّها بلا انتظار تهيئةِ سوقٍ بعينه (الدرس ٩٨: حارسٌ لا يُطلِق).
+# العمودان owner_iso3 / owner_bloc: أحدهما يُملأ لا كلاهما. وسمُ الكتلة INTL أو
+#   MULTI يعني «لا مالكَ قُطريّ» ⇒ لا يُحتسَب مخالفةً أبداً (معياراً دولياً أو
+#   برنامجاً تستعمله عدّةُ دول بالاسم نفسه).
+# ليس مصدرَ اشتراطاتٍ ولا أرقام: تسميةٌ ومالكٌ فقط؛ الاشتراطاتُ في requirements_l1.csv.
+scheme,owner_iso3,owner_bloc,authority_ar,source,source_url,note
+SONCAP,NGA,,برنامج تقييم المطابقة النيجيري — المنظمة النيجيرية للمعايير (SON),Standards Organisation of Nigeria,https://son.gov.ng,شهادةُ مطابقةٍ قبل الشحن للسلع المستوردة إلى نيجيريا
+NAFDAC,NGA,,الوكالة الوطنية لإدارة ومراقبة الأغذية والأدوية (نيجيريا),NAFDAC,https://www.nafdac.gov.ng,تسجيلُ المنتج الغذائي/الدوائي قبل الاستيراد
+CIQ,CHN,,التفتيش والحجر الصحي — الجمارك الصينية (GACC),General Administration of Customs of China,http://english.customs.gov.cn,فحصٌ وحجرٌ صحيٌّ على الواردات إلى الصين
+GACC,CHN,,الإدارة العامة للجمارك الصينية,General Administration of Customs of China,http://english.customs.gov.cn,تسجيلُ المنشأة الأجنبية للأغذية المصدَّرة إلى الصين
+FSSAI,IND,,هيئة سلامة الغذاء ومعاييره في الهند,Food Safety and Standards Authority of India,https://www.fssai.gov.in,ترخيصُ المستورد وتسجيلُ المنتج قبل الإفراج
+ONSSA,MAR,,المكتب الوطني للسلامة الصحية للمنتجات الغذائية (المغرب),ONSSA,https://www.onssa.gov.ma,اعتمادُ المنشأة وتسجيلُ المنتج قبل الاستيراد
+SASO,SAU,,الهيئة السعودية للمواصفات والمقاييس والجودة,SASO,https://www.saso.gov.sa,المواصفاتُ السعودية — بوابةُ سَبَر للمطابقة
+SABER,SAU,,منصّة سَبَر للمطابقة (السعودية),SASO,https://saber.sa,شهادةُ مطابقةِ الإرسالية للسلع الداخلة إلى السعودية
+SFDA,SAU,,الهيئة العامة للغذاء والدواء (السعودية),SFDA,https://www.sfda.gov.sa,اشتراطاتُ الغذاء والدواء داخل السعودية
+GSO,,GCC,هيئة التقييس لدول مجلس التعاون,GCC Standardization Organization,https://www.gso.org.sa,مواصفاتٌ خليجيةٌ موحّدة — تسري على دول المجلس
+MOIAT,ARE,,وزارة الصناعة والتكنولوجيا المتقدمة (الإمارات — خلفُ ESMA),MOIAT,https://www.moiat.gov.ae,نظامُ الإمارات للرقابة على المنتجات
+CE,,EU,علامةُ المطابقة الأوروبية,European Commission,https://single-market-economy.ec.europa.eu/single-market/ce-marking_en,إلزاميةٌ لفئاتٍ محدّدة داخل السوق الأوروبية الموحّدة
+REACH,,EU,لائحةُ تسجيل المواد الكيميائية وتقييمها (الاتحاد الأوروبي),European Chemicals Agency,https://echa.europa.eu/regulations/reach,تسجيلُ المواد وحدودُ المواد المقيَّدة
+TRACES,,EU,نظامُ المراقبة التجارية للاتحاد الأوروبي,European Commission — DG SANTE,https://food.ec.europa.eu/horizontal-topics/traces_en,شهادةُ الدخول CHED عبر نقطة تفتيشٍ حدودية
+FDA,USA,,إدارةُ الغذاء والدواء الأمريكية,U.S. Food and Drug Administration,https://www.fda.gov,التسجيلُ المسبق والإخطارُ المسبق للأغذية المستوردة
+JAS,JPN,,المواصفاتُ الزراعية اليابانية,Ministry of Agriculture Forestry and Fisheries (Japan),https://www.maff.go.jp/e/policies/standard/jas/,نظامُ وسمٍ ومواصفاتٍ للمنتجات الزراعية
+MFDS,KOR,,وزارةُ سلامة الغذاء والدواء (كوريا),Ministry of Food and Drug Safety,https://www.mfds.go.kr/eng/,تسجيلُ المستورد وفحصُ الإرساليات
+HACCP,,INTL,نظامُ تحليل المخاطر ونقاط التحكّم الحرجة,Codex Alimentarius (FAO/WHO),https://www.fao.org/fao-who-codexalimentarius/,معيارٌ دوليّ لا مالكَ قُطريّ له
+ISO 22000,,INTL,نظامُ إدارة سلامة الغذاء,International Organization for Standardization,https://www.iso.org/standard/65464.html,معيارٌ دوليّ طوعيّ
+BRCGS,,INTL,معيارُ BRCGS العالمي لسلامة الغذاء,BRCGS,https://www.brcgs.com,مخطَّطٌ خاصٌّ يطلبه مشترون لا دولة
+IFS,,INTL,معيارُ IFS Food,IFS Management GmbH,https://www.ifs-certification.com,مخطَّطٌ خاصٌّ يطلبه مشترون لا دولة
+FSSC 22000,,INTL,مخطَّطُ FSSC 22000,Foundation FSSC,https://www.fssc.com,مخطَّطٌ خاصٌّ معترَفٌ به من GFSI
+PVoC,,MULTI,برنامجُ التحقّق من المطابقة قبل الشحن,Multiple national programmes share this name,https://son.gov.ng,اسمٌ تستعمله عدّةُ دولٍ ببرامجَ مختلفة — لا يُحتسَب مخالفةً
+COC,,MULTI,شهادةُ المطابقة,Generic conformity-certificate term,https://www.gso.org.sa,مصطلحٌ عامّ لا مخطَّطٌ بعينه

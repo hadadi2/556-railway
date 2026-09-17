@@ -107,8 +107,108 @@ def _decision(top: dict | None) -> dict:
             "tone": _verdict_tone(verdict)}
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٧ (موجة عيوب التقرير) — قائمةُ شروطٍ واحدة · one open-conditions list
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «ثلاثةُ شروطٍ في الملخّص، واثنان في التوصيات، وثلاثةٌ في قسم
+# إعادة التقييم».
+#
+# الجذرُ **مرصودٌ حرفياً**: `silk_decision.decide` يبني القائمةَ الواحدة
+# (`silk_decision.py` — مفتاح `conditions`)، ثم تقرؤها خمسةُ سطوحٍ بأربعِ
+# سلوكيّات: هذا الملفّ يقصّ `[:3]` في `format_result` و`[:4]` في
+# `render_text`، و`decision_basis` **يُعيد بناءها من الأعمدة** ثم يقصّ
+# `[:6]`، و`silk_reports` يعرضها كاملةً في موضعين. فالقارئُ الذي يقارن
+# مستندَ العميل بمستند المشغّل بالطرفية يرى ثلاثةَ أعدادٍ وأسماءً مختلفة.
+#
+# **خلف رايةٍ مطفأةٍ افتراضياً** (`SILK_OPEN_CONDITIONS_SINGLE`): مطفأةً يحفظ
+# كلُّ سطحٍ سقفَه القائم حرفياً؛ ومفعّلةً يقرأ الجميعُ من هذا المُعِدّ —
+# قائمةٌ واحدة، وعددٌ واحدٌ هو **العددُ الكامل دائماً**، وأيُّ قصٍّ يُعلَن
+# نصّاً («وشرطان آخران») فلا يُخفي العددَ الحقيقيّ.
+
+CONFIDENCE_DISCIPLINE_FLAG = "SILK_CONFIDENCE_DISCIPLINE"
+
+
+def _oldest_fact_year(result: object) -> "int | None":
+    """أقدمُ سنةِ حقيقةٍ يستند إليها هذا العرض — من `silk_staleness.fact_year`
+    وحدَه (المصدرُ البنيويّ القائم) لا من النثر. `None` حين لا سنةَ مرصودة."""
+    try:
+        from silk_staleness import fact_year
+    except Exception:  # noqa: BLE001
+        return None
+    years: list = []
+    dr = (result or {}).get("deep_research") or {} \
+        if isinstance(result, dict) else {}
+    for m in (dr.get("missions") or {}).values():
+        findings = ((m.get("findings") if isinstance(m, dict)
+                     else getattr(m, "findings", None)) or [])
+        for f in findings:
+            y = fact_year(f)
+            if isinstance(y, int) and 1900 < y < 2200:
+                years.append(y)
+    return min(years) if years else None
+
+
+def confidence_discipline() -> bool:
+    """هل رايةُ الصنف ٨ مفعّلة؟ — سقفُ النطاق وعرضُ حساب الدرجة."""
+    return os.environ.get(CONFIDENCE_DISCIPLINE_FLAG, "").strip().lower() in (
+        "1", "true", "yes")
+
+
+OPEN_CONDITIONS_FLAG = "SILK_OPEN_CONDITIONS_SINGLE"
+OPEN_CONDITIONS_CAP = 6          # سقفُ العرض الموحَّد عند التفعيل
+
+
+def open_conditions_single() -> bool:
+    """هل رايةُ الصنف ٧ مفعّلة؟"""
+    return os.environ.get(OPEN_CONDITIONS_FLAG, "").strip().lower() in (
+        "1", "true", "yes")
+
+
+def open_conditions(ed: object, cap: "int | None" = None) -> dict:
+    """الشروطُ المفتوحة **بعددها الكامل** — المصدرُ الواحد لكلّ سطح.
+
+    يعيد `{"items", "count", "shown", "hidden", "more_note"}`:
+    `count` هو العددُ الكامل **دائماً** (لا عددُ المعروض)، و`more_note` جملةُ
+    إفصاحٍ عن المخفيّ أو `""`. مطفأةً: `cap` كما يمرّره المُنادي (سلوكُه
+    القائم)؛ ومفعّلةً: سقفٌ واحدٌ موحَّد.
+    """
+    items = [str(c) for c in ((ed or {}).get("conditions") or [])
+             if str(c).strip()] if isinstance(ed, dict) else []
+    limit = (OPEN_CONDITIONS_CAP if open_conditions_single()
+             else (cap if isinstance(cap, int) else None))
+    shown = items[:limit] if isinstance(limit, int) else list(items)
+    hidden = len(items) - len(shown)
+    note = ""
+    if hidden > 0:
+        note = (f"و{hidden} شرطٌ آخر" if hidden == 1
+                else f"و{hidden} شروطٌ أخرى")
+    return {"items": items, "count": len(items), "shown": shown,
+            "hidden": hidden, "more_note": note}
+
+
+def _score_arithmetic_line(arith: dict, lang: str = "ar") -> str:
+    """حسابُ الدرجة في سطرٍ يقرؤه صاحبُ القرار — أو إعلانُ الامتناع.
+
+    الصنف ٨: «الدرجة 65» بلا حسابٍ لا تُراجَع؛ و«الدرجة 65 = (0.25×0.80 +
+    0.20×0.57) ÷ 0.45» تُراجَع بقلم. والامتناعُ يُقال بسببه لا يُترَك فراغاً.
+    """
+    import silk_i18n as _I
+    terms = (arith or {}).get("terms") or []
+    if (arith or {}).get("score") is None:
+        reason = (arith or {}).get("withheld_reason") or ""
+        return _I.t("score_arithmetic_withheld", lang, reason=reason)
+    import silk_decision as _D
+    parts = "، ".join(
+        f"{_D.pillar_label(t['name'], lang)} {t['weight']:g}×"
+        f"{t['strength']:g}" for t in terms)
+    return _I.t("score_arithmetic_line", lang, parts=parts,
+                wsum=f"{arith['weight_sum']:g}",
+                score=round(float(arith["score"]) * 100))
+
+
 def decision_basis(ed: dict, displayed_confidence: object = None,
-                   lang: str = "ar") -> "dict | None":
+                   lang: str = "ar",
+                   oldest_fact_year: object = None) -> "dict | None":
     """أساسُ الحكم **جاهزاً للعرض** — بنيةٌ واحدة يستهلكها كلُّ سطحِ عميل.
 
     > **الموجة Z · البند Z-06.** الأعمدةُ الخمسة وقاعدتُها والحجّةُ المضادّة
@@ -161,11 +261,32 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
                          "note": _t("pillar_measured")})
             if strength < 0.5:
                 conds.append(_t("cond_pillar_weak", pillar=label, pct=pct))
+    # الصنف ٧: **العددُ والسقفُ يُوحَّدان، والصياغةُ تبقى صياغةَ القارئ.**
+    #
+    # جُرِّبت قراءةُ نصوصِ المحرّك مباشرةً وأُسقِطت بالقياس: سلاسلُ المحرّك
+    # لغةُ قياسٍ داخلية («متوسط المتاح من: log10(TAM)/9…») بينما سطرُ
+    # `cond_pillar_weak` صياغةُ قارئٍ («عالِجه قبل الالتزام…») — فكان
+    # التفعيلُ **يُعيد** العيبَ الذي سدّه الصنف ١. والعيبُ المرصود لم يكن
+    # إعادةَ البناء بل **انزياحَ العدد وصمتَ القصّ**: فيُعلَن العددُ الكامل
+    # ويُوحَّد السقفُ ويُقال ما خُفي، والنصُّ كما هو.
+    _oc = open_conditions(ed, OPEN_CONDITIONS_CAP)
+    _cap = OPEN_CONDITIONS_CAP if open_conditions_single() else 6
+    _shown_conds = conds[:_cap]
+    _hidden = max(0, len(conds) - len(_shown_conds))
+    if open_conditions_single() and _hidden:
+        _shown_conds = _shown_conds + [
+            (f"و{_hidden} شرطٌ آخر" if _hidden == 1
+             else f"و{_hidden} شروطٌ أخرى") + f" (الإجمالي {len(conds)})"]
     out = {
         "head": _t("decision_basis_head"),
         "pillars": rows,
         "conditions_head": _t("decision_conditions_head"),
-        "conditions": conds[:6],
+        "conditions": _shown_conds,
+        # العددُ الكامل دائماً — سطحٌ يعرض ثلاثةً من ثمانيةٍ يقول ذلك.
+        # يُقرأ من الصياغة المعروضة (هي ما يراه القارئ)، ويُطابِق عددَ
+        # قائمة المحرّك في كلّ حالةٍ مقيسة (كلاهما من الأعمدة نفسِها).
+        "conditions_count": len(conds),
+        "engine_conditions_count": _oc["count"],
         "col_pillar": _t("pillar_col"),
         "col_strength": _t("pillar_strength_col"),
         "col_note": _t("pillar_note_col"),
@@ -179,6 +300,57 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
         out["score_line"] = _t("decision_weighted_line",
                                score=out["score_pct"],
                                conf=out["confidence_pct"])
+    # ── الصنف ٨ (موجة عيوب التقرير) — خلف رايةٍ مطفأةٍ افتراضياً ──────────
+    # (أ) **سقفُ نطاق الثقة**: لا «عالية» عند عمودٍ أساسيٍّ مجهول أو شرطين
+    #     مفتوحين. **الرقمُ لا يُمَسّ** — التسميةُ وحدها تُسقَّف، فلا قيمةَ
+    #     مخزَّنة تتغيّر.
+    # (ب) **حسابُ الدرجة معروضاً**: وزنٌ × قوّةٌ لكلّ عمودٍ محسوب، ومجموعُ
+    #     الأوزان المُعاد تسويتها، والناتج — ومقفولٌ باختبارٍ أنّ الناتج
+    #     يُطابِق `decide()["score"]` حرفياً في الحالتين (رقمٌ أو امتناعٌ
+    #     مُعلَن). حسابٌ يخالف الدرجة يُوهِم القارئَ بالتحقّق.
+    # (ج) **مقياسان لا واحد**: ثقةُ الحكم ≠ نسبةُ التحقّق من البيانات —
+    #     البلاغُ أنّ الثانية عُرضت مكان الأولى.
+    if confidence_discipline():
+        _cap = _D.confidence_band_cap(pillars, ed.get("conditions"))
+        if _cap:
+            out["confidence_band_cap"] = _cap
+            out["confidence_cap_reason"] = _t(
+                "confidence_cap_core_missing",
+                parts=_D.part_labels(
+                    [_D.pillar_label(n, lang)
+                     for n in _D.missing_core_pillars(pillars)], lang))
+        if isinstance(out["confidence_pct"], (int, float)):
+            from silk_style_contract import confidence_band_label
+            out["confidence_band"] = confidence_band_label(
+                out["confidence_pct"], lang, cap=_cap)
+        # (د) **قِدَمُ البيانات يُقرَأ ولا يُمَسّ الرقم**. المراجعةُ الذاتية
+        #     للفرق (البند ٥٨) كشفت أنّ `CONFIDENCE_AGE_DECAY` جدولٌ معلَنٌ
+        #     **بلا قارئٍ في الإنتاج** — أي أنّ الصنفَ ٨ ادّعى تحلُّلاً لا
+        #     يجري. الآن: يُعرَض الخصمُ سطراً مسمّىً من أقدم سنةٍ مرصودةٍ
+        #     فعلاً، والثقةُ المخزَّنة كما هي (نمطُ سقفِ التسمية نفسِه).
+        _oldest = oldest_fact_year
+        if isinstance(_oldest, int) and _oldest > 1900:
+            import datetime as _dt
+            _age = max(0, _dt.date.today().year - int(_oldest))
+            _keep = _D.age_decay_factor(_age)
+            if _keep < 1.0:
+                out["confidence_age_year"] = int(_oldest)
+                out["confidence_age_years"] = _age
+                out["confidence_age_haircut_pct"] = round(
+                    (1.0 - _keep) * 100, 1)
+                out["confidence_age_note"] = _t(
+                    "confidence_age_haircut", year=int(_oldest), age=_age,
+                    pct=out["confidence_age_haircut_pct"])
+        _opt = ed.get("weights_option") or "A"
+        _arith = _D.score_arithmetic(pillars,
+                                     _D.WEIGHT_OPTIONS.get(_opt) or {})
+        out["score_arithmetic"] = _arith
+        out["score_arithmetic_line"] = _score_arithmetic_line(_arith, lang)
+        # نسبةُ التحقّق مقياسٌ مسمّىً مستقلّ — لا تُقدَّم كثقةِ حكم.
+        _cov = ed.get("coverage")
+        if isinstance(_cov, (int, float)):
+            out["verification_rate_pct"] = round(float(_cov) * 100)
+            out["verification_rate_note"] = _t("verification_rate_note")
     # القاعدةُ والحجّة: مُصفّاتان بالصمّام — غيابُهما إطفاءٌ مقصود لا نقص.
     if layer_enabled("VERDICT_STRUCTURE"):
         if ed.get("decision_rule"):
@@ -1068,6 +1240,12 @@ _ORPHAN_TAIL_COMMA_RE = re.compile(r"\s*[،,;]\s*[/／]?\s*([\)）])")
 # لصياغة قارئ بإسقاط «آلياً» من عبارات الإحالة (المعنى يبقى صحيحاً).
 _SYSTEM_MECHANICS_RE = re.compile(
     r"(يرد أسفل هذا القسم|تلي هذا القسم|يلي هذا القسم|يليان|تليان)\s+آلياً")
+# الصنف ١ (موجة عيوب التقرير): «مُصنَّفٌ آلياً» تقول **كيف عمل النظام**، وما
+# يحتاجه القارئ هو **ماذا يعني ذلك لقراره**: أن الرمز لم يُراجَع بشرياً. نفسُ
+# علاج البند 23 أعلاه (صياغةُ قارئ بلا فقدِ معنى) مطبَّقاً على الصيغة الفعلية
+# التي تصل المتن. يُحفَظ الحرفُ السابق (مُصنَّف/صُنِّف/حُسِم) والتالي.
+_AUTO_CLASSIFIED_RE = re.compile(
+    r"(مُصنَّف|مصنَّف|مصنف|صُنِّف|صنِّف|حُسِم|حسم)(\S*)\s+آليّ?اً")
 # HF4.1 (تسريب سلسلةٍ إنجليزيةٍ داخلية إلى §5 — تقرير قطر): ملاحظةُ الحكم
 # المبدئيّ ثنائيةُ اللغة («Preliminary only; missing sources flagged, not
 # estimated. تنبيه: …») — النصفُ الإنجليزيّ داخليٌّ لا يصل العميل. يُزال
@@ -1450,8 +1628,16 @@ def _strip_internal_plumbing(text: str | None,
     text = _ORPHAN_LEAD_COMMA_RE.sub(r"\1", text)
     text = _ORPHAN_TAIL_COMMA_RE.sub(r"\1", text)
     text = _EMPTY_CITATION_GROUP_RE.sub("", text)
+    # الصنف ٢ (موجة عيوب التقرير): المجموعةُ الآمنة على النثر من إصلاح أثرِ
+    # الخانة الفارغة — قوسٌ فارغ، فراغٌ مزدوج، فراغٌ قبل علامةِ ترقيم. امتدادٌ
+    # لعلاج البند 13 أعلاه بنفس منطقه (لا فاصلةَ يتيمةً تُطبَع أبداً)، ومصدرُ
+    # القاعدة واحدٌ يقرؤه الفحصُ أيضاً فلا يتباعد إصلاحٌ عن فحص.
+    import silk_i18n as _i18n_tidy
+    text = _i18n_tidy.tidy_punctuation(text)
     # البند 23: لغة آلية بناء الملاحق تتحول لصياغة قارئ.
     text = _SYSTEM_MECHANICS_RE.sub(r"\1", text)
+    # الصنف ١: «مُصنَّفٌ آلياً» → «مُصنَّفٌ بلا مراجعة بشرية» (المعنى للقارئ).
+    text = _AUTO_CLASSIFIED_RE.sub(r"\1\2 بلا مراجعة بشرية", text)
     # §٢ (تدقيق «تحليل #1» DZA): تنسيق «**» شارد + رقم ثقة عربي خام — راجع
     # تعليقات الثوابت أعلاه لماذا لا يُمَسّ "## "/"### ".
     text = _strip_stray_markdown(text)
@@ -2108,6 +2294,17 @@ def _already_explained_nearby(s: str, end: int, gloss: str) -> bool:
     return len(following_words & gloss_words) >= 2
 
 
+_TERM_DIACRITICS_RE = re.compile("[\u064b-\u0652\u0670\u0640]")
+_TERM_ALEF_RE = re.compile("[أإآ]")
+
+
+def _norm_for_terms(s: object) -> str:
+    """تطبيعٌ خفيفٌ لمطابقة مصطلحٍ عربيّ داخل نثرٍ مُشكَّل — حركاتٌ وتطويلٌ
+    وهمزاتٌ تُوحَّد (نظيرُ `silk_quality_gate._norm_ar` عند حدّ العرض)."""
+    out = _TERM_DIACRITICS_RE.sub("", str(s or ""))
+    return _TERM_ALEF_RE.sub("ا", out).replace("ى", "ي").replace("ة", "ه")
+
+
 def _apply_merchant_language(text: "str | None") -> "tuple[str, list]":
     """B1 (SPEC-v2): نفّذ عقد لغة التاجر حتمياً على سرد التقرير في النموذج
     الواحد. يعيد (النص المشروح، قائمة المسرد) فيرثهما كل مخرَج (md/docx)
@@ -2145,11 +2342,36 @@ def _apply_merchant_language(text: "str | None") -> "tuple[str, list]":
         s = s[:m.end()] + f" ({gloss})" + s[m.end():]
     s = re.sub(r"[ \t]{2,}", " ", s)
 
+    # الصنف ٤ (موجة عيوب التقرير): مصطلحاتٌ **عربية** تُستعمَل بلا تعريف
+    # (المرآة، عتباتُ التركّز، سعرُ الحدود، نسبةُ التحقّق). `GLOSSARY_ORDER`
+    # مبنيٌّ على اختصاراتٍ لاتينية فلا يبلغها. التعريفُ يُضاف **إلى المسرد
+    # نفسه** حين يَرِد المصطلح — لا مسارَ عرضٍ ثانٍ، ولا شرحٌ مقحومٌ وسطَ
+    # الجملة (يحظره `PLAIN_LANGUAGE_RULE`، وهو بعينه عيبُ «مؤشر التركّز HHI
+    # (مؤشر يقيس تركّز السوق…)» الذي رصده الصنف ٢).
+    from silk_style_contract import METHODOLOGY_DEFINITIONS_ORDER
+    _plain = _norm_for_terms(s)
+    for term, definition in METHODOLOGY_DEFINITIONS_ORDER:
+        if _norm_for_terms(term) in _plain:
+            used.append((term, definition))
+
     seen: dict = {}
+    # **إزالةُ تكرارِ التعريف لا المصطلح**: «نسبة التحقّق» و«نسبة التحقق»
+    # هجاءان لمصطلحٍ واحد (مفاتيحُ مطابقةٍ لا مصطلحاتٌ مستقلّة)، وإدراجُهما
+    # يُظهِر التعريفَ نفسَه مرّتين في مسردٍ واحد — وهو بعينه عيبُ التكرار
+    # الذي تسدّه هذه الموجة.
+    by_gloss: dict = {}
     for term, gloss in used:
+        if gloss in by_gloss:
+            continue
+        by_gloss[gloss] = term
         seen.setdefault(term, gloss)
+
+    def _pos(term: str) -> int:
+        i = _plain.find(_norm_for_terms(term))
+        return i if i >= 0 else len(_plain)
+
     glossary = [{"term": t, "gloss": g}
-                for t, g in sorted(seen.items(), key=lambda kv: s.find(kv[0]))]
+                for t, g in sorted(seen.items(), key=lambda kv: _pos(kv[0]))]
     return s, glossary
 
 
@@ -2702,6 +2924,25 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
                       + (f" ({_missing})" if _missing else "")
                       + " — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي "
                       "حتى تأكيد الرمز الصحيح.")
+    # ── الصنف ١٠ (خلف رايته): اتّساعُ البند الجمركيّ يُعلَن كما يُعلَن
+    # عدمُ شموله لصفة المنتج — **بالآلة نفسِها** لا بمسارِ عرضٍ ثانٍ:
+    # سطرُ حدودٍ واحد + تعليمُ أرقامِ التركّز سياقاً + سقفُ الثقة القائم.
+    # العيبُ المرصود: بندٌ يغطّي فئةً كاملةً قُرِئ سوقَ منتجٍ واحد. والاتّساعُ
+    # **واقعةُ منتجٍ مُهيَّأة** (`hs_scope`) لا استنتاجَ محرّك.
+    _hs_broad = False
+    try:
+        import silk_market_structure as _MS
+        if _MS.enabled() and _MS.hs_scope(result.get("hs_code")) == "broad":
+            _hs_broad = True
+    except Exception:  # noqa: BLE001 — تهيئةٌ غائبةٌ ليست خطأَ عرض
+        _hs_broad = False
+    if _hs_broad and not hs_flagged:
+        verdict = cap_confidence_for_flagged_hs(verdict, hs_conf)
+        limits.insert(0, f"{CONTEXTUAL_TAG}: رمز HS "
+                      f"{result.get('hs_code')} يغطي فئةً أوسع من المنتج "
+                      "المدروس وفق تهيئة المنتج — تُقرأ أرقام الاستيراد "
+                      "والتركّز والحصص سياقاً عاماً للفئة لا قياساً مباشراً "
+                      "لهذا المنتج.")
     # البند 18 (موجة سدّ الفجوات F5): صندوقُ التحذير الواحد أعلى التقرير —
     # يُبنى حتمياً من نفس عقد التأكيد الذي يبني سطرَ الحدود أعلاه؛ المُصدِّرون
     # (md/docx/اللوحة) يعرضونه مرةً واحدة في الرأس بدل تكرار جملة التحذير
@@ -2862,7 +3103,9 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
         "price_unlock": PRICE_UNLOCK_LINE,
         # Wave 3.2: عند تعليم الرمز، التركّز (HHI) سياقٌ فقط لا إشارة تسجيل
         # للحكم لهذا المنتج — الشارة تستهلكها المُصدِّرات.
-        "concentration_context_only": bool(hs_flagged),
+        # الصنف ١٠: الاتّساعُ المُهيَّأ يُعلِّم أرقامَ التركّز سياقاً كما
+        # يُعلّمها عدمُ شمولِ الوصف — نفسُ المفتاح، فلا سطرَ عرضٍ ثانٍ.
+        "concentration_context_only": bool(hs_flagged or _hs_broad),
         # Wave 6.1: شرطا قلب الحكم المهيكلان (حكم مراقبة/مشروط) — يعرضهما كل
         # مُصدِّر «شرطا قلب الحكم»، وتربط خارطة الـ٩٠ يوماً كل خطوة بأيّهما تُغلق.
         "flip_conditions": _flip_conditions(
@@ -3134,7 +3377,8 @@ def build_view(result: dict, lang: str = "ar") -> dict:
         # المحرّك الخام، فلا يظهر رقمان في مستندٍ واحد.
         decision["basis"] = decision_basis(
             ed_top, (((result.get("deep_research") or {}).get("verdict")
-                      or {}).get("confidence")), lang)
+                      or {}).get("confidence")), lang,
+            oldest_fact_year=_oldest_fact_year(result))
     cp = _competitive_position(top)
     view_markets = []
     for row in markets:
@@ -3356,15 +3600,20 @@ def render_text(view: dict) -> str:
         L.append(f"قرار الدخول (المحرك الموزون): {verdict_ar(ed.get('verdict'))} "
                  f"— النقاط {_sc_txt} — الثقة "
                  f"{confidence_phrase(ed.get('confidence'))} — {ed.get('why')}")
-        for c in (ed.get("conditions") or [])[:3]:
+        # الصنف ٧: المصدرُ الواحد — السقفُ القائم (٣) يبقى مطفأةً.
+        _oc = open_conditions(ed, 3)
+        for c in _oc["shown"]:
             L.append(f"  شرط: {c}")
+        if _oc["more_note"]:
+            L.append(f"  شرط: {_oc['more_note']} "
+                     f"(الإجمالي {_oc['count']})")
     cp = view["competitive_position"]
     L.append("موقعك التنافسي:")
     if cp.get("available"):
         L.append(f"  التغطية: {cp.get('coverage')}")
         for f in cp.get("feasibility_threads") or []:
             L.append(f"  ضد {f['competitor'][:40]}: سعر مرصود "
-                     f"{f['observed_price']} — هامشك عند المضاهاة "
+                     f"{f['observed_price']} — هامشك إن سعّرت مثله "
                      f"{f['margin_at_match_pct']}% وعند البيع أقل 10% "
                      f"{f['margin_at_10pct_below']}%")
         for t in cp.get("competitor_threads") or []:
@@ -3493,8 +3742,13 @@ def analysis_context(result: dict, max_chars: int = 6000) -> str:
         for g in (a.get("gaps") or [])[:2]:
             L.append(f"فجوة {k_ar}: {_humanize_gap_note(g)}")
     ed = top.get("entry_decision") or {}
-    for cnd in (ed.get("conditions") or [])[:4]:
+    # الصنف ٧: المصدرُ الواحد — السقفُ القائم (٤) يبقى مطفأةً.
+    _oc = open_conditions(ed, 4)
+    for cnd in _oc["shown"]:
         L.append(f"شرط مفتوح: {cnd}")
+    if _oc["more_note"]:
+        L.append(f"شرط مفتوح: {_oc['more_note']} "
+                 f"(الإجمالي {_oc['count']})")
     for x in (view.get("limits") or [])[:6]:
         L.append(f"حدّ معلن: {x}")
     out = "\n".join(L)

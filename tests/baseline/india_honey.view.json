@@ -1,0 +1,575 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق الهند (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 41300000",
+  "أفضل باب دخول: موزّع تجزئة متخصّص"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 33,
+  "note": "33 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": 2024,
+      "note": "واردات 2024",
+      "retrieved_at": "2026-08-02",
+      "source": "UN Comtrade",
+      "value": 41300000
+     }
+    ],
+    "entry_cost": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "تعريفة مطبَّقة",
+      "retrieved_at": "2026-08-02",
+      "source": "WITS",
+      "value": 60.0
+     }
+    ],
+    "entry_door": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "باب الدخول",
+      "retrieved_at": "2026-08-02",
+      "source": "بحث ويب",
+      "value": "موزّع تجزئة متخصّص"
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.7,
+      "confidence_badge": "◐ ثانوي",
+      "note": "سعر رف منافس روبية/كجم",
+      "retrieved_at": "2026-08-02",
+      "source": "بحث ويب",
+      "value": 480.0
+     }
+    ],
+    "swot": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "note": "ضغط على الهامش",
+      "retrieved_at": "2026-08-02",
+      "source": "UN Comtrade",
+      "value": "رسوم 60%"
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "الهند مراقبة — هامش موجب ورسوم 60%."
+  },
+  "caveat_box": "",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": false,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": {
+    "basis": "retail",
+    "category": "عسل",
+    "currency": "",
+    "fx_date": "",
+    "fx_rate": null,
+    "gaps": [
+     "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
+    ],
+    "note": "أدنى سعر رف منافس مرصود",
+    "per_kg": 480.0,
+    "per_litre": 681.6245,
+    "per_unit": 480.0,
+    "raw_value": 480.0,
+    "source": "سعر رف تجزئة لعبوة 1 كجم، روبية",
+    "value_usd": null
+   },
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "confirm": "عرض شحن رسمي + جدول رسوم الجهة التنظيمية للسوق",
+     "confirm_time": "أسبوع عمل",
+     "method": "بضاعة الشحنة التجريبية (تكلفتك × وحدات الحاوية) (الشحن بلا سعر ممر متحقق — مداه أوسع من ±50% فيُستبعد من المجموع ويُغلق بعرض أسعار) (رسوم التسجيل غير متحققة — خارج المجموع ومعلنة)",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "range": {
+      "high": 2539350,
+      "low": 2539350
+     },
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "INR",
+     "value": 2539350,
+     "width_pct": 0
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "confirm": "شرط إعادة/تصريف في أول عقد يقلّص السقف فعلياً",
+     "confirm_time": "بند تفاوضي في أول عقد",
+     "method": "كلفة الدخول كلها عرضة للفقد في أسوأ حالة (بضاعة + شحن غير مستردّين)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "range": {
+      "high": 2539350,
+      "low": 2539350
+     },
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "INR",
+     "value": 2539350,
+     "width_pct": 0
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": false,
+   "gaps": [
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "أقصى سعر مصنع (EXW) غير محسوب — الناقص: عملة السعر المرصود"
+   ],
+   "hhi": 1490.0,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": "سائل لزج في عبوة زجاجية",
+   "reverse_solve": null,
+   "unlock_note": null,
+   "waterfall": [
+    {
+     "is_parameter": false,
+     "name": "سعر المصنع (EXW)",
+     "note": "USD",
+     "value": 95.0
+    },
+    {
+     "is_parameter": true,
+     "name": "الشحن (12% من EXW)",
+     "note": "معلمة معلنة قابلة للتعديل — من سيناريو الشحن",
+     "value": 11.4
+    },
+    {
+     "is_parameter": true,
+     "name": "التكلفة الواصلة (بعد تعرفة 0.0%)",
+     "note": "معلمة معلنة قابلة للتعديل — التعرفة غير متاحة — بلا جمارك",
+     "value": 106.4
+    },
+    {
+     "is_parameter": true,
+     "name": "سعر الموزّع (+20%)",
+     "note": "معلمة معلنة قابلة للتعديل — هامش الموزّع",
+     "value": 127.68
+    },
+    {
+     "is_parameter": true,
+     "name": "سعر التجزئة قبل الضريبة (+25%)",
+     "note": "معلمة معلنة قابلة للتعديل — هامش التجزئة",
+     "value": 159.6
+    },
+    {
+     "is_parameter": true,
+     "name": "سعر الرف (+ضريبة 0.0%)",
+     "note": "معلمة معلنة قابلة للتعديل — الضريبة غير متاحة — صفر معلن",
+     "value": 159.6
+    }
+   ]
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في الهند",
+    "met": false
+   }
+  ],
+  "gap_register": [],
+  "glossary": [],
+  "hs_confirmation": {
+   "code_desc": "عسل طبيعي",
+   "confirmed": true,
+   "hs_code": "040900",
+   "missing_terms": [],
+   "overlap": 1.0,
+   "product_terms": [
+    "عسل"
+   ],
+   "reason": "وصف الرمز يشمل صفات المنتج المميّزة",
+   "shared_terms": [
+    "عسل"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "04",
+   "confirmed": null,
+   "heading": "0409",
+   "hs6": "040900",
+   "official_description": "Honey; natural",
+   "subheading": "040900"
+  },
+  "hs_flagged": false,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [],
+  "market": {
+   "iso2": "IN",
+   "iso3": "IND",
+   "m49": 356,
+   "name_ar": "الهند",
+   "name_en": "India"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "مؤشر التركّز",
+      "retrieved_at": "2026-08-02",
+      "source": "UN Comtrade",
+      "value": 1490
+     },
+     {
+      "confidence": 0.8,
+      "note": "حصة أستراليا %",
+      "retrieved_at": "2026-08-02",
+      "source": "UN Comtrade",
+      "value": 22.0
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "مؤشر تركّز 1490",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "customs_requirements": {
+    "failed": false,
+    "findings": [],
+    "label": "الاشتراطات الجمركية",
+    "name": "LLMMissionAgent",
+    "summary": "FSSAI تسجيل المستورد وترخيص المنتج",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "عدد السكان 2024",
+      "retrieved_at": "2026-08-02",
+      "source": "World Bank",
+      "value": 1440000000
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMMissionAgent",
+    "summary": "سكان 1.44 مليار نسمة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.7,
+      "note": "سعر رف تجزئة لعبوة 1 كجم، روبية",
+      "retrieved_at": "2026-08-02",
+      "source": "بحث ويب",
+      "value": 480.0
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "سعر رف تجزئة مرصود 480 روبية/كجم (12/12)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.7,
+      "data_year": 2024,
+      "note": "سعر الصرف الرسمي مقابل الدولار 2024",
+      "retrieved_at": "2026-08-02",
+      "source": "World Bank",
+      "value": 83.2
+     }
+    ],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "سعر الصرف الرسمي 83.2 روبية للدولار",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "note": "تعريفة مطبَّقة %",
+      "retrieved_at": "2026-08-02",
+      "source": "WITS",
+      "value": 60.0
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMMissionAgent",
+    "summary": "تعريفة مطبَّقة 60%",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "واردات مصرَّحة 2024",
+      "retrieved_at": "2026-08-02",
+      "source": "UN Comtrade",
+      "value": 41300000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "متوسط سعر استيراد دولار/كجم 2024",
+      "retrieved_at": "2026-08-02",
+      "source": "UN Comtrade",
+      "value": 3.15
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات 41.3 مليون وسعر حدود 3.15 دولار/كجم (68/68)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "سعر رف تجزئة لعبوة 1 كجم، روبية",
+    "reason": "",
+    "value": 480.0
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "عسل",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 2,
+   "text": "## 1. الخلاصة التنفيذية\nالتوصية: مراقبة السوق. قاعدة الحكم قبل الأرقام: نوصي بالدخول حين تكتمل\nثلاثة جوانب من خمسة ويكون الهامش موجباً؛ وهنا الهامش موجب لكن الرسوم\nالجمركية 60% تجعل التنافس السعري هشّاً. واردات الهند المصرَّحة من العسل\n41.3 مليون دولار لعام 2024.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. أدخل المصدّر تكلفة إنتاج\nالكيلوغرام (95 روبية)، ورُصد سعر رف منافس واحد موثّق، فاكتملت سلسلة التكلفة\nمن المصنع إلى الرف.\n\n## 3. نظرة عامة على السوق وحجمه\nالواردات المصرَّحة 41.3 مليون دولار (2024)، بنمو تراكمي 6.4% سنوياً على\nثلاث سنوات. متوسط سعر الاستيراد الحدودي 3.15 دولار للكيلوغرام.\n\n## 4. ديناميكيات السوق\nعدد السكان 1.44 مليار نسمة. الاستهلاك الحضري هو المحرّك، والعسل المستورد\nيقع في شريحة الهدايا والصيدليات لا في السلة اليومية.\n\n## 5. تحليل المستهلك والطلب\nسعر الرف المنافس المرصود 480 روبية للكيلوغرام في متجر تجزئة حضري. الطلب\nيرتفع في موسم المهرجانات.\n\n## 6. المشهد التنافسي\nالمورّدون: أستراليا 22%، نيوزيلندا 18%، السعودية 4%. مؤشر التركّز 1490 —\nسوق تنافسي غير مركّز.\n\n## 7. التنظيم والوصول للسوق\nتشترط FSSAI تسجيل المستورد وترخيص المنتج قبل الإفراج. الرسوم الجمركية\nالمطبَّقة 60% وفق WITS، وهي أعلى بند تكلفة في سلسلة الوصول إلى الرف.\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري إلى ميناء نافا شيفا. زمن العبور غير متاح من مصدر منسَّق.\n\n## 9. تقييم المخاطر\nالرسوم المرتفعة هي الخطر الأول، وسعر الصرف الثاني: كلاهما يضغط على الهامش\nمباشرة ولا يخضع لتحكّم المصدّر. وحين تُحسب سلسلة التكلفة كاملةً بالرسوم\nالمطبَّقة، يقع أقصى سعر مصنع قابل للمنافسة دون متوسط سعر الاستيراد المرصود\n— ولا يصلح هذا الرقم أساساً للتفاوض.\n\n## 10. التوصيات الاستراتيجية\nأقوى حجة ضد هذا الحكم: الهامش موجب فعلاً بالأرقام المرصودة، ومن يرى الرسوم\nثابتة قد يرى الدخول الآن أفضل من انتظار خفضها. نردّ بأن سعر رف واحد ليس\nمسحاً سعرياً، وأن الهامش المحسوب على رصدة واحدة لا يحتمل صدمة صرف.\n### أرقام القرار\nتفصيل البنود الخمسة في جدول أرقام القرار: الشحنة التجريبية، وكلفة الدخول\nحتى أول شحنة، ونقطة التعادل، والزمن إلى أول فاتورة، وسقف الخسارة.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. تسجيل FSSAI. 2. عرض شحن رسمي لممر جدة–نافا شيفا. 3. مسح سعري لخمسة\nمتاجر قبل تثبيت أي سعر بيع.\n\n## 11. الملاحق\nUN Comtrade، البنك الدولي، WITS، بحث ويب.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "ind-shape",
+  "verdict": {
+   "ai": {
+    "reasoning": "الهامش موجب لكن الرسوم تُهشّشه.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.52,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "040900",
+  "origin": "SAU",
+  "product": "عسل",
+  "target_market": "الهند"
+ },
+ "hs_code": "040900",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "عسل",
+ "provenance": [
+  {
+   "attempted": 6,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 6,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.7,
+   "contributed": 3,
+   "failures": [],
+   "source": "بحث ويب",
+   "tail": " — ثقة المرصود 70–80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.7,
+   "contributed": 2,
+   "failures": [],
+   "source": "World Bank",
+   "tail": " — ثقة المرصود 70–80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [],
+   "source": "WITS",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

@@ -146,10 +146,17 @@ class WorkflowTests(unittest.TestCase):
         self.assertFalse(products()['030111']['excluded'])
 
     def test_empty_itc_result_is_distinct_from_unknown_hs(self):
-        with patch('silk_platform.export_opportunities.client.chart', return_value={'rows': []}):
+        # أداةُ قياسٍ لا تشديدَ نطاق: هذا الفحصُ فشل مرّةً في الحزمة الكاملة
+        # ونجح منفرداً وفي إعادةٍ كاملةٍ نظيفة، فالجذرُ غيرُ مُثبَت. البدائلُ
+        # الثلاثة تُعطي 404 أيضاً (`hs_not_found`) أو تتخطّى المزوّد المُحاكى،
+        # فكانت الرسالةُ الأصلية تكتم أيَّها حدث. الآن: جسمُ الردّ في كلّ
+        # تأكيد، وعددُ نداءات المزوّد مؤكَّد — فالحدوثُ التالي يسمّي سببَه.
+        with patch('silk_platform.export_opportunities.client.chart',
+                   return_value={'rows': []}) as chart:
             r = self.http.get('/platform/export-opportunities/preview?hs_code=010121')
-        self.assertEqual(r.status_code, 404)
-        self.assertEqual(r.json()['detail']['code'], 'itc_no_results')
+        self.assertEqual(chart.call_count, 1, 'ITC stub bypassed or called twice')
+        self.assertEqual(r.status_code, 404, r.text)
+        self.assertEqual(r.json()['detail']['code'], 'itc_no_results', r.text)
 
     def test_factory_save_keeps_hs_and_group_provenance(self):
         conn = self.db.connect()

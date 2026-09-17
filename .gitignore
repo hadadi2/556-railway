@@ -26,3 +26,4 @@ preview-accounts.json
 preview_app.py
 run-preview.ps1
 local-start.*.log
+.reports_for_owner/

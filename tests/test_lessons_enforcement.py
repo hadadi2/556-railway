@@ -207,6 +207,125 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٥٠–٢٥٢ — سدُّ الفجوات: حارسٌ بلا فرعٍ مرصودٍ لا يُطلِق، وتشديدُ
+    # مطابقةٍ بحسب البند لا السوق، وحدٌّ مُعلَنٌ أوسعَ من قياسه.
+    (250, "tests/test_market_structure_config.py",
+     ["def test_c17_the_border_price_guard_can_fire_without_any_configuration",
+      "def test_c17_threshold_is_measured_and_keeps_every_corpus_silent"]),
+    (251, "tests/test_market_structure_config.py",
+     ["def test_c18_regulatory_emphasis_names_no_foreign_regime_when_scoped",
+      "def test_c18_the_leak_is_caught_in_the_text_by_the_existing_gate_rule"]),
+    (252, "tests/test_market_structure_config.py",
+     ["def test_c19_currency_reverse_lookup_is_scoped_to_the_exporters_own_"
+      "currency"]),
+    # ٢٤٩ — عبارةٌ إلزاميةٌ يكسرها سطرٌ جديد: مطبِّعُ الحضورِ الحرفيّ.
+    (249, "tests/test_market_structure_config.py",
+     ["def test_c16_a_mandatory_warning_survives_a_line_wrap",
+      "def test_c16_the_kenya_corpus_is_not_blocked_by_that_false_negative"]),
+    # ٢٤٧/٢٤٨ — مراجعةُ الجولة الثالثة: بلاغُ الحارس دليلٌ يُقرَأ، والرأسُ
+    # العامُّ ليس صدىً — والاستثناءُ بقائمةٍ مقيسةٍ لا بحدسٍ نحويّ.
+    (247, "tests/test_market_structure_config.py",
+     ["def test_c14_a_generic_word_is_not_a_named_gateway",
+      "def test_the_lead_filter_removes_what_the_guard_warned_about"]),
+    (248, "tests/test_market_structure_config.py",
+     ["def test_c15_a_generic_head_before_two_proper_names_is_not_an_echo",
+      "def test_c10_breadth_note_says_which_level_supplied_the_evidence"]),
+    # ٢٤٦ — المرساةُ السلوكية: الحارسُ يُضيَّق بقياسٍ لا بتقدير، والنظامُ
+    # الأجنبيُّ يُرصَد والمنشأُ يُعفى، والمخطَّطُ يرفض المجهول، والرايةُ
+    # تحكم السلوكَ وحدَه.
+    (246, "tests/test_market_structure_config.py",
+     ["def test_target_region_guard_needs_two_authorities_and_two_named_gateways",
+      "def test_regime_guard_fires_on_a_foreign_scheme_and_spares_origin",
+      "def test_an_unknown_top_level_section_no_longer_passes_silently",
+      "def test_the_module_carries_no_country_or_hs_literal",
+      "def test_the_guards_fire_only_where_the_defect_is_real_and_verbatim",
+      "def test_flag_off_changes_no_surface_on_any_canonical_blob"]),
+    # ٢٤٥ — المرساةُ السلوكية: الخانةُ المرصودة تُعاد ثمّ تُصلَح، والمرجعُ
+    # لا يسأل الراية، والحارسُ يصمت بالبناء، وصفرُ مسٍّ بالبيانات.
+    (245, "tests/test_report_quality_logic_layer.py",
+     ["def test_c13_the_observed_cell_is_reproduced_then_fixed",
+      "def test_c13_canonical_form_never_asks_about_the_flag",
+      "def test_c13_guard_marks_the_superseded_path_and_goes_silent_when_fixed",
+      "def test_c13_flag_changes_only_the_value_cell_and_no_stored_number"]),
+    # ٢٤٤ — المرساةُ السلوكية: الحارسُ يُطلِق على المقروءِ غيرِ المقروء
+    # حرفياً، والقيمُ المتغيّرةُ محسوبةٌ بمقدار التعريفة، والحكمُ لا يتغيّر.
+    (244, "tests/test_report_quality_logic_layer.py",
+     ["def test_c12_guard_fires_exactly_on_readable_but_unread_inputs",
+      "def test_c12_the_repo_own_provider_wording_was_unreadable",
+      "def test_c12_no_alternative_of_the_frozen_narrow_pattern_is_lost",
+      "def test_c12_an_ambiguous_currency_name_never_gets_an_iso_code",
+      "def test_c12_flag_changes_only_the_three_measured_markets"]),
+    # ٢٤٣ — المرساةُ السلوكية: السقفُ يَرِث ناقصَه بالاسم، والشدةُ تتبع
+    # الراية، والتفعيلُ إضافةُ إسنادٍ فقط، وصفرُ إطلاقةٍ على المدوّنات.
+    (243, "tests/test_report_quality_logic_layer.py",
+     ["def test_c9_max_loss_inherits_the_named_unknown_components",
+      "def test_c9_severity_follows_the_flag",
+      "def test_c9_flag_on_only_appends_provenance_to_the_derived_row",
+      "def test_c9_no_hard_fail_on_any_canonical_blob_with_the_flag_on",
+      "def test_c9_iso_currency_never_guesses_an_ambiguous_name"]),
+    # ٢٤٢ — المرساةُ السلوكية: الحسابُ يُعيد إنتاج الدرجة على الاثنتي عشرة،
+    # ويحترم قاعدةَ الحدّ الأدنى، والتفعيلُ إضافةٌ محضة.
+    (242, "tests/test_report_quality_logic_layer.py",
+     ["def test_c8_rendered_arithmetic_reproduces_the_score_exactly",
+      "def test_c8_arithmetic_respects_the_min_pillars_rule",
+      "def test_c8_basis_additions_are_purely_additive_behind_the_flag",
+      "def test_c8_all_three_flags_add_only_new_keys_on_production_views"]),
+    # ٢٤١ — المرساةُ السلوكية: صياغةُ القارئ لا تُستبدَل بلغة القياس،
+    # والقصُّ يُعلَن، والقياسُ على شكل الإنتاج لا على المدوّنة الخام.
+    (241, "tests/test_report_quality_logic_layer.py",
+     ["def test_c7_reader_wording_is_not_replaced_by_engine_measurement_language",
+      "def test_c7_count_is_always_the_full_count_and_truncation_is_disclosed",
+      "def test_c7_flag_changes_nothing_on_any_production_shaped_view",
+      "def test_c7_a_count_outside_the_open_conditions_sense_is_not_counted"]),
+    # ٢٤٠ — المرساةُ السلوكية: الشدةُ تتبع الراية، وتسميةُ الفرق ليست عيباً،
+    # وصفرُ حجبٍ جديد على المدوّنات والرايةُ مفعّلة.
+    (240, "tests/test_report_quality_logic_layer.py",
+     ["def test_c6_divergence_severity_follows_the_flag",
+      "def test_c6_naming_the_difference_is_correct_not_a_defect",
+      "def test_c6_flag_off_changes_nothing_in_the_fail_set",
+      "def test_c6_no_hard_fail_on_any_canonical_blob_with_the_flag_on"]),
+    # ٢٣٩ — المرساةُ السلوكية: المدوّنةُ لم تَعُد محجوبةً بتناقضٍ كاذب،
+    # والتناقضُ الحقيقيّ ما زال يحجب، والتثبيتةُ الموجَبة تُطلِق فعلاً.
+    (239, "tests/test_report_quality_reader_layer.py",
+     ["def test_c11_nigeria_blob_is_no_longer_blocked_by_a_false_contradiction",
+      "def test_c11_a_disclosed_mirror_gap_is_not_a_blocking_contradiction",
+      "def test_c11_c_a_real_contradiction_still_blocks",
+      "def test_selfreview_egypt_is_the_positive_fixture_for_the_first_round",
+      "def test_c5_similarity_threshold_separates_measured_negatives_from_the_defect"]),
+    # ٢٣٨ — المرساةُ السلوكية: هامشُ العتبة مقيسٌ لا مخمَّن، والتفصيلُ داخل
+    # القسم ليس تكراراً، والعيبُ في توزيع الرابط لا مجموعه.
+    (238, "tests/test_report_quality_reader_layer.py",
+     ["def test_c5_similarity_threshold_separates_measured_negatives_from_the_defect",
+      "def test_c5_detail_inside_one_section_is_not_repetition",
+      "def test_c5_connector_repeated_inside_one_paragraph_is_caught"]),
+    # ٢٣٧ — المرساةُ السلوكية: المنصوبُ المنوَّن ليس جهةً، والتهيئةُ مُدقَّقة،
+    # والحاجزُ القائم يكفي للتسمية الإنجليزية (مقيسٌ لا مُفترَض).
+    (237, "tests/test_report_quality_reader_layer.py",
+     ["def test_c4_accusative_objects_are_not_mistaken_for_authorities",
+      "def test_c4_authority_config_is_validated_when_present",
+      "def test_c4_english_activity_label_is_already_blocked_by_the_language_gate",
+      "def test_c4_definitions_render_only_when_the_term_appears",
+      "def test_c4_authority_rule_has_an_english_mirror"]),
+    # ٢٣٦ — المرساةُ السلوكية: العائلاتُ الخمس تتّفق، والدرجةُ صيغةٌ واحدة،
+    # والعملةُ لا تُخمَّن، وإطلاقةُ خطّ الأساس الوحيدة مُعدَّدةٌ كي لا تنمو.
+    (236, "tests/test_report_quality_reader_layer.py",
+     ["def test_c3_all_competing_formatters_now_share_one_source",
+      "def test_c3_score_has_exactly_one_form",
+      "def test_c3_amount_carries_its_currency_and_never_invents_one",
+      "def test_c3_new_rules_fire_once_on_the_canonical_set"]),
+    # ٢٣٥ — المرساةُ السلوكية: كلُّ قالبٍ يصمد بخاناتٍ فارغة، والاستثناءاتُ
+    # المُعايَرة لا تُطلِق، وقناتا الإصلاح مِعيارُهما مختلف.
+    (235, "tests/test_report_quality_reader_layer.py",
+     ["def test_c2_every_template_survives_all_slots_empty",
+      "def test_c2_measured_exemptions_do_not_fire",
+      "def test_c2_prose_criterion_differs_from_the_slot_criterion"]),
+    # ٢٣٤ — المرساةُ السلوكية: إعادةُ إنتاجِ التسريب من طرفٍ إلى طرف في
+    # وورد العميل، وصفرُ إنذارٍ كاذب على المدوّنات العشر.
+    (234, "tests/test_report_quality_reader_layer.py",
+     ["def test_c1_counter_case_reaches_the_client_docx_in_reader_language",
+      "def test_c1_zero_false_positives_across_every_canonical_blob",
+      "def test_c1_contextual_tokens_fire_only_in_the_system_sense",
+      "def test_c1_alef_hamza_does_not_collide_with_the_preposition_ila"]),
     # البند ٩٣ — الهوية المستعارة: ألوان Stripe الحرفية عاشت في المنتج لأن
     # الحارس طابَق ملفّ الهوية ولم يسأل عن **مصدر** قيمه. المرساة: المنع
     # الصريح بالاسم على الصفحات الأربع + تحقّق المتصفّح من اللون المحسوب.
@@ -497,6 +616,183 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    (250, "silk_quality_gate.py",
+     ["_BORDER_ABOVE_SHELF_RATIO = 1.25", "يفوق سعرَ الرفّ"]),
+    (251, "silk_ai_judge.py",
+     ["_HS_CATEGORY_SCOPED", "_SCOPED_REGIME_TAIL"]),
+    (249, "silk_quality_gate.py", ["def _flat_ar", "_flat_ar(text)"]),
+    # ٢٤٧/٢٤٨ — تضييقُ حارسَين بقائمتين مقيستين لا بحدس.
+    (247, "silk_quality_gate.py",
+     ["def _named_gateways", "_GENERIC_GATEWAY_WORDS"]),
+    (248, "silk_quality_gate.py", ["_ECHO_UNIT_WORDS", "def _hs6_registered"]),
+    (247, "tools/canonical_libya_tahini.py",
+     ["def libya_tahini_research_blob", "ميناء بنغازي"]),
+    (248, "tools/canonical_kenya_honey.py",
+     ["def kenya_honey_research_blob", "PVoC"]),
+    # ٢٤٦ — بنيةُ السوق تهيئةً: الوحدةُ القارئة، وسجلُّ الأنظمة، والمخطَّطُ
+    # الجديد مع رفضِ المجهول، والحرّاسُ الستّة، ومبدِّلُ تعليمةِ البعثة.
+    (246, "silk_market_structure.py",
+     ["def market_currency", "def main_port", "def standards_bodies",
+      "def target_region", "def regions", "def hs_scope",
+      "def price_range", "def scheme_belongs_to", "NO_COUNTRY_OWNER",
+      "def enabled"]),
+    (246, "silk_profiles.py",
+     ["_MARKET_SECTIONS", "_PRODUCT_SECTIONS", "def _check_region",
+      "HS_SCOPES", "REGION_FACTS", "target_region"]),
+    (246, "silk_quality_gate.py",
+     ["def _check_zero_fx_volatility", "def _check_target_region_missing",
+      "def _check_broad_hs_scope_undisclosed",
+      "def _check_border_price_out_of_range",
+      "def _check_lead_outside_activity_allowlist",
+      "def _check_regime_not_belonging_to_country", "_NAMED_GATEWAY_RE"]),
+    (246, "silk_missions.py",
+     ["def scope_instructions", "_LEGACY_SCHEME_HINT",
+      "_SCOPED_SCHEME_HINT"]),
+    (246, "silk_style_contract.py",
+     ["def lead_activity_allowed", "LEAD_ACTIVITY_ALLOWED"]),
+    (246, "silk_reports.py", ["def _lead_reason", "_LEADS_REASON_KEY"]),
+    # ٢٤٥ — خانةُ القيمة: المنسِّقُ الواحد، والمرجعُ المستقلُّ عن الراية،
+    # والصيغةُ القائمة محفوظةً مرجعاً، والفحصُ الذي يقابلهما.
+    (245, "silk_narrative.py",
+     ["def canonical_decision_value", "def fmt_decision_value",
+      "def _legacy_decision_value", "def decision_number_format",
+      "DECISION_NUMBER_FORMAT_FLAG"]),
+    (245, "silk_quality_gate.py",
+     ["def _check_decision_number_format_drift"]),
+    (245, "silk_reports.py", ["fmt_decision_value"]),
+    # ٢٤٤ — مفرداتُ التعرّف: المصدرُ الواحد، والاتحادُ لا الاستبدال،
+    # ومنعُ تخمينِ الدولة من اسمٍ واسع، والحارسُ الحتميّ.
+    (244, "silk_narrative.py",
+     ["def currency_tokens", "def currency_in", "def _currency_token_re",
+      "_CURRENCY_AMBIGUOUS_AR", "_CURRENCY_MIN_AR"]),
+    (244, "silk_economics.py",
+     ["def tariff_words", "def currency_in_note",
+      "def recognition_vocabulary", "_TARIFF_WORDS_EXTRA",
+      "RECOGNITION_VOCABULARY_FLAG"]),
+    (244, "silk_quality_gate.py",
+     ["def _check_observed_value_declared_unavailable",
+      "_UNAVAILABLE_INPUTS"]),
+    # ٢٤٣ — إسنادُ الرقم المشتقّ: المُنسِّقُ الواحد، ورمزُ ISO بلا تخمين،
+    # وحقلا المحرّك، وقاعدتا البوابة، وإبرةُ اسمِ البند.
+    (243, "silk_narrative.py",
+     ["def fmt_derived", "def fmt_derived_input", "def iso_currency",
+      "def derived_provenance_enabled", "DERIVED_PROVENANCE_RULE",
+      "ASSUMPTION_TAG_AR"]),
+    (243, "silk_economics.py",
+     ["def _unit_cur", "unknown=list(entry.get(\"unknown\") or [])",
+      "inputs=", "unknown="]),
+    (243, "silk_quality_gate.py",
+     ["def _check_reference_to_nonexistent_figure",
+      "def _check_max_loss_without_components", "def _dn_needle",
+      "_ENGINE_EXCLUSION_MARKS", "_RANGE_MARK_RE"]),
+    (243, "silk_reports.py", ["fmt_derived"]),
+    (243, "silk_ai_judge.py", ["_derived_rule", "DERIVED_PROVENANCE_RULE"]),
+    # ٢٤٢ — انضباطُ الثقة: الأعمدةُ الأساسية، والسقف، وجدولُ التحلُّل،
+    # وحسابُ الدرجة المُلزَم بقاعدة الحدّ الأدنى، وفصلُ نسبةِ التحقّق.
+    (242, "silk_decision.py",
+     ["CORE_PILLARS", "MAX_CONDITIONS_FOR_HIGH", "CONFIDENCE_AGE_DECAY",
+      "def age_decay_factor", "def missing_core_pillars",
+      "def confidence_band_cap", "def score_arithmetic",
+      "withheld_reason"]),
+    (242, "silk_style_contract.py", ["_BAND_ORDER", "cap in _BAND_ORDER"]),
+    (242, "silk_render.py",
+     ["def confidence_discipline", "def _score_arithmetic_line",
+      "verification_rate_pct", "confidence_band_cap"]),
+    (242, "silk_quality_gate.py",
+     ["def _check_high_confidence_with_missing_pillar", "_HIGH_CONF_RE"]),
+    (242, "silk_i18n.py",
+     ["score_arithmetic_line", "verification_rate_note",
+      "confidence_cap_core_missing"]),
+    # ٢٤١ — قائمةُ شروطٍ واحدة: المُعِدّ، والعددُ الكامل، وإعلانُ القصّ،
+    # وفحصُ العدد المذكور بسياق «مفتوح».
+    (241, "silk_render.py",
+     ["def open_conditions", "def open_conditions_single",
+      "OPEN_CONDITIONS_CAP", "conditions_count",
+      "engine_conditions_count"]),
+    (241, "silk_quality_gate.py",
+     ["def _check_open_conditions_count_mismatch", "_AR_COUNT_WORDS",
+      "_OPEN_COND_CTX_RE", "def _stated_condition_counts"]),
+    (241, "silk_reports.py", ["open_conditions"]),
+    # ٢٤٠ — هويةُ الرقم: المخزن، قاعدةُ قراءةِ القرار، حقنُ المعرّف في
+    # الموجّه خلف الراية، ومجموعةُ الحجب المحسوبة عند الحكم.
+    (240, "silk_figure_store.py",
+     ["def build", "def decision_reading", "def classify",
+      "def facts_block", "FIGURE_ID_RULE", "def enabled",
+      "_METHOD_OF_METRIC", "_METHOD_RANK"]),
+    (240, "silk_quality_gate.py",
+     ["def effective_fail_triggers", "_FLAGGED_FAIL_TRIGGERS",
+      "def _check_metric_value_divergence",
+      "def _check_shared_value_across_entities"]),
+    (240, "silk_ai_judge.py", ["silk_figure_store", "FIGURE_ID_RULE"]),
+    # ٢٣٩ — المراجعةُ الذاتية بعد الجولة الأولى: تضييقُ فحصٍ حاجبٍ يُطلِق على
+    # الصحيح، وبلاغٌ يمرّ على المنسِّق، وعتبةٌ تُعايَر بفصلٍ مقيس، وتثبيتةٌ
+    # موجَبةٌ واحدة تُثبِت أنّ القواعدَ تصطاد نثرَ كاتبٍ طبيعيّ.
+    (239, "silk_quality_gate.py",
+     ["_OTHER_UNIVERSE_CTX_RE", "def _fmt_gate_num", "_XSEC_SIM_DEFAULT",
+      "بيانات المرآة"]),
+    (239, "tools/canonical_egypt_olive_oil.py",
+     ["def egypt_olive_oil_research_blob", "بالحصة السعودية"]),
+    (239, "tools/canonical_nigeria_dates.py",
+     ["def nigeria_dates_research_blob", "بيانات المرآة"]),
+    (239, "tools/gen_verdict_baseline.py",
+     ["egypt_olive_oil", "nigeria_dates"]),
+    # ٢٣٨ — التكرار: قاعدةُ الشرح الواحد، وقائمةُ الروابط المشتركة، وقناتا
+    # الإنفاذ (تشابهٌ عبر الأقسام + رابطٌ داخل الفقرة) بعتبةٍ مُعايَرة.
+    (238, "silk_style_contract.py",
+     ["SINGLE_EXPLANATION_RULE", "REPEATED_CONNECTORS",
+      "REPEATED_CONNECTORS_EN", "def single_explanation_rule"]),
+    (238, "silk_quality_gate.py",
+     ["def _check_cross_section_near_duplicate",
+      "def _check_connector_repeated_in_paragraph",
+      "_XSEC_SIM_DEFAULT", "def _report_sections"]),
+    # ٢٣٧ — انزياحُ التسمية: جدولُ الترجمة، التعريفاتُ المشروطة، تهيئةُ
+    # السلطات ومُدقِّقُها، وكشفُ الانزياح بالإشارة الصرفية.
+    (237, "silk_style_contract.py",
+     ["ACTIVITY_LABEL_AR", "def activity_label_ar",
+      "METHODOLOGY_DEFINITIONS", "METHODOLOGY_DEFINITIONS_ORDER",
+      "AUTHORITY_HEADS"]),
+    (237, "silk_quality_gate.py",
+     ["def _check_authority_naming_drift", "_ACCUSATIVE_TANWEEN_RE",
+      "def _check_defined_term_without_definition",
+      "def _configured_authorities",
+      # المرآةُ الإنجليزية — قفلُ التكافؤ التقطَ غيابَها.
+      "_AUTHORITY_QUALIFIED_EN_RE", "def _authority_mentions_en"]),
+    (237, "silk_profiles.py", ["multi_authority", "authorities"]),
+    (237, "silk_render.py",
+     ["METHODOLOGY_DEFINITIONS_ORDER", "def _norm_for_terms"]),
+    (237, "silk_reports.py", ["activity_label_ar"]),
+    # ٢٣٦ — مُنسِّقُ العرض الواحد: الدوالُّ القانونية، وإعادةُ توجيه العائلات
+    # المتوازية إليه بأسمائها القائمة، وأربعُ قواعدَ تحرس انحدارَه.
+    (236, "silk_narrative.py",
+     ["def fmt_number", "def fmt_pct", "def fmt_score", "def fmt_amount",
+      "def fmt_year", "def fmt_observed_at", "def past_tense_projection",
+      "SCORE_MAX", "CURRENCY_AR"]),
+    (236, "silk_quality_gate.py",
+     ["def _check_score_format_drift", "def _check_amount_without_currency",
+      "def _check_stale_data_without_year",
+      "def _check_observation_date_equals_run_date"]),
+    (236, "silk_reports.py", ["from silk_narrative import fmt_number"]),
+    # ٢٣٥ — خانةٌ فارغة تكسر جملة: صيغُ الفراغ + قناتا الإصلاح بمِعيارَيهما
+    # + قاعدةُ سلامة الإحالة في الموجّه + الفحصُ الحتميّ.
+    (235, "silk_i18n.py",
+     ["def repair_interpolation", "def tidy_punctuation", "_EMPTY_SUFFIX",
+      "def _is_blank", "_empty\": {"]),
+    (235, "silk_quality_gate.py",
+     ["def _check_template_interpolation", "_ECHO_UNIT_WORDS",
+      "_ECHO_COMPARISON_RE", "template_interpolation"]),
+    (235, "silk_style_contract.py",
+     ["REFERENTIAL_INTEGRITY_RULE", "def referential_integrity_rule"]),
+    # ٢٣٤ — لغةُ النظام تصل القارئ: المصدرُ الواحد للقوائم (يقرؤه الموجّهُ
+    # والمراجعُ والبوابة)، والفحصُ الحتميّ، وعلاجُ «مُصنَّف آلياً» في العرض.
+    (234, "silk_style_contract.py",
+     ["FORBIDDEN_READER_PHRASES", "HARD_READER_TOKENS",
+      "CONTEXTUAL_READER_TOKENS", "SYSTEM_SENSE_CUES",
+      "READER_LANGUAGE_RULE", "def reader_language_rule"]),
+    (234, "silk_quality_gate.py",
+     ["def _check_reader_language_leak", "reader_language_leak",
+      # تصادمُ «إلى»/«آلي»: تطبيعٌ يحفظ صيغةَ الألف في هذه القناة.
+      "def _norm_token", "_TOKEN_SOFT_NORM_RE"]),
+    (234, "silk_render.py", ["_AUTO_CLASSIFIED_RE"]),
     # ١١٧ — بلاغ تحليل 20: حارس العملية المدفوعة العقيمة + تسليم الجزئي بدل
     # §5-الإتلاف + شارة «غير مكتمل» في كل مخرَج + الاستئناف من الجزء.
     (117, "silk_ai_judge.py", ["writer_continuation", "def _missing_sections",

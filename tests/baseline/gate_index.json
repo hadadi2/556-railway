@@ -1,0 +1,243 @@
+{
+ "dza_peanut_butter": {
+  "findings": [
+   "access_timeline_missing",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_constraints",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts",
+   "narrative_confidence_mismatch",
+   "price_comparability_gaps",
+   "style_repeated_key_figure",
+   "style_repeated_key_figure"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "egypt_olive_oil": {
+  "findings": [
+   "agent_empty",
+   "authority_naming_drift",
+   "connector_repeated_in_paragraph",
+   "cross_section_near_duplicate",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "markdown_artifacts",
+   "narrative_money_not_grounded",
+   "observed_value_declared_unavailable",
+   "template_interpolation"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "fettuccine": {
+  "findings": [
+   "decision_numbers_present",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "germany_dates": {
+  "findings": [
+   "agent_empty",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_constraints",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "india_honey": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "markdown_artifacts",
+   "observed_value_declared_unavailable",
+   "observed_value_declared_unavailable"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "japan_honey": {
+  "findings": [
+   "agent_empty",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_constraints",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts",
+   "narrative_money_not_grounded"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "jordan_milk": {
+  "findings": [
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "economics_missing_despite_inputs",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts",
+   "style_inline_enumeration"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "FAIL"
+ },
+ "kenya_honey": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "markdown_artifacts",
+   "observed_value_declared_unavailable",
+   "observed_value_declared_unavailable",
+   "unclassified_product_attribute"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "kuwait_peanut_butter": {
+  "findings": [
+   "agent_empty",
+   "caveat_repetition",
+   "dangling_cross_reference",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_constraints",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts",
+   "narrative_money_not_grounded",
+   "price_comparability_gaps"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "FAIL"
+ },
+ "libya_tahini": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "broad_hs_scope_undisclosed",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "lead_outside_activity_allowlist",
+   "markdown_artifacts",
+   "observed_value_declared_unavailable",
+   "target_region_missing_in_multi_authority"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "morocco_juice": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "markdown_artifacts",
+   "observed_value_declared_unavailable"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "nadec_yemen_dairy": {
+  "findings": [
+   "agent_empty",
+   "cagr_sign_flips_under_base_year",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts",
+   "mirror_divergence_contraction_narrative",
+   "stale_year_driving_conclusion",
+   "stale_year_driving_conclusion",
+   "tam_below_single_country_flow",
+   "vintage_expired_facts_present"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "FAIL"
+ },
+ "netherlands": {
+  "findings": [
+   "agent_empty",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_constraints",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "nigeria_dates": {
+  "findings": [
+   "agent_empty",
+   "agent_empty",
+   "cross_universe_ratio",
+   "decimal_precision",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "markdown_artifacts",
+   "narrative_money_not_grounded"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "qatar_peanut_butter": {
+  "findings": [
+   "client_section_placeholder",
+   "client_section_placeholder",
+   "client_section_placeholder",
+   "client_section_placeholder",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "markdown_artifacts",
+   "narrative_money_not_grounded",
+   "section_structure"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "FAIL"
+ },
+ "yemen": {
+  "findings": [
+   "agent_empty",
+   "dangling_cross_reference",
+   "decision_number_format_drift",
+   "decision_numbers_present",
+   "exec_summary_constraints",
+   "exec_summary_recommendation_first",
+   "markdown_artifacts",
+   "narrative_confidence_mismatch",
+   "stale_data_without_year",
+   "vintage_expired_facts_present"
+  ],
+  "language_quality": [],
+  "skipped_checks": [],
+  "verdict": "FAIL"
+ }
+}

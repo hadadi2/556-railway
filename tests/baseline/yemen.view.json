@@ -1,0 +1,546 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: مراقبة السوق — سوق اليمن (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 12000000"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": {
+  "llm_calls": 28,
+  "note": "28 نداء كلود"
+ },
+ "data_year": null,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "واردات تحت الرمز 040510",
+      "retrieved_at": "2026-07-15",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 12000000
+     }
+    ],
+    "price_competitiveness": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "Carrefour Aden",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Maps",
+      "status": "",
+      "value": "6.5 دولار/كجم"
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "اليمن مراقبة السوق — الرمز المُصنَّف خطأً يُضعِف اليقين."
+  },
+  "caveat_box": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: أرقام الاستيراد والتركّز والحصص في هذا التقرير مجموعةٌ تحت رمز HS 040510، ووصفه الرسمي لا يشمل صفة المنتج المميّزة — الأرقام الموسومة بنجمة (*) تُقرأ في سياق هذا التنبيه حتى تأكيد الرمز الصحيح.",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": true,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": {
+    "basis": "retail",
+    "category": "زبدة الفول السوداني",
+    "currency": "",
+    "fx_date": "",
+    "fx_rate": null,
+    "gaps": [
+     "حجم العبوة (كجم أو لتر) غير متاح — السعر/كجم والسعر/لتر غير محسوبَين، لا تخمين",
+     "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
+    ],
+    "note": "أدنى سعر رف منافس مرصود",
+    "per_kg": null,
+    "per_litre": null,
+    "per_unit": 5.0,
+    "raw_value": 5.0,
+    "source": "وزن غير مذكور",
+    "value_usd": null
+   },
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج كجم الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": true,
+   "displacement_required": true,
+   "gaps": [
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "أقصى سعر مصنع (EXW) غير محسوب — الناقص: حجم العبوة (لتطبيع السعر إلى كجم/لتر)؛ عملة السعر المرصود",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للكيلوغرام لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف"
+   ],
+   "hhi": 3100.0,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج الكيلوغرام، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "إعادة تصنيف الرمز ثم سحب واردات كومتريد تحته",
+    "condition": "توفّر بيانات استيراد موثوقة تحت رمز HS الصحيح",
+    "met": false
+   },
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في اليمن",
+    "met": false
+   }
+  ],
+  "gap_register": [
+   {
+    "gap_class": "G1",
+    "gap_class_label": "غير مجموع في أي مصدر معروف — يتطلب بحثاً أولياً",
+    "text": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040510 («زبدة (Butter)») لا يشمل صفة المنتج المميّزة (فول، سوداني) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح."
+   },
+   {
+    "gap_class": "G1",
+    "gap_class_label": "غير مجموع في أي مصدر معروف — يتطلب بحثاً أولياً",
+    "text": "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي)."
+   }
+  ],
+  "glossary": [
+   {
+    "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع",
+    "term": "HHI"
+   },
+   {
+    "gloss": "متوسط النمو السنوي المركّب",
+    "term": "CAGR"
+   }
+  ],
+  "hs_confirmation": {
+   "code_desc": "زبدة (Butter)",
+   "confirmed": false,
+   "hs_code": "040510",
+   "missing_terms": [
+    "فول",
+    "سوداني"
+   ],
+   "product_terms": [
+    "فول",
+    "سوداني",
+    "زبدة"
+   ],
+   "reason": "وصف الرمز لا يشمل الصفة المميّزة «فول سوداني»",
+   "shared_terms": [
+    "زبدة"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "04",
+   "confirmed": false,
+   "heading": "0405",
+   "hs6": "040510",
+   "official_description": "Dairy produce; derived from milk, butter",
+   "subheading": "040510",
+   "substitution_note": "هذه الأرقام تصف الرمز 040510 (فئة مجاورة غير مؤكَّدة لمواصفة المنتج)؛ لا تُنقل إلى فئة المنتج الفعلية، ولا تُبنى عليها خلاصة حجم أو حصة أو تركّز.",
+   "substitution_note_en": "These figures describe HS code 040510 (an adjacent category not confirmed for the product specification); do not carry them over to the actual product category, and do not build size, share, or concentration conclusions on them."
+  },
+  "hs_flagged": true,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [],
+   "path": "gap"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [
+   "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040510 («زبدة (Butter)») لا يشمل صفة المنتج المميّزة (فول، سوداني) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
+   "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي)."
+  ],
+  "market": {
+   "iso2": "YE",
+   "iso3": "YEM",
+   "m49": 887,
+   "name_ar": "اليمن",
+   "name_en": "Yemen"
+  },
+  "missions": {
+   "competitors": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "HHI محسوب من حصص الرمز 040510",
+      "retrieved_at": "2026-07-15",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 3100
+     }
+    ],
+    "label": "تحليل المنافسين",
+    "name": "LLMMissionAgent",
+    "summary": "HHI 3100 — سوق مركّز (تحت الرمز 040510)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demand_trends": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "زبدة الفول السوداني — الصفة الدقيقة",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Trends",
+      "status": "",
+      "value": 0.4
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "فوائد زبدة الفول السوداني — الفئة الأعمّ",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Trends",
+      "status": "",
+      "value": 100
+     },
+     {
+      "confidence": 0.0,
+      "data_year": null,
+      "note": "no series for seasonality of 'رمضان زبدة الفول السوداني'",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Trends",
+      "status": "fetch_failed",
+      "value": null
+     }
+    ],
+    "label": "اتجاهات الطلب والموسمية",
+    "name": "LLMMissionAgent",
+    "summary": "طلب الصفة الدقيقة ضعيف؛ الفئة أقوى",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": 2013,
+      "note": "دخل الفرد (2013)",
+      "retrieved_at": "2026-07-15",
+      "source": "World Bank",
+      "status": "",
+      "value": 1106
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2018,
+      "note": "نسبة الفقر (2018)",
+      "retrieved_at": "2026-07-15",
+      "source": "World Bank",
+      "status": "",
+      "value": 31.5
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMMissionAgent",
+    "summary": "دخل الفرد 1106 دولار (2013)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "pricing_scout": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.4,
+      "data_year": null,
+      "note": "وزن غير مذكور",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Maps",
+      "status": "",
+      "value": "علبة 5 دولار"
+     },
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "Carrefour Aden",
+      "retrieved_at": "2026-07-15",
+      "source": "Google Maps",
+      "status": "",
+      "value": "6.5 دولار/كجم"
+     }
+    ],
+    "label": "تحليل الأسعار",
+    "name": "LLMMissionAgent",
+    "summary": "أسعار رفّ مرصودة، بعضها بلا وزن",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "risk_news": {
+    "failed": false,
+    "findings": [],
+    "label": "تقييم المخاطر والمستجدات",
+    "name": "LLMMissionAgent",
+    "summary": "استقرار سياسي منخفض",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "واردات 2023 تحت الرمز 040510",
+      "retrieved_at": "2026-07-15",
+      "source": "UN Comtrade",
+      "status": "",
+      "value": 12000000
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMMissionAgent",
+    "summary": "واردات الزبدة (040510) نحو 12 مليون دولار (70/70 بند)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "price_rows": [
+   {
+    "note": "وزن غير مذكور",
+    "reason": "الوزن غير متاح",
+    "value": "علبة 5 دولار"
+   },
+   {
+    "note": "Carrefour Aden",
+    "reason": "",
+    "value": "6.5 دولار/كجم"
+   }
+  ],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "زبدة الفول السوداني",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nالحكم مراقبة السوق بدرجة ثقة منخفضة (55%). واردات اليمن من الزبدة (رمز 040510) نحو 12 مليون\nدولار، والمشهد مركّز (HHI (مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع) 3100). دخل الفرد 1106 دولار.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. رمز HS المستخدم 040510،\nبينما العائلة الأدقّ لهذا المنتج هي البند 2008 (محضرات الفول السوداني) — انظر\nالملاحظة المنهجية.\n\n## 3. نظرة عامة على السوق وحجمه\nواردات 2023 نحو 12 مليون دولار وفق UN Comtrade تحت الرمز 040510.\n\n## 4. ديناميكيات السوق\nنمو سنوي مركّب (CAGR (متوسط النمو السنوي المركّب)) 6% على مدى ثلاث سنوات.\n\n## 5. تحليل المستهلك والطلب\nدخل الفرد 1106 دولار (2013) — بيانات 2013 (الأحدث المتاح) ونسبة الفقر 31.5% (2018) — بيانات 2018 (الأحدث المتاح). الطلب على «زبدة الفول\nالسوداني» ضعيف (0.4 من 100) بينما «فوائد زبدة الفول السوداني» يبلغ 100. لا\nبيانات موسمية/رمضانية من Trends.\n\n## 6. المشهد التنافسي\nمورّدون: مصر، الهند، الإمارات. مؤشر التركّز HHI = 3100 (سوق مركّز جداً).\nأسعار الرفّ المرصودة بلا وزن مذكور في بعض الصفوف.\n\n## 7. التنظيم والوصول للسوق\nاشتراطات استيراد عامة؛ لا لائحة مرقّمة مرصودة.\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري عبر ميناء عدن.\n\n## 9. تقييم المخاطر\nاستقرار سياسي منخفض؛ تقلّب سعر الصرف حاد.\n\n## 10. التوصيات الاستراتيجية\nينبغي التعامل مع أرقام الاستيراد كمؤشر سياقي لا كمقياس مباشر حتى تأكيد الرمز.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. الحصول على بيانات استيراد تحت الرمز الصحيح. 2. تعاقد مع موزّع محلي مؤكَّد.\n\n## 11. الملاحق\nUN Comtrade, World Bank, Google Maps.",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "yem-real",
+  "verdict": {
+   "ai": {
+    "reasoning": "سوق يحتاج بيانات تحت الرمز الصحيح وموزّعاً مؤكَّداً قبل الالتزام.",
+    "verdict": "WATCH"
+   },
+   "confidence": 0.5,
+   "verdict": "WATCH"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "مراقبة السوق",
+  "verdict_tone": "watch"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "040510",
+  "origin": "SAU",
+  "product": "زبدة الفول السوداني",
+  "target_market": "اليمن"
+ },
+ "hs_code": "040510",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040510 («زبدة (Butter)») لا يشمل صفة المنتج المميّزة (فول، سوداني) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
+  "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي).",
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "زبدة الفول السوداني",
+ "provenance": [
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 3,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.4,
+   "contributed": 3,
+   "failures": [],
+   "source": "Google Maps",
+   "tail": " — ثقة المرصود 40–80%",
+   "url": ""
+  },
+  {
+   "attempted": 3,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [
+    "no series for seasonality of 'رمضان زبدة الفول السوداني'"
+   ],
+   "source": "Google Trends",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 2,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 2,
+   "failures": [],
+   "source": "World Bank",
+   "tail": " — ثقة المرصود 80%",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": null,
+ "year_fell_back": false
+}

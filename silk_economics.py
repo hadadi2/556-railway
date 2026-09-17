@@ -387,6 +387,43 @@ def reverse_solve_max_exw(shelf_price: float, *, tariff_pct, vat_pct,
 # ── بناء قسم الاقتصاد من نتائج البعثات · the view assembler ────────────────
 
 _TARIFF_WORDS = ("تعرفة", "التعرفة", "رسوم جمركية", "جمرك", "tariff", "duty")
+# ── الصنف ١٢: «غير متاح» وهو مرصود · one recognition vocabulary ────────────
+# **العيبُ المرصود:** بعثةُ التعريفات تُعيد «التعريفة المطبَّقة % HS…» —
+# وهي **الصيغةُ الحرفية** التي يكتبها مزوّدُ WTO في هذا الريبو
+# (`silk_wto_tariff.py:149`) — فلا تُقرَأ هنا لأنّ القائمة تعرف «تعرفة»
+# وحدَها، فيُعتمَد **٠٪ جمارك** في الحل العكسي ويُعلَن «التعرفة غير متاحة».
+# أثرُه رقميّ لا لغويّ: أقصى سعرِ مصنعٍ منافسٍ مُبالَغٌ بمقدار التعريفة
+# كلِّها، أي أنّ التقرير يُبلِغ المصدّرَ أنه يقدر على تكلفةٍ لا يقدر عليها.
+# و`silk_gap_recovery.py:691` يقبل الإملاءَين معاً أصلاً — فالتباعدُ داخليّ
+# لا افتراضيّ.
+_TARIFF_WORDS_EXTRA = ("تعريفة", "التعريفة", "التعريفات",
+                       "الرسوم الجمركية", "customs duty", "applied tariff")
+
+RECOGNITION_VOCABULARY_FLAG = "SILK_RECOGNITION_VOCABULARY"
+
+
+def recognition_vocabulary() -> bool:
+    """هل رايةُ الصنف ١٢ مفعّلة؟ — نمطُ الرايات القائم."""
+    import os
+    return os.environ.get(RECOGNITION_VOCABULARY_FLAG,
+                          "").strip().lower() in ("1", "true", "yes")
+
+
+def tariff_words() -> tuple:
+    """مفرداتُ التعرّف على التعريفة — الضيّقةُ بلا الراية، والموسَّعةُ معها.
+    الاتحادُ لا الاستبدال: لا بديلَ قائمٌ يسقط (اختبارُ عدم الانحدار)."""
+    return (_TARIFF_WORDS + _TARIFF_WORDS_EXTRA if recognition_vocabulary()
+            else _TARIFF_WORDS)
+
+
+def currency_in_note(note: object) -> str:
+    """عملةُ الملاحظة — من المصدر الواحد (`silk_narrative.currency_in`) حين
+    تكون الرايةُ مفعّلة، وبالنمط الضيّق القائم حرفياً بدونها."""
+    if recognition_vocabulary():
+        import silk_narrative
+        return silk_narrative.currency_in(note)
+    m = _CURRENCY_RE.search(str(note or ""))
+    return m.group(1) if m else ""
 _VAT_WORDS = ("ضريبة القيمة المضافة", "ضريبة", "VAT")
 _HHI_WORDS = ("HHI", "هيرفندال", "تركّز")
 # بنود بعثة الأسعار التي ليست أسعاراً (عدّادات/نِسَب/مؤشرات) — تُستبعد من
@@ -663,8 +700,15 @@ def _round_clean(x: float) -> "int | float":
 
 
 def _mk_estimate(name: str, low: float, high: float, method: str,
-                 confirm: str, confirm_time: str, unit: str = "") -> dict:
-    """تقدير بحقوله الأربعة — أو إعلان «أوسع من أن يُتصرف به» فوق ±50%."""
+                 confirm: str, confirm_time: str, unit: str = "",
+                 inputs: "list | None" = None,
+                 unknown: "list | None" = None) -> dict:
+    """تقدير بحقوله الأربعة — أو إعلان «أوسع من أن يُتصرف به» فوق ±50%.
+
+    الصنف ٩ (خلف `SILK_DERIVED_PROVENANCE`): `inputs` مدخلاتُ المعادلة، كلٌّ
+    `{name, source, assumed}`؛ و`unknown` المكوّناتُ المستبعَدةُ من الجمع
+    بأسمائها. بلا الراية **لا يُضاف الحقلان** فيبقى البند حرفياً كما كان
+    (قرار المالك: لا تغييرَ سلوكٍ بلا راية)."""
     mid = (low + high) / 2.0
     width = abs(high - low) / 2.0 / mid * 100.0 if mid else 0.0
     width = round(width, 1)
@@ -679,6 +723,13 @@ def _mk_estimate(name: str, low: float, high: float, method: str,
         est["note"] = TOO_WIDE_NOTE
     else:
         est["value"] = _round_clean(mid)
+    if inputs or unknown:
+        import silk_narrative
+        if silk_narrative.derived_provenance_enabled():
+            if inputs:
+                est["inputs"] = [i for i in inputs if i]
+            if unknown:
+                est["unknown"] = [str(u) for u in unknown if str(u).strip()]
     return est
 
 
@@ -711,7 +762,12 @@ def estimate_trial_shipment(category: str, unit_kg: float | None = None
         f"حمولة حاوية 40 قدماً المنشورة ÷ وزن "
         f"{mu_ar} الواحد ({unit_kg:g} كجم)",
         "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
-        "3–5 أيام عمل", unit=mu_ar)
+        "3–5 أيام عمل", unit=mu_ar,
+        inputs=[{"name": "حمولة حاوية 40 قدماً", "source": spec["source"],
+                 "source_client": "مواصفة حمولة الحاوية المنشورة"},
+                {"name": f"وزن {mu_ar} الواحد ({unit_kg:g} كجم)",
+                 "source": "ثابت كثافة الفئة المسجّل" if mu_code == "litre"
+                           else "وحدة السوق كجم (بلا تحويل)"}])
     # الاستشهاد الخام (لاتيني) حقلٌ منفصل: أسطح المشغّل تعرضه، وسطح
     # العميل يبقى بلغة الزائر (سياسة «لا مصدر خام على سطح العميل»، موجة ٣).
     est["source"] = spec["source"]
@@ -777,6 +833,22 @@ def estimate_freight_per_unit(category: str, exw_per_unit: float | None,
         "3–5 أيام عمل", unit=f"لكل {market_unit(category)[1]}")
 
 
+def _unit_cur(cost_currency: str) -> str:
+    """وحدةُ المبلغ المشتقّ — رمزُ ISO حين يُعرَف (الصنف ٩، خلف رايته).
+
+    «8,900 بعملة تكلفتك» مبلغٌ غيرُ قابلٍ للتدقيق؛ و«8,900 SAR» يُدقَّق.
+    عملةٌ لا يُعرَف رمزُها تبقى بنصّها كما صرّح به المالك (لا تخمينَ رمز)،
+    وغيابُ التصريح يبقى معلَناً بالعبارة القائمة نفسها.
+    """
+    import silk_narrative
+    cur = (cost_currency or "").strip()
+    if not cur:
+        return "بعملة تكلفتك"
+    if not silk_narrative.derived_provenance_enabled():
+        return cur
+    return silk_narrative.iso_currency(cur) or cur
+
+
 def build_decision_numbers(*, category: str, market_iso3: str = "",
                            cost_per_unit: float | None = None,
                            cost_currency: str = "",
@@ -828,7 +900,25 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
             + (" + رسوم متحققة" if cert_fee_range else
                " (رسوم التسجيل غير متحققة — خارج المجموع ومعلنة)"),
             "عرض شحن رسمي + جدول رسوم الجهة التنظيمية للسوق",
-            "أسبوع عمل", unit=(cost_currency or "بعملة تكلفتك"))
+            "أسبوع عمل", unit=_unit_cur(cost_currency),
+            inputs=[
+                {"name": "تكلفة إنتاج الوحدة لديك",
+                 "source": "بطاقة المنتج التي أدخلتها"},
+                {"name": "وحدات الشحنة التجريبية",
+                 "source": "حمولة الحاوية المنشورة ÷ وزن الوحدة"}]
+            + ([{"name": "كلفة الشحن للوحدة",
+                 "source": ((freight or {}).get("source")
+                            or "سعر ممر منشور متحقق"),
+                 "source_client": "سعر ممر شحن منشور متحقق"}]
+               if fr_known else [])
+            + ([{"name": "رسوم التسجيل والاعتماد",
+                 "source": "جدول رسوم الجهة التنظيمية للسوق"}]
+               if cert_fee_range else []),
+            unknown=([] if fr_known else
+                     ["كلفة الشحن للوحدة (بلا سعر ممر متحقق — مداها أوسع "
+                      "من ±50%)"])
+            + ([] if cert_fee_range else
+               ["رسوم التسجيل والاعتماد (غير متحققة)"]))
         out.append(entry)
     else:
         out.append({"name": "كلفة الدخول الكلية حتى أول شحنة",
@@ -885,7 +975,17 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                 "كلفة الدخول ÷ هامش الوحدة (أقصى سعر مصنع منافس − "
                 "تكلفتك)",
                 "تثبيت سعر بيع فعلي من أول مفاوضة مستورد",
-                "مع أول عرض سعر جاد", unit=mu_ar)
+                "مع أول عرض سعر جاد", unit=mu_ar,
+                inputs=[
+                    {"name": "كلفة الدخول الكلية حتى أول شحنة",
+                     "source": "بند «كلفة الدخول» في هذا الجدول"},
+                    {"name": "أقصى سعر مصنع قابل للمنافسة",
+                     "source": "هوامشُ الشحن والتوزيع من معلمات السيناريو "
+                               "المعلنة فوق أدنى سعر رف منافس مرصود",
+                     "assumed": True},
+                    {"name": "تكلفة إنتاج الوحدة لديك",
+                     "source": "بطاقة المنتج التي أدخلتها"}],
+                unknown=list(entry.get("unknown") or []))
             if monthly_capacity:
                 be["months_at_capacity"] = {
                     "low": round(lo / monthly_capacity, 1),
@@ -928,7 +1028,12 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
             "كلفة الدخول كلها عرضة للفقد في أسوأ حالة (بضاعة + شحن غير "
             "مستردّين)",
             "شرط إعادة/تصريف في أول عقد يقلّص السقف فعلياً",
-            "بند تفاوضي في أول عقد", unit=(cost_currency or "بعملة تكلفتك"))
+            "بند تفاوضي في أول عقد", unit=_unit_cur(cost_currency),
+            inputs=[{"name": "كلفة الدخول الكلية حتى أول شحنة",
+                     "source": "بند «كلفة الدخول» في هذا الجدول"}],
+            # الصنف ٩: سقفُ المخاطرة يَرِث **ناقصَ** كلفة الدخول بالاسم —
+            # سقفٌ يُقرأ شاملاً وهو ناقصٌ أخطرُ من سقفٍ معلَنِ النقص.
+            unknown=list(entry.get("unknown") or []))
         out.append(ml)
     else:
         out.append({"name": "أقصى خسارة إن فشل الدخول", "tier": "gap",
@@ -982,10 +1087,9 @@ def economics_view(dr: dict, product_card: dict | None = None,
     if retail_rows:
         lowest, src_note = min(retail_rows, key=lambda t: t[0])
         pack_kg, pack_litre = _parse_pack_from_note(src_note)
-        cur_m = _CURRENCY_RE.search(src_note)
         anchor = normalize_price(lowest, basis="retail", category=category,
                                  pack_kg=pack_kg, pack_litre=pack_litre,
-                                 currency=(cur_m.group(1) if cur_m else ""),
+                                 currency=currency_in_note(src_note),
                                  source=src_note,
                                  note="أدنى سعر رف منافس مرصود")
     elif other_rows:
@@ -1002,7 +1106,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
                     "سعر واحد على الأقل (بعثة الأسعار)")
 
     tariff, t_note = _mission_numeric(dr, "tariffs_agreements",
-                                      _TARIFF_WORDS, 0.0, 100.0)
+                                      tariff_words(), 0.0, 100.0)
     if tariff is None:
         gaps.append("التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي")
     vat, _ = _mission_numeric(dr, "tariffs_agreements", _VAT_WORDS, 0.0, 50.0)

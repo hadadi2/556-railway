@@ -38,6 +38,24 @@ BASELINE_PATH = os.path.join(_REPO_ROOT, "tests", "baselines",
 # المدوّنات العشر — مفتاح ثابت → (وحدة، دالة المدوّنة)
 CANONICAL_BLOBS = {
     "dza_peanut_butter": ("canonical_dza_peanut_butter", "dza_research_blob"),
+    # موجة عيوب التقرير (أمر المالك بعد كلّ جولة): سوقان ومنتَجان جديدان
+    # تُولَّد تقاريرُهما وتُراجَع ذاتياً لاكتشافِ عائلاتِ عيوبٍ لم تُرصَد —
+    # مصرُ (عملةٌ محلّية وفئةٌ واسعة) ونيجيريا (ضعفُ تبليغٍ مُعلَن ⇒ مرآة).
+    "egypt_olive_oil": ("canonical_egypt_olive_oil",
+                        "egypt_olive_oil_research_blob"),
+    "nigeria_dates": ("canonical_nigeria_dates", "nigeria_dates_research_blob"),
+    # الجولةُ الثانية (المراجعةُ الذاتية بعدها): الهندُ (مسارُ الاقتصاد
+    # مكتملاً — بطاقةُ تكلفةٍ مُدخَلةٌ وسعرُ رفٍّ مرصود، فبنودُ القرار
+    # محسوبةٌ لا فجوات) والمغربُ (عملتان لا تُطرَحان). وهما معاً الطرفان
+    # في مقارنةِ مفرداتِ التعرّف (الصنف ١٢).
+    "india_honey": ("canonical_india_honey", "india_honey_research_blob"),
+    "morocco_juice": ("canonical_morocco_juice",
+                      "morocco_juice_research_blob"),
+    # الجولةُ الثالثة (المراجعةُ الذاتية بعدها): ليبيا (سلطتان بحكم الواقع
+    # وبوّابتا دخولٍ مسمّيتان — شكلُ حارسِ الإقليم) وكينيا (ثلاثةُ أصنافِ
+    # أنظمةِ مطابقةٍ في تقريرٍ واحد: قُطريٌّ ومشتركُ الاسم ودوليّ).
+    "libya_tahini": ("canonical_libya_tahini", "libya_tahini_research_blob"),
+    "kenya_honey": ("canonical_kenya_honey", "kenya_honey_research_blob"),
     "fettuccine": ("canonical_fettuccine", "fettuccine_research_blob"),
     "germany_dates": ("canonical_germany_dates", "germany_dates_research_blob"),
     "japan_honey": ("canonical_japan_honey", "japan_honey_research_blob"),

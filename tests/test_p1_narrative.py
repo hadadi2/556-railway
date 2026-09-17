@@ -80,9 +80,17 @@ def test_confidence_and_money_and_growth_formats():
     assert N.confidence_phrase(0.31) == "منخفضة (31%)"
     assert N.confidence_phrase(0.91) == "عالية (91%)"
     assert N.confidence_phrase(None) == "غير محسوبة"
-    assert N.fmt_money(48_537_942) == "48.5 مليون دولار"
-    assert N.fmt_money(789_206) == "789 ألف دولار"
+    # الصنف ٣ (موجة عيوب التقرير) — **تغييرٌ مقصود** لا انحدار:
+    # (أ) المليونُ بمنزلتين: «48.5» كانت تطوي 37,942 دولاراً من رقمٍ يقرؤه
+    #     صاحبُ قرار؛ والمطلبُ المُعلَن «millions with 2 decimals».
+    # (ب) فرعُ «ألف» أُسقِط: «789 ألف دولار» تُفقِد 206 دولاراً بلا مكسبِ
+    #     قراءة، وفاصلُ الآلاف يحفظ الرقم كما هو — وهو المطلبُ نفسُه
+    #     («thousands separators»). القيمةُ المخزَّنة لم تتغيّر، العرضُ فقط.
+    assert N.fmt_money(48_537_942) == "48.54 مليون دولار"
+    assert N.fmt_money(789_206) == "789,206 دولار"
     assert N.fmt_money(None) == "—"
+    # والمنسِّقُ واحد: `fmt_money` غلافُ `fmt_amount(v, "USD")` حرفياً.
+    assert N.fmt_money(48_537_942) == N.fmt_amount(48_537_942, "USD")
     g = N.growth_phrase(25.5, 291.3, years="2019–2025")
     assert "معدل نمو سنوي مركّب 25.5%" in g and "CAGR" not in g
 
@@ -120,7 +128,9 @@ def test_exec_summary_three_human_paragraphs_no_machine_values():
                    "TradeFlowAgent", "market_size", "demand_capacity"):
         assert banned not in joined, banned
     # الأساس التجاري من الأرقام المرصودة بصيغة بشرية + المصدر.
-    assert "ألف دولار" in paras[1] and "UN Comtrade" in paras[1]
+    # الصنف ٣: «789 ألف دولار» صارت «789,206 دولار» (فاصلُ آلافٍ يحفظ الرقم
+    # كما هو بدل طيِّ 206 دولارات) — المرساةُ على العملة لا على الاختزال.
+    assert "789,206 دولار" in paras[1] and "UN Comtrade" in paras[1]
     assert "16.69%" in paras[1]
     # فقرة النواقص تترجم اسم المقياس الداخلي.
     assert "دخل الفرد" in paras[2]

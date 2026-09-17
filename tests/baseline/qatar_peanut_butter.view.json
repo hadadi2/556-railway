@@ -1,0 +1,537 @@
+{
+ "ai_report": null,
+ "ai_report_note": null,
+ "brief": [
+  "التوصية: دخول مشروط — سوق قطر (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 7120000.0"
+ ],
+ "classified": false,
+ "competitive_position": {
+  "available": false,
+  "note": "أدخل سعر المصنع بوحدة المنتج للمساعدة في تحديد موقعك التنافسي"
+ },
+ "completeness": {
+  "by_component": {},
+  "gap_count": 0,
+  "label": "بيانات ضعيفة — thin data, gaps dominate",
+  "observed": 0,
+  "pct": 0.0,
+  "total": 0
+ },
+ "consumer_culture": {
+  "grounded": false,
+  "insights": [],
+  "note": "",
+  "raw": []
+ },
+ "culture": [],
+ "data_economics": null,
+ "data_year": 2023,
+ "decision": {
+  "confidence": null,
+  "verdict": null,
+  "why": "لا أسواق مرتّبة — لا بيانات كافية"
+ },
+ "deep_research": {
+  "analyst": {
+   "by_category": {
+    "demand": [
+     {
+      "confidence": 0.9,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "HS200811 إجمالي استيراد قطر من العالم 2023, USD",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "UN Comtrade",
+      "source_ids": [],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": 7120000.0
+     }
+    ],
+    "entry_cost": [
+     {
+      "confidence": 0.8,
+      "confidence_badge": "✓ موثّق",
+      "data_year": null,
+      "note": "عضويّة تكتّلين",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "GCC secretariat",
+      "source_ids": [
+       "GCC secretariat",
+       "GAFTA secretariat"
+      ],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": "قطر عضوٌ في GCC وGAFTA — إعفاءٌ جمركيّ للمنشأ السعوديّ"
+     }
+    ]
+   },
+   "diagnostics": {},
+   "missing_categories": [],
+   "summary": "تحليل التقاطعات مكتمل"
+  },
+  "caveat_box": "",
+  "charter": {},
+  "client_fallback_prose": {},
+  "concentration_context_only": false,
+  "degraded": false,
+  "degraded_reason": "",
+  "economics": {
+   "anchor_price": null,
+   "decision_numbers": [
+    {
+     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+     "confirm_time": "3–5 أيام عمل",
+     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "name": "حجم الشحنة التجريبية",
+     "range": {
+      "high": 26730,
+      "low": 26730
+     },
+     "source": "icontainers.com — ISO max gross 30,480 kg",
+     "tag": "تقدير معلن بمدى",
+     "tier": "estimated",
+     "too_wide": false,
+     "unit": "كجم",
+     "value": 26730,
+     "width_pct": 0
+    },
+    {
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج كجم الواحد لديك",
+     "name": "كلفة الدخول الكلية حتى أول شحنة",
+     "tier": "gap"
+    },
+    {
+     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً (زيارة متجر/موقع — ساعة)",
+     "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة — طرفها الناقص يعطّلها",
+     "missing": "تكلفتك + سعر رف منافس مرصود",
+     "name": "نقطة التعادل",
+     "tier": "gap"
+    },
+    {
+     "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
+     "impact": "لا يُجدول التدفق النقدي لأول صفقة",
+     "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
+     "name": "الزمن من القرار إلى أول فاتورة",
+     "tier": "gap"
+    },
+    {
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
+     "name": "أقصى خسارة إن فشل الدخول",
+     "tier": "gap"
+    }
+   ],
+   "displacement_measured": false,
+   "displacement_required": false,
+   "gaps": [
+    "لا سعر رف منافس مرصود — الحل العكسي غير ممكن حتى يُرصد سعر واحد على الأقل (بعثة الأسعار)",
+    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للكيلوغرام لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف",
+    "تركّز المورّدين غير متاح — لم نستطع تحديد ما إذا كان السوق محكوماً بعدد قليل من المورّدين أم مفتوحاً للتنافس. لا تقرأ ذلك «سوقاً مفتوحاً»: هو بند لم يُقَس"
+   ],
+   "hhi": null,
+   "market_unit": {
+    "code": "kg",
+    "label_ar": "كجم"
+   },
+   "parameter_scenarios": {
+    "distributor_margin_pct": {
+     "متوسط": 20.0,
+     "مرتفع": 30.0,
+     "منخفض": 10.0
+    },
+    "freight_pct_of_exw": {
+     "متوسط": 12.0,
+     "مرتفع": 25.0,
+     "منخفض": 5.0
+    },
+    "retailer_margin_pct": {
+     "متوسط": 25.0,
+     "مرتفع": 40.0,
+     "منخفض": 15.0
+    }
+   },
+   "pricing_contradiction": null,
+   "product_form": null,
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج الكيلوغرام، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "waterfall": null
+  },
+  "fact_records": {},
+  "flip_conditions": [
+   {
+    "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في قطر",
+    "met": false
+   }
+  ],
+  "gap_register": [],
+  "glossary": [],
+  "hs_confirmation": {
+   "code_desc": "زبدة الفول السوداني",
+   "confirmed": true,
+   "hs_code": "200811",
+   "missing_terms": [
+    "مقرمشه"
+   ],
+   "overlap": 0.75,
+   "product_terms": [
+    "زبده",
+    "فول",
+    "سوداني",
+    "مقرمشه"
+   ],
+   "reason": "وصف الرمز يشمل صفات المنتج المميّزة",
+   "shared_terms": [
+    "زبده",
+    "فول",
+    "سوداني"
+   ]
+  },
+  "hs_derivation": {
+   "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
+   "chapter": "20",
+   "confirmed": null,
+   "heading": "2008",
+   "hs6": "200811",
+   "official_description": "Nuts; ground-nuts, whether or not containing added sugar, other sweetening matter or spirit",
+   "subheading": "200811"
+  },
+  "hs_flagged": false,
+  "hs_provenance": null,
+  "hypotheses": [],
+  "importer_leads": {
+   "leads": [
+    {
+     "address": "الدوحة (نموذج)",
+     "doc_level": "○ مرشّح ويب غير موثَّق",
+     "email": "—",
+     "maps_link": "—",
+     "name": "Five Group Trading Company",
+     "phone": "—",
+     "rating": null,
+     "review_count": null,
+     "website": "—"
+    }
+   ],
+   "note": "عيّنة توضيحية",
+   "path": "scraper"
+  },
+  "judge_abstain_shadow": {},
+  "limits": [
+   "تنبيه تحقّقٍ: رقمُ «حجم السوق» البالغ 497,000,000$ الوارد في قسم «تحليل المستهلك والطلب» يتعذّر التوفيقُ بينه وبين بيانات التجارة الرسمية المرصودة في هذه الدراسة (يفوق إجمالي واردات البند المرصود لسنة المرجع 2023 (7,120,000$) بمقدار 70× (السقف 20×))؛ يُرجَّح أنه يقيس فئةً أوسع أو نطاقاً جغرافياً مختلفاً — يُقرأ مؤشراً سياقياً لا قياساً مباشراً لهذا البند حتى التحقّق المستقلّ."
+  ],
+  "market": {
+   "iso2": "QA",
+   "iso3": "QAT",
+   "m49": "634",
+   "name_ar": "قطر",
+   "name_en": "Qatar"
+  },
+  "missions": {
+   "channels_importers": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.35,
+      "data_year": null,
+      "note": "[entry_door] مرشّح",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "بحث ويب (غير مؤكَّد)",
+      "source_ids": [],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": "موزّع مرشّح للتحقّق"
+     }
+    ],
+    "label": "قنوات التوزيع والاستيراد",
+    "name": "LLMAgent:channels_importers",
+    "summary": "موزّع محتمل",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "consumer_culture": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.4,
+      "data_year": null,
+      "note": "حجم سوق الفول السوداني الكامل في قطر قُدِّر عام 2025 — فئةٌ أوسع",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "بحث ويب موجَّه",
+      "source_ids": [],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": "497 مليون دولار"
+     }
+    ],
+    "label": "ثقافة المستهلك",
+    "name": "LLMAgent:consumer_culture",
+    "summary": "إشارة حجم سوقٍ واسعة (فئة أوسع)",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demand_trends": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.6,
+      "data_year": null,
+      "note": "موسمية واضحة",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "Google Trends",
+      "source_ids": [],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": "اتجاه بحثٍ صاعد على خمس سنوات"
+     }
+    ],
+    "label": "اتجاهات الطلب والموسمية",
+    "name": "LLMAgent:demand_trends",
+    "summary": "اتجاه طلب موسمي",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "demographics_economy": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.95,
+      "data_year": null,
+      "note": "عدد سكان قطر، نسمة، 2023",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "World Bank",
+      "source_ids": [],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": 2860000.0
+     },
+     {
+      "confidence": 0.85,
+      "data_year": null,
+      "note": "[demand] مؤشّر اقتصاديّ",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "IMF WEO",
+      "source_ids": [
+       "IMF WEO",
+       "World Bank"
+      ],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": "نمو الناتج المحليّ للفرد في قطر مستقرّ"
+     }
+    ],
+    "label": "الديموغرافيا والاقتصاد الكلي",
+    "name": "LLMAgent:demographics_economy",
+    "summary": "مؤشرات مستقرة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "[entry_cost] عضويّة تكتّلين",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "GCC secretariat",
+      "source_ids": [
+       "GCC secretariat",
+       "GAFTA secretariat"
+      ],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": "قطر عضوٌ في GCC وGAFTA — إعفاءٌ جمركيّ للمنشأ السعوديّ"
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMAgent:tariffs_agreements",
+    "summary": "إعفاء جمركيّ عبر تكتّلين",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "trade_flow": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.9,
+      "data_year": null,
+      "note": "HS200811 إجمالي استيراد قطر من العالم 2023, USD",
+      "reference_period": "",
+      "retrieval_method": "",
+      "retrieved_at": "2026-07-23",
+      "source": "UN Comtrade",
+      "source_ids": [],
+      "status": "",
+      "unit": "",
+      "url": "",
+      "value": 7120000.0
+     }
+    ],
+    "label": "تدفقات التجارة",
+    "name": "LLMAgent:trade_flow",
+    "summary": "تدفقات تجارية مؤكَّدة",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   }
+  },
+  "narrative": {
+   "available": true,
+   "reason": "",
+   "source": "llm"
+  },
+  "next_step": null,
+  "plausibility_flags": [
+   {
+    "action": "caveat",
+    "claimed_usd": 497000000.0,
+    "detail": {
+     "import_ratio": 69.8,
+     "imports_usd": 7120000.0,
+     "imports_year": 2023
+    },
+    "kind": "market_size_magnitude",
+    "mission": "consumer_culture",
+    "reason": "يفوق إجمالي واردات البند المرصود لسنة المرجع 2023 (7,120,000$) بمقدار 70× (السقف 20×)",
+    "severity": "high",
+    "source": "بحث ويب موجَّه"
+   }
+  ],
+  "price_rows": [],
+  "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
+  "product": "زبدة الفول السوداني المقرمشة",
+  "reconciliation": {
+   "conflicts": []
+  },
+  "render_repairs": [],
+  "report": {
+   "failure_reason": "",
+   "incomplete": false,
+   "missing_sections": [],
+   "review_cycles": 2,
+   "text": "## 1. الخلاصة التنفيذية\n\nالتوصية دخول مشروط. يستورد السوق زبدة الفول السوداني بقيمة 7.12 مليون دولار\nسنوياً، بمعدّل نموّ مركّب موجب، وصفُّ المورّدين معتدل التركّز فيفتح باباً\nلمورّد سعوديّ ينافس بالسعر.\n\n## 2. منهجية البحث ونطاقه\n\nاعتمد هذا التقرير على Comtrade وWorld Bank وIMF WEO وGoogle Trends وأمانتَي\nGCC وGAFTA. سنة البيانات الأساسية 2023.\n\n## 3. نظرة عامة على السوق وحجمه\n\nبلغت واردات قطر من زبدة الفول السوداني HS200811 نحو 7.12 مليون دولار عام 2023\n(UN Comtrade). ويُقدَّر حجم سوق الفول السوداني الكامل في قطر بـ 497 مليون دولار\nعام 2025 — رقمٌ يقيس فئةً أوسع بكثيرٍ من هذا البند الجمركيّ.\n\n### 3.2 الموزّعون في السوق\n\nمن الموزّعين الناشطين Five Group Trading Company، ويُنصَح بالتحقّق قبل التعاقد.\n\n## 4. التنظيم والوصول للسوق\n\nقطر عضوٌ في مجلس التعاون الخليجيّ ومنطقة التجارة الحرة العربية الكبرى، فتتمتّع\nواردات المنشأ السعوديّ بإعفاءٍ جمركيّ.\n",
+   "unresolved_notes": []
+  },
+  "report_style": "",
+  "trace_id": "sample-client-qat-peanut",
+  "verdict": {
+   "ai": {
+    "confidence": 0.62,
+    "reasoning": "الأدلة تدعم دخولاً مشروطاً بتأمين قنوات التوزيع.",
+    "verdict": "CONDITIONAL-GO"
+   },
+   "verdict": "CONDITIONAL-GO"
+  },
+  "verdict_consistency": {},
+  "verdict_label": "دخول مشروط",
+  "verdict_tone": "conditional"
+ },
+ "degraded": false,
+ "degraded_reason": "",
+ "dynamics": null,
+ "header": {
+  "coverage_pct": 0.0,
+  "date": "<RUN_DATE>",
+  "hs_code": "200811",
+  "origin": "SAU",
+  "product": "زبدة الفول السوداني المقرمشة",
+  "target_market": "قطر"
+ },
+ "hs_code": "200811",
+ "hs_confidence": null,
+ "hs_provenance": null,
+ "limits": [
+  "تنبيه تحقّقٍ: رقمُ «حجم السوق» البالغ 497,000,000$ الوارد في قسم «تحليل المستهلك والطلب» يتعذّر التوفيقُ بينه وبين بيانات التجارة الرسمية المرصودة في هذه الدراسة (يفوق إجمالي واردات البند المرصود لسنة المرجع 2023 (7,120,000$) بمقدار 70× (السقف 20×))؛ يُرجَّح أنه يقيس فئةً أوسع أو نطاقاً جغرافياً مختلفاً — يُقرأ مؤشراً سياقياً لا قياساً مباشراً لهذا البند حتى التحقّق المستقلّ.",
+  "تعذّر التصنيف"
+ ],
+ "markets": [],
+ "note": null,
+ "preliminary": true,
+ "product": "زبدة الفول السوداني المقرمشة",
+ "provenance": [
+  {
+   "attempted": 1,
+   "confidence_max": 0.9,
+   "confidence_min": 0.9,
+   "contributed": 1,
+   "failures": [],
+   "source": "UN Comtrade",
+   "tail": " — ثقة المرصود 90%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "merged_sources": [
+    "GCC secretariat",
+    "GAFTA secretariat"
+   ],
+   "merged_sources_more": 0,
+   "source": "GCC secretariat",
+   "tail": " — ثقة المرصود 80% · مصادر مدمجة: GCC secretariat، GAFTA secretariat",
+   "url": ""
+  }
+ ],
+ "regulatory": {},
+ "report_language": "ar",
+ "test_run": false,
+ "year": 2023,
+ "year_fell_back": false
+}

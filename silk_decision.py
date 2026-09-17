@@ -49,6 +49,113 @@ _GO, _NOGO = 0.65, 0.45          # عتبات §8
 _MIN_CONF_GO = 0.60
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٨ (موجة عيوب التقرير) — انضباطُ الثقة · confidence discipline
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «درجة 65 — عند العتبة بالضبط — وعمودُ الربحية مجهول»،
+# و«ثقة عالية بينما عمودٌ أساسيٌّ غائب»، و«نسبةُ التحقّق من البيانات معروضةٌ
+# كأنها ثقةُ الحكم».
+#
+# **الأعمدةُ الأساسية** — تُسمّى صريحةً لأنّ القاعدةَ تحتاج تعريفاً لا حدساً:
+# قرارُ دخولِ سوقٍ لا يُبنى بلا معرفةِ (أ) حجمِ الطلب، (ب) جدارِ السعر الذي
+# سيواجهه، (ج) وجودِ هامشٍ بعده. أمّا `regulatory` و`risk` فبوّابتان: غيابُهما
+# **شرطٌ مفتوح** لا عجزٌ عن التقييم — ولذلك لا يمنعان «ثقةً عالية» وحدهما،
+# بل يمنعانها عبر قاعدةِ «شرطان مفتوحان» أدناه.
+CORE_PILLARS: tuple = ("market", "competition", "profit")
+
+# سقفُ نطاقِ الثقة: لا «عالية» عند عمودٍ أساسيٍّ مجهول أو شرطين مفتوحين.
+MAX_CONDITIONS_FOR_HIGH = 2
+
+# تحلُّلُ الثقة بقِدَم البيانات — **جدولٌ معلَنٌ** لا معامِلٌ مخفيّ:
+# سنتان فأقل: بلا خصم. ٣–٥ سنوات: ٪١٠. ٦–١٠: ٪٢٥. فوق ١٠: ٪٤٠.
+# السببُ: بياناتُ تجارةٍ عمرُها عشرُ سنواتٍ تصف سوقاً آخر، والثقةُ في حكمٍ
+# مبنيٍّ عليها ليست ثقةَ حكمٍ مبنيٍّ على بيانات العام الماضي.
+CONFIDENCE_AGE_DECAY: tuple = ((2, 0.00), (5, 0.10), (10, 0.25),
+                               (10**6, 0.40))
+
+
+def age_decay_factor(age_years: object) -> float:
+    """معامِلُ الإبقاء (١ − الخصم) لعُمرِ البيانات — من الجدول المعلَن."""
+    try:
+        age = int(age_years)
+    except (TypeError, ValueError):
+        return 1.0
+    if age < 0:
+        return 1.0
+    for cap, cut in CONFIDENCE_AGE_DECAY:
+        if age <= cap:
+            return round(1.0 - cut, 3)
+    return round(1.0 - CONFIDENCE_AGE_DECAY[-1][1], 3)
+
+
+def missing_core_pillars(pillars: object) -> list:
+    """أسماءُ الأعمدة الأساسية التي لا قيمةَ لها — قائمةٌ (قد تكون فارغة)."""
+    out: list = []
+    for name in CORE_PILLARS:
+        row = (pillars or {}).get(name) if isinstance(pillars, dict) else None
+        if not isinstance((row or {}).get("value"), (int, float)):
+            out.append(name)
+    return out
+
+
+def confidence_band_cap(pillars: object, conditions: object) -> "str | None":
+    """أعلى نطاقِ ثقةٍ مسموح — `"medium"` عند عمودٍ أساسيٍّ مجهول أو شرطين
+    مفتوحين، و`None` بلا سقف.
+
+    القاعدةُ تُقال للقارئ لا تُخفى: «لا نقول ثقةً عالية ونحن لا نعرف
+    الربحية» جملةٌ يفهمها صاحبُ القرار ويحاسبنا عليها.
+    """
+    if missing_core_pillars(pillars):
+        return "medium"
+    if len(conditions or []) >= MAX_CONDITIONS_FOR_HIGH:
+        return "medium"
+    return None
+
+
+def score_arithmetic(pillars: object, weights: object) -> dict:
+    """حسابُ الدرجة **معروضاً**: وزنٌ × قوّةٌ لكلّ عمودٍ محسوب، ومجموعُ
+    الأوزان المُعاد تسويتها، والناتج.
+
+    يعيد `{"terms": [{name, weight, strength, product}], "weight_sum",
+    "score", "renormalised"}` — والناتجُ يجب أن يُطابِق `decide()["score"]`
+    حرفياً، وذلك مقفولٌ باختبار: حسابٌ معروضٌ لا يُعيد إنتاج الدرجة أسوأُ من
+    حسابٍ غائب، لأنه يُوهِم القارئَ بالتحقّق.
+    """
+    terms: list = []
+    contrib = wsum = 0.0
+    for name, w in (weights or {}).items():
+        raw = ((pillars or {}).get(name) or {}).get("value")
+        strength = pillar_strength(name, raw)
+        if strength is None:
+            continue
+        # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الجمعُ يجري على القوّة
+        # **غيرِ المُدوَّرة** كما يجمعها `decide._score` حرفياً؛ والتدويرُ
+        # للعرض وحدَه. كان الجمعُ على المُدوَّرة (٣ منازل) فتختلف الدرجةُ
+        # المعروضةُ عن العنوان بنقطةٍ في بعض التوليفات — وحسابٌ يخالف
+        # الدرجةَ أسوأُ من حسابٍ غائب لأنه يُوهِم بالتحقّق.
+        exact = (1.0 - float(raw)) if name == "competition" else float(raw)
+        terms.append({"name": name, "weight": float(w),
+                      "strength": strength,
+                      "product": round(float(w) * exact, 6)})
+        contrib += float(w) * exact
+        wsum += float(w)
+    # **قاعدةُ الحدّ الأدنى تسري هنا حرفياً** (البند 2 من أمر إصلاح المحرّك).
+    # قِياسٌ كشفه: الصيغةُ الأولى كانت تحسب درجةً لإحدى عشرةَ مدوّنةٍ من
+    # اثنتي عشرة **حجب المحرّكُ درجتَها عمداً** (أعمدةٌ محسوبةٌ دون الحدّ)
+    # — فكان الحسابُ المعروض يُظهِر رقماً قال المحرّكُ إنه لا يُصدره. حسابٌ
+    # يخالف الدرجةَ أسوأُ من حسابٍ غائب، لأنه يُوهِم القارئَ بالتحقّق.
+    enough = len(terms) >= _min_scored_pillars()
+    score = round(contrib / wsum, 3) if (wsum and enough) else None
+    return {"terms": terms, "weight_sum": round(wsum, 3), "score": score,
+            "renormalised": bool(wsum and abs(wsum - 1.0) > 1e-9),
+            "computed_pillars": len(terms),
+            "min_scored_pillars": _min_scored_pillars(),
+            "withheld_reason": (None if enough else
+                                f"أعمدةٌ محسوبة {len(terms)} دون الحدّ "
+                                f"الأدنى {_min_scored_pillars()} — لا درجةَ "
+                                "تُعرَض ولا تُخمَّن")}
+
+
 def _min_scored_pillars() -> int:
     """الحدّ الأدنى من الأعمدة المحسوبة قبل أيّ درجةٍ موزونة — البند 2 من
     أمر إصلاح المحرّك (تقريرا #10/#11: «درجة موزونة 84%» بعمودٍ واحد و«26%»
@@ -145,7 +252,12 @@ def _pct(x: object) -> str:
     غلاف تقرير العميل بعد أن صار حكمُ المحرّك هو المُقدَّم (Z-01) — فسدُّ
     التسريب لازمٌ عند المنشأ لا في العارض.
     """
-    return f"{round(float(x) * 100)}%" if isinstance(x, (int, float)) else "—"
+    # الصنف ٣: النسبةُ من المُنسِّق الواحد — صفرُ تغييرٍ في المخرَج (كسرٌ
+    # 0–1 × 100 مقرَّباً لعددٍ صحيح) بمصدرٍ واحد للقاعدة.
+    if not isinstance(x, (int, float)) or isinstance(x, bool):
+        return "—"
+    from silk_narrative import fmt_pct
+    return fmt_pct(round(float(x) * 100), dp=0)
 
 
 def _clip(x: float) -> float:
@@ -373,7 +485,7 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
     conditions: list[str] = []
     for name in missing_pillars:
         # D4 (البند 16): مفردات الغياب القانونية على سطح الشروط أيضاً.
-        conditions.append(f"عمود {_AR[name]} غائب (غير متاح: "
+        conditions.append(f"جانب {_AR[name]} غائب (غير متاح: "
                           f"{_parts_ar(pillars[name]['missing'])}) "
                           "— أكمل مصادره قبل قرار نهائي")
     for name, p in pillars.items():
@@ -385,7 +497,7 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
             # سدّ تسريب (الطبقة ٨): كسر عشري خام على وجه التقرير ("ضعيف
             # (0.37)") — نسبة مئوية بشرية بدله، شقيقة إصلاح سطر «لماذا»
             # أعلاه لنفس السبب (لا رقم آلي خام يصل العميل).
-            conditions.append(f"عمود {_AR[name]} ضعيف ({round(eff * 100)}%) "
+            conditions.append(f"جانب {_AR[name]} ضعيف ({round(eff * 100)}%) "
                               f"— {p['basis']}")
     if pillars["regulatory"].get("eligibility_gate"):
         conditions.insert(0, "بوابة أهلية أمامية مفتوحة (منشأة معتمدة EU 2017/625) "
@@ -605,7 +717,7 @@ def counter_case(decision: dict) -> dict:
               for k, v in pillars.items()
               if isinstance((v or {}).get("value"), (int, float))]
     if not scored:
-        return {"case": "لا أعمدة محسوبة تُبنى منها حجة مضادة — البيانات "
+        return {"case": "لا جوانب محسوبة تُبنى منها حجة مضادة — البيانات "
                         "غير كافية أصلاً.",
                 "rebuttal": ""}
     # البند 8 (أمر إصلاح المحرّك): «أقوى الأعمدة X وأضعفها X» بعمودٍ واحد
@@ -619,7 +731,7 @@ def counter_case(decision: dict) -> dict:
     strongest = max(scored, key=lambda t: t[1])
     conds = decision.get("conditions") or []
     if verdict == "GO":
-        case = (f"أقوى حجة ضد المضيّ: أضعف الأعمدة «{_AR.get(weakest[0], weakest[0])}» "
+        case = (f"أقوى حجة ضد المضيّ: أضعف الجوانب «{_AR.get(weakest[0], weakest[0])}» "
                 f"عند {round(weakest[1] * 100)}%"
                 + (f"، مع {len(conds)} شرطاً مفتوحاً" if conds else "")
                 + " — لو كان هذا العمود هو الحاكم وحده لتغيّر القرار.")
@@ -627,21 +739,21 @@ def counter_case(decision: dict) -> dict:
                     f"{_pct(decision.get('score'))} تجاوزت عتبة المضيّ "
                     f"({_pct(_GO)}) عبر الأعمدة مجتمعة بأوزانها المعلنة، "
                     f"والثقة {_pct(decision.get('confidence'))} فوق الحد "
-                    "الأدنى — عمود ضعيف واحد لا يعكس القرار ما لم يبلغ "
+                    "الأدنى — جانب ضعيف واحد لا يعكس القرار ما لم يبلغ "
                     "بوابة الخطر الحرجة.")
     elif verdict == "NO-GO":
-        case = (f"أقوى حجة ضد الرفض: أقوى الأعمدة "
+        case = (f"أقوى حجة ضد الرفض: أقوى الجوانب "
                 f"«{_AR.get(strongest[0], strongest[0])}» عند "
                 f"{round(strongest[1] * 100)}% يشير إلى فرصة قائمة.")
         rebuttal = (f"لماذا لم تُعتمد: الدرجة الموزونة "
                     f"{_pct(decision.get('score'))} دون عتبة الرفض "
-                    f"({_pct(_NOGO)}) أو أطلقت بوابة الخطر الحرجة — عمود "
+                    f"({_pct(_NOGO)}) أو أطلقت بوابة الخطر الحرجة — جانب "
                     "قوي واحد لا يعوّض بنية القرار الكاملة.")
     else:
-        case = (f"أقوى حجة ضد الدخول المشروط: من جهةٍ العمود الأقوى "
+        case = (f"أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب "
                 f"«{_AR.get(strongest[0], strongest[0])}» "
                 f"({round(strongest[1] * 100)}%) يدعم مضيّاً كاملاً، ومن جهةٍ "
-                f"العمود الأضعف «{_AR.get(weakest[0], weakest[0])}» "
+                f"أضعفها «{_AR.get(weakest[0], weakest[0])}» "
                 f"({round(weakest[1] * 100)}%) يدعم رفضاً.")
         rebuttal = ("لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي "
                     "والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام "

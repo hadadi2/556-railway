@@ -1532,6 +1532,13 @@ def run_llm_agent(mission: dict, market: MarketRef, product: str = "",
     ctx = {"market": market, "product": product, "hs_code": hs_code,
           "extra_findings": extra_findings or [], "extra_context": extra_context,
           "mission_key": mission.get("key", "")}
+    # الصنف ١٠: تعليمةُ أنظمة المطابقة مقيَّدةٌ بسوق الهدف حين تُفعَّل
+    # رايتُها، والنصُّ السابق حرفياً بدونها (`silk_missions.scope_instructions`).
+    try:
+        import silk_missions as _MS_MISSIONS
+        mission = _MS_MISSIONS.scope_instructions(mission)
+    except Exception as _e:  # noqa: BLE001 — تعليمةٌ تحسينٌ لا شرطُ تشغيل
+        log.warning("mission scope_instructions skipped: %s", _e)
     eff_mission = dict(mission)
     if instruction:
         eff_mission["instructions"] = (

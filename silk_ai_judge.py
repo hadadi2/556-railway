@@ -1093,8 +1093,39 @@ _HS_CATEGORY: "list[tuple[range, str, str]]" = [
 ]
 
 
+# الصنف ١٨: النصفُ الثاني من جذر الصنف ١٠. الجدولُ أعلاه يُلحِق بموجّه
+# الكاتب أسماءَ **أنظمةٍ أوروبية** (REACH، علامة CE، قيود azo) **بحسب فصلِ
+# البند الجمركيّ لا بحسب السوق** — فتقريرُ سوقٍ غيرِ أوروبيٍّ يُذكَّر
+# بتسجيلِ REACH وعلامةِ CE. وهو بعينه ما أُصلِح في `silk_missions.py:202`
+# (SONCAP/CIQ/SFDA لكلّ سوق) وبقي هنا مُعلَناً بنداً لاحقاً. والفكسُ
+# **بلا أيّ تفريعٍ قُطريّ**: تُحذَف أسماءُ أنظمةِ الكتلة ويحلّ محلَّها تقييدٌ
+# بسوق الهدف — والمعاييرُ الدوليةُ حقّاً (HACCP/BRC/IFS/FSSC) والمصطلحاتُ
+# التقنيةُ العامّة (التوافق الكهرومغناطيسي، اعتماد النوع) تبقى.
+_SCOPED_REGIME_TAIL = ("وسمِّ أنظمةَ المطابقة الخاصّة بسوق الهدف كما يعيدها "
+                       "lookup_reference، ولا تذكر نظامَ دولةٍ أو كتلةٍ أخرى")
+_HS_CATEGORY_SCOPED: "dict[str, str]" = {
+    "منتج كيميائي/بلاستيكي":
+        "بطاقات بيانات السلامة وحدود المواد المقيَّدة، " + _SCOPED_REGIME_TAIL,
+    "منسوجات/ملابس/أحذية":
+        "بطاقات المحتوى والعناية، قيود الأصباغ، وسلامة المنتج "
+        "الاستهلاكي، " + _SCOPED_REGIME_TAIL,
+    "آلات/معدّات كهربائية":
+        "التوافق الكهرومغناطيسي (EMC) وتوجيهات السلامة، "
+        + _SCOPED_REGIME_TAIL,
+    "أجهزة/أدوات دقيقة":
+        "متطلبات الأجهزة الطبية حيث انطبقت، " + _SCOPED_REGIME_TAIL,
+    "أثاث/ألعاب/سلع استهلاكية":
+        "سلامة المنتج الاستهلاكي وسلامة الألعاب وقيود المواد المقيَّدة، "
+        + _SCOPED_REGIME_TAIL,
+}
+
+
 def _product_category(hs_code: object) -> "tuple[str, str] | None":
-    """(اسم الفئة، تركيز الاشتراطات) من فصل HS — None إن تعذّر/غير مصنَّف."""
+    """(اسم الفئة، تركيز الاشتراطات) من فصل HS — None إن تعذّر/غير مصنَّف.
+
+    التركيزُ **مقيَّدٌ بسوق الهدف** حين تكون رايةُ الصنف ١٠ مفعّلة، وبالنصّ
+    السابق حرفياً بدونها (فلا يتغيّر موجّهٌ ولا خرجُ eval بالراية مطفأة).
+    """
     s = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
     if len(s) < 2:
         return None
@@ -1102,8 +1133,15 @@ def _product_category(hs_code: object) -> "tuple[str, str] | None":
         chapter = int(s[:2])
     except ValueError:
         return None
+    try:
+        import silk_market_structure as _MS
+        scoped = _MS.enabled()
+    except Exception:  # noqa: BLE001 — التقييد تحسينٌ لا شرطُ كتابة
+        scoped = False
     for rng, name, emphasis in _HS_CATEGORY:
         if chapter in rng:
+            if scoped:
+                return name, _HS_CATEGORY_SCOPED.get(name, emphasis)
             return name, emphasis
     return None
 
@@ -1213,11 +1251,48 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
             "\n\n" + (EPISTEMIC_VERB_RULE_EN if lang == "en"
                       else EPISTEMIC_VERB_RULE), "")
     facts = _isolate(_facts(list(mission_reports.values())))
+    # الصنف ٦ (موجة عيوب التقرير) — **خلف رايةٍ مطفأةٍ افتراضياً**: الأرقامُ
+    # تصل الكاتبَ بمعرّفاتٍ ثابتة ([F1]، [F2]…) فيصير تعارضُ قراءتين قابلاً
+    # للكشف بدل أن يُنسَخ الرقمُ مرّتين بقيمتين. بلا الراية يبقى مسارُ
+    # `_facts` كما هو حرفياً — لا معرّفٌ ولا قاعدةٌ إضافية في الموجّه.
+    _figure_rule = ""
+    try:
+        import silk_figure_store as _FS
+        if _FS.enabled():
+            _store = _FS.build(mission_reports)
+            if (_store.get("figures") or []):
+                # **المراجعةُ الذاتية للفرق (البند ٥٨)**: كان المخزنُ
+                # **يستبدل** كتلةَ الحقائق كلَّها، وهو يحفظ الأرقامَ وحدَها
+                # — فتسقط من موجّه الكاتب الفجواتُ المعلنة (`value=None`)
+                # والاكتشافاتُ النصّية والبنيوية وبلاغاتُ البعثات الفاشلة
+                # ووسمُ التقادم. أي أنّ تفعيلَ رايةِ الصنف ٦ كان **يُخفي
+                # الفجوة** عن الكاتب — خرقٌ مباشرٌ لعقد «فجوةٌ معلنة لا
+                # اختلاق». الآن **إلحاقٌ لا استبدال**: الحقائقُ كما هي،
+                # وتحتَها الأرقامُ بمعرّفاتها.
+                facts = (facts + "\n\n[FIGURE_IDS]\n"
+                         + _isolate(_FS.facts_block(_store)))
+                _figure_rule = _FS.FIGURE_ID_RULE
+    except Exception as _e:  # noqa: BLE001 — المخزنُ تحسينٌ لا شرطُ كتابة
+        log.warning("figure store skipped: %s", _e)
+    # الصنف ٩ (موجة عيوب التقرير) — **خلف رايةٍ مطفأةٍ افتراضياً**: قاعدةُ
+    # إسنادِ الرقم المشتقّ (عملةٌ + معادلةٌ + مدخلاتٌ بمصادرها + وسمُ
+    # الافتراض + سقفُ خسارةٍ مدىً بمكوّناته). بلا الراية لا يُلحَق حرفٌ.
+    _derived_rule = ""
+    try:
+        import silk_narrative as _NR
+        if _NR.derived_provenance_enabled():
+            _derived_rule = _NR.DERIVED_PROVENANCE_RULE
+    except Exception as _e:  # noqa: BLE001 — قاعدةٌ تحسينٌ لا شرطُ كتابة
+        log.warning("derived provenance rule skipped: %s", _e)
     sections = "\n".join(f"{i}. {s}" for i, s
                          in enumerate(report_sections(lang), 1))
     parts = [
         f"المنتج: {_isolate(product)}. السوق: {_isolate(market_name)}.",
         contract,
+        # الصنف ٦: قاعدةُ هويةِ الرقم — فارغةٌ بلا الراية فلا تُغيّر الموجّه.
+        *([_figure_rule] if _figure_rule else []),
+        # الصنف ٩: قاعدةُ إسنادِ الرقم المشتقّ — كذلك فارغةٌ بلا رايتها.
+        *([_derived_rule] if _derived_rule else []),
         "قارن أسعار عروض تطابق نوع المنتج وشكله الفعلي فقط. لا تغيّر اسم "
         "منتج في المصدر لكي يبدو مطابقاً: الطحينة ليست الحلاوة الطحينية، "
         "والحليب السائل ليس مسحوق الحليب. اعتمد عروض بعثة التسعير المقبولة؛ "
@@ -2562,6 +2637,14 @@ def review_report(draft: str, mission_reports: dict,
         "ولا سلسلة معادلة رياضية داخل جملة نثرية؟ هل تظهر كلمة 'الدرجة' أو "
         "'النتيجة الرقمية' أو أي لغة خوارزمية خارج جدول التوصيات الصغير؟ "
         "عدّ أي غياب من كل ما سبق كمشكلة صريحة في issues.\n"
+        # الصنف ١ (موجة عيوب التقرير): المراجعُ يُدقّق **لغةَ القارئ** بنفس
+        # العقد المحقون في الكاتب — مصدرٌ واحد، فلا تُدقَّق قاعدةٌ غير التي
+        # كُتب بها. القوائمُ الحتمية تُفحَص بعده في
+        # `silk_quality_gate._check_reader_language_leak` (لا نداء مدفوع).
+        + "دقّق لغةَ القارئ بهذا العقد نفسِه:\n"
+        + __import__("silk_style_contract").reader_language_rule(lang) + "\n"
+        + "كلُّ خرقٍ لهذا العقد مشكلةٌ صريحة في issues باقتراح الصياغة "
+        "البديلة.\n"
         # §8 (أمر العمل الرئيس — تمريرة لغوية على مستوى السطر):
         "تمريرة لغوية (§8): دقّق التطابق النحوي (العدد مع المعدود، التذكير/"
         "التأنيث)، والتلصيقات المشوَّهة (كلمة مكرّرة فوراً، قيمة حقلٍ خام "

@@ -16,6 +16,23 @@
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },
+  "egypt_olive_oil": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.522,
+      "market": 0.807,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.58,
+    "view_verdict": "CONDITIONAL-GO",
+    "view_verdict_label": "دخول مشروط"
+  },
   "fettuccine": {
     "computed_pillars": 2,
     "engine_confidence": null,
@@ -49,6 +66,23 @@
     "view_confidence": 0.65,
     "view_verdict": "CONDITIONAL-GO",
     "view_verdict_label": "دخول مشروط"
+  },
+  "india_honey": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.298,
+      "market": 0.846,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.52,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
   },
   "japan_honey": {
     "computed_pillars": 2,
@@ -84,6 +118,23 @@
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },
+  "kenya_honey": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.324,
+      "market": 0.731,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.46,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
   "kuwait_peanut_butter": {
     "computed_pillars": 2,
     "engine_confidence": null,
@@ -98,6 +149,40 @@
       "risk": null
     },
     "view_confidence": 0.5,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "libya_tahini": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.352,
+      "market": 0.756,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.49,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "morocco_juice": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.396,
+      "market": 0.808,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.47,
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },
@@ -132,6 +217,23 @@
       "risk": null
     },
     "view_confidence": 0.6,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "nigeria_dates": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": 0.436,
+      "market": 0.675,
+      "profit": null,
+      "regulatory": null,
+      "risk": null
+    },
+    "view_confidence": 0.44,
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },

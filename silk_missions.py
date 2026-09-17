@@ -199,7 +199,8 @@ MISSIONS: dict[str, dict] = {
             "المرجع الثابت (lookup_reference جدول requirements) هو المصدر "
             "الأساس — اعرضه كما هو أولاً. استخدم بحث الويب فقط للتحقق "
             "المستهدَف من تحديثات حديثة، لا لاكتشاف اشتراطات من الصفر. "
-            "اذكر شهادات الحلال/SONCAP/CIQ/SFDA متى انطبقت. إن أعاد "
+            "سمِّ أنظمة المطابقة الخاصة بسوق الهدف كما يعيدها "
+            "lookup_reference، ولا تذكر نظام دولة أخرى. إن أعاد "
             "lookup_reference صفراً من الصفوف لهذا السوق/الفئة، لا تكتفِ "
             "بالصمت — أعلن الفجوة صراحة باسم السوق والفئة تحديداً، فجوة "
             "قابلة للسدّ لاحقاً بإضافة صف مرجعي موثّق (لا اختلاقه هنا)."),
@@ -569,6 +570,40 @@ def _augment_risk_news_wgi(report: AgentReport, iso3: str) -> AgentReport:
     return report
 
 
+# ── الصنف ١٠: تسميةُ أنظمة المطابقة · conformity-scheme naming ─────────────
+# **العيبُ المرصود:** حدودُ تقريرِ اليمن استشهدت بـSONCAP (نيجيريا) وCIQ
+# (الصين). **الجذر:** تعليمةُ بعثة الاشتراطات كانت تحقن أسماءَ أنظمةٍ بعينها
+# في موجّه **كلّ سوق**، بلا قيدٍ غير قراءةِ النموذج لعبارة «متى انطبقت» —
+# تفريعٌ قُطريٌّ في الشيفرة. والمسارُ المُقنَّن (`requirements_l1.csv`) لا
+# يمكن أن يتسرّب أصلاً: مطابقتُه ISO3 دقيقةٌ أو كتلةٌ حصراً.
+#
+# التعليمةُ الجديدة مقيَّدةٌ بسوق الهدف. والنصُّ السابق محفوظٌ **حرفياً** هنا
+# ويُستعمَل حين تكون رايةُ الصنف ١٠ مطفأة — فالسلوكُ السابق هو نفسُه بلا
+# راية، والأسماءُ لم تَبقَ تعليمةً بل صارت سجلَّ تراجعٍ مُعلَناً في موضعٍ
+# واحد (سجلُّ المالكين الحقيقيّ في `data/regulatory_schemes_l1.csv`).
+_SCOPED_SCHEME_HINT = ("سمِّ أنظمة المطابقة الخاصة بسوق الهدف كما يعيدها "
+                       "lookup_reference، ولا تذكر نظام دولة أخرى.")
+_LEGACY_SCHEME_HINT = "اذكر شهادات الحلال/SONCAP/CIQ/SFDA متى انطبقت."
+
+
+def scope_instructions(mission: dict) -> dict:
+    """تعليماتُ البعثة بحسب رايةِ الصنف ١٠ — القاموسُ نفسُه بلا الراية.
+
+    بلا الراية يُستبدَل المقطعُ المقيَّدُ بالنصّ السابق حرفياً، فلا يتغيّر
+    موجّهٌ ولا خرجُ eval. ومع الراية يبقى المقيَّد كما هو في `MISSIONS`.
+    """
+    import silk_market_structure
+    if not isinstance(mission, dict) or silk_market_structure.enabled():
+        return mission
+    ins = str(mission.get("instructions") or "")
+    if _SCOPED_SCHEME_HINT not in ins:
+        return mission
+    out = dict(mission)
+    out["instructions"] = ins.replace(_SCOPED_SCHEME_HINT,
+                                      _LEGACY_SCHEME_HINT, 1)
+    return out
+
+
 def _augment_risk_news_fx(report: AgentReport, iso3: str) -> None:
     """ألحِق تقلّبَ سعر الصرف المحسوب ببعثة المخاطر (البند 3 من أمر إصلاح
     المحرّك — «استقرار العملة لم يُرصَد» في اللوحة بينما §9 يسرد ثبات
@@ -633,10 +668,27 @@ def _augment_risk_news_fx(report: AgentReport, iso3: str) -> None:
     if vol is None:
         return
     yrs = "، ".join(str(y) for y, _ in sorted(series))
+    # الصنف ١٠ (خلف رايته): الصفرُ **يُعلَن معناه** ولا يُمَسّ رقمُه. تقلّبٌ
+    # صفريّ يرفع عمودَ أمانِ العملة إلى ١.٠٠ في الدرجة، وهو إمّا ربطٌ رسميٌّ
+    # وإمّا سلسلةٌ ثابتةٌ أو سعرٌ رسميٌّ واحدٌ في سوقٍ له سعران — والفرقُ
+    # قرارُ مخاطرة. القيمةُ تبقى كما هي (تثبيتةُ المالك على `0.0`)، والإبرةُ
+    # «تقلب سعر الصرف» تبقى حرفيةً في مقدّمة الملاحظة كي لا يُكسَر
+    # مستخلِصُ الأعمدة (`silk_deep_pillars`).
+    _zero_tail = ""
+    if vol == 0.0:
+        try:
+            import silk_market_structure
+            if silk_market_structure.enabled():
+                _zero_tail = ("؛ وصفرُ التقلّب هنا إمّا ربطٌ رسميٌّ للعملة "
+                              "وإمّا سلسلةٌ ثابتةٌ/سعرٌ رسميٌّ واحد — لا "
+                              "تقلّبٌ مرصودٌ صفراً")
+        except Exception:  # noqa: BLE001
+            _zero_tail = ""
     findings.append(DataPoint(
         vol, "World Bank", 0.85,
         f"[risk] تقلب سعر الصرف {vol}% — مستنتَج بقاعدة معلنة "
-        f"((الأعلى−الأدنى)÷الوسط×100) من سلسلة PA.NUS.FCRF لسنوات {yrs}",
+        f"((الأعلى−الأدنى)÷الوسط×100) من سلسلة PA.NUS.FCRF لسنوات {yrs}"
+        + _zero_tail,
         data_year=max(y for y, _ in series)))
 
 

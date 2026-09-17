@@ -67,6 +67,26 @@ PLAIN_TERMS: dict[str, str] = {
 # نص «لماذا لم تُعتمد» من المحرّك) معاً، فلا نسختان تتباعدان.
 CLIENT_TERM_REPLACEMENTS: tuple = (
     ("الدرجة الموزونة", "قوة الفرصة في التقييم"),
+    # الصنف ١ (موجة عيوب التقرير): «العمود» مفردةُ قياسٍ داخلية، والمفردةُ
+    # المعتمدة على سطح القارئ «الجانب» (`silk_i18n.pillar_col` = «الجانب»،
+    # و`cond_pillar_weak` = «جانب {pillar} ضعيف»). كان الزوجُ يغطّي «الدرجة
+    # الموزونة» وحدها، فأفلتت «العمود الأقوى/الأضعف» من سردِ المحرّك
+    # (`silk_decision.counter_case`) إلى `counter_case_line` ثمّ إلى **docx
+    # العميل** (`silk_reports.py:4012`) — إعادةُ إنتاجٍ مباشرة على مدوّنة
+    # الجزائر. الجذرُ مُصلَحٌ في منشأ السرد؛ وهذه شبكةُ أمانٍ للمدوّنات
+    # المخزَّنة قبل الإصلاح (سابقة `test_weighted_score_sanitized_as_backstop`).
+    # الأطولُ أولاً كي لا يبتلعَ استبدالٌ جزءاً من آخر.
+    ("العمود الأقوى", "أقوى الجوانب"),
+    ("العمود الأضعف", "أضعف الجوانب"),
+    ("أقوى الأعمدة", "أقوى الجوانب"),
+    ("أضعف الأعمدة", "أضعف الجوانب"),
+    ("الأعمدة مجتمعة", "الجوانب مجتمعة"),
+    ("أقوى عمود", "أقوى جانب"),
+    ("أضعف عمود", "أضعف جانب"),
+    ("عمود ضعيف", "جانب ضعيف"),
+    ("عمود قوي", "جانب قوي"),
+    ("عمود واحد", "جانب واحد"),
+    ("لا أعمدة محسوبة", "لا جوانب محسوبة"),
 )
 
 # (ب) أسماء أنظمة حقيقية يحتاجها التاجر بالاسم — تبقى، بوصف قصير مرّة واحدة.
@@ -105,6 +125,211 @@ PLAIN_LANGUAGE_RULE = (
 )
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ١ (موجة عيوب التقرير) — لغةُ القارئ · reader-facing language
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: عباراتٌ كُتبت لمطوّرٍ وصلت صاحبَ القرار («لم يتمكن الاستدعاء من
+# جلب أي سجل»، «عطل تقني في واجهة»، «خارج أساس الحكم الآلي»…).
+#
+# **إعلانُ ما ثبت (صنفُ الدليل: static code review + direct reproduction):**
+# سبعٌ من العشر المرصودة **لا توجد في هذا المستودع إطلاقاً** — فلا قالبَ
+# أنتجها، وهي من نثرِ الكاتب (النموذج). الموجودةُ ثلاثٌ فقط، وكلُّها مُصلَحةٌ
+# في منشئها بهذه الموجة:
+#   - «تقاطع المحلل بلا أدلة كافية» — `silk_i18n.limit_analyst_thin`
+#   - «العمود الأقوى/الأضعف» — `silk_decision.counter_case` (أُعيد إنتاجُ
+#     وصولها إلى docx العميل مباشرةً على مدوّنة الجزائر)
+#   - «هامش المضاهاة» — كانت تُطبَع في العرض وتُحظَر في الموجّه معاً
+# ولذلك فالحارسُ الوحيد الممكن لما لا قالبَ له هو **قائمةٌ حتمية** تُفحَص
+# على كلّ تقرير: القوائمُ هنا (مصدرٌ واحد) والفحصُ في
+# `silk_quality_gate._check_reader_language_leak`.
+
+# (١) عباراتٌ حرفيةٌ لا تصلح لقارئٍ بأيّ سياق — بذرتُها العشرُ المرصودة.
+FORBIDDEN_READER_PHRASES: tuple = (
+    "لم تصل معادلة محسوبة مسبقاً",
+    "لم يتمكن الاستدعاء من جلب أي سجل",
+    "عطل تقني في واجهة",
+    "خارج أساس الحكم الآلي",
+    "بعثة بحثية",
+    "تقاطع المحلل بلا أدلة كافية",
+    "وحدة نقدية",
+    "وحدة ريال لكل دولار",
+    "العمود الأقوى",
+    "العمود الأضعف",
+    "هامش المضاهاة",
+    "بفئة تكلفة",
+)
+
+# (٢) رموزٌ لا معنى لها عند قارئٍ بشريّ في أيّ سياق — تُلتقَط عارية.
+# `{`/`}` قوسا قالبٍ لم يُحشَ (يغطّيهما الصنف ٢ أيضاً)، وBقيتُها مفرداتُ
+# برمجةٍ خام. `N/A` تُلتقَط لأن معجمَ الغياب المعتمَد عربيٌّ ثنائيّ
+# («غير متاح» / «غير محسوب» — `silk_quality_gate._ABSENCE_FORBIDDEN`).
+HARD_READER_TOKENS: tuple = (
+    "pipeline", "null", "undefined", "NaN", "N/A", "{", "}", "استدعاء",
+)
+
+# (٣) مفرداتٌ **ذاتُ معنيين**: مشروعةٌ بمعناها التجاري، ولغةُ نظامٍ بمعناها
+# التقني. تُفحَص بالسياق لا عارية — وهذا شرطُ صدقٍ لا تسامحاً: «معادلة» وردت
+# ١١ مرّة في خطّ الأساس كلُّها **مأمورٌ بها** في معيار الكتابة («معادلة
+# التعادل = كلفة الدخول ÷ هامش الوحدة»)، فحظرُها عارياً يُطلِق على كلّ تقرير
+# صحيح. و«واجهة» كانت تُلتقَط من داخل «مواجهة» بلا حدِّ كلمة.
+CONTEXTUAL_READER_TOKENS: tuple = ("واجهة", "معادلة", "آلي", "آلياً", "آليّاً")
+
+# قرائنُ المعنى التقنيّ — وجودُ إحداها قربَ المفردة (± ٤٠ محرفاً) يجعلها
+# لغةَ نظام. مبنيّةٌ على مفرداتِ السباكة التي يعرفها هذا المستودع فعلاً.
+SYSTEM_SENSE_CUES: tuple = (
+    "النظام", "نظامنا", "الحقل", "حقل", "سجل", "السجل", "طبقة", "الطبقة",
+    "قاعدة البيانات", "الخادم", "المخزن", "التشغيل", "عطل", "تعذّر",
+    "تعذر", "فشل", "خطأ", "استدعاء", "واجهة برمجية", "مُصنَّف", "مصنَّف",
+    "صُنِّف", "صنِّف", "التصنيف الآلي", "الحكم الآلي", "محسوبة مسبقاً",
+)
+
+# استثناءاتُ المعنى التجاريّ الصريح — تُفحَص أوّلاً فتمنع الإنذار الكاذب.
+READER_TOKEN_ALLOW: tuple = (
+    "واجهة المتجر", "واجهة الرف", "واجهة العرض", "واجهة المحل",
+    "خط إنتاج آلي", "خطّ إنتاج آلي", "تعبئة آلية", "فرز آلي",
+)
+
+# القاعدةُ المحقونةُ في عقود الكاتب والمراجع — إلحاقٌ لا استبدال (نمط
+# `EPISTEMIC_VERB_RULE`). لا تُكرِّر ما في معيار الكتابة؛ تضيف بُعداً واحداً:
+# **من يقرأ**.
+READER_LANGUAGE_RULE = (
+    "**لغةُ القارئ (إلزامي — القارئ صاحبُ قرارٍ تجاريّ لا مهندسُ النظام):**\n"
+    "- عربيةٌ فصحى مهنية، وترقيمٌ عربيّ (، ؛ ؟) لا لاتينيّ.\n"
+    "- **لا تصف النظامَ ولا عملَه**: لا «استدعاء» ولا «واجهة» ولا «طبقة "
+    "عرض» ولا «حقل» ولا «سجل» ولا «بعثة» ولا «تقاطع محلل» ولا «معادلة "
+    "محسوبة مسبقاً» ولا «الحكم الآلي». هذه أسماءُ أجزاءٍ من أداةٍ داخلية "
+    "لا يعرفها القارئ ولا يستطيع التصرّف بها.\n"
+    "- **العجزُ يُقال بأثره على القرار لا بسببه التقنيّ**: «لم نجد سعر "
+    "تجزئة مرصوداً لهذا الصنف، فلا تُحسَب نقطة التعادل» — لا «تعذّر جلب "
+    "السجل» ولا «عطل تقني».\n"
+    "- **مفردتا الغياب المعتمدتان اثنتان فقط**: «غير متاح» (لا وجود "
+    "للرقم) و«غير محسوب» (يوجد ولم يُحسب). لا `N/A` ولا رمزٌ إنجليزيّ.\n"
+    "- **مفرداتُ التقييم بلغة القارئ**: «الجانب» لا «العمود»، و«قوة "
+    "الفرصة» لا «الدرجة الموزونة»، و«فارق السعر التنافسي» لا «هامش "
+    "المضاهاة».\n"
+    "- **نوِّع الروابط**: لا تفتتح أكثر من فقرةٍ واحدة في القسم بالرابط "
+    "نفسه، ولا تُعِد «وهذا يعني» في فقرتين متجاورتين — للمعنى الواحد "
+    "صيغٌ عدّة (ومن ثمّ، فـ، لذلك، والأثرُ العمليّ)."
+)
+
+READER_LANGUAGE_RULE_EN = (
+    "**Reader's language (mandatory — your reader is a commercial "
+    "decision-maker, not the system's engineer):**\n"
+    "- Never describe the system or its internals: no \"call\", "
+    "\"interface\", \"render layer\", \"field\", \"record\", "
+    "\"mission\", \"analyst intersection\", \"pre-computed equation\" "
+    "or \"automated verdict\".\n"
+    "- State a shortfall by its effect on the decision, never by its "
+    "technical cause: \"no observed retail price for this item, so the "
+    "break-even cannot be computed\" — not \"record fetch failed\".\n"
+    "- Exactly two absence words: \"not available\" (the figure does not "
+    "exist) and \"not computed\" (it exists and was not computed). Never "
+    "N/A, null or NaN.\n"
+    "- Vary connectives: no two adjacent paragraphs may open with the same "
+    "connective, and never repeat \"this means\" twice in a row."
+)
+
+
+# ── الصنف ٢ (موجة عيوب التقرير): سلامةُ الإحالة · referential integrity ─────
+# القوالبُ مُصلَحةٌ حتمياً (`silk_i18n.t` + صيغُ الفراغ)، لكنّ الكاتبَ يركّب
+# جملاً من النوع نفسِه بنفسه — «ثم السعودية بالحصة السعودية»، و«الشريحة
+# المحسوبة أعلاه» لشريحةٍ أُعلِن أن حجمها غير محسوب. لا قالبَ يُصلَح فيها،
+# فالقاعدةُ توجيهٌ والفحصُ إنفاذ (`_check_template_interpolation`).
+REFERENTIAL_INTEGRITY_RULE = (
+    "**سلامةُ الإحالة (إلزامي — لا تُحِل إلى ما لم يُعرَض):**\n"
+    "- **لا «أعلاه» ولا «أدناه» لرقمٍ أو شريحةٍ أعلنتَ أنها «غير محسوبة» "
+    "أو «غير متاحة».** إن لم يُحسَب فقُل ما ينقص لحسابه، لا تُحِل القارئَ "
+    "إلى فراغ.\n"
+    "- **العددُ المذكور يطابق المعدود**: لا «شرطين مفتوحين» ثم شرطٌ واحد "
+    "في القائمة. اكتب العددَ من القائمة التي ستسردها، أو اسرِدها بلا عدد.\n"
+    "- **لا تُعِد اسمَ الكيان داخل وصفِه**: «ثم السعودية بحصة 10.44%» لا "
+    "«ثم السعودية بالحصة السعودية البالغة 10.44%».\n"
+    "- **لا تشرح مصطلحاً بين قوسين وسط الجملة** بكلمةٍ من المصطلح نفسِه "
+    "(«مؤشر التركّز (مؤشر يقيس التركّز)») — التعريفُ مرّةً واحدة في "
+    "المنهجية، والمتنُ يستعمل المعنى لا الاسمَ ثم شرحَه."
+)
+
+REFERENTIAL_INTEGRITY_RULE_EN = (
+    "**Referential integrity (mandatory — never point at what was not "
+    "shown):**\n"
+    "- No \"above\" or \"below\" for a figure or segment you declared "
+    "\"not computed\" or \"not available\". If it was not computed, say "
+    "what is missing to compute it; do not send the reader to an empty spot.\n"
+    "- A stated count must match what you then list: never \"two open "
+    "conditions\" followed by one. Take the number from the list you are "
+    "about to write, or list them without a count.\n"
+    "- Never repeat an entity's name inside its own description.\n"
+    "- Never gloss a term mid-sentence with a word from the term itself — "
+    "define it once in the methodology and use the meaning in the body."
+)
+
+
+# ── الصنف ٥ (موجة عيوب التقرير): شرحٌ واحدٌ لكلّ حقيقة · single explanation ──
+# بلاغُ المالك: القرارُ التنظيميّ نفسُه مشروحٌ في خمسة أقسام، و«وهذا يعني»
+# في كلّ فقرةٍ تقريباً. الجذرُ: كلُّ قسمٍ يُولَّد باستقلالٍ فلا يعرف ما شُرِح
+# قبله. القاعدةُ توجيهٌ، والفحصُ إنفاذ (`cross_section_near_duplicate` و
+# `connector_repeated_in_paragraph`).
+#
+# **مفاتيحُ الروابط مصدرٌ واحد** يقرؤه الموجّهُ والفحص: قاعدةٌ تحظر رابطاً
+# لا يعدّه فحصٌ أمنيةٌ لا قاعدة.
+REPEATED_CONNECTORS: tuple = (
+    "وهذا يعني", "هذا يعني", "ومعنى ذلك", "ما يعني", "وبالتالي", "بالتالي",
+    "من ناحية", "علاوة على ذلك", "بالإضافة إلى", "من جهة أخرى",
+    "إضافة إلى ذلك", "ومن ثم", "لذلك", "وعليه", "في المقابل", "ومع ذلك",
+    "كما أن", "جدير بالذكر",
+)
+
+REPEATED_CONNECTORS_EN: tuple = (
+    "this means", "which means", "therefore", "as a result",
+    "in addition", "furthermore", "moreover", "on the other hand",
+    "that said", "it is worth noting", "consequently",
+)
+
+SINGLE_EXPLANATION_RULE = (
+    "**شرحٌ واحدٌ لكلّ حقيقة (إلزامي — التكرارُ يُطيل ولا يُقنع):**\n"
+    "- **لكلّ حقيقةٍ قسمٌ واحدٌ يشرحها كاملةً**: القرارُ التنظيميّ في "
+    "قسم التنظيم، والمنافسةُ في قسمها، والسعرُ في قسمه. حين تحتاجها في "
+    "قسمٍ آخر فاذكرها **بجملةٍ واحدة** تُحيل إلى قسمها ولا تُعيد شرحها: "
+    "«يبقى قيدُ الإدراج المذكور في التنظيم حاجزاً أمام أول شحنة» — لا "
+    "إعادةَ سردِ اللائحة ورقمِها وأثرِها من جديد.\n"
+    "- **لا فقرةَ تُختَم بما افتتحته**: إن لم تُضِف الجملةُ الأخيرة معلومةً "
+    "أو نتيجةً لم تُقَل، احذفها.\n"
+    "- **الرابطُ لا يتكرّر في الفقرة الواحدة**: لا «وهذا يعني» مرّتين في "
+    "فقرة، ولا في فقرتين متجاورتين. للمعنى الواحد صيغٌ عدّة (ومن ثمّ، فـ، "
+    "والأثرُ العمليّ، ويترتّب على ذلك) — أو اذكر النتيجة مباشرةً بلا رابط."
+)
+
+SINGLE_EXPLANATION_RULE_EN = (
+    "**One explanation per fact (mandatory — repetition lengthens without "
+    "persuading):**\n"
+    "- **Each fact has exactly one section that explains it in full.** Where "
+    "you need it elsewhere, state it in **one sentence** that points back to "
+    "that section and do not re-explain it.\n"
+    "- **No paragraph may close on what it opened with**: if the last "
+    "sentence adds no information or conclusion not already stated, cut it.\n"
+    "- **Never repeat a connective inside one paragraph**, and not in two "
+    "adjacent paragraphs either — vary it, or state the conclusion with no "
+    "connective at all."
+)
+
+
+def single_explanation_rule(lang: str = "ar") -> str:
+    """قاعدةُ الشرح الواحد بلغة التقرير — مصدرٌ واحد للموجّه والفحص."""
+    return SINGLE_EXPLANATION_RULE_EN if str(lang).lower().startswith("en") \
+        else SINGLE_EXPLANATION_RULE
+
+
+def referential_integrity_rule(lang: str = "ar") -> str:
+    """قاعدةُ سلامة الإحالة بلغة التقرير — مصدرٌ واحد للموجّه والفحص."""
+    return REFERENTIAL_INTEGRITY_RULE_EN if str(lang).lower().startswith("en") \
+        else REFERENTIAL_INTEGRITY_RULE
+
+
+def reader_language_rule(lang: str = "ar") -> str:
+    """القاعدةُ بلغة التقرير — مصدرٌ واحد للموجّه والمراجع والفحص."""
+    return READER_LANGUAGE_RULE_EN if str(lang).lower().startswith("en") \
+        else READER_LANGUAGE_RULE
+
 # WP-1 §4 — سُلَّم معايرة الثقة الواحد: المصدر الوحيد لعتبات نطاقات الثقة
 # المعروضة على وجه التقرير. الثقة المعروضة هي ثقة المحرّك الحتمي المحسوبة،
 # لا التقرير الذاتي غير المعاير من النموذج؛ والتسمية العربية تُشتقّ من
@@ -115,17 +340,31 @@ CONFIDENCE_HIGH_MIN_PCT = 80    # عالية ≥ 80%
 CONFIDENCE_MEDIUM_MIN_PCT = 60  # متوسطة 60–79% / منخفضة < 60%
 
 
-def confidence_band_label(pct: float, lang: str = "ar") -> str:
+# الصنف ٨ (موجة عيوب التقرير): ترتيبُ النطاقات لتطبيق سقفٍ عليها.
+_BAND_ORDER: tuple = ("low", "medium", "high")
+
+
+def confidence_band_label(pct: float, lang: str = "ar",
+                          cap: "str | None" = None) -> str:
     """تسمية نطاق الثقة من النسبة المئوية — المشتقّ الوحيد.
 
     الموجة ٠: **العتبات لا تتغيّر بتغيّر اللغة** (٨٠٪ / ٦٠٪ في اللغتين) —
-    النطاق حكمٌ حسابيّ، والتسمية وحدها معروضة. العربية تبقى حرفياً كما هي."""
+    النطاق حكمٌ حسابيّ، والتسمية وحدها معروضة. العربية تبقى حرفياً كما هي.
+
+    الصنف ٨: `cap` سقفٌ اختياريّ (`"medium"`) يمنع تسميةَ «عالية» حين يكون
+    عمودٌ أساسيٌّ مجهولاً أو الشروطُ المفتوحة اثنتين — **الرقمُ لا يُمَسّ،
+    التسميةُ وحدها تُسقَّف**، فلا قيمةَ مخزَّنة تتغيّر. القاعدةُ تُقال
+    للقارئ: «لا نقول ثقةً عالية ونحن لا نعرف الربحية».
+    """
     if pct >= CONFIDENCE_HIGH_MIN_PCT:
         band = "high"
     elif pct >= CONFIDENCE_MEDIUM_MIN_PCT:
         band = "medium"
     else:
         band = "low"
+    if cap in _BAND_ORDER and \
+            _BAND_ORDER.index(band) > _BAND_ORDER.index(cap):
+        band = cap
     if str(lang or "ar").lower() != "en":
         return {"high": "عالية", "medium": "متوسطة", "low": "منخفضة"}[band]
     import silk_i18n
@@ -135,6 +374,146 @@ def confidence_band_label(pct: float, lang: str = "ar") -> str:
 # ترتيب الفحص: الأطول أولاً كي لا يبتلع اختصارٌ جزءاً من آخر عند البحث.
 GLOSSARY_ORDER: list[tuple[str, str]] = sorted(
     GLOSSARY.items(), key=lambda kv: -len(kv[0]))
+
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٤ (موجة عيوب التقرير) — انزياحُ التسمية والمصطلح
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك ثلاثةُ عيوبٍ في عائلةٍ واحدة: (أ) «الحكومة الحوثية» و«السلطات
+# الحوثية» و«الحكومة» لنفس الجهة في تقريرٍ واحد، (ب) تسمياتُ نشاطٍ إنجليزية
+# («Import export company»، «Food broker») في جدولٍ عربيّ، (ج) مصطلحاتٌ
+# تُستعمَل بلا تعريف (المرآة، عتباتُ التركّز، سعرُ الحدود، نسبةُ التحقّق).
+#
+# **(ب) مغطّاةٌ أصلاً بحاجز**: `_check_language_consistency` يُفشِل على مقطعٍ
+# إنجليزيٍّ في مستندٍ عربيّ — مقيسٌ على «| Import export company |». الناقصُ
+# كان **الفكس**: الجدولُ يُبنى من `category` الخام
+# (`silk_gmaps.py`) بلا ترجمة، فكان الحاجزُ يحجب تقريراً صحيحاً بدل أن
+# تُترجَم الخليّة. الترجمةُ أدناه، والحاجزُ يبقى حارسَه.
+
+# (أ) تسمياتُ النشاط من مصادرَ خارجية (تصنيف خرائط قوقل وأمثالها) → عربيّ.
+# جدولُ **ترجمةٍ** لا تفسير: المفتاحُ مُطبَّعٌ صغيراً بلا فواصل.
+ACTIVITY_LABEL_AR: dict[str, str] = {
+    "import export company": "شركة استيراد وتصدير",
+    "importer": "مستورد",
+    "exporter": "مصدّر",
+    "food broker": "وسيط أغذية",
+    "food products supplier": "مورّد منتجات غذائية",
+    "wholesaler": "تاجر جملة",
+    "wholesale grocer": "تاجر جملة بقالة",
+    "distributor": "موزّع",
+    "food manufacturer": "مصنع أغذية",
+    "grocery store": "بقالة",
+    "supermarket": "سوق مركزي",
+    "hypermarket": "هايبرماركت",
+    "convenience store": "متجر ملائم",
+    "trading company": "شركة تجارية",
+    "general store": "متجر عام",
+    "warehouse": "مستودع",
+    "logistics service": "خدمة لوجستية",
+    "freight forwarding service": "وكالة شحن",
+    "customs broker": "مخلّص جمركي",
+    "confectionery": "حلويات",
+    "candy store": "متجر حلويات",
+    "dairy store": "متجر ألبان",
+    "dairy farm": "مزرعة ألبان",
+    "auto parts store": "متجر قطع غيار",
+}
+
+
+# ── الصنف ١٠: قائمةُ سماحِ النشاط · lead activity allow-list ───────────────
+# **العيبُ المرصود:** قائمةُ الروابط حملت «متجر قطع غيار» بينما غاب عنها
+# الموزّعون الذين يوصي بهم التقريرُ نفسُه. و`_clean_leads` يُنقّي بالاسم
+# والجغرافيا والحشو **لا بالنشاط** — فلا مِصفاةَ تمنع نشاطاً لا صلةَ له.
+#
+# القائمةُ **بياناتٌ لا تفريعُ سوق**: نشاطٌ يُشترى منه أو يُوزَّع عبره أو
+# يُخلّص به. والنشاطُ **غيرُ المُدرَج في الجدول يمرّ** (سياسةُ
+# `activity_label_ar` نفسُها): الجهلُ بالتسمية ليس دليلَ عدمِ الصلة، والمنعُ
+# يكون بنشاطٍ مُدرَجٍ **ومستبعَدٍ صريحاً** لا بنشاطٍ مجهول.
+LEAD_ACTIVITY_ALLOWED: frozenset = frozenset({
+    "import export company", "importer", "exporter", "food broker",
+    "food products supplier", "wholesaler", "wholesale grocer",
+    "distributor", "food manufacturer", "grocery store", "supermarket",
+    "hypermarket", "convenience store", "trading company", "general store",
+    "warehouse", "logistics service", "freight forwarding service",
+    "customs broker", "confectionery", "candy store", "dairy store",
+    "dairy farm",
+})
+
+
+def _activity_key(raw: object) -> str:
+    """مفتاحُ النشاط المطبَّع — المصدرُ الواحد للمِصفاة وللعرض معاً."""
+    return " ".join(str(raw or "").strip().lower().replace("_", " ").split())
+
+
+def lead_activity_allowed(raw: object) -> bool:
+    """هل نشاطُ الرابط ضمن السماح؟ — والمجهولُ يمرّ (انظر أعلاه).
+
+    المطابقةُ على التسميةِ الخام **وعلى ترجمتها** كلتيهما، فرابطٌ خُزِّن
+    مترجَماً (المسارُ يترجم عند `_clean_leads`) لا يصير مجهولاً بالترجمة.
+    """
+    given = str(raw or "").strip()
+    if not given:
+        return True
+    # مأخذُ المراجعة الذاتية: التطبيعُ هنا كان `lower()` وحدَه بينما
+    # `activity_label_ar` يطوي الشرطةَ السفلى والفراغَ — فـ«Auto_parts_store»
+    # تمرّ المِصفاةَ ثمّ تُعرَض «متجر قطع غيار» المستبعَدة. مُطبِّعٌ **واحد**
+    # للطرفين كي لا يفترقا مرّةً أخرى.
+    key = _activity_key(given)
+    # تُحلّ التسميةُ العربية إلى مفتاحها الخام أوّلاً — وإلّا مرّ «متجر قطع
+    # غيار» المترجَمُ بينما يُمنَع أصلُه الإنجليزيّ (قِياسٌ على هذه الدالّة
+    # نفسِها كشف العيبَ قبل الشحن).
+    if key not in ACTIVITY_LABEL_AR:
+        for k, v in ACTIVITY_LABEL_AR.items():
+            if v == given:
+                key = k
+                break
+    if key in LEAD_ACTIVITY_ALLOWED:
+        return True
+    return key not in ACTIVITY_LABEL_AR
+
+
+def activity_label_ar(raw: object) -> str:
+    """تسميةُ نشاطٍ خارجية بالعربية — غيرُ المعروفة **تُعاد كما هي**.
+
+    لا تخمينَ ترجمة: تسميةٌ غيرُ مُدرَجة تمرّ بحالها فيلتقطها حاجزُ اتساق
+    اللغة (`_check_language_consistency`) ويُعلَن النقصُ بدل أن يُستَر
+    بترجمةٍ مختلَقة — نفسُ منطقِ العملة في الصنف ٣.
+    """
+    return ACTIVITY_LABEL_AR.get(_activity_key(raw), str(raw or "").strip())
+
+
+# (ب) تعريفاتُ المنهجية — سطرٌ واحدٌ ثابتٌ لكلّ مصطلحٍ **يُعرَض حين يَرِد**.
+# مصطلحاتٌ عربية لا اختصاراتٌ لاتينية، فلا يبلغها `GLOSSARY_ORDER`؛ ويستهلكها
+# بانيُ المسرد الواحد (`silk_render._apply_merchant_language`) نفسُه، فلا
+# مسارَ عرضٍ ثانٍ. الأطولُ أوّلاً كي لا يبتلعَ مصطلحٌ جزءاً من آخر.
+METHODOLOGY_DEFINITIONS: dict[str, str] = {
+    "بيانات المرآة": "أرقامُ الشريك المصدّر بدل تصريح المستورد — تُستعمَل حين "
+                     "لا يُبلِّغ المستورد، وقد تختلف عن أرقامه",
+    "المرآة": "أرقامُ الشريك المصدّر بدل تصريح المستورد — تُستعمَل حين لا "
+              "يُبلِّغ المستورد، وقد تختلف عن أرقامه",
+    "البيانات المباشرة": "أرقامٌ صرّح بها المستورد نفسُه لجهته الجمركية",
+    "مؤشر تركّز السوق": "مقياسٌ من 0 إلى 10000؛ فوق 2500 يعني سوقاً بيد قلّة، "
+                        "وأقلّ يعني موزّعاً على كثيرين",
+    "سعر الحدود": "قيمةُ الشحنة عند نقطة الدخول قبل الرسوم وهوامش التوزيع — "
+                  "ليست سعرَ الرفّ",
+    "نسبة التحقّق": "حصّةُ أرقام هذا التقرير التي فُتِح مصدرُها وتأكّدت قيمتُه "
+                    "منه — وهي غيرُ ثقةِ التوصية",
+    "نسبة التحقق": "حصّةُ أرقام هذا التقرير التي فُتِح مصدرُها وتأكّدت قيمتُه "
+                   "منه — وهي غيرُ ثقةِ التوصية",
+}
+
+METHODOLOGY_DEFINITIONS_ORDER: list = sorted(
+    METHODOLOGY_DEFINITIONS.items(), key=lambda kv: -len(kv[0]))
+
+# (ج) رؤوسُ أسماءِ الجهات الرسمية — تُستعمَل لكشف انزياح التسمية حتمياً.
+# «الحكومة» و«السلطات» بلا نسبةٍ إحالةٌ مبهمة حين يذكر التقريرُ جهتين.
+AUTHORITY_HEADS: tuple = ("الحكومة", "حكومة", "السلطات", "السلطة", "سلطات",
+                          "الإدارة", "إدارة", "الهيئة", "هيئة")
+
+# تسمياتُ السلطة المحيَّدة لكلّ سوق تُهيَّأ في
+# `data/market_profiles.json` تحت `authorities` (قائمةٌ موثَّقة) مع
+# `multi_authority` — **تهيئةٌ لا تفريعٌ في الشيفرة** (`silk_profiles`). حين
+# تُهيَّأ، تصير التسميةُ المفضَّلة؛ وحين لا تُهيَّأ، يعمل كشفُ الانزياح على
+# نصّ التقرير وحده فلا يكون الحارسُ نائماً بانتظار بيانات.
 
 GLOSSARY_HEADING = "مسرد المصطلحات"
 
@@ -386,6 +765,12 @@ ACADEMIC_WRITER_CONTRACT = (
     + "\n\n" + WRITING_STANDARD_RULE
     + "\n\n" + EPISTEMIC_VERB_RULE
     + "\n\n" + PLAIN_LANGUAGE_RULE
+    # الصنف ١ (موجة عيوب التقرير): بُعدُ «من يقرأ» — إلحاقٌ لا استبدال.
+    + "\n\n" + READER_LANGUAGE_RULE
+    # الصنف ٢: لا إحالةَ إلى ما لم يُعرَض، ولا عددٌ يخالف معدودَه.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE
+    # الصنف ٥: قسمٌ واحدٌ يشرح كلَّ حقيقة، ورابطٌ لا يتكرّر في الفقرة.
+    + "\n\n" + SINGLE_EXPLANATION_RULE
 )
 
 
@@ -422,6 +807,12 @@ WRITER_STYLE_CONTRACT = (
     + "\n\n" + WRITING_STANDARD_RULE
     + "\n\n" + EPISTEMIC_VERB_RULE
     + "\n\n" + PLAIN_LANGUAGE_RULE
+    # الصنف ١ (موجة عيوب التقرير): بُعدُ «من يقرأ» — إلحاقٌ لا استبدال.
+    + "\n\n" + READER_LANGUAGE_RULE
+    # الصنف ٢: لا إحالةَ إلى ما لم يُعرَض، ولا عددٌ يخالف معدودَه.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE
+    # الصنف ٥: قسمٌ واحدٌ يشرح كلَّ حقيقة، ورابطٌ لا يتكرّر في الفقرة.
+    + "\n\n" + SINGLE_EXPLANATION_RULE
 )
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -511,6 +902,12 @@ WRITER_STYLE_CONTRACT_EN = (
     + "\n\n" + WRITING_STANDARD_RULE_EN
     + "\n\n" + EPISTEMIC_VERB_RULE_EN
     + "\n\n" + PLAIN_LANGUAGE_RULE_EN
+    # الصنف ١ (موجة عيوب التقرير) — المرآةُ الإنجليزية، إلحاقٌ لا استبدال.
+    + "\n\n" + READER_LANGUAGE_RULE_EN
+    # الصنف ٢ — المرآةُ الإنجليزية.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE_EN
+    # الصنف ٥ — المرآةُ الإنجليزية.
+    + "\n\n" + SINGLE_EXPLANATION_RULE_EN
 )
 
 ACADEMIC_WRITER_CONTRACT_EN = (
@@ -538,6 +935,12 @@ ACADEMIC_WRITER_CONTRACT_EN = (
     + "\n\n" + WRITING_STANDARD_RULE_EN
     + "\n\n" + EPISTEMIC_VERB_RULE_EN
     + "\n\n" + PLAIN_LANGUAGE_RULE_EN
+    # الصنف ١ (موجة عيوب التقرير) — المرآةُ الإنجليزية، إلحاقٌ لا استبدال.
+    + "\n\n" + READER_LANGUAGE_RULE_EN
+    # الصنف ٢ — المرآةُ الإنجليزية.
+    + "\n\n" + REFERENTIAL_INTEGRITY_RULE_EN
+    # الصنف ٥ — المرآةُ الإنجليزية.
+    + "\n\n" + SINGLE_EXPLANATION_RULE_EN
 )
 
 

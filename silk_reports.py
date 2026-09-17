@@ -122,11 +122,18 @@ def _stamp_degraded_banner(doc, view: dict, lang: str = "ar") -> None:
 
 
 def _fmt(v: object) -> str:
-    """تنسيق قيمة للعرض — display formatting (None = فجوة معلنة)."""
+    """تنسيق قيمة للعرض — display formatting (None = فجوة معلنة).
+
+    الصنف ٣ (موجة عيوب التقرير): كان `{:,.0f}` يبتر المنازل العشرية للمقادير
+    الكبيرة ويترك الصغيرة بلا فاصلِ آلاف — فظهر «36,234,200» بجوار «26730».
+    المنطقُ الآن من المُنسِّق الواحد `silk_narrative.fmt_number`، والاسمُ
+    والسلوكُ للأنواع غير الرقمية كما هما حرفياً.
+    """
     if v is None:
         return "—"
-    if isinstance(v, (int, float)) and not isinstance(v, bool) and abs(v) >= 1000:
-        return f"{v:,.0f}"
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        from silk_narrative import fmt_number
+        return fmt_number(v) if abs(v) >= 1000 else str(v)
     return str(v)
 
 
@@ -1759,8 +1766,12 @@ def _docx_entry_decision(doc, m: dict) -> None:
             _pillar_ar(k) for k in ed["missing_pillars"]))
     if ed.get("critical_risk"):
         doc.add_paragraph("تحذير: خطر حرج مرصود — راجع سجل المخاطر أدناه.")
-    doc.add_paragraph("الشروط:")
-    for c in ed.get("conditions") or ["لا شروط مفتوحة"]:
+    # الصنف ٧: المصدرُ الواحد — كاملةٌ بلا قصٍّ كما كانت، والعددُ مُعلَن.
+    from silk_render import open_conditions
+    _oc = open_conditions(ed)
+    doc.add_paragraph(f"الشروط ({_oc['count']}):" if _oc["count"]
+                      else "الشروط:")
+    for c in _oc["shown"] or ["لا شروط مفتوحة"]:
         doc.add_paragraph(str(c), style="List Bullet")
     doc.add_paragraph("سجل المخاطر:")
     for r in ed.get("risks") or []:
@@ -2293,14 +2304,21 @@ def _economics_md_lines(dr: dict) -> list[str]:
                 if e.get("too_wide"):
                     val = e.get("note")
                 else:
-                    r = e["range"]
-                    val = (f"{e['value']} {e.get('unit', '')} "
-                           f"(المدى {r['low']}–{r['high']}، "
-                           f"±{e['width_pct']}%)")
+                    # الصنف ١٣: خانةُ القيمة من المنسِّق الواحد — بلا الراية
+                    # تُعاد الصيغةُ القائمة حرفاً بحرف.
+                    from silk_narrative import fmt_decision_value
+                    val = fmt_decision_value(e)
                 # سطح مشغّل/أكاديمي: الاستشهاد الخام يُلحق هنا (سطح العميل
                 # يعرض الطريقة بلغة الزائر فقط — سياسة موجة ٣).
-                _mth = e["method"] + (f" — المصدر: {e['source']}"
-                                      if e.get("source") else "")
+                # الصنف ٩: المعادلةُ ومدخلاتُها ومصادرُها والناقصُ من
+                # مُنسِّقٍ واحد (`silk_narrative.fmt_derived`) — بلا الراية
+                # يعيد `method` حرفياً فلا يتغيّر حرفٌ في هذا السطر.
+                from silk_narrative import fmt_derived as _fmt_derived
+                _mth = _fmt_derived(e)
+                # الاستشهادُ الخام لا يُكرَّر: حين يكون مصدرَ أحدِ المدخلات
+                # المعروضة فقد ذُكِر (الصنف ٥ — شرحٌ واحدٌ لكلّ حقيقة).
+                if e.get("source") and str(e["source"]) not in _mth:
+                    _mth += f" — المصدر: {e['source']}"
                 dn_lines.append(f"| {e['name']} | {val} | {_mth} | "
                                 f"{e['confirm']} — {e['confirm_time']} |")
             else:
@@ -3577,11 +3595,12 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
             if e.get("too_wide"):
                 val = str(e.get("note"))
             else:
-                r = e["range"]
-                val = (f"{e['value']} {e.get('unit', '')} "
-                       f"(المدى {r['low']}–{r['high']}، "
-                       f"±{e['width_pct']}%)")
-            rows.append([e["name"], val, e["method"],
+                from silk_narrative import fmt_decision_value
+                val = fmt_decision_value(e)
+            # الصنف ٩: نفسُ المُنسِّق على سطح العميل — سقفُ المخاطرة
+            # يصل القارئَ بناقصه مسمّىً لا شاملاً في الظاهر.
+            from silk_narrative import fmt_derived as _fmt_derived
+            rows.append([e["name"], val, _fmt_derived(e, client=True),
                          f"{e['confirm']} — {e['confirm_time']}"])
         else:
             rows.append([e["name"],
@@ -3775,14 +3794,15 @@ def _readable_number(v: object) -> str:
         n = float(v)
     except (TypeError, ValueError):
         return str(v)
+    # الصنف ٣: المنطقُ من المُنسِّق الواحد بلا عملة (الوحدةُ تأتي من
+    # الملاحظة كما يقول العقدُ أعلاه) — «38 مليون»، «1,234»، «0.67».
+    from silk_narrative import fmt_amount, fmt_number
     a = abs(n)
-    if a >= 1e9:
-        return f"{n / 1e9:.1f} مليار".replace(".0 ", " ")
     if a >= 1e6:
-        return f"{n / 1e6:.1f} مليون".replace(".0 ", " ")
+        return fmt_amount(n)
     if a >= 1e3:
-        return f"{n:,.0f}"
-    return f"{n:g}"
+        return fmt_number(n, 0)
+    return fmt_number(n)
 
 
 def _client_readable_fact(value: object, note: object) -> "str | None":
@@ -5212,8 +5232,8 @@ def render_docx(view: dict, path: str) -> str:
         for f in cp.get("feasibility_threads") or []:
             p = doc.add_paragraph()
             p.add_run(f"ضد {f['competitor']}: ").bold = True
-            p.add_run(f"سعر مرصود {_fmt(f['observed_price'])} — هامشك عند "
-                      f"المضاهاة {f['margin_at_match_pct']}% وعند البيع "
+            p.add_run(f"سعر مرصود {_fmt(f['observed_price'])} — هامشك إن "
+                      f"سعّرت مثله {f['margin_at_match_pct']}% وعند البيع "
                       f"أقل 10% {f['margin_at_10pct_below']}%")
             for gap in f.get("assumptions_and_gaps") or []:
                 doc.add_paragraph(gap, style="List Bullet")
@@ -5411,13 +5431,29 @@ _LEADS_TITLE = "قائمة مستوردين وموزعين قابلين للتو
 _LEADS_HEADER = ["الاسم", "العنوان", "الهاتف", "الإيميل", "الموقع", "التقييم"]
 _LEADS_COL_KEYS = ("col_name", "col_address", "col_phone", "col_email",
                    "col_website", "col_rating")
+# الصنف ١٠: عمودُ «سبب الإدراج» — العيبُ المرصود أنّ القائمة حملت نشاطاً لا
+# صلةَ له وغاب عنها موزّعٌ يوصي به المتن، ولا عمودَ يقول للقارئ **لماذا**
+# دخلت هذه الجهةُ القائمة. خلف رايةِ الصنف ١٠: بلا الراية الرأسُ حرفياً كما هو.
+_LEADS_REASON_KEY = "col_include_reason"
+
+
+def _leads_reason_on() -> bool:
+    try:
+        import silk_market_structure
+        return silk_market_structure.enabled()
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _leads_header(lang: str = "ar") -> list:
     """رؤوس أعمدة جدول الروابط بلغة التقرير — العربية تبقى حرفياً كما هي."""
     if silk_i18n.normalize(lang) == "ar":
-        return list(_LEADS_HEADER)
-    return [_T(k, "en") for k in _LEADS_COL_KEYS]
+        head = list(_LEADS_HEADER)
+    else:
+        head = [_T(k, "en") for k in _LEADS_COL_KEYS]
+    if _leads_reason_on():
+        head.append(_T(_LEADS_REASON_KEY, lang))
+    return head
 
 
 import functools as _functools
@@ -5479,18 +5515,50 @@ def _clean_leads(leads: list, dr: dict) -> list:
     iso3 = (market.get("iso3") or "").upper()
     tnames = {(market.get("name_en") or "").strip().lower(),
               (market.get("name_ar") or "").strip().lower()}
+    # الصنف ٤ (موجة عيوب التقرير): تسميةُ النشاط تأتي من تصنيفِ المصدر
+    # الخارجي بالإنجليزية («Import export company») فتصل جدولاً عربياً.
+    # الترجمةُ عند حدِّ العرض — لا في طبقة الجلب (البيانات الخام كما هي)،
+    # ومن جدولٍ واحد يقرؤه الفحصُ أيضاً. غيرُ المُدرَجة تمرّ بحالها فيلتقطها
+    # حاجزُ اتساق اللغة القائم بدل أن تُستَر بترجمةٍ مختلَقة.
+    from silk_style_contract import activity_label_ar
+    # الصنف ١٠ (خلف رايته): مِصفاةُ النشاط، وحصانةُ الجهةِ التي يسمّيها المتن.
+    # العيبُ المرصود وجهان: نشاطٌ لا صلةَ له **دخل** القائمة، وموزّعٌ يوصي به
+    # التقريرُ **غاب** عنها. فالنشاطُ صار مِصفاةً (والمجهولُ يمرّ)، والجهةُ
+    # المسمّاةُ في المتن لا تُسقِطها مِصفاةٌ أبداً — لا تُختلَق جهةٌ ولا
+    # يُختلَق اتصال، إنما تُمنَع مِصفاةٌ من إخفاء ما يوصي به التقريرُ نفسُه.
+    _scoped = _leads_reason_on()
+    _body = ""
+    if _scoped:
+        from silk_style_contract import lead_activity_allowed
+        _body = (((dr.get("report") or {}).get("text") or "")
+                 if isinstance(dr.get("report"), dict) else "")
     out = []
     for lead in leads or []:
         lead = clean_contact(lead, iso3)
         if lead is None:
             continue
         nm = (lead.get("name") or "").strip()
+        named = bool(_scoped and nm and len(nm) >= 4 and nm in _body)
+        if named:
+            lead = dict(lead)
+            lead["named_in_report"] = True
+        # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الحصانةُ كانت تتجاوز
+        # **كلَّ** المصافي لا مِصفاةَ النشاط وحدَها — فجهةٌ يسمّيها المتنُ
+        # بعنوانٍ في دولةٍ أخرى أو بلا أيّ اتصالٍ كانت تُعرَض. الحصانةُ
+        # مقصورةٌ على النشاط: التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ
+        # صحّةِ عنوانٍ ولا وجودِ اتصال.
+        if _scoped and not named and not lead_activity_allowed(
+                lead.get("category")):
+            continue
         if not nm or not looks_like_name(nm):          # البند ٥: نثر/بلا اسم
             continue
         if _is_filler_lead(lead):                        # البند ٦: حشو
             continue
         if _address_wrong_geo(lead.get("address"), iso3, tnames):  # البند ٤
             continue
+        if lead.get("category"):
+            lead = dict(lead)
+            lead["category"] = activity_label_ar(lead["category"])
         out.append(lead)
     return out
 
@@ -5501,7 +5569,7 @@ def _leads_data(dr: dict):
     return leads, (il.get("note") or "")
 
 
-def _lead_cells(lead: dict) -> list:
+def _lead_cells(lead: dict, lang: str = "ar") -> list:
     """C5: خلايا صفّ رائد — الحقل الغائب «—» (لا اختلاق). التقييم مع عدد
     المراجعات إن توفّرا."""
     def g(k):
@@ -5512,8 +5580,22 @@ def _lead_cells(lead: dict) -> list:
                 else str(rating) if rating else "—")
     site = lead.get("website") or lead.get("maps_link") or ""
     # WS10: خلية «مستوى التوثيق» (doc_level) أُسقِطت — لا عمود إسناد في المتن.
-    return [g("name"), g("address"), g("phone"), g("email"),
-            site.strip() or "—", rating_s]
+    cells = [g("name"), g("address"), g("phone"), g("email"),
+             site.strip() or "—", rating_s]
+    if _leads_reason_on():
+        cells.append(_lead_reason(lead, lang))
+    return cells
+
+
+def _lead_reason(lead: dict, lang: str = "ar") -> str:
+    """سببُ إدراج الجهة بلغة الزائر — نشاطٌ ذو صلة، أو تسميةُ المتن لها،
+    أو إفصاحٌ بأنّ نشاطها غير مُصرَّح. لا خانةَ صامتة."""
+    if lead.get("named_in_report"):
+        return _T("lead_reason_named", lang)
+    cat = str(lead.get("category") or "").strip()
+    if cat:
+        return _T("lead_reason_activity", lang, activity=cat)
+    return _T("lead_reason_unknown", lang)
 
 
 def _md_leads(dr: dict, L: list) -> None:
@@ -5526,11 +5608,12 @@ def _md_leads(dr: dict, L: list) -> None:
         L += ["لا جهات اتصال قابلة للتواصل في هذا التشغيل — القائمة غير متاحة"
               + (f" ({note})" if note else "") + ".", ""]
         return
-    L += ["| " + " | ".join(_LEADS_HEADER) + " |",
-          "|" + "|".join(["---"] * len(_LEADS_HEADER)) + "|"]
+    head = _leads_header("ar")
+    L += ["| " + " | ".join(head) + " |",
+          "|" + "|".join(["---"] * len(head)) + "|"]
     for lead in leads:
         L.append("| " + " | ".join(c.replace("|", "／")
-                                   for c in _lead_cells(lead)) + " |")
+                                   for c in _lead_cells(lead, "ar")) + " |")
     L += ["", MAPS_DISCLAIMER, ""]
 
 
@@ -5549,7 +5632,7 @@ def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar") -> None:
             f" ({note})" if (note and silk_i18n.normalize(lang) == "ar") else "")
         doc.add_paragraph(sanitize(msg) if sanitize else msg)
         return
-    rows = [[(sanitize(c) if sanitize else c) for c in _lead_cells(lead)]
+    rows = [[(sanitize(c) if sanitize else c) for c in _lead_cells(lead, lang)]
             for lead in leads]
     _add_table(doc, _leads_header(lang), rows)
     line = MAPS_DISCLAIMER
@@ -5812,9 +5895,14 @@ def render_markdown(view: dict) -> str:
                 _pillar_ar(k) for k in ed["missing_pillars"]))
         if ed.get("critical_risk"):
             L.append("- **خطر حرج مرصود** — راجع سجل المخاطر أدناه.")
-        if ed.get("conditions"):
-            L += ["", "**الشروط:**",
-                  *[f"- {c}" for c in ed["conditions"]]]
+        # الصنف ٧: المصدرُ الواحد — والعددُ الكامل في العنوان.
+        from silk_render import open_conditions
+        _oc = open_conditions(ed)
+        if _oc["count"]:
+            L += ["", f"**الشروط ({_oc['count']}):**",
+                  *[f"- {c}" for c in _oc["shown"]]]
+            if _oc["more_note"]:
+                L.append(f"- {_oc['more_note']}")
         if ed.get("first_steps"):
             L += ["", "**الخطوات الأولى:**",
                   *[f"{i}. {s}" for i, s in enumerate(ed["first_steps"], 1)]]
@@ -5836,7 +5924,7 @@ def render_markdown(view: dict) -> str:
         L.append(f"- التغطية: {cp.get('coverage')}")
         for f in cp.get("feasibility_threads") or []:
             L.append(f"- ضد {f['competitor']}: سعر مرصود "
-                     f"{_fmt(f['observed_price'])} — هامشك عند المضاهاة "
+                     f"{_fmt(f['observed_price'])} — هامشك إن سعّرت مثله "
                      f"{f['margin_at_match_pct']}% وعند البيع أقل 10% "
                      f"{f['margin_at_10pct_below']}%")
             for gap in f.get("assumptions_and_gaps") or []:

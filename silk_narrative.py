@@ -514,32 +514,463 @@ def internal_ar(token: object) -> str:
             or _AGENT_KEY_AR.get(s) or s)
 
 
-def fmt_money(v: object) -> str:
-    """مبلغ بالدولار مقروء — 48.5 مليون دولار / 789 ألف دولار؛ الغائب «—»."""
-    if v is None:
-        return GAP
-    try:
-        n = float(v)
-    except (TypeError, ValueError):
-        return str(v)
-    if abs(n) >= 1e9:
-        return f"{n / 1e9:.1f} مليار دولار"
-    if abs(n) >= 1e6:
-        return f"{n / 1e6:.1f} مليون دولار"
-    if abs(n) >= 1e3:
-        return f"{n / 1e3:.0f} ألف دولار"
-    return f"{n:,.0f} دولار"
+# ════════════════════════════════════════════════════════════════════════════
+# الصنف ٣ (موجة عيوب التقرير) — مُنسِّقُ العرض الواحد · the one display formatter
+# ════════════════════════════════════════════════════════════════════════════
+# بلاغُ المالك: «36,234,200.146 مقابل 26730»، والدرجةُ تظهر 65 و0.65 و65%،
+# وأرقامٌ بلا وحدةٍ ولا سنة، وبياناتُ 2018 بلا سنةٍ مطبوعة، وتوقّعُ 2024
+# بصيغةِ المستقبل في 2026، وتاريخُ التشغيل مطبوعاً مكانَ تاريخ الرصد.
+#
+# الجذرُ المُقاس: **لا مُنسِّقَ واحد**. خمسُ عائلاتٍ متوازية تُنسِّق الأرقام —
+# `silk_narrative.fmt_money`/`fmt_pct` هنا، و`silk_reports._fmt`
+# (`{:,.0f}`) و`_readable_number` (منزلةٌ واحدة)، و`silk_decision._pct`،
+# وعشرُ صيغِ `{:,.0f}` مضمَّنةٍ داخل بوابة الجودة نفسها. عائلةٌ لكلّ مُصدِّر
+# ⇒ رقمٌ واحد بأشكالٍ عدّة في مستندٍ واحد.
+#
+# القاعدةُ هنا **مصدرٌ واحد**، وكلُّ مُستهلِكٍ يشير إليها بأسمائه القائمة
+# كما هي (صفرُ تغييرٍ في أيّ سطح API).
+
+SCORE_MAX = 100          # صيغةُ الدرجة الوحيدة: «N من SCORE_MAX»
+PCT_MAX_DP = 2           # النسبةُ بمنزلتين عشريتين كحدٍّ أقصى
+AMOUNT_MAX_DP = 2        # المقاديرُ الكبيرة بمنزلتين
+OBSERVED_UNKNOWN_AR = "تاريخ الرصد غير معروف"
+OBSERVED_UNKNOWN_EN = "observation date unknown"
 
 
-def fmt_pct(v: object, signed: bool = False) -> str:
-    if v is None:
-        return GAP
+def _as_float(v: object) -> "float | None":
+    """رقمٌ أو `None` — لا استثناءَ يُسقِط عرضاً."""
+    if v is None or isinstance(v, bool):
+        return None
     try:
-        n = float(v)
+        return float(v)
     except (TypeError, ValueError):
-        return str(v)
+        return None
+
+
+def _trim_zeros(s: str) -> str:
+    """أزِل الأصفارَ الزائدة بعد الفاصلة: «4.40» → «4.4»، «4.00» → «4»."""
+    return s.rstrip("0").rstrip(".") if "." in s else s
+
+
+# **المراجعةُ الذاتية للفرق (البند ٥٨)**: سقفُ المنزلتين كان يطبع حصةً
+# مرصودةً 0.004% صفراً — **صفرٌ مختلَق** يصل سطحَ العميل، وهو خرقٌ للمبدأ
+# المؤسِّس لا عيبُ تنسيق (والصفرُ المُستنتَج مسقوفٌ بثقةٍ 0.6 في طبقة
+# البيانات لهذا السبب نفسِه). القاعدة: **قيمةٌ غيرُ صفريةٍ لا تُعرَض صفراً
+# أبداً** — تُزاد المنازلُ حتى يظهر أوّلُ رقمٍ دالّ، بسقفٍ مُعلَن.
+_SIGNIFICANT_DP_CAP = 6
+
+
+def _dp_keeping_value(n: float, dp: int) -> int:
+    """المنازلُ اللازمة كي لا تُعرَض قيمةٌ غيرُ صفريةٍ صفراً — بسقفٍ مُعلَن."""
+    dp = max(0, int(dp))
+    if not n:
+        return dp
+    while dp < _SIGNIFICANT_DP_CAP and round(abs(n), dp) == 0:
+        dp += 1
+    return dp
+
+
+def fmt_number(v: object, dp: int = AMOUNT_MAX_DP) -> str:
+    """رقمٌ للعرض: فاصلُ آلافٍ دائماً، وحدٌّ أقصى للمنازل العشرية.
+
+    «36234200.146» → «36,234,200.15»، و«26730» → «26,730». فاصلُ الآلاف ليس
+    تجميلاً: بلاغُ المالك قارَن الرقمين فعلاً، وأحدُهما بلا فاصلٍ يُقرأ خطأً.
+    وقيمةٌ أصغرُ من سقف المنازل **لا تُطوى إلى صفر** (انظر أعلاه).
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    return _trim_zeros(f"{n:,.{_dp_keeping_value(n, dp)}f}")
+
+
+def fmt_pct(v: object, signed: bool = False, dp: int = PCT_MAX_DP) -> str:
+    """نسبةٌ مئوية بمنزلتين كحدٍّ أقصى — «84.05%» تصير «84.05%» و«84.0%» «84%».
+
+    كانت `{n:g}` فتُخرِج «12.416666666666666%» من قسمةٍ غير منتهية.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
     sign = "+" if (signed and n > 0) else ""
-    return f"{sign}{n:g}%"
+    return f"{sign}{_trim_zeros(f'{n:,.{_dp_keeping_value(n, dp)}f}')}%"
+
+
+def fmt_score(v: object) -> str:
+    """**الصيغةُ الوحيدة** للدرجة: «65 من 100».
+
+    يقبل الكسرَ 0–1 والعددَ 0–100 معاً ويوحّدهما — العلّةُ المرصودة أنّ نفسَ
+    الدرجة ظهرت «65» و«0.65» و«65%» في تقريرٍ واحد. الكسرُ ≤1 يُضرَب في 100؛
+    وهو تمييزٌ آمنٌ لأنّ درجةً معروضةً بـ«1 من 100» لا معنى لها عملياً،
+    والحدُّ موثَّقٌ هنا لا مخفيّ.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    if 0.0 <= n <= 1.0:
+        n *= SCORE_MAX
+    return f"{round(n)} من {SCORE_MAX}"
+
+
+def fmt_amount(v: object, currency: object = None,
+               dp: int = AMOUNT_MAX_DP) -> str:
+    """مبلغٌ **بعملته** — «48.53 مليون دولار»، و«789 ألف يورو»، و«1,234 SAR».
+
+    العملةُ وسيطٌ صريح: مبلغٌ بلا عملةٍ عيبٌ في ذاته (الصنف ٩)، فلا تُخمَّن
+    هنا ولا تُفترَض بالدولار. غيابُها يُخرِج الرقمَ وحده كي **تُلتقَطه**
+    قاعدةُ البوابة بدل أن يُستَر بعملةٍ مختلَقة.
+    """
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    cur = str(currency or "").strip()
+    label = CURRENCY_AR.get(cur.upper(), cur)
+    a = abs(n)
+    if a >= 1e9:
+        body = f"{_trim_zeros(f'{n / 1e9:,.{dp}f}')} مليار"
+    elif a >= 1e6:
+        body = f"{_trim_zeros(f'{n / 1e6:,.{dp}f}')} مليون"
+    else:
+        # لا فرعَ «ألف»: «1,234 ريال» أصدقُ من «1 ألف ريال» — فاصلُ الآلاف
+        # يحفظ الرقم كما هو، والاختزالُ يفقد دقّةً بلا مكسبِ قراءة.
+        body = fmt_number(n, dp)
+    return f"{body} {label}".strip() if label else body
+
+
+# العملاتُ التي يَرِد نصُّها عربياً — ما ليس هنا يُطبَع برمزه ISO كما هو
+# (لا تخمينَ اسمٍ عربيٍّ لعملةٍ غير مُسجَّلة).
+CURRENCY_AR = {
+    "USD": "دولار", "EUR": "يورو", "SAR": "ريال", "GBP": "جنيه إسترليني",
+    "AED": "درهم", "QAR": "ريال قطري", "KWD": "دينار كويتي",
+    "JOD": "دينار أردني", "DZD": "دينار جزائري", "YER": "ريال يمني",
+    "JPY": "ين", "NGN": "نايرا", "INR": "روبية", "EGP": "جنيه مصري",
+}
+
+
+# ── الصنف ٩: إسنادُ الرقم المشتقّ · derived-figure provenance ───────────────
+# **العيبُ المرصود:** «أقصى خسارة إن فشل الدخول: 8,900» — رقمٌ مشتقٌّ يصل
+# القارئَ بلا عملته، وبلا معادلته، وبلا مصدرِ كلّ مدخلٍ فيه، وبلا تسميةِ
+# المكوّنات التي **استُبعدت** من جمعه (الشحنُ غيرُ المتحقّق، رسومُ التسجيل).
+# فيقرأ صاحبُ القرار سقفَ مخاطرةٍ يظنّه شاملاً وهو ناقص.
+#
+# **الجذر:** المحرّك يكتب المعادلةَ نثراً في `method` ويُخفي الاستبعاد داخل
+# نفس الجملة، فلا حقلَ يحمل المدخلاتِ ولا مصادرَها ولا الناقص — فلا سطحَ
+# يقدر على عرضها ولا بوابةَ تقدر على قياس غيابها.
+#
+# **الحلّ:** حقلان مهيكلان على بند الرقم المشتقّ (`inputs` و`unknown`) يبنيهما
+# `silk_economics.build_decision_numbers`، ومُنسِّقٌ واحدٌ هنا يعرضهما على كلّ
+# سطح. خلف رايةٍ مطفأةٍ افتراضياً (`SILK_DERIVED_PROVENANCE=1`): بلا الراية
+# لا حقلَ يُضاف ولا حرفَ يتغيّر في أيّ سطح.
+DERIVED_PROVENANCE_FLAG = "SILK_DERIVED_PROVENANCE"
+ASSUMPTION_TAG_AR = "افتراض"       # وسمُ المدخل غير المرصود (لا يُقدَّم رصداً)
+
+
+def derived_provenance_enabled() -> bool:
+    """هل رايةُ الصنف ٩ مفعّلة؟ — نمطُ `silk_figure_store.enabled` القائم."""
+    import os
+    return os.environ.get(DERIVED_PROVENANCE_FLAG,
+                          "").strip().lower() in ("1", "true", "yes")
+
+
+# اسمُ العملةِ العربيّ ⇄ رمزُها ISO. الاتجاهُ العكسيّ من `CURRENCY_AR` نفسه
+# (مصدرٌ واحد)، مع أسماءٍ شائعةٍ بلا تمييزٍ قُطريّ صريح تُترك **بلا** رمز:
+# «دينار» وحدَها تسعُ خمسَ دول، وتخمينُ رمزها اختلاقٌ لا ترجمة.
+_CURRENCY_ISO_EXTRA = {"دولار أمريكي": "USD", "الدولار": "USD",
+                       "ريال سعودي": "SAR", "جنيه استرليني": "GBP"}
+
+
+def iso_currency(currency: object) -> str:
+    """رمزُ ISO للعملة إن كان معروفاً — وإلّا سلسلةٌ فارغة.
+
+    الصنف ٩: مبلغٌ بلا رمزِ عملةٍ لا يُدقَّق. والغيابُ يُعاد فارغاً كي
+    **يُعلَن** ناقصاً، لا يُخمَّن رمزٌ من اسمٍ يسعُ عدّةَ دول.
+    """
+    cur = str(currency or "").strip()
+    if not cur:
+        return ""
+    if re.fullmatch(r"[A-Za-z]{3}", cur):
+        return cur.upper()
+    if cur in _CURRENCY_ISO_EXTRA:
+        return _CURRENCY_ISO_EXTRA[cur]
+    # الصنف ١٢: سجلُّ العرض خريطةٌ **واحدٌ لواحد** والعلاقةُ الحقيقية
+    # كثيرٌ لواحد — «روبية» تسعُ ستَّ دولٍ و«درهم» تسعُ الإماراتَ والمغرب.
+    # فعكسُ الخريطة يُخمِّن دولةً: درهمُ المغرب كان يُوسَم `AED`. قائمةُ
+    # الأسماء الواسعة تعلو العكسَ دائماً — ولا رمزَ إلّا حين يكون قاطعاً.
+    if cur in _CURRENCY_AMBIGUOUS_AR:
+        return ""
+    for code, ar in CURRENCY_AR.items():
+        if ar == cur:
+            return code
+    return ""
+
+
+_LATIN_RE = re.compile(r"[A-Za-z]")
+APPENDIX_SOURCE_AR = "المصدر مذكورٌ في ملحق المراجع"
+
+
+def _input_source(inp: dict, client: bool) -> str:
+    """مصدرُ المدخل **بلغةِ السطح**.
+
+    سياسةُ الريبو القائمة: الاستشهادُ الخام (`icontainers.com — ISO max
+    gross 30,480 kg`) سطحُ مشغّلٍ لا سطحُ عميل — وبوابةُ نصّ المُنتَج
+    النهائي ترفض تسرّبَ اللغة. وقياسُ المراجعة الذاتية للجولة الثانية أثبت
+    أنّ البوابةَ **ليست شبكةً موثوقة** لهذا التسرّب: مواصفةُ حاويةٍ واحدة
+    رُفِضت والأخرى مرّت. فالمنعُ عند المصدر: تسميةٌ عربيةٌ صريحة
+    (`source_client`) أوّلاً، ثمّ المصدرُ نفسُه **إن خلا من الحرف اللاتيني**،
+    وإلّا فإحالةٌ إلى ملحق المراجع الذي يحمله فعلاً.
+    """
+    ar = str(inp.get("source_client") or "").strip()
+    raw = str(inp.get("source") or "").strip()
+    if not client:
+        return raw or ar
+    if ar:
+        return ar
+    if raw and not _LATIN_RE.search(raw):
+        return raw
+    return APPENDIX_SOURCE_AR if raw else ""
+
+
+def fmt_derived_input(inp: object, client: bool = False) -> str:
+    """مدخلٌ واحدٌ من مدخلات رقمٍ مشتقّ: اسمُه ثمّ مصدرُه أو وسمُ الافتراض.
+
+    المصدرُ المرصود يُسمّى؛ والمعلمةُ المفترضة تُوسَم «افتراض» صريحاً — فلا
+    يقرأ صاحبُ القرار معلمةَ سيناريو كأنها قياس. مدخلٌ بلا أيٍّ منهما
+    يُعلَن «مصدره غير مسجّل» (فجوةٌ معلنة لا حشوٌ صامت).
+
+    `client=True`: لغةُ الزائر حصراً (انظر `_input_source`).
+    """
+    if not isinstance(inp, dict):
+        return str(inp or "").strip()
+    name = str(inp.get("name") or "").strip()
+    if not name:
+        return ""
+    src = _input_source(inp, client)
+    if inp.get("assumed"):
+        return (f"{name} — {ASSUMPTION_TAG_AR}: {src}" if src
+                else f"{name} — {ASSUMPTION_TAG_AR} غير مصدَّق")
+    if src:
+        return f"{name} — المصدر: {src}"
+    return f"{name} — مصدره غير مسجّل"
+
+
+DERIVED_PROVENANCE_RULE = (
+    "**إسنادُ الرقم المشتقّ (إلزامي):** كلُّ مبلغٍ يُكتَب برمز عملته "
+    "(SAR/USD/EUR…) — مبلغٌ بلا عملةٍ لا يُدقَّق. وكلُّ رقمٍ **تشتقّه** "
+    "(تعادل، كلفةُ دخول، سقفُ خسارة، شريحةٌ قابلة للخدمة) يُكتَب معه: "
+    "معادلتُه، ومدخلاتُها واحداً واحداً، ومصدرُ كلّ مدخلٍ مرصود، ووسمُ "
+    "«افتراض» على كلّ مدخلٍ غيرِ مرصود. وسقفُ الخسارة **مدىً** لا رقماً "
+    "مفرداً، وتُسمّى فيه المكوّناتُ التي لم تُحسَب وبقيت خارجه. "
+    "ولا تكتب رقماً لبندٍ تُعلِنه الحقائقُ غيرَ محسوب: الصيغةُ المشروعة "
+    "«غير محسوب — الناقص: [اسم المدخل]»."
+)
+
+
+def fmt_derived(entry: object, client: bool = False) -> str:
+    """طريقةُ اشتقاق بندٍ من «أرقام القرار» — معادلتُه ثمّ مدخلاتُها بمصادرها
+    ثمّ المكوّناتُ غير المحسوبة بأسمائها.
+
+    بلا الراية (أو بلا الحقلين) تُعاد `method` **حرفياً كما هي** — فكلّ سطح
+    يستدعي هذا المُنسِّق بلا أن يتغيّر خرجُه المطفأ.
+    """
+    e = entry if isinstance(entry, dict) else {}
+    method = str(e.get("method") or "").strip()
+    if not derived_provenance_enabled():
+        return method
+    inputs = [x for x in (e.get("inputs") or []) if x]
+    unknown = [str(u).strip() for u in (e.get("unknown") or []) if str(u).strip()]
+    if not inputs and not unknown:
+        return method
+    parts = [method] if method else []
+    rendered = [r for r in (fmt_derived_input(i, client) for i in inputs)
+                if r]
+    if rendered:
+        parts.append("المدخلات: " + "؛ ".join(rendered) + ".")
+    if unknown:
+        parts.append("مكوّنات غير محسوبة وخارج هذا الرقم: "
+                     + "؛ ".join(unknown) + ".")
+    return " ".join(parts)
+
+
+# ── الصنف ١٢: مفرداتُ التعرّف · one recognition vocabulary ─────────────────
+# **العيبُ المرصود:** سعرُ رفٍّ مرصودٌ وملاحظتُه تقول «روبية» صريحةً، ومع ذلك
+# يُعلَن «أقصى سعر مصنع غير محسوب — الناقص: **عملة السعر المرصود**». السببُ
+# أنّ كاشفَ العملات في `silk_economics` قائمةٌ مكتوبةٌ بخمسةَ عشرَ بديلاً
+# (خليجيةٌ وأوروبيةٌ وأمريكية) لا تعرف الروبيةَ ولا النايرا ولا الين — فجودةُ
+# التقرير تتبع **جغرافيا العملة** لا جودةَ الرصد.
+#
+# هذه الدالّةُ المصدرُ الواحد: سجلُّ العرض (`CURRENCY_AR`) وكاشفُ المحرّك
+# وحارسُ البوابة يقرؤون منها جميعاً، فلا تتباعد ثلاثُ مفرداتٍ مرّةً أخرى.
+# الرموزُ وأسماءٌ عربيةٌ شائعةٌ **بلا** تمييزٍ قُطريّ تبقى مقبولةً كعملةٍ
+# مرصودة (فالرصدُ حاصل) وإن تعذّر رمزُها ISO (انظر `iso_currency`).
+_CURRENCY_SYMBOLS = ("€", "$", "£", "ر.س")
+# أسماءٌ عربيةٌ **تسعُ أكثرَ من دولة** — تُقرَأ عملةً مرصودة (فالرصدُ حاصل)
+# ولا يُخمَّن لها رمزُ ISO أبداً (`iso_currency` تعيد فراغاً). «جنيه» العارية
+# كانت في النمط القائم ولا مقابلَ لها في سجلّ العرض، فإسقاطُها من المصدر
+# الواحد كان **انحداراً** رصده اختبارُ عدمِ الانحدار قبل الشحن.
+_CURRENCY_AMBIGUOUS_AR = ("درهم", "دينار", "روبية", "ليرة", "بيزو", "شلن",
+                          "جنيه", "فرنك", "كرونة", "يوان", "روبل", "راند")
+
+
+def currency_tokens() -> tuple:
+    """كلُّ ما يُقرَأ عملةً — رموزٌ ثمّ رموزُ ISO ثمّ الأسماءُ العربية.
+
+    مرتَّبةٌ بالأطول أوّلاً كي لا يبتلعَ «دينار» جزءاً من «دينار كويتي».
+    """
+    toks = set(_CURRENCY_SYMBOLS) | set(_CURRENCY_AMBIGUOUS_AR)
+    toks |= set(CURRENCY_AR) | set(CURRENCY_AR.values())
+    toks |= set(_CURRENCY_ISO_EXTRA)
+    return tuple(sorted((t for t in toks if t), key=len, reverse=True))
+
+
+_CURRENCY_MIN_AR = 3          # «ين» تسكن داخل «الصين»/«بين» — انظر أدناه
+_AR_LETTER = "\u0621-\u064a"
+
+
+_CURRENCY_TOKEN_RE: dict = {}
+
+
+def _currency_token_re(token: str) -> "re.Pattern | None":
+    """نمطُ تعرّفٍ على اسمِ عملةٍ واحد — مُخزَّنٌ بعد أوّل بناء.
+
+    الحدود: لا حرفَ عربيٍّ بعد الاسم، ويُسمَح قبله بأدواتِ الجرّ والعطف
+    والتعريف الملتصقة («بالروبية»، «والنايرا») — فاسمُ العملة في العربية
+    يَرِد ملتصقاً أكثرَ مما يَرِد مفرداً، ونمطٌ بحدودٍ صارمةٍ كان يفوّته.
+
+    **منطقةُ العمى المعلنة:** الأسماءُ العربيةُ الأقصرُ من ثلاثة أحرف
+    مستبعَدة («ين» تسكن داخل «الصين» و«بين» و«سنتين»، فقبولُها يُنتِج
+    عملةً من كلّ جملةٍ تقريباً) — ورمزُها ISO (`JPY`) يُقرَأ.
+    """
+    if token in _CURRENCY_TOKEN_RE:
+        return _CURRENCY_TOKEN_RE[token]
+    rx = None
+    if re.fullmatch(r"[A-Za-z]{3}", token):
+        rx = re.compile(f"(?<![A-Za-z]){re.escape(token)}(?![A-Za-z])")
+    elif re.fullmatch(f"[{_AR_LETTER} ]+", token):
+        # كلمةٌ عربيةٌ خالصة — القيدُ الطوليّ وأدواتُ الالتصاق لها وحدها؛
+        # «ر.س» اختصارٌ بنقطةٍ فلا يسقط بقيدِ الطول (وكان يسقط: القاعدةُ
+        # الأولى عدّت حروفَه اثنين فأسقطت رمزاً يقرؤه النمطُ القائم أصلاً).
+        if len(re.findall(f"[{_AR_LETTER}]", token)) >= _CURRENCY_MIN_AR:
+            rx = re.compile(f"(?<![{_AR_LETTER}])[وفبكل]{{0,2}}(?:ال)?"
+                            f"{re.escape(token)}(?![{_AR_LETTER}])")
+    else:
+        rx = re.compile(re.escape(token))
+    _CURRENCY_TOKEN_RE[token] = rx
+    return rx
+
+
+def currency_in(text: object) -> str:
+    """أوّلُ عملةٍ يُسمّيها النصّ — **بتسميتها في السجلّ** لا بالكلمة الملتصقة.
+
+    «سعر رف لعبوة 1 كجم، بالروبية» ⇒ «روبية». الأطولُ أوّلاً فلا يبتلع
+    «دينار» جزءاً من «دينار كويتي». وغيابُ التسمية يُعاد فراغاً — تُعلَن
+    الفجوةُ ولا تُخمَّن عملة.
+    """
+    t_ = str(text or "")
+    if not t_:
+        return ""
+    for token in currency_tokens():
+        rx = _currency_token_re(token)
+        if rx is not None and rx.search(t_):
+            return token
+    return ""
+
+
+# ── الصنف ١٣: قيمةُ بندِ القرار تمرّ بالمنسِّق الواحد ─────────────────────
+# **العيبُ المرصود** (المراجعةُ الذاتية للجولة الثانية، مدوّنةُ الهند):
+# «كلفة الدخول الكلية حتى أول شحنة | **2539350 INR** (المدى
+# 2539350–2539350، ±0%)» — رقمٌ من سبع خاناتٍ بلا فاصلِ آلاف يقرؤه صاحبُ
+# القرار بالتقطيع، ومدىً **منحلٌّ** طرفاه متساويان يُقدَّم كأنه مجالُ قياسٍ
+# ±0% بينما هو قيمةٌ نقطية.
+#
+# **الجذر:** الصنفُ ٣ وحّد المنسِّقات، وهذان السطحان (`_economics_md_lines`
+# و`_client_decision_numbers_table`) يبنيان خانةَ القيمة بـf-string خاصّةٍ
+# بهما — سطحٌ لم يبلغه التوحيد، فعاد العيبُ من الباب نفسه.
+DECISION_NUMBER_FORMAT_FLAG = "SILK_DECISION_NUMBER_FORMAT"
+
+
+def decision_number_format() -> bool:
+    """هل رايةُ الصنف ١٣ مفعّلة؟ — نمطُ الرايات القائم."""
+    import os
+    return os.environ.get(DECISION_NUMBER_FORMAT_FLAG,
+                          "").strip().lower() in ("1", "true", "yes")
+
+
+def _legacy_decision_value(e: dict) -> str:
+    """الصيغةُ القائمة حرفياً — تُحفَظ هنا مرجعاً للمقابلة لا للاستخدام."""
+    r = e.get("range") or {}
+    return (f"{e.get('value')} {e.get('unit', '')} "
+            f"(المدى {r.get('low')}–{r.get('high')}، "
+            f"±{e.get('width_pct')}%)")
+
+
+def canonical_decision_value(entry: object) -> str:
+    """الصيغةُ القانونية **بلا سؤالِ الراية** — مرجعُ المقابلة في البوابة.
+
+    فاصلُ آلافٍ من `fmt_number`، ومدىً منحلٌّ (طرفاه متساويان) يُطوى فلا
+    يُقدَّم مجالَ قياسٍ ±0% حيث لا مجال.
+    """
+    e = entry if isinstance(entry, dict) else {}
+    unit = str(e.get("unit") or "").strip()
+    body = fmt_number(e.get("value"))
+    head = f"{body} {unit}".strip()
+    r = e.get("range") or {}
+    lo, hi = r.get("low"), r.get("high")
+    if lo is None or hi is None or _as_float(lo) == _as_float(hi):
+        return head
+    return (f"{head} (المدى {fmt_number(lo)}–{fmt_number(hi)}، "
+            f"±{e.get('width_pct')}%)")
+
+
+def fmt_decision_value(entry: object) -> str:
+    """خانةُ القيمة كما تُعرَض **الآن**: قانونيةً مع الراية، والقائمةُ حرفاً
+    بحرفٍ بدونها. والبوابةُ تقابل هذه بتلك فتعرف أيُّ مسارٍ سارٍ."""
+    return (canonical_decision_value(entry) if decision_number_format()
+            else _legacy_decision_value(
+                entry if isinstance(entry, dict) else {}))
+
+
+def fmt_year(v: object) -> str:
+    """سنةٌ للعرض — بلا فاصلِ آلاف («2024» لا «2,024»)."""
+    n = _as_float(v)
+    if n is None:
+        return GAP if v is None else str(v)
+    return str(int(round(n)))
+
+
+def fmt_observed_at(v: object, lang: str = "ar") -> str:
+    """تاريخُ الرصد — يُطبَع **إن وُجد في البيانات فقط**.
+
+    عند غيابه يُقال ذلك صريحاً، ولا يُستعار تاريخُ التشغيل: بلاغُ المالك أن
+    تاريخَ التشغيل طُبِع مكانَ تاريخِ الرصد، فقرأ القارئُ بياناتَ 2018
+    كأنها رُصدت اليوم. ساعةُ خطِّ التجميع ليست معطىً.
+    """
+    s = str(v or "").strip()
+    if not s:
+        return (OBSERVED_UNKNOWN_EN if str(lang).lower().startswith("en")
+                else OBSERVED_UNKNOWN_AR)
+    return s
+
+
+def past_tense_projection(year: object, today_year: "int | None" = None) -> bool:
+    """هل مضت سنةُ التوقّع؟ — «يُتوقَّع أن يبلغ في 2024» مكتوبةً في 2026 خطأٌ
+    زمنيّ يصل القارئ. القرارُ هنا، والصياغةُ عند المُصدِّر."""
+    n = _as_float(year)
+    if n is None:
+        return False
+    if today_year is None:
+        import datetime
+        today_year = datetime.date.today().year
+    return int(n) < int(today_year)
+
+
+def fmt_money(v: object) -> str:
+    """مبلغٌ بالدولار مقروء — الاسمُ القائم، والمنطقُ من المُنسِّق الواحد.
+
+    الصنف ٣: كانت هذه نسخةً ثانيةً من قواعد المقادير (منزلةٌ واحدة للمليون،
+    واختزالُ «ألف» بلا عشور) تتباعد عن `silk_reports._readable_number`
+    و`_fmt`. صارت غلافاً لـ`fmt_amount(v, "USD")` — مصدرٌ واحد، وسطحُ النداء
+    كما هو حرفياً لكلّ مُستهلِك.
+    """
+    return fmt_amount(v, "USD")
 
 
 def confidence_phrase(c: object, lang: str = "ar") -> str:

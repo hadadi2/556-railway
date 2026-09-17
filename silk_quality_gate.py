@@ -295,6 +295,20 @@ def _norm_ar(s: object) -> str:
     return re.sub(r"[ \t]+", " ", t).lower()
 
 
+# ── الصنف ١٦: عبارةٌ إلزاميةٌ يكسرها سطرٌ جديد · wrapped mandatory literal ──
+# **العيبُ المرصود:** تقريرٌ يحمل التحذيرَ الإلزاميّ «…ولا يصلح هذا الرقم
+# أساساً\nللتفاوض» — والفحصُ يُبلِّغ غيابَه، لأنّ `_norm_ar` يطوي المسافاتَ
+# والجدولةَ فقط لا **الأسطرَ** (وهو تصميمٌ مقصود: فحوصٌ كثيرةٌ تقطع على
+# الأسطر). فعبارةٌ إلزاميةٌ متعدّدةُ الكلمات لا تُطابَق أبداً إذا لفَّها
+# الكاتبُ على سطرين — ومعاقبةُ الإفصاح عيبٌ أخطرُ من غيابه (الدرس 239).
+#
+# `_flat_ar` للحضورِ الحرفيّ وحدَه: طيُّ كلِّ فراغٍ بما فيه السطرُ الجديد.
+# لا يُستعمَل حيث يكون السطرُ حدّاً دلالياً (قطعُ الفقرات، رؤوسُ الجداول).
+def _flat_ar(s: object) -> str:
+    """نصٌّ مطبَّعٌ **بطيّ كلّ فراغ** — لمطابقةِ حضورِ عبارةٍ إلزامية."""
+    return re.sub(r"\s+", " ", _norm_ar(s)).strip()
+
+
 def _dangling_cross_reference_en(text: str) -> list[dict]:
     """مرآةُ الإحالة المعلَّقة على الإنجليزية (البند G-06) — نفسُ المعيار."""
     findings = []
@@ -1336,7 +1350,23 @@ def _check_currency_label_mismatch(dr: dict) -> list[dict]:
 # يُحفَظان، لا يُصحَّح أحدهما صامتاً.
 _RECONCILED_PHRASES = ("مؤشر سياقي", "فئة مجاورة", "فئة كومتريد مجاورة",
                        "ليس خطأً", "لا يُصلَح برقمٍ مختلَق", "تفسير التناقض",
-                       "التناقض متوقَّع", "مصالحة")
+                       "التناقض متوقَّع", "مصالحة",
+                       # الصنف ١١ (المراجعة الذاتية بعد الجولة الأولى):
+                       # **تمييزُ المباشر عن المرآة عقدٌ محفوظ** — تقريرٌ
+                       # يُفصِح عن الفجوة صريحاً («بيانات المرآة … فجوة …
+                       # لم تُحسم») يفعل بالضبط ما يُطلَب منه، فلا يُحجَب.
+                       "بيانات المرآة", "المرآة", "التصريح المباشر",
+                       "mirror data", "directly reported")
+
+# الصنف ١١: **عوالمُ مختلفة لا تُقارَن** — «نصيب الفرد من الواردات 0.005
+# دولار» يحمل كلمة «الواردات» فيدخل مِجَسَّ الفحص، فتُقارَن نسبةٌ للفرد
+# بإجماليِّ واردات ⇒ 240,000,000× ⇒ **حجبٌ** على جملةٍ سليمة.
+# و`_check_cross_universe_ratio` يعرف أصلاً أنّ «نصيب الفرد» عالمٌ آخر —
+# فالمعرفةُ كانت موجودةً في البوابة ولم تبلغ هذا الفحص.
+_OTHER_UNIVERSE_CTX_RE = re.compile(
+    r"نصيب\s+الفرد|للفرد|لكلّ?\s+فرد|حصة\s+الفرد|متوسط\s+السعر"
+    r"|سعر\s+(?:ال)?(?:وحدة|كجم|كيلو|لتر|طن|عبوة|رف|حدود)"
+    r"|per\s+capita|unit\s+price|price\s+per", re.IGNORECASE)
 # المرايا الإنجليزية مضمومة (صيد الفجوات ٣) — فحص تناقض الأدلة حاجب وكان
 # خامداً كلياً على lang=en (شرطا «واردات» و«دولار» عربيان).
 _IMPORTS_KW_RE = re.compile(r"الواردات|واردات|\bimports?\b", re.IGNORECASE)
@@ -1403,6 +1433,16 @@ def _iter_usd_amounts(text: str) -> list[tuple[int, int, float]]:
     return spans
 
 
+def _fmt_gate_num(v: object) -> str:
+    """رقمٌ في بلاغِ البوابة عبر المُنسِّق الواحد (الصنف ٣).
+
+    الصنف ١١ (ج): `{v:,.0f}` كان يطبع «0$» لمبلغٍ دون الوحدة (0.005) —
+    فيقرأ المشغّلُ بلاغاً بلا معنى عن رقمٍ موجود. البلاغُ سطحُ قراءةٍ أيضاً.
+    """
+    from silk_narrative import fmt_number
+    return fmt_number(v)
+
+
 def _check_evidence_body_numeric_consistency(dr: dict) -> list[dict]:
     """قارن قيمة الواردات المسجَّلة في سجل الأدلة (DataPoint خام في findings
     البعثات) برقم الواردات المذكور في متن التقرير — تعارضٌ حقيقي (>٣×) بلا
@@ -1432,6 +1472,19 @@ def _check_evidence_body_numeric_consistency(dr: dict) -> list[dict]:
             continue
         if any(p in ctx for p in _RECONCILED_PHRASES):
             continue
+        # الصنف ١١ (أ): عالمٌ آخر لا يُقارَن بإجماليٍّ.
+        if _OTHER_UNIVERSE_CTX_RE.search(ctx):
+            continue
+        # الصنف ١١ (ب): **رقمٌ مسنودٌ في الأدلة ليس تناقضاً** — حين يحمل
+        # السجلُّ قراءتين مشروعتين لمؤشرٍ واحد (تصريحٌ مباشر + مرآة)، كانت
+        # الحلقةُ تقارن قراءةَ المتن بالقراءةِ **الأخرى** فتُفشِل تقريراً
+        # صحيحاً. وذكرُ قراءتين بلا تمييزٍ عيبٌ حقيقيّ لكنه من عائلةِ
+        # **الصنف ٦** (قيمتان لمؤشرٍ واحد) لا من عائلةِ الرقمِ غيرِ المسنود
+        # التي يحرسها هذا الفحص — فحصان لعيبٍ واحدٍ يُضاعِفان الحجبَ ولا
+        # يزيدان تغطية.
+        if any(abs(amt - ev) <= abs(ev) * (_NUMERIC_NEAR_MATCH - 1.0)
+               for ev in evidence_values if ev):
+            continue
         for ev in evidence_values:
             if ev <= 0:
                 continue
@@ -1455,8 +1508,9 @@ def _check_evidence_body_numeric_consistency(dr: dict) -> list[dict]:
                     "check": "evidence_body_numeric_contradiction",
                     "repairable": False,
                     "note": (f"تناقضٌ رقميٌّ داخليّ: سجل الأدلة يسجّل قيمة "
-                             f"واردات {ev:,.0f}$ بينما متن التقرير يذكر "
-                             f"{amt:,.0f}$ لنفس المؤشر (نسبة {ratio:.1f}× "
+                             f"واردات {_fmt_gate_num(ev)}$ بينما متن التقرير "
+                             f"يذكر {_fmt_gate_num(amt)}$ لنفس المؤشر "
+                             f"(نسبة {ratio:.1f}× "
                              "> 3×) بلا تفسيرٍ مجاور — يجب التصالح أو "
                              "التفسير الصريح قبل التسليم")})
             else:
@@ -1464,7 +1518,8 @@ def _check_evidence_body_numeric_consistency(dr: dict) -> list[dict]:
                     "check": "evidence_body_numeric_divergence",
                     "repairable": True,
                     "note": (f"رقمان مختلفان لنفس المؤشر: سجل الأدلة "
-                             f"{ev:,.0f}$ والمتن {amt:,.0f}$ (فرق "
+                             f"{_fmt_gate_num(ev)}$ والمتن "
+                             f"{_fmt_gate_num(amt)}$ (فرق "
                              f"{ratio:.2f}×). قد يكون الفرق مشروعاً (سنة "
                              "أخرى أو تجميع مختلف) — اذكر أيّهما تقصد "
                              "وسببَ الفرق، أو وحّدهما")})
@@ -2177,7 +2232,6 @@ def _check_regulatory_blocker(view: dict) -> list[dict]:
                  "تأخّرَها، فلا تُسلَّم توصيةٌ إيجابيةٌ فوقه.")}]
 
 
-
 # ── الموجة C · Z-03 وZ-05 — تحجيمُ السوق يُفحَص اشتقاقاً لا مقداراً فقط ────
 
 _SIZING_ROW_RE = re.compile(
@@ -2265,7 +2319,6 @@ def _check_market_sizing_derivation(dr: dict) -> list[dict]:
     except Exception as exc:  # noqa: BLE001 — الحارسُ تحسينيّ لا شرطُ تسليم
         log.warning("sizing grounding check skipped: %s", exc)
     return out
-
 
 
 # ── الموجة C · C-07 وC-08 — الرقمُ يُربَط بالحكم لا بنفسه ─────────────────
@@ -2364,7 +2417,6 @@ def _check_narrative_matches_the_verdict(view: dict) -> list[dict]:
                          f"{'، '.join(f'{p}%' for p in sorted(far))} — "
                          "وحّدهما أو اشرح الفرق")})
     return out
-
 
 
 def _check_narrative_money_grounded(dr: dict) -> list[dict]:
@@ -2468,6 +2520,35 @@ FAIL_TRIGGER_CHECKS = frozenset({
     # مسجّل مدخلاً ناقصاً — حجبُ رقمٍ محسوبٍ حتمياً لا يُسلَّم (عائلة الدرس 84).
     "unit_conversion_refusal",
 })
+
+
+# ── الجولة الثانية: مجموعةُ الحجبِ الفعّالة · flag-gated fail triggers ──────
+# قرار المالك 2026-08-19 «لا حجب جديداً» يبقى سارياً على الإنتاج: الفحوصُ
+# الجديدة تحجب **فقط** حين تُفعَّل رايتُها صريحاً. و`FAIL_TRIGGER_CHECKS`
+# نفسُها **لا تُمَسّ** — عشراتُ الاختبارات تقرؤها عقداً ثابتاً — فتُحسَب
+# المجموعةُ الفعّالة عند الحكم: مطفأةً = المجموعةُ الأصلية حرفياً.
+_FLAGGED_FAIL_TRIGGERS: tuple = (
+    # (اسمُ الفحص، الوحدةُ التي تحمل رايتَه، اسمُ دالّة الراية)
+    ("metric_value_divergence", "silk_figure_store", "enabled"),
+    ("open_conditions_count_mismatch", "silk_render",
+     "open_conditions_single"),
+    ("high_confidence_with_missing_pillar", "silk_render",
+     "confidence_discipline"),
+    ("reference_to_nonexistent_figure", "silk_narrative",
+     "derived_provenance_enabled"),
+)
+
+
+def effective_fail_triggers() -> frozenset:
+    """مجموعةُ الفحوص الحاجبة الآن — الثابتة زائداً ما تُفعِّله الرايات."""
+    extra = set()
+    for check, module, fname in _FLAGGED_FAIL_TRIGGERS:
+        try:
+            if getattr(__import__(module), fname)():
+                extra.add(check)
+        except Exception:  # noqa: BLE001 — رايةٌ غيرُ قابلةٍ للقراءة = مطفأة
+            continue
+    return FAIL_TRIGGER_CHECKS | extra
 
 
 _HHI_VALUE_RE = re.compile(r"HHI[^\d\n]{0,25}(\d+(?:[.,]\d+)?)")
@@ -3368,6 +3449,683 @@ def _check_derived_number_has_inputs(view: dict) -> list[dict]:
     return []
 
 
+# ── الصنف ٩: رقمٌ مشتقٌّ بلا إسناد · derived figure without provenance ─────
+# **العيبُ المرصود:** خارطةُ الطريق تُسمّي «الشريحةَ القابلة للخدمة» و«نقطةَ
+# التعادل» بأرقامٍ في إطارٍ محسوب، بينما المحرّكُ يُعلن البندَين نفسَهما
+# **فجوةً** (`tier == "gap"`) في «أرقام القرار» — فيقرأ صاحبُ القرار رقماً
+# لم يُحسَب أصلاً. و«أقصى خسارة» تصل رقماً واحداً شاملَ المظهر بينما أساسُها
+# (كلفةُ الدخول) استُبعد منه الشحنُ غيرُ المتحقّق ورسومُ التسجيل.
+#
+# **الجذر:** لا قاعدةَ تقابل بين ما أعلنه المحرّك مجهولاً وما كتبه الكاتبُ
+# محسوباً؛ فالكاتبُ يُعيد الاشتقاق بحرّية والبوابةُ لا تقيس التقابل.
+#
+# الأوّلُ حاجبٌ **خلف رايةِ الصنف ٩ فقط** (`_FLAGGED_FAIL_TRIGGERS`)؛ والثاني
+# تحذيريّ. والمرجعُ في الحالتين حتميّ: بنودُ `decision_numbers` نفسُها.
+_DN_STOPWORDS = ("من", "الى", "في", "حتى", "اول", "ان", "على", "عن",
+                 "مع", "او", "و", "الي", "بعد", "قبل", "لكل")
+_MAX_LOSS_NEEDLES = ("أقصى خسارة", "أقصى الخسارة", "سقف الخسارة",
+                     "maximum loss", "max loss")
+# إفصاحُ الاستبعاد المقبول قرب سقفِ المخاطرة — أيٌّ منها يُعفي (والمدى
+# نفسُه إفصاحٌ: رقمان بينهما شَرطة يقولان إنّ الرقم غيرُ قاطع).
+_EXCLUSION_DISCLOSURE = ("خارج", "غير محسوب", "غير محسوبة", "غير متحقق",
+                         "غير متحققة", "مستبعد", "مستبعدة", "لا يشمل",
+                         "لا تشمل", "يُستبعد", "يستبعد", "بلا سعر",
+                         "excluded", "not included", "does not include")
+_ENGINE_EXCLUSION_MARKS = ("خارج المجموع", "يُستبعد من المجموع",
+                           "فيُستبعد من المجموع")
+# المدى: رقمان بفاصلٍ صريح («7,100–10,700»، «بين 7,100 و 10,700»،
+# «7,100 to 10,700»). العطفُ بين رقمين يُقبَل فاصلَ مدىً — ثمنُه المُعلَن
+# أنّ رقمين غيرَ مرتبطين في جملةِ السقف نفسِها يُعفيانها، وهو ثمنٌ أهونُ
+# من معاقبةِ الصيغةِ العربيّةِ الأشهرِ للمدى.
+_RANGE_MARK_RE = re.compile(
+    r"\d[\s,.\d]*\s*(?:[-–—]|و|الى|إلى|to)\s*\d")
+
+
+def _dn_needle(name: object) -> str:
+    """إبرةُ بندٍ من «أرقام القرار»: أقصرُ مقطعٍ **متّصلٍ** من اسمه يبدأ من
+    أوّله ويضمّ كلمةً دالّةً واحدةً على الأقلّ بعد الأولى.
+
+    «نقطة التعادل» ⇒ «نقطة التعادل»؛ «أقصى خسارة إن فشل الدخول» ⇒ «أقصى
+    خسارة»؛ «الزمن من القرار إلى أول فاتورة» ⇒ «الزمن من القرار» (الكلمةُ
+    الثانيةُ حرفُ جرٍّ فتُضَمّ الثالثة) — كي لا تبتلعَ الإبرةُ نثراً عاماً.
+    """
+    words = [w for w in _norm_ar(str(name or "")).split() if w]
+    if len(words) < 2:
+        return " ".join(words)
+    for i in range(1, len(words)):
+        if words[i] not in _DN_STOPWORDS and len(words[i]) >= 3:
+            return " ".join(words[:i + 1])
+    return " ".join(words[:2])
+
+
+# بنودٌ **زمنية** بطبعها: رقمُ الزمن فيها قيمةٌ لا جدولٌ زمنيّ.
+_TIME_ITEM_RE = re.compile(r"زمن|مدة|مدّة|توقيت")
+# رقمٌ ملتصقٌ بوحدةِ زمنٍ — جدولٌ زمنيٌّ لا قيمةُ بند. الإبرةُ تُقرَأ على
+# النصِّ **المطبَّع** (`_norm_ar` يطوي الهمزة)، فكلُّ وحدةٍ بصيغتيها.
+_TIME_QTY_RE = re.compile(
+    r"\d+(?:[.,]\d+)?\s*(?:يوم|أيام|ايام|يوما|أسبوع|اسبوع|أسابيع|اسابيع|"
+    r"أسبوعا|اسبوعا|شهر|شهور|أشهر|اشهر|شهرا|سنة|سنه|سنوات|سنين|عام|أعوام|"
+    r"اعوام|ربع|أرباع|ارباع)")
+
+
+def _shows_a_value(seg: str, time_item: bool) -> bool:
+    """هل تعرض الجملةُ **قيمةً** للبند، أم جدولاً زمنياً فحسب؟"""
+    if not _ANY_DIGIT_RE.search(seg):
+        return False
+    if time_item:
+        return True
+    return bool(_ANY_DIGIT_RE.search(_TIME_QTY_RE.sub(" ", seg)))
+
+
+def _check_reference_to_nonexistent_figure(view: dict) -> list[dict]:
+    """`reference_to_nonexistent_figure` (الصنف ٩ — حاجبٌ خلف رايته): المتنُ
+    يُسمّي بندَ قرارٍ برقمٍ في إطارٍ محسوب بينما المحرّكُ يُعلنه فجوة.
+
+    **مأخذُ المراجعة الذاتية:** «أيُّ رقمٍ» كان يُحتسَب عرضاً لقيمةٍ، فجملةٌ
+    مشروعةٌ تُعلِن **جدولاً زمنياً** («نقطةُ التعادل ستتضح بعد أول 3 أشهر من
+    التشغيل») تُفشِل التقريرَ بفحصٍ غيرِ قابلٍ للإصلاح. فالرقمُ الملتصقُ
+    بوحدةِ **زمن** ليس قيمةً للبند — إلّا حين يكون البندُ نفسُه زمنياً
+    («الزمن من القرار إلى أول فاتورة»)، فيُقرأ من اسمِه لا بتفريع.
+
+    **منطقةُ العمى المعلنة:** (أ) صياغةٌ لا تحمل إبرةَ اسمِ البند («العتبةُ
+    التي تتساوى عندها») لا تُرى؛ (ب) رقمٌ بلا رقمٍ عربيٍّ أو لاتينيّ في
+    الجملة نفسها لا يُرى؛ (ج) جملةٌ تحمل رمزَ فجوةٍ معلَنة تُعفى بالتصميم —
+    «نقطةُ التعادل غير محسوبة: الناقصُ تكلفتُك» هي الصيغةُ المشروعة؛
+    (د) رقمٌ زمنيٌّ في بندٍ غيرِ زمنيٍّ لا يُعَدّ قيمةً.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    text = ((dr.get("report") or {}).get("text") or "")
+    dn = ((dr.get("economics") or {}).get("decision_numbers") or [])
+    if not text or not dn:
+        return []
+    gaps = _norm_gap_tokens()
+    named: list[str] = []
+    plain_segs = [seg for seg in re.split(r"[.\n؟!؛]", _norm_ar(text))]
+    for e in dn:
+        if not isinstance(e, dict) or e.get("tier") != "gap":
+            continue
+        needle = _dn_needle(e.get("name"))
+        if len(needle) < 6:
+            continue
+        time_item = bool(_TIME_ITEM_RE.search(str(e.get("name") or "")))
+        for seg in plain_segs:
+            if (needle in seg and _shows_a_value(seg, time_item)
+                    and not any(g in seg for g in gaps)):
+                nm = str(e.get("name") or "").strip()
+                if nm and nm not in named:
+                    named.append(nm)
+                break
+    if not named:
+        return []
+    return [{
+        "check": "reference_to_nonexistent_figure", "repairable": False,
+        "note": ("المتن يعرض رقماً لبنودٍ يُعلنها المحرك غير محسوبة: «"
+                 + "، ".join(named[:4]) + "» — رقمٌ لبندٍ مجهولٍ لا يُسلَّم؛ "
+                 "البديل: «غير محسوب — الناقص: [اسم المدخل]»")}]
+
+
+def _check_max_loss_without_components(view: dict) -> list[dict]:
+    """`max_loss_without_components` (الصنف ٩، تحذيريّ): سقفُ المخاطرة يصل
+    رقماً مفرداً بينما أساسُه المحسوب **استُبعد منه** مكوّنٌ سمّاه المحرّك.
+
+    المرجعُ حتميّ: بندُ كلفةِ الدخول يُصرِّح بالاستبعاد نصّاً («خارج
+    المجموع»/«يُستبعد من المجموع»). فإن صرّح ولم يحمل نثرُ سقفِ المخاطرة
+    مدىً ولا إفصاحَ استبعاد ⇒ سقفٌ يُقرأ شاملاً وهو ناقص.
+
+    **منطقةُ العمى المعلنة:** غيابُ ذكرِ السقف من المتن أصلاً لا يُلتقَط هنا
+    (شأنُ `decision_numbers_present`)؛ ومدىً مكتوبٌ بالكلمات بلا رقمين
+    («بين أدنى وأقصى») لا يُرى.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    text = ((dr.get("report") or {}).get("text") or "")
+    dn = ((dr.get("economics") or {}).get("decision_numbers") or [])
+    if not text or not dn:
+        return []
+    excluded: list[str] = []
+    ml_named = False
+    for e in dn:
+        if not isinstance(e, dict):
+            continue
+        method = str(e.get("method") or "")
+        if any(m in method for m in _ENGINE_EXCLUSION_MARKS):
+            excluded.append(str(e.get("name") or ""))
+        if (any(n in str(e.get("name") or "") for n in _MAX_LOSS_NEEDLES)
+                and e.get("tier") == "estimated"):
+            ml_named = True
+            excluded += [str(u) for u in (e.get("unknown") or [])]
+    if not ml_named or not excluded:
+        return []
+    n_needles = tuple(_norm_ar(n) for n in _MAX_LOSS_NEEDLES)
+    n_disclose = tuple(_norm_ar(d) for d in _EXCLUSION_DISCLOSURE)
+    gaps = _norm_gap_tokens()
+    for raw_seg in re.split(r"[.\n؟!؛]", text):
+        seg = _norm_ar(raw_seg)
+        if not (any(n in seg for n in n_needles)
+                and _ANY_DIGIT_RE.search(seg)):
+            continue
+        if (any(d in seg for d in n_disclose) or any(g in seg for g in gaps)
+                or _RANGE_MARK_RE.search(raw_seg)):
+            continue
+        return [{
+            "check": "max_loss_without_components", "repairable": True,
+            "note": ("سقف المخاطرة يُعرض رقماً مفرداً بينما أساسه المحسوب "
+                     "استُبعد منه مكوّن سمّاه المحرك — اعرضه مدىً وسمِّ ما "
+                     "هو خارجه: «" + "؛ ".join(
+                         x for x in excluded[:2] if x) + "»")}]
+    return []
+
+
+# ── الصنف ١٢: «غير متاح» وهو مرصود · declared unavailable yet observed ────
+# **العيبُ المرصود:** «التعرفة غير متاحة — اعتُمدت 0%» وبعثةُ التعريفات
+# تحمل «التعريفة المطبَّقة 60%»؛ و«الناقص: عملة السعر المرصود» وملاحظةُ
+# السعر تقول «روبية» صريحةً. الفجوةُ مُعلَنةٌ صادقةً في ظاهرها وكاذبةٌ في
+# مضمونها: المعطى **مرصودٌ** ولم يُعرَف، لا مفقود.
+#
+# هذا الفحصُ يقابل **إعلانَ النقص** بما تحمله البعثةُ المسؤولةُ عنه فعلاً.
+# تحذيريّ دائماً (لا حجبَ جديد)، ويعمل بالراية وبدونها — فهو الشاهدُ على
+# أنّ الفكسَ أصلحَ شيئاً: مطفأةً يُطلِق على المدوّنتين، ومفعّلةً يصمت.
+# الصياغةُ الدقيقة (بعد قياسٍ): الفحصُ لا يسأل «هل تَرِد الكلمةُ في بعثةٍ ما؟»
+# — سؤالٌ أطلقَ على تسعِ مدوّناتٍ منها ستٌّ **فجوتُها صادقة** (كلمةُ «جمرك»
+# ترد بلا رقمٍ قابلٍ للقراءة، والعملةُ ترد في صفِّ سعرٍ **آخرَ** غيرِ المرساة).
+# يسأل السؤالَ الحتميّ الوحيد: **هل كان مستخلِصُ المحرّك نفسُه سيجدها لو
+# وُسِّعت المفردات؟** فيصمت بالبناء حين تُفعَّل الراية، ويُطلِق حين — وفقط
+# حين — كان المعطى قابلاً للقراءة ولم يُقرَأ.
+_UNAVAILABLE_INPUTS = (
+    ("التعرفة غير متاحة", "tariff", "التعرفة", "tariffs_agreements"),
+    ("عملة السعر المرصود", "currency", "عملة السعر المرصود",
+     "pricing_scout"),
+)
+
+
+def _check_observed_value_declared_unavailable(view: dict) -> list[dict]:
+    """`observed_value_declared_unavailable` (الصنف ١٢، تحذيريّ): قسمُ
+    الاقتصاد يُعلن معطىً ناقصاً بينما مستخلِصُ المحرّك **كان سيجده** بمفرداتٍ
+    أوسع — معطىً مرصوداً لم يُقرأ، لا معطىً مفقوداً.
+
+    **منطقةُ العمى المعلنة:** (أ) المعطيانِ المقابَلان اثنان (التعريفةُ
+    وعملةُ سعرِ المرساة) — وهما المقيسان، ويُزاد الجدولُ بمعطىً حين يُرصَد
+    مثلُه؛ (ب) عملةٌ ترد في صفِّ سعرٍ لم يُصبح مرساةً لا تُحتسَب (المرساةُ
+    وحدها تُغذّي الحلَّ العكسيّ)؛ (ج) اسمُ عملةٍ أقصرُ من ثلاثة أحرف
+    مستبعَدٌ في المصدر الواحد (`silk_narrative._currency_token_re`).
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    eco = (dr.get("economics") or {})
+    gaps = [str(g) for g in (eco.get("gaps") or []) if str(g).strip()]
+    if not gaps or not (dr.get("missions") or {}):
+        return []
+    import silk_economics as _E
+    import silk_narrative as _N
+    wide = _E._TARIFF_WORDS + _E._TARIFF_WORDS_EXTRA
+    findings = []
+    for needle, kind, label, mkey in _UNAVAILABLE_INPUTS:
+        if not any(needle in g for g in gaps):
+            continue
+        hit = ""
+        if kind == "tariff":
+            val, note = _E._mission_numeric(dr, mkey, wide, 0.0, 100.0)
+            if val is not None:
+                hit = f"{val}% — «{str(note)[:40]}»"
+        else:
+            hit = _N.currency_in((eco.get("anchor_price") or {}).get("source"))
+        if not hit:
+            continue
+        findings.append({
+            "check": "observed_value_declared_unavailable",
+            "repairable": True,
+            "note": (f"قسم الاقتصاد يُعلن «{label}» معطىً ناقصاً بينما "
+                     f"بعثة «{mkey}» تحمله قابلاً للقراءة ({hit}) — معطىً "
+                     "مرصوداً لم يُقرأ، لا معطىً مفقوداً؛ مفرداتُ التعرّف "
+                     "أضيقُ من مفرداتِ البيانات")})
+    return findings
+
+
+# ── الصنف ١٣: خانةُ قيمةٍ خارج المنسِّق الواحد ──────────────────────────────
+# **العيبُ المرصود:** «2539350 INR (المدى 2539350–2539350، ±0%)» — سبعُ
+# خاناتٍ بلا فاصلِ آلاف، ومدىً منحلٌّ يُقدَّم مجالَ قياسٍ ±0% حيث لا مجال.
+# الصنفُ ٣ وحّد المنسِّقات وهذان السطحان بُنِيا بـf-string خاصّةٍ بهما.
+#
+# الفحصُ يقابل **الصيغةَ القائمة** بالصيغةِ القانونية للمنسِّق الواحد،
+# ويسمّي الخانةَ بعينها. تحذيريّ دائماً، ويصمت بالبناء حين تُفعَّل الراية —
+# فموضوعُه مسارُ العرض الساري لا بياناتُ المدوّنة.
+def _check_decision_number_format_drift(view: dict) -> list[dict]:
+    """`decision_number_format_drift` (الصنف ١٣، تحذيريّ): خانةُ قيمةٍ في
+    «أرقام القرار» تُعرَض بصيغةٍ غير صيغةِ المنسِّق الواحد.
+
+    **منطقةُ العمى المعلنة:** (أ) بنودُ الفجوة (`tier != "estimated"`) نصٌّ
+    لا رقمٌ فلا تُقابَل؛ (ب) بندٌ مُعلَنٌ «أوسعَ من أن يُتصرف به»
+    (`too_wide`) يُعرَض بملاحظته لا بقيمته فيُستثنى؛ (ج) سطوحٌ أخرى تعرض
+    مقادير (جدولُ السيناريوهات والشلال) خارج نطاق هذا الفحص — تُضاف حين
+    تُقاس، ولا يُدّعى شمولٌ غيرُ محقَّق.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    dn = ((dr.get("economics") or {}).get("decision_numbers") or [])
+    if not dn:
+        return []
+    import silk_narrative as _N
+    drifted = []
+    for e in dn:
+        if not isinstance(e, dict) or e.get("tier") != "estimated" \
+                or e.get("too_wide"):
+            continue
+        canonical = _N.canonical_decision_value(e)
+        if canonical != _N.fmt_decision_value(e):
+            drifted.append(f"{e.get('name')}: «{canonical}»")
+    if not drifted:
+        return []
+    return [{
+        "check": "decision_number_format_drift", "repairable": True,
+        "note": ("خانةُ قيمةٍ في «أرقام القرار» تُعرَض خارج المنسِّق الواحد "
+                 "(فاصلُ آلافٍ غائب أو مدىً منحلٌّ طرفاه متساويان يُقدَّم "
+                 "مجالَ قياس) — الصيغةُ القانونية: "
+                 + "؛ ".join(drifted[:3]))}]
+
+
+# ══════ الصنف ١٠: افتراضاتُ بنية السوق · market-structure assumptions ══════
+# **العيوبُ المرصودة** في تقريرٍ حيٍّ واحد: «تقلّب 0.00%» لدولةٍ بسعرين
+# متباعدين؛ وسلطةٌ هنا ومرفأٌ هناك بلا إقليمِ هدف؛ وبندٌ جمركيٌّ يغطّي فئةً
+# كاملةً مقروءاً سوقَ منتج؛ ونشاطٌ لا صلةَ له في قائمة الروابط؛ ونظامُ مطابقةٍ
+# يخصّ دولةً أخرى في قسم الحدود.
+#
+# الحرّاسُ الستّة **تحذيريةٌ كلُّها** (قرارُ المالك: لا حجب جديداً) وتقرأ
+# **نصَّ التقرير أوّلاً**: سجلُّ التهيئة يغطّي أربعةَ أسواقٍ من ٣٨، فحارسٌ
+# يشترط التهيئة ينام في الباقي — وهو بعينه الدرس ٩٨ (حارسٌ لا يُطلِق).
+# التهيئةُ **تُثري البلاغَ** ولا تشترطه، كما في `authority_naming_drift`.
+_FX_VOL_NEEDLES = ("تقلب سعر الصرف", "تقلّب سعر الصرف", "fx volatility")
+_FX_PEG_DISCLOSURE = ("مربوط", "ربط رسمي", "ربطٌ رسميّ", "سعر ثابت رسمي",
+                      "pegged", "official peg")
+
+
+def _check_zero_fx_volatility(view: dict) -> list[dict]:
+    """`zero_fx_volatility` (الصنف ١٠، تحذيريّ): المحرّك أصدر تقلّبَ صرفٍ
+    **صفراً** فصار عمودُ أمانِ العملة كاملاً، بلا إعلانِ ربطٍ رسميّ.
+
+    الصفرُ قيمةٌ مشروعةٌ لعملةٍ مربوطة، وهو أيضاً ما تُنتِجه سلسلةٌ ثابتةٌ
+    أو سعرٌ رسميٌّ واحدٌ في سوقٍ له سعران — والفرقُ بينهما قرارُ مخاطرة.
+    فالمطلوبُ إعلانُ أيِّهما، لا حَجبُ الرقم.
+
+    **منطقةُ العمى المعلنة:** (أ) الفحصُ لا يميّز الربطَ الحقيقيَّ من السلسلة
+    الثابتة — ولذلك هو تحذيرٌ يطلب الإعلان لا حكمٌ؛ (ب) تقلّبٌ **غيرُ**
+    صفريٍّ لكنه محسوبٌ من سعرٍ رسميٍّ واحدٍ في سوقٍ بسعرين لا يُرى (لا معطى
+    يُقابِل السعرَ الموازي)؛ (ج) صياغةُ الربط بالإنجليزية مشمولةٌ بإبرتين.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    missions = dr.get("missions") or {}
+    risk = missions.get("risk_news") if isinstance(missions, dict) else None
+    findings = ((risk.get("findings") if isinstance(risk, dict)
+                 else getattr(risk, "findings", None)) or [])
+    zero = False
+    for f in findings:
+        note = str((f.get("note") if isinstance(f, dict)
+                    else getattr(f, "note", "")) or "")
+        val = (f.get("value") if isinstance(f, dict)
+               else getattr(f, "value", None))
+        if not any(n in note for n in _FX_VOL_NEEDLES):
+            continue
+        try:
+            if val is not None and float(val) == 0.0:
+                zero = True
+        except (TypeError, ValueError):
+            continue
+    if not zero:
+        return []
+    text = ((dr.get("report") or {}).get("text") or "")
+    if any(d in text for d in _FX_PEG_DISCLOSURE):
+        return []
+    return [{
+        "check": "zero_fx_volatility", "repairable": True,
+        "note": ("تقلّبُ سعر الصرف مرصودٌ صفراً فصار عمودُ أمان العملة "
+                 "كاملاً (١.٠٠) في الدرجة — والصفرُ إمّا ربطٌ رسميٌّ وإمّا "
+                 "سلسلةٌ ثابتةٌ أو سعرٌ رسميٌّ واحدٌ في سوقٍ له سعران. "
+                 "أعلِن أيَّهما: «العملة مربوطة رسمياً» أو «لم يُرصَد إلا "
+                 "السعر الرسمي»")}]
+
+
+# الصنف ١٠ — سلطتان ومرفأٌ بلا إقليمِ هدف. الإبرُ قويةُ الدلالة: منفذُ دخولٍ
+# فعليّ لا كلمةٌ عامة، وإفصاحُ الإقليم بصيغِه المتوقّعة.
+# بوّابةٌ **مسمّاة**: إبرةُ منفذٍ يتبعها اسمٌ علَم — «ميناء عدن» لا «ميناء».
+# القيدُ مقيسٌ: الإبرةُ وحدَها أطلقت على تقريرٍ سليمٍ ذكر جهتين مشروعتين
+# ومنفذاً واحداً، والشرطُ الحقيقيُّ للعيب المرصود **بوّابتان** (قيودُ سلطةٍ
+# ومرفأُ أخرى). بالبوّابتين: صفرُ إطلاقةٍ على المدوّنات الأربعَ عشرة.
+_NAMED_GATEWAY_RE = re.compile(
+    r"(?:ميناء|مرفأ|منفذ|معبر|مطار)\s+([^\s،.؛()]{3,})")
+# الصنف ١٤ (مراجعةُ الجولة الثالثة): الإبرةُ كانت تبتلع الكلمةَ العامّة —
+# «منفذ الدخول» تُقرَأ بوّابةً اسمُها «الدخول»، فيصير لتقريرٍ ذي مرفأٍ واحدٍ
+# بوّابتان ويُطلِق الحارسُ على الصحيح. الكلماتُ العامّة **مُستبعَدةٌ
+# بالاسم**، والاسمُ العلَمُ وحدَه يُعَدّ بوّابة.
+_GENERIC_GATEWAY_WORDS = frozenset({
+    "الدخول", "دخول", "الرئيس", "الرئيسي", "الرئيسية", "الوحيد", "الوحيدة",
+    "البري", "البرّي", "البحري", "البحرية", "الجوي", "الجويّ", "الحدودي",
+    "الحدودية", "المستهدف", "المستهدفة", "المحدد", "المحددة", "النظامي",
+    "النظامية", "المعتمد", "المعتمدة", "الجمركي", "الجمركية",
+})
+
+
+def _named_gateways(text: str) -> list:
+    """بوّاباتُ الدخول **المسمّاةُ باسمٍ علَم** في المتن — مرتَّبةً بلا تكرار.
+
+    الكلمةُ العامّةُ بعد الإبرة ليست اسماً: «منفذ الدخول»/«الميناء الرئيس»
+    وصفٌ لا تسمية. قِياسُ المراجعة الثالثة: بلا هذا الاستبعاد صار لتقرير
+    ليبيا ثلاثُ «بوّابات» إحداها «الدخول».
+    """
+    out = []
+    for g in _NAMED_GATEWAY_RE.findall(text or ""):
+        name = g.strip()
+        if not name or _norm_ar(name) in {_norm_ar(w)
+                                          for w in _GENERIC_GATEWAY_WORDS}:
+            continue
+        if name not in out:
+            out.append(name)
+    return sorted(out)
+_TARGET_REGION_DISCLOSURE = ("الإقليم المستهدف", "المنطقة المستهدفة",
+                             "منفذ الدخول المستهدف", "الإقليم الخاضع",
+                             "تحت سلطة", "target region")
+
+
+def _check_target_region_missing(view: dict, dr: dict,
+                                 lang: str = "ar") -> list[dict]:
+    """`target_region_missing_in_multi_authority` (الصنف ١٠، تحذيريّ): المتنُ
+    يذكر جهتين مُنسَبتين **ومنفذَ دخولٍ** بلا إقليمِ هدفٍ مُعلَن.
+
+    كلُّ سلطةٍ منفذٌ وقيودٌ ورسومٌ مختلفة، فقائمةُ اشتراطاتٍ من سلطةٍ فوق
+    مرفأٍ تحت أخرى قائمةٌ لا تصلح للتنفيذ. آلةُ رصدِ الجهات هي
+    `_authority_mentions` نفسُها (الصنف ٤) — لا كاشفَ ثانٍ.
+
+    **منطقةُ العمى المعلنة:** (أ) جهتان بلا نسبةٍ («الحكومة» عارية) شأنُ
+    `authority_naming_drift` لا هذا الفحص؛ (ب) بوّابةٌ بلا اسمٍ علَمٍ
+    («الميناء الرئيس») لا تُعَدّ — القيدُ مقيسٌ لا مُقدَّر: بالإبرة وحدَها
+    أطلق الفحصُ على تقريرٍ سليم، وبالبوّابتين المسمّيتين صفرُ إطلاقةٍ على
+    المدوّنات الأربعَ عشرة؛ (ج) الفحصُ عربيُّ المجسّ (`_AR_ONLY_CHECKS`)؛
+    (د) التهيئةُ (`multi_authority`) تُثري البلاغَ ولا تشترطه.
+    """
+    text = ((dr.get("report") or {}).get("text") or "")
+    if not text or lang != "ar":
+        return []
+    mentions = _authority_mentions(text)
+    quals = {row["qual"] for row in mentions.values()} if mentions else set()
+    if len(quals) < 2:
+        return []
+    gates = _named_gateways(text)
+    if len(gates) < 2:
+        return []
+    if any(d in text for d in _TARGET_REGION_DISCLOSURE):
+        return []
+    tail = ""
+    try:
+        import silk_market_structure as _MS
+        iso3 = str((view.get("market") or {}).get("iso3")
+                   or ((dr.get("market") or {}).get("iso3")) or "")
+        if _MS.multi_authority(iso3):
+            region = _MS.target_region(iso3)
+            tail = (f" والإقليمُ المُهيَّأ لهذا السوق: «{region}»." if region
+                    else " والسوقُ مُهيَّأٌ متعدّدَ السلطات بلا إقليمِ هدف.")
+    except Exception:  # noqa: BLE001 — التهيئةُ تُثري البلاغ لا تشترطه
+        tail = ""
+    return [{
+        "check": "target_region_missing_in_multi_authority",
+        "repairable": True,
+        "note": ("المتنُ يذكر جهتين مُنسَبتين (" + "، ".join(
+            f"«{q}»" for q in sorted(quals)[:3]) + ") وبوّابتَي دخولٍ ("
+            + "، ".join(f"«{g}»" for g in gates[:3]) + ") بلا إقليمِ هدفٍ "
+            "مُعلَن — وكلُّ سلطةٍ بوّابةٌ وقيودٌ ورسومٌ مختلفة، فالقائمةُ "
+            "لا تصلح للتنفيذ حتى يُسمَّى الإقليم." + tail)}]
+
+
+# الصنف ١٠ — بندٌ جمركيٌّ واسعٌ غيرُ مُعلَن. الاتّساعُ يُثبَت بأحد سبيلين
+# حتميّين: تهيئةُ المنتج (`hs_scope: broad`)، أو **وصفُ البند الرسميّ نفسُه**
+# حين يحمل علامةَ سلّةٍ («ومنه»/«أخرى»/"other") — أي أنّ البندَ يضمّ المنتجَ
+# بين غيره. وما لا يُثبَت لا يُحكَم عليه.
+_HS_BREADTH_MARKS = ("ومنه", "ومنها", "أخرى", "غير ذلك", "غير مذكورة",
+                     "other", "n.e.s")
+_HS_BREADTH_DISCLOSURE = ("أوسع من", "فئة أوسع", "فئةً أوسع", "سياقاً للفئة",
+                          "سياقاً عاماً للفئة", "فئة مجاورة", "فئةٍ مجاورة",
+                          "مُعلَّم", "معلَّم", "broader category",
+                          "category context")
+
+
+def _hs6_registered(hs: str) -> bool:
+    """هل البندُ السداسيُّ مسجَّلٌ بوصفه الخاصّ في المرجع؟ — وإلّا فالوصفُ
+    المُعاد هو وصفُ بنده الرباعيّ (تدرّجُ `definition` الداخليّ)."""
+    try:
+        import silk_hs_reference
+        return str(hs) in getattr(silk_hs_reference, "_HS6", {})
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _check_broad_hs_scope_undisclosed(view: dict) -> list[dict]:
+    """`broad_hs_scope_undisclosed` (الصنف ١٠، تحذيريّ): البندُ الجمركيُّ
+    يغطّي فئةً أوسع من المنتج، والمتنُ لا يُفصِح.
+
+    **منطقةُ العمى المعلنة:** (أ) بندٌ خارج المرجع المسجّل وبلا تهيئةٍ لا
+    يُرى — الاتّساعُ لا يُخمَّن (وهو حالُ أغلب البنود اليوم: المرجعُ ثمانيةُ
+    بنودٍ سداسية)؛ (ب) الإفصاحُ يُقاس بإبَرٍ نصّية، فصياغةٌ غيرُ متوقّعةٍ
+    تُحتسَب غياباً — ثمنٌ مقبولٌ لتحذير؛ (ج) `hs_flagged` عائلةٌ **أخرى**
+    (وصفُ البند لا يشمل صفةَ المنتج) ولها آلتُها القائمة.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    hs = str(view.get("hs_code")
+             or (view.get("header") or {}).get("hs_code") or "").strip()
+    text = ((dr.get("report") or {}).get("text") or "")
+    if len(hs) < 6 or not text:
+        return []
+    broad, why = False, ""
+    try:
+        import silk_market_structure as _MS
+        if _MS.hs_scope(hs) == "broad":
+            broad, why = True, "التهيئةُ تُعلنه بنداً واسعاً"
+    except Exception:  # noqa: BLE001
+        pass
+    if not broad:
+        try:
+            from silk_hs_reference import definition
+            defn = str(definition(hs) or "")
+            if defn and any(m in defn for m in _HS_BREADTH_MARKS):
+                broad = True
+                # مرجعُ الوصف يتدرّج ٦→٤ داخلياً، فيُقال **من أيّ مستوىً**
+                # جاء الدليل: بندٌ غيرُ مسجَّلٍ سداسياً يُحكَم بوصف بنده
+                # الرباعيّ — تقريبٌ مُعلَنٌ لا استنتاجٌ صامت.
+                lvl = ("وصفُ البند الرسميّ" if str(definition(hs)) == defn
+                       and _hs6_registered(hs) else "وصفُ البند الرباعيّ")
+                why = f"{lvl} «{defn[:60]}» علامةُ سلّة"
+        except Exception:  # noqa: BLE001
+            pass
+    if not broad:
+        return []
+    if any(d in text for d in _HS_BREADTH_DISCLOSURE):
+        return []
+    return [{
+        "check": "broad_hs_scope_undisclosed", "repairable": True,
+        "note": (f"أرقامُ التجارة مجموعةٌ تحت البند {hs} وهو أوسعُ من المنتج "
+                 f"المدروس ({why}) — والمتنُ لا يُفصِح، فتُقرأ أرقامُ فئةٍ "
+                 "كأنها أرقامُ المنتج. أضف سطرَ إفصاحٍ واحداً")}]
+
+
+# الصنف ١٧: عتبةُ انقلابِ سلسلةِ القيمة — سعرُ حدودٍ يفوق سعرَ الرفّ
+# المرصود بهذه النسبة أو أكثر. مقيسةٌ على المدوّنات الستّ عشرة (أعلى
+# نسبةٍ مشروعةٍ ١.٠٤٧) لا مُقدَّرة — فصلٌ عشرون نقطة.
+_BORDER_ABOVE_SHELF_RATIO = 1.25
+
+
+def _check_border_price_out_of_range(view: dict) -> list[dict]:
+    """`border_price_out_of_range` (الصنف ١٠، تحذيريّ): سعرُ الحدود المرصود
+    غيرُ معقولٍ — خارجَ المدى المُهيَّأ للمنتج، أو **فوق سعرِ الرفّ المرصود
+    في التقرير نفسِه** بفارقٍ لا يفسّره اختلافُ عبوةٍ أو رتبة.
+
+    فرعان، والثاني هو ما يجعل الفحصَ حيّاً (الدرس ٩٨): الأوّلُ يحتاج
+    `price_range` مُهيَّأً وهو غيرُ مُدخَلٍ لأيّ منتجٍ اليوم (قرارُ مالكٍ
+    مسجَّل: العقدُ يُشحَن والصفوفُ إدخالٌ لاحقٌ بمصدر) — فحارسٌ بهذا الفرع
+    وحدَه **لا يُطلِق في أيّ سوق**. والثاني لا يحتاج تهيئةً قطّ: يقابل ثلاثةَ
+    أرقامٍ **مرصودةٍ في التقرير** (سعرُ الحدود دولاراً/كجم، سعرُ الرفّ بعملةٍ
+    محلّية/كجم، سعرُ الصرف الرسميّ) — وسعرُ حدودٍ يفوق سعرَ الرفّ تناقضٌ في
+    سلسلةِ القيمة لا واقعة.
+
+    **العتبةُ مقيسة** لا مُقدَّرة: أعلى نسبةٍ مشروعةٍ على المدوّنات الستّ
+    عشرة ١.٠٤٧ (ليبيا: ٢.٠٥ مقابل ١.٩٥٩ دولار/كجم — فارقُ عبوةٍ ورتبةٍ
+    محتمَل)، فالعتبةُ ١.٢٥ تُبقي صفرَ إطلاقةٍ على المدوّنات كلِّها بفصلٍ
+    مقيسٍ عشرين نقطة (سابقةُ الصنف ١١: قاعدةٌ تُطلِق على الصحيح لا تُشحَن).
+
+    **مناطقُ العمى المعلنة:** (أ) الفرعُ الأوّل صامتٌ حتى تُدخَل الصفوف؛
+    (ب) الفرعُ الثاني يحتاج الأرقامَ الثلاثة معاً — وهي مجتمعةٌ في ثلاثٍ من
+    ستّ عشرةَ مدوّنة، فسوقٌ بلا سعرِ رفٍّ أو بلا سعرِ صرفٍ مرصودٍ لا يُرى؛
+    (ج) سوقٌ بسعرَي صرفٍ متباعدين (رسميٌّ وموازٍ) قد يُظهِر انقلاباً ظاهرياً
+    — ولذلك العتبةُ واسعةٌ والبلاغُ **طلبُ مراجعةٍ** لا حكمٌ بخطأ؛
+    (د) سعرُ رفٍّ بعبوةٍ غيرِ الكيلوغرام يُطبَّع في مسار الأسعار لا هنا.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    hs = str(view.get("hs_code")
+             or (view.get("header") or {}).get("hs_code") or "").strip()
+    if not dr:
+        return []
+    try:
+        import silk_economics as _E
+        import silk_market_structure as _MS
+        band = _MS.price_range(hs) if hs else None
+        val, note = _E._mission_numeric(
+            dr, "trade_flow", ("متوسط سعر استيراد", "قيمة الوحدة الحدودية",
+                              "unit value"), 0.0, 100_000.0)
+    except Exception:  # noqa: BLE001
+        return []
+    if val is None:
+        return []
+    if band and not (band["min"] <= val <= band["max"]):
+        return [{
+            "check": "border_price_out_of_range", "repairable": True,
+            "note": (f"سعرُ الحدود المرصود {_fmt_gate_num(val)} دولار/كجم خارج "
+                     f"المدى المعقول المُهيَّأ للمنتج "
+                     f"({_fmt_gate_num(band['min'])}–"
+                     f"{_fmt_gate_num(band['max'])})"
+                     f" — «{str(note)[:40]}»؛ راجع البند أو المصدر قبل بناء "
+                     "هامشٍ عليه")}]
+    try:
+        shelf, s_note = _E._mission_numeric(
+            dr, "pricing_scout", ("سعر رف", "سعر تجزئة", "shelf"),
+            0.0, 10 ** 9)
+        if shelf is None:
+            return []
+        # المراجعةُ الذاتية (البند ٢): إبرةٌ فضفاضة «سعر الصرف» تُطابِق
+        # «تقلب سعر الصرف 12.4%» فتُقرَأ **نسبةٌ** سعرَ صرف — والملاحظتان
+        # متعاقبتان في بعثة المخاطر نفسِها. الإبرةُ هي إبرةُ السابقة القائمة
+        # في `silk_economics` حرفياً («سعر الصرف الرسمي») بحدودِها نفسِها.
+        # المراجعةُ الذاتية (البند ٣): قسمةٌ بلا فحصِ عملة — سعرُ رفٍّ
+        # مرصودٌ **بالدولار** كان يُقسَم على سعر الصرف فيصير خمسَ قيمته،
+        # فيُطلِق الحارسُ على تقريرٍ سعرُ رفِّه ضِعفُ سعرِ الحدود. نفسُ
+        # استثناء `silk_economics` القائم (`_cur in ("$","USD","دولار")`).
+        cur = _E.currency_in_note(s_note)
+        if cur in ("$", "USD", "دولار"):
+            shelf_usd, rate = shelf, None
+        else:
+            rate, _fx_note = _E._mission_numeric(
+                dr, "risk_news", ("سعر الصرف الرسمي",), 1e-4, 100_000.0)
+            if not rate:
+                return []
+            shelf_usd = shelf / rate
+    except Exception:  # noqa: BLE001
+        return []
+    if shelf_usd <= 0 or val < _BORDER_ABOVE_SHELF_RATIO * shelf_usd:
+        return []
+    basis = (f" بسعر الصرف الرسمي {_fmt_gate_num(rate)}" if rate
+             else " والسعرُ مرصودٌ بالدولار")
+    return [{
+        "check": "border_price_out_of_range", "repairable": True,
+        "note": (f"سعرُ الحدود المرصود {_fmt_gate_num(val)} دولار/كجم يفوق "
+                 f"سعرَ الرفّ المرصود في التقرير نفسِه "
+                 f"({_fmt_gate_num(shelf_usd)} دولار/كجم{basis}) — "
+                 f"«{str(s_note)[:40]}»؛ سلسلةُ القيمة "
+                 "لا تحتمل هذا الاتجاه، فراجع وحدةَ أحدِ الرقمين أو مستوى "
+                 "السعر قبل بناء هامشٍ عليه")}]
+
+
+def _check_lead_outside_activity_allowlist(view: dict) -> list[dict]:
+    """`lead_outside_activity_allowlist` (الصنف ١٠، تحذيريّ): رابطٌ في قائمة
+    الجهات نشاطُه مُدرَجٌ ومستبعَدٌ من قائمة السماح.
+
+    **منطقةُ العمى المعلنة:** (أ) نشاطٌ **مجهولٌ** يمرّ بالتصميم — الجهلُ
+    بالتسمية ليس دليلَ عدمِ الصلة (سياسةُ `activity_label_ar`)؛ (ب) روابطُ
+    مسارِ Places وبحثِ الويب لا تحمل نشاطاً أصلاً فلا تُرى (مسارُ الخرائط
+    وحدَه يحمله)؛ (ج) الفحصُ لا يحكم على غيابِ موزّعٍ مسمّىً في النثر —
+    ذلك شأنُ الإدراجِ التلقائيّ في `_clean_leads`.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    leads = ((dr.get("importer_leads") or {}).get("leads") or [])
+    if not leads:
+        return []
+    try:
+        from silk_style_contract import lead_activity_allowed
+    except Exception:  # noqa: BLE001
+        return []
+    bad = []
+    for lead in leads:
+        if not isinstance(lead, dict):
+            continue
+        cat = str(lead.get("category") or "").strip()
+        if cat and not lead_activity_allowed(cat):
+            name = str(lead.get("name") or "").strip() or "جهةٌ بلا اسم"
+            row = f"{name} ({cat})"
+            if row not in bad:
+                bad.append(row)
+    if not bad:
+        return []
+    return [{
+        "check": "lead_outside_activity_allowlist", "repairable": True,
+        "note": ("قائمةُ الجهات تحمل نشاطاً لا صلةَ له بالمنتج: "
+                 + "؛ ".join(bad[:3]) + " — الجهةُ تُدرَج لنشاطها لا لقربها "
+                 "الجغرافيّ، وإدراجُها يُضعِف ثقةَ القائمة كلِّها")}]
+
+
+def _check_regime_not_belonging_to_country(view: dict) -> list[dict]:
+    """`regime_not_belonging_to_country` (الصنف ١٠، تحذيريّ): المتنُ يستشهد
+    بنظامِ مطابقةٍ مالكُه دولةٌ أخرى ولا كتلةٌ يخصّها سوقُ الهدف.
+
+    المرجعُ حتميّ: `data/regulatory_schemes_l1.csv` — مفتاحُه **النظام** لا
+    السوق، فيعمل الفحصُ على الأسواق كلِّها بلا انتظار تهيئةِ سوق (الدرس ٩٨).
+    ودولةُ المنشأ مشروعةٌ دائماً: اشتراطاتُ الخروج جزءٌ من كلّ تقرير.
+
+    **منطقةُ العمى المعلنة:** (أ) نظامٌ غيرُ مُسجَّلٍ في الجدول لا يُحكَم
+    عليه — لا نحكم على ما لا نعرف، والسجلُّ يُوسَّع بصفٍّ مُستشهَد؛
+    (ب) المعاييرُ الدولية والأسماءُ التي تتقاسمها برامجُ عدّة دول موسومةٌ
+    `INTL`/`MULTI` فلا تُحتسَب أبداً؛ (ج) ذكرُ النظام **نفياً** («لا ينطبق
+    SONCAP هنا») يُحتسَب — ثمنٌ مُعلَنٌ لتحذير، والصياغةُ المشروعة أن يُذكَر
+    نظامُ السوق لا نظامُ غيره.
+    """
+    dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
+    # مأخذُ المراجعة الذاتية: الملحقُ يُقرَأ متناً، فرابطُ مصدرٍ
+    # (`fda.gov`, `ce-marking`) يُحتسَب نظاماً أجنبياً في قائمة الاشتراطات.
+    # قصُّ الملحق هو اصطلاحُ كلّ فحصٍ نصّيٍّ في هذا الملف.
+    text = _split_off_appendix(((dr.get("report") or {}).get("text") or ""))
+    if not text:
+        return []
+    iso3 = str((view.get("market") or {}).get("iso3")
+               or ((dr.get("market") or {}).get("iso3")) or "").strip()
+    if not iso3:
+        return []
+    origin = str((view.get("header") or {}).get("origin") or "").strip()
+    try:
+        import silk_market_structure as _MS
+        rows = _MS.schemes()
+    except Exception:  # noqa: BLE001
+        return []
+    alien = []
+    for row in rows:
+        name = row["scheme"]
+        if not re.search(r"(?<![A-Za-z0-9])" + re.escape(name)
+                         + r"(?![A-Za-z0-9])", text, re.I):
+            continue
+        if _MS.scheme_belongs_to(name, iso3, origin):
+            continue
+        owner = row.get("owner_iso3") or row.get("owner_bloc") or "—"
+        entry = f"{name} ({owner})"
+        if entry not in alien:
+            alien.append(entry)
+    if not alien:
+        return []
+    return [{
+        "check": "regime_not_belonging_to_country", "repairable": True,
+        "note": ("المتنُ يستشهد بأنظمةِ مطابقةٍ لا تخصّ سوقَ الهدف "
+                 f"({iso3}): " + "، ".join(alien[:3]) + " — نظامُ دولةٍ أخرى "
+                 "في قائمةِ اشتراطاتٍ يُوهِم بقيدٍ غيرِ قائمٍ ويُخفي القيدَ "
+                 "القائم")}]
+
+
 # البند 6 (أمر إصلاح المحرّك) — تناقضُ تسعيرٍ محسوب مرّ بلا تعليق (تقرير
 # #11: أقصى EXW ‏$0.3274 مقابل متوسط استيراد $0.81 — أدنى بـ60%، ومع ذلك
 # قُدِّم الرقم «أساساً للتفاوض»). حين يحسب المحرك `pricing_contradiction`:
@@ -3392,9 +4150,11 @@ def _check_pricing_contradiction_flagged(view: dict) -> list[dict]:
     findings = []
     # المطابقة عبر المُطبِّع الواحد (`_norm_ar`) على الطرفين — «أساساً»
     # المنوَّنة على نصٍّ مجرَّد كانت لا تلتقي أبداً (حادثة هذا الفحص نفسه).
-    plain = _norm_ar(text)
-    if (_norm_ar(_PRICING_WARNING_NEEDLE) not in plain
-            and _PRICING_WARNING_NEEDLE_EN not in plain):
+    # الصنف ١٦: الحضورُ الحرفيُّ يُقاس على نصٍّ مطويِّ الأسطر — التحذيرُ
+    # الملفوفُ على سطرين كان يُبلَّغ غائباً وهو حاضر.
+    plain = _flat_ar(text)
+    if (_flat_ar(_PRICING_WARNING_NEEDLE) not in plain
+            and _flat_ar(_PRICING_WARNING_NEEDLE_EN) not in plain):
         findings.append({
             "check": "pricing_contradiction_flagged", "repairable": False,
             "note": ("المحرك رصد أن أقصى سعر المصنع أدنى بنسبة "
@@ -3744,6 +4504,1238 @@ def _check_system_language_leak(text: str) -> list[dict]:
 # انبعاثهما في طبقة العرض نفسها (silk_render/silk_reports/silk_economics)
 # إلى الثنائية القانونية، وبعد حلّ تناقض الموجّه الذاتي (كان يفرض «وزن غير
 # مذكور» في خلايا الأسعار ويحظر «غير مذكور» بعدها بأسطر).
+# ══════════ الصنف ١ (موجة عيوب التقرير) — لغةُ النظام تصل القارئ ══════════
+# بلاغُ المالك: عباراتٌ كُتبت لمطوّرٍ وصلت صاحبَ القرار. الفحصُ الحتميّ هو
+# الحارسُ **الوحيد الممكن** لسبعٍ من العشر المرصودة: لا قالبَ في هذا
+# المستودع يُنتجها، فهي من نثر الكاتب (النموذج) — وما لا قالبَ له لا يُصلَح
+# إلّا بقاعدةٍ تُفحَص على كلّ تقرير. القوائمُ مصدرُها الواحد
+# `silk_style_contract` (يستهلكها الموجّهُ والمراجعُ أيضاً) فلا تتباعد نسختان.
+#
+# **المنطقةُ العمياء المُعلَنة (نمط الدرس 172):** قائمةٌ محدودة — لغةُ نظامٍ
+# جديدةٌ غيرُ مُدرَجة لا تُلتقَط. وقاعدةُ الإدراج سؤالُ الدرس 176 عند كلّ
+# إضافة: **من يؤلّف هذه العبارة؟** إن كان قالباً فالقالبُ يُصلَح أوّلاً
+# والقاعدةُ حارسُ انحدارٍ له؛ وإن كان النموذجَ فالقاعدةُ هي الإنفاذ.
+#
+# تحذيريّ لا حاجب (قرار المالك 2026-08-19: لا حجب جديداً بلا راية)، ويعيد
+# القسمَ والنصَّ لكلّ إطلاقة كما طلب البلاغ.
+_READER_LEAK_WINDOW = 40        # نصفُ نافذة قرينة المعنى التقنيّ (محارف)
+
+
+def _reader_section_of(text: str, pos: int) -> str:
+    """عنوانُ أقرب قسمٍ فوق الموضع — «القسم» في بلاغ الإطلاقة."""
+    head = ""
+    for m in _HEADING_RE.finditer(text, 0, max(pos, 0)):
+        head = m.group(1).strip()
+    return head or "قبل أول عنوان"
+
+
+def _reader_snippet(text: str, start: int, end: int) -> str:
+    """مقتطفٌ يقرؤه المشغّل — النصُّ حول الإطلاقة بلا أسطر."""
+    lo = max(0, start - 45)
+    return " ".join(text[lo:end + 45].split())
+
+
+# **تصادمٌ رصده حارسٌ قائم** (`test_quality_gate_stays_warn…`): «إلى»
+# تُطبَّع إلى «الي» بتوحيد الهمزات، وكذلك «آلي» — فكان حرفُ الجرّ الأكثرُ
+# شيوعاً في العربية يُبلَّغ «لغةَ نظام». المفرداتُ ذاتُ المعنيين تُطابَق
+# بتطبيعٍ **يحفظ الهمزة** (حركاتٌ وتطويلٌ فقط)، فلا يقع التصادم.
+_TOKEN_SOFT_NORM_RE = re.compile("[\u064b-\u0652\u0670\u0640]")
+
+
+def _norm_token(s: object) -> str:
+    """تطبيعٌ للمطابقةِ **يحفظ صيغةَ الألف**: الحركاتُ والتطويلُ فقط."""
+    return _TOKEN_SOFT_NORM_RE.sub("", str(s or ""))
+
+
+# **المراجعةُ الذاتية للفرق (البند ٥٨)**: التطبيعُ يحذف حروفاً (تشكيلاً
+# وتطويلاً) ويطوي المسافات، فمواضعُ المطابقة في النصّ المطبَّع **لا تطابق**
+# مواضعَ النصّ الأصليّ — فكان بلاغُ `reader_language_leak` يسمّي قسماً غيرَ
+# الذي فيه العيب ويقتطع مقطعاً من موضعٍ آخر. وبلاغٌ يشير إلى موضعٍ خطأ
+# يُرسِل المشغّلَ إلى قسمٍ سليم.
+#
+# `_norm_map` يبني النصَّ المطبَّع **ومعه فهرسَ موضعِ كلّ حرفٍ في الأصل**،
+# فيعود كلُّ موضعٍ إلى نظامه الإحداثيّ الصحيح.
+def _norm_map(s: object, soft: bool = False) -> tuple:
+    """(النصُّ المطبَّع، فهرسُ موضعِ كلّ حرفٍ في الأصل).
+
+    `soft=True` يحفظ صيغةَ الألفِ ويطبّق تطبيعَ `_norm_token`؛ وإلّا يطبّق
+    تطبيعَ `_norm_ar` حرفاً بحرف — والنتيجةُ **مطابقةٌ نصّياً** لِما تعيده
+    الدالّتان، ومقفولٌ باختبار.
+    """
+    src = str(s or "")
+    out: list = []
+    idx: list = []
+    for i, ch in enumerate(src):
+        if _AR_DIACRITICS_STRIP_RE.fullmatch(ch) or ch == "ـ":
+            continue
+        if soft:
+            out.append(ch)
+            idx.append(i)
+            continue
+        if ch in "أإآ":
+            ch = "ا"
+        elif ch == "ة":
+            ch = "ه"
+        elif ch == "ى":
+            ch = "ي"
+        if ch in " \t":
+            if out and out[-1] == " ":
+                continue
+            ch = " "
+        out.append(ch.lower())
+        idx.append(i)
+    return "".join(out), idx
+
+
+def _check_reader_language_leak(text: str, lang: str = "ar") -> list[dict]:
+    """`reader_language_leak` (الصنف ١، تحذيريّ): لغةُ نظامٍ داخلية في نصٍّ
+    يقرؤه صاحبُ القرار.
+
+    ثلاثُ قنواتٍ بشدّةِ يقينٍ متفاوتة، ولذلك لا تُخلَط:
+
+    1. **عباراتٌ حرفية** (`FORBIDDEN_READER_PHRASES`) — لا سياقَ يشفع لها.
+    2. **رموزٌ خام** (`HARD_READER_TOKENS`) — بحدِّ كلمةٍ للّاتينيّ كي لا
+       يُلتقَط `null` من داخل كلمة.
+    3. **مفرداتٌ ذاتُ معنيين** (`CONTEXTUAL_READER_TOKENS`) — تُطلِق **فقط**
+       بقرينةِ معنى تقنيّ قريبة. هذا شرطُ صدقٍ لا تسامح: «معادلة» وردت ١١
+       مرّة في خطّ الأساس كلُّها **مأمورٌ بها** في معيار الكتابة («معادلة
+       التعادل = كلفة الدخول ÷ هامش الوحدة»)، فحظرُها عارياً يُطلِق على كلّ
+       تقريرٍ صحيح؛ و«واجهة» كانت تُلتقَط من داخل «مواجهة» بلا حدِّ كلمة.
+
+    الملاحقُ مستثناةٌ (`_split_off_appendix`): الملحقُ التقنيّ سطحُ مدقّقٍ
+    لا سطحُ قارئ — نفسُ استثناءِ `_check_decimal_precision`. وبلاغُ كلّ
+    إطلاقةٍ يحمل **القسمَ والنصَّ** كما طلب البلاغ، وإطلاقةٌ واحدة لكلّ
+    مفردةٍ (لا ضجيجَ تكرارٍ لنفس العبارة).
+    """
+    if not text:
+        return []
+    from silk_style_contract import (CONTEXTUAL_READER_TOKENS,
+                                     FORBIDDEN_READER_PHRASES,
+                                     HARD_READER_TOKENS, READER_TOKEN_ALLOW,
+                                     SYSTEM_SENSE_CUES)
+    body = _split_off_appendix(text)
+    # المواضعُ تُترجَم إلى إحداثيّات النصّ الأصليّ قبل أيّ بلاغ (انظر
+    # `_norm_map`): بلاغٌ يشير إلى قسمٍ غيرِ الذي فيه العيب يُرسِل المشغّلَ
+    # إلى قسمٍ سليم — وهو عيبُ بلاغٍ لا عيبُ كشف.
+    plain, _plain_idx = _norm_map(body)
+    findings: list[dict] = []
+    covered: list[tuple] = []          # مدياتُ العبارات المُبلَّغة (بالأصل)
+
+    def _orig(pos: int, idx: list, fallback: int = 0) -> int:
+        """موضعٌ في النصّ المطبَّع ⇒ موضعُه في الأصل."""
+        if 0 <= pos < len(idx):
+            return idx[pos]
+        return idx[-1] if idx else fallback
+
+    def _add(hit: str, start: int, end: int, why: str) -> None:
+        covered.append((start, end))
+        findings.append({
+            "check": "reader_language_leak", "repairable": True,
+            "note": (f"لغةُ نظامٍ داخلية في نصٍّ يقرؤه صاحبُ القرار: «{hit}» "
+                     f"— القسم «{_reader_section_of(body, start)}»: "
+                     f"…{_reader_snippet(body, start, end)}… ({why})")})
+
+    def _inside_reported(pos: int) -> bool:
+        return any(lo <= pos < hi for lo, hi in covered)
+
+    # (١) العباراتُ الحرفية أوّلاً — فتغطّي رموزَها فلا يُبلَّغ الرمزُ مرّتين.
+    for phrase in FORBIDDEN_READER_PHRASES:
+        n_phrase = _norm_ar(phrase)
+        i = plain.find(n_phrase)
+        if i >= 0:
+            lo = _orig(i, _plain_idx)
+            hi = _orig(i + len(n_phrase) - 1, _plain_idx, lo) + 1
+            _add(phrase, lo, hi, "عبارةٌ محظورة حرفياً")
+
+    # (٢) الرموزُ الخام — حدُّ كلمةٍ للّاتينيّ الأبجديّ، ومطابقةٌ نصّيةٌ لغيره
+    # (`{`/`}`/`N/A` رموزٌ لا كلمات، والعربيُّ يُطبَّع أوّلاً).
+    for tok in HARD_READER_TOKENS:
+        if tok.isascii() and tok.isalpha():
+            m = re.search(rf"(?<![A-Za-z]){re.escape(tok)}(?![A-Za-z])",
+                          body, re.I)
+            span = (m.start(), m.end()) if m else None
+        else:
+            hay, needle = ((plain, _norm_ar(tok)) if not tok.isascii()
+                           else (body, tok))
+            i = hay.find(needle)
+            if i < 0:
+                span = None
+            elif hay is body:
+                span = (i, i + len(needle))
+            else:
+                lo = _orig(i, _plain_idx)
+                span = (lo, _orig(i + len(needle) - 1, _plain_idx, lo) + 1)
+        if span and not _inside_reported(span[0]):
+            _add(tok, span[0], span[1],
+                 "رمزٌ خام لا معنى له عند القارئ")
+
+    # (٣) المفرداتُ ذاتُ المعنيين — بقرينةٍ فقط، وإطلاقةٌ واحدة لكلّ مفردة.
+    soft, _soft_idx = _norm_map(body, soft=True)
+    for tok in CONTEXTUAL_READER_TOKENS:
+        ntok = _norm_token(tok)
+        for m in re.finditer(rf"(?<![^\W\d_]){re.escape(ntok)}(?![^\W\d_])",
+                             soft):
+            o_lo = _orig(m.start(), _soft_idx)
+            o_hi = _orig(m.end() - 1, _soft_idx, o_lo) + 1
+            if _inside_reported(o_lo):
+                continue
+            lo = max(0, m.start() - _READER_LEAK_WINDOW)
+            hi = min(len(soft), m.end() + _READER_LEAK_WINDOW)
+            window = _norm_ar(soft[lo:hi])
+            if any(_norm_ar(a) in window for a in READER_TOKEN_ALLOW):
+                continue
+            cue = next((c for c in SYSTEM_SENSE_CUES
+                        if _norm_ar(c) in window), None)
+            if cue:
+                _add(tok, o_lo, o_hi,
+                     f"بمعناها التقنيّ — قرينةُ «{cue}» بجوارها")
+                break
+    return findings
+
+
+# ══════════ الصنف ٢ (موجة عيوب التقرير) — خانةٌ فارغة تكسر جملة ══════════
+# بلاغُ المالك: «ثم السعودية بالحصة السعودية البالغة 10.44%»، و«الشريحة
+# المحسوبة أعلاه رغم غياب رقم لحجمها»، و«استند هذا الحكم إلى شرطين مفتوحين»
+# بلا شرطين.
+#
+# العلاجُ الحتميّ في القوالب نفسها (`silk_i18n.t` + `repair_interpolation` +
+# صيغُ الفراغ `<key>_empty` — من ٦٣ زوجاً مكسوراً إلى صفر). وهذا الفحصُ
+# حارسُ انحدارٍ له **وحارسٌ أصليّ لنثر الكاتب**: النموذجُ يركّب جملاً كهذه
+# بنفسه، ولا قالبَ يُصلَح فيها.
+#
+# تحذيريّ. القاعدةُ الواحدة: `silk_i18n.repair_interpolation` هي مِعيارُ
+# «سليم» — فلا قاعدةُ فحصٍ تخالف قاعدةَ إصلاح.
+_UNRENDERED_SLOT_RE = re.compile(r"\{[a-zA-Z_][a-zA-Z_0-9]{0,30}\}")
+# إحالةٌ مكانيّة («أعلاه»/«أدناه») بجوار إعلانِ غياب: الإحالةُ تَعِد بشيءٍ
+# أُعلِن أنه غيرُ موجود — «الشريحة المحسوبة أعلاه رغم غياب رقم لحجمها».
+_SPATIAL_REF_RE = re.compile(r"أعلاه|أدناه|above|below", re.I)
+_GAP_WORDS_NEAR = ("غير محسوب", "غير متاح", "لا نعرفه بعد", "not computed",
+                   "not available", "not known yet")
+_SPATIAL_GAP_WINDOW = 60
+# صدى الكيان: الاسمُ نفسُه مكرّراً داخل وصفِه («السعودية بالحصة السعودية»).
+# ≥٤ محارف كي لا تُلتقَط أدواتٌ وحروفُ جرّ، والنافذةُ ثلاثُ كلماتٍ بينهما.
+_ECHO_WORD_RE = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
+# **المسافةُ هي التمييز** (مُعايَرةٌ في المراجعة الذاتية بعد الجولة الأولى):
+# العيبُ المرصود «السعودية بالحصة **السعودية**» مسافتُه كلمةٌ واحدةٌ فاصلة
+# (j = i+2) — الكلمةُ تعيد نفسَها داخل وصفِها. والتباينُ المشروع «العبوات
+# الصغيرة … حصة العبوات الكبيرة» مسافتُه كلمتان (j = i+3) لأنّ بينهما
+# فعلاً ومضافاً. فالسقفُ ٢: يحفظ العيبَ ويُخرِج المقارنة.
+# (الاستدلالُ بالمُحدِّد التالي جُرِّب وأُسقِط: «بالحصة» و«البالغة» مختلفان
+# فكان يُسكِت العيبَ المرصود نفسَه — معاملٌ واحدٌ مُعايَرٌ أصدقُ من حدسٍ.)
+_ECHO_MAX_GAP = 2
+# **ثلاثةُ استثناءاتٍ قِياسية، لا تخميناً** (مُعايَرةٌ على خطّ الأساس):
+# (١) وحداتُ القياس والعملات: «0.85 دينار/لتر مقابل 0.55 دينار/لتر» مقارنةٌ
+#     سليمة يجب أن تتكرّر فيها الوحدة — إنذارٌ كاذبٌ في كلّ سلّم أسعار.
+_ECHO_UNIT_WORDS = frozenset({
+    "دينار", "ريال", "دولار", "يورو", "درهم", "جنيه", "دينارا", "ريالا",
+    "كجم", "كيلوغرام", "كيلو", "غرام", "لتر", "طن", "عبوة", "وحدة", "قطعة",
+    "شهر", "سنة", "سنوياً", "سنويا", "يوم", "أسبوع", "مليون", "مليار", "ألف",
+    # الصنف ١٥ (مراجعةُ الجولة الثالثة): **رأسٌ عامٌّ قبل اسمٍ علَم** يتكرّر
+    # بالضرورة حين يُعَدّ كيانان — «ميناء طرابلس أو ميناء بنغازي» عربيةٌ
+    # سليمة، و«الهيئة الغربية… الهيئة الشرقية» كذلك. الفحصُ أطلق عليها
+    # صدىً. والاستبعادُ بالرأسِ العامِّ لا بقاعدةِ «تابعٌ مختلف»: تلك
+    # جُرِّبت في الصنف ٢ فأسكتت العيبَ المرصود نفسَه («السعودية بالحصة
+    # السعودية») — فالمعالجةُ بقائمةٍ مقيسةٍ لا بحدسٍ عامّ.
+    "ميناء", "مرفأ", "منفذ", "معبر", "مطار", "هيئة", "الهيئة", "وزارة",
+    "الوزارة", "شركة", "مؤسسة", "جمعية", "بنك", "سوق", "مدينة", "محافظة",
+    "إقليم", "منطقة", "ولاية",
+})
+# **المراجعةُ الذاتية للفرق (البند ٥٨)**: المقارنةُ تجري على الكلمةِ
+# **المطبَّعة** (`_norm_ar`) والقائمةُ مكتوبةٌ غيرَ مطبَّعة — فعشرون مدخلاً
+# منها كانت **ميتةً** (كلُّ ما فيه ة/أ/إ/ى: «عبوة»، «أسبوع»، «وحدة»،
+# «سنوياً»، «الهيئة»، «شركة»…)، ومنها استثناءاتٌ قائمةٌ قبل هذه الموجة. تُطبَّع
+# القائمةُ مرّةً واحدة عند البناء فلا يتكرّر العيبُ بإضافةِ مدخلٍ جديد.
+_ECHO_UNIT_NORM: frozenset = frozenset(_norm_ar(w) for w in _ECHO_UNIT_WORDS)
+# (٢) رابطُ مقارنةٍ بين الورودين ⇒ تكرارٌ مقصودٌ لطرفَي المقارنة.
+_ECHO_COMPARISON_RE = re.compile(
+    r"مقابل|مقارنةً|مقارنة|بينما|في حين|أمام|versus|vs\.?|compared", re.I)
+# (٣) الورودُ الثاني داخل قوسٍ ⇒ شرحٌ مقحوم: عيبٌ حقيقيّ لكنه من عائلةِ
+#     المسرد (الصنف ٤ — «مصطلحٌ يُستعمل بلا تعريف»، ويحظره أصلاً
+#     `PLAIN_LANGUAGE_RULE`: «ولا شرحَ بين قوسين وسط الجملة»). يُترك لقناته
+#     كي لا يُبلِّغ فحصان عيباً واحداً بتسميتين.
+_ECHO_PAREN_RE = re.compile(r"[\(（][^\)）]*$")
+
+
+def _check_template_interpolation(text: str, lang: str = "ar") -> list[dict]:
+    """`template_interpolation` (الصنف ٢، تحذيريّ): جملةٌ كسرتها خانةٌ فارغة
+    أو إحالةٌ إلى ما أُعلِن غائباً أو صدى كيانٍ في وصفِه.
+
+    أربعُ قنوات:
+
+    1. **خانةٌ لم تُحشَ** — `{label}` حرفياً في نصٍّ معروض.
+    2. **أثرٌ مكانيكيّ** — قوسٌ فارغ/نقطتان متدلّيتان/فراغٌ مزدوج، مُقاساً
+       بأن `silk_i18n.repair_interpolation` تُغيّر السطر. مِعيارٌ واحد
+       للإصلاح والفحص، فلا تتباعد قاعدتان.
+    3. **إحالةٌ إلى غائب** — «أعلاه/أدناه» على مسافةٍ قريبة من إعلانِ غياب.
+    4. **صدى كيان** — الاسمُ نفسُه داخل وصفِه («بالحصة السعودية» بعد
+       «السعودية»)، بحدِّ كلمةٍ ونافذةٍ ثلاثِ كلمات.
+    """
+    if not text:
+        return []
+    from silk_i18n import repair_interpolation, tidy_punctuation
+    body = _split_off_appendix(text)
+    findings: list[dict] = []
+    seen: set = set()
+
+    def _add(kind: str, detail: str, pos: int) -> None:
+        sig = (kind, detail)
+        if sig in seen:
+            return
+        seen.add(sig)
+        findings.append({
+            "check": "template_interpolation", "repairable": True,
+            "note": (f"{kind} — القسم «{_reader_section_of(body, pos)}»: "
+                     f"…{_reader_snippet(body, pos, pos + len(detail))}…")})
+
+    m = _UNRENDERED_SLOT_RE.search(body)
+    if m:
+        _add(f"خانةُ قالبٍ لم تُحشَ «{m.group(0)}»", m.group(0), m.start())
+    # مِعيارُ القالب (`repair_interpolation`) يُقاس على **سطرٍ كاملٍ بذاته**:
+    # نقطتان متدلّيتان آخرَ سطرٍ لا يتلوه متنٌ = خانةٌ فُرِّغت فعلاً.
+    lines = body.splitlines()
+    for n, raw in enumerate(lines):
+        s = raw.strip()
+        if not s or s.startswith(("#", "|", ">")):
+            continue
+        if repair_interpolation(s) == tidy_punctuation(s):
+            continue
+        if not s.rstrip().endswith((":", "：")):
+            continue
+        # **نقطتان يتلوهما متنٌ عنوانٌ مشروع** (رُصد في المراجعة الذاتية):
+        # «الشرط الحاجب:» آخرَ سطرٍ يكمله السطرُ التالي نثرٌ سليم، وإسقاطُ
+        # نقطتيه إفسادٌ لا إصلاح. الخانةُ المُفرَّغة تُخلِّف نقطتين **لا
+        # يتلوهما شيء**.
+        nxt = next((x.strip() for x in lines[n + 1:] if x.strip()), "")
+        if nxt and not nxt.startswith(("#", "|", ">")):
+            continue
+        _add("نقطتان متدلّيتان — خانةٌ فُرِّغت بلا صيغةِ فراغٍ نحوية",
+             s[:40], body.find(raw))
+
+    for line in body.splitlines():
+        stripped = line.strip()
+        # الجداول والعناوين تُستثنى: فراغُ المحاذاة فيها مقصودٌ لا عطب.
+        if not stripped or stripped.startswith(("#", "|", ">")):
+            continue
+        # **المِعيارُ الآمنُ على النثر** لا معيارُ القالب: شرطةٌ آخرَ سطرٍ
+        # في نثرٍ مطويّ وسطُ جملةٍ لا أثرُ خانةٍ فارغة (قياسٌ على مدوّنة
+        # Nadec). والقناتان بمِعيارَيهما أصدقُ من قناةٍ بمعيارٍ واحد خاطئ.
+        if tidy_punctuation(stripped) != stripped:
+            _add("أثرُ خانةٍ فارغة (قوسٌ فارغ/نقطتان متدلّيتان/فراغٌ مزدوج)",
+                 stripped[:40], body.find(line))
+
+    for m in _SPATIAL_REF_RE.finditer(body):
+        lo = max(0, m.start() - _SPATIAL_GAP_WINDOW)
+        hi = min(len(body), m.end() + _SPATIAL_GAP_WINDOW)
+        window = _norm_ar(body[lo:hi])
+        gap = next((g for g in _GAP_WORDS_NEAR if _norm_ar(g) in window), None)
+        if gap:
+            _add(f"إحالةٌ «{m.group(0)}» إلى ما أُعلِن «{gap}»",
+                 m.group(0), m.start())
+
+    for line in body.splitlines():
+        if line.strip().startswith(("#", "|", ">")):
+            continue
+        words = [(w.group(0), w.start()) for w in _ECHO_WORD_RE.finditer(line)]
+        norm = [_norm_ar(w) for w, _ in words]
+        for i, w in enumerate(norm):
+            if w in _ECHO_UNIT_NORM:
+                continue
+            for j in range(i + 1, min(i + 1 + _ECHO_MAX_GAP, len(norm))):
+                if norm[j] != w or j == i + 1:
+                    continue
+                between = line[words[i][1] + len(words[i][0]):words[j][1]]
+                if _ECHO_COMPARISON_RE.search(between):
+                    break
+                # الورودُ الثاني داخل قوسٍ ⇒ شرحٌ مقحوم (قناةُ الصنف ٤).
+                if _ECHO_PAREN_RE.search(line[:words[j][1]]):
+                    break
+                _add(f"صدى كيانٍ داخل وصفِه «{words[i][0]}»",
+                     words[i][0], body.find(line) + words[i][1])
+                break
+    return findings
+
+
+# ══════ الصنف ٣ (موجة عيوب التقرير) — عرضُ الأرقام والوحدات والتواريخ ══════
+# بلاغُ المالك: «36,234,200.146 مقابل 26730»؛ والدرجةُ 65 و0.65 و65% في
+# تقريرٍ واحد؛ وأرقامٌ بلا وحدةٍ ولا سنة؛ وبياناتُ 2018 بلا سنةٍ مطبوعة؛
+# وتوقّعُ 2024 بصيغةِ المستقبل في 2026؛ وتاريخُ التشغيل مكانَ تاريخِ الرصد.
+#
+# الجذرُ (خمسُ عائلاتِ تنسيقٍ متوازية) مُصلَحٌ بمُنسِّقٍ واحد في
+# `silk_narrative`. وهذه أربعُ قواعدَ تحذيرية — حرّاسُ انحدارٍ له، وحرّاسٌ
+# أصليّون لنثر الكاتب الذي لا يمرّ على مُنسِّق.
+
+# (١) تعدّدُ صيغِ الدرجة: نفسُ القيمة بصيغتين.
+_SCORE_OF_100_RE = re.compile(r"(\d{1,3}(?:\.\d+)?)\s*(?:من|/|out of)\s*100")
+_SCORE_WORD_RE = re.compile(
+    r"(?:قوة (?:هذه )?الفرصة|الدرجة الموزونة|الدرجة|opportunity strength"
+    r"|weighted score)[^\d\n]{0,25}(\d{1,3}(?:\.\d+)?)\s*(%|٪)?")
+_SCORE_FRACTION_RE = re.compile(
+    r"(?:قوة (?:هذه )?الفرصة|الدرجة)[^\d\n]{0,25}(0\.\d+)")
+
+# (٢) مقدارٌ كبير بلا عملة: «مليون/مليار» أو رقمٌ ≥ أربع خانات في جملةِ مالٍ
+# بلا رمزِ عملةٍ أو اسمِها قريباً.
+_MAGNITUDE_WORD_RE = re.compile(r"\b(?:مليون|مليار|ألف)\b|\b(?:million|billion)\b")
+_CURRENCY_NEAR_RE = re.compile(
+    r"دولار|يورو|ريال|درهم|دينار|جنيه|نايرا|روبية|ين\b"
+    r"|\b(?:USD|EUR|SAR|AED|QAR|KWD|JOD|DZD|YER|JPY|NGN|INR|EGP|GBP)\b"
+    r"|[$€£¥]", re.I)
+# كلماتُ سياقٍ غير ماليّ: مقدارٌ عن سكّانٍ أو أطنانٍ أو وحداتٍ لا يحتاج عملة.
+_NON_MONEY_CTX_RE = re.compile(
+    r"نسمة|سكان|السكان|طن|أطنان|كجم|كيلوغرام|لتر|عبوة|قطعة|وحدة|زيارة"
+    r"|استعلام|بحث|مصنع|منشأة|شركة|نقطة|درجة|tonne|kg|litre|liter|units?"
+    r"|population|searches", re.I)
+_MONEY_WINDOW = 55
+
+# (٣) بياناتٌ أقدمُ من ثلاثِ سنواتٍ تقود جملةً بلا سنةٍ مطبوعة.
+_STALE_YEARS_DEFAULT = 3
+_ANY_YEAR_RE = re.compile(r"\b(19\d\d|20\d\d)\b")
+
+# (٤) تاريخُ رصدٍ يساوي تاريخَ التشغيل — ساعةُ خطِّ التجميع ليست معطىً.
+_OBSERVED_LABEL_RE = re.compile(
+    r"(?:تاريخ (?:ال)?رصد|رُصد (?:في|بتاريخ)|observ(?:ed|ation) date)"
+    r"[^\d\n]{0,20}(\d{4}-\d{2}-\d{2})")
+
+
+_STALE_YEAR_WINDOW = 90
+
+
+def _as_number(v: object) -> "float | None":
+    """رقمٌ من قيمةِ دليلٍ — أو `None` (بلا استثناءٍ يُسقِط الفحص)."""
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    try:
+        return float(str(v).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _significant_number_mentions(body: str, num: float) -> list:
+    """مواضعُ ذكرِ الرقم في النثر بصيغتَي العرض المعتادتين.
+
+    الرقمُ يُعرَض إمّا كاملاً بفاصلِ آلاف («7,120,000») أو مختزلاً بمقداره
+    («7.12 مليون»). لا تُلتقَط الأرقامُ الصغيرة (< 1000) كي لا يُطابَق
+    «2» من نصٍّ آخر — الرقمُ الصغير يُميَّز بقيمته لا بذاته.
+    """
+    if abs(num) < 1000:
+        return []
+    out: list = []
+    cands = {f"{num:,.0f}", f"{num:.0f}"}
+    if abs(num) >= 1e6:
+        cands.add(f"{num / 1e6:,.2f}".rstrip("0").rstrip("."))
+        cands.add(f"{num / 1e6:,.1f}".rstrip("0").rstrip("."))
+    if abs(num) >= 1e9:
+        cands.add(f"{num / 1e9:,.2f}".rstrip("0").rstrip("."))
+    for c in cands:
+        if len(c) < 3:
+            continue
+        i = body.find(c)
+        if i >= 0:
+            out.append((i, i + len(c)))
+    return out
+
+
+def _check_score_format_drift(text: str) -> list[dict]:
+    """`score_format_drift` (الصنف ٣، تحذيريّ): الدرجةُ بأكثر من صيغة.
+
+    الصيغةُ المعتمدة واحدة: «N من 100» (`silk_narrative.fmt_score`). ظهورُ
+    كسرٍ 0–1 أو نسبةٍ مئوية للدرجة نفسِها في التقرير خلطُ مقاييس — البلاغ
+    المرصود: 65 و0.65 و65% لنفس الدرجة.
+    """
+    if not text:
+        return []
+    body = _split_off_appendix(text)
+    forms: dict = {}
+    for m in _SCORE_OF_100_RE.finditer(body):
+        forms.setdefault("من 100", m.group(0).strip())
+    for m in _SCORE_FRACTION_RE.finditer(body):
+        forms.setdefault("كسر 0–1", m.group(0).strip())
+    for m in _SCORE_WORD_RE.finditer(body):
+        if m.group(2):                       # نسبةٌ مئوية للدرجة
+            forms.setdefault("نسبة مئوية", m.group(0).strip())
+    if len(forms) < 2:
+        return []
+    shown = "، ".join(f"«{v}» ({k})" for k, v in forms.items())
+    return [{"check": "score_format_drift", "repairable": True,
+             "note": ("الدرجةُ معروضةٌ بأكثر من صيغة في تقريرٍ واحد: " + shown
+                      + " — الصيغةُ المعتمدة واحدة: «N من 100» "
+                        "(silk_narrative.fmt_score)")}]
+
+
+def _check_amount_without_currency(text: str) -> list[dict]:
+    """`amount_without_currency` (الصنف ٣، تحذيريّ): مقدارٌ ماليٌّ بلا عملته.
+
+    يُفحَص بالسياق لا عارياً: «38 مليون نسمة» و«2,500 طن» مقاديرُ مشروعةٌ
+    بلا عملة، و«2500» قيمةُ مؤشرِ تركّزٍ لا مال. القاعدةُ تُطلِق حين يكون
+    المقدارُ في سياقٍ ماليٍّ صريح بلا رمزِ عملةٍ قريب.
+    """
+    if not text:
+        return []
+    body = _split_off_appendix(text)
+    findings: list[dict] = []
+    seen: set = set()
+    for m in _MAGNITUDE_WORD_RE.finditer(body):
+        lo = max(0, m.start() - _MONEY_WINDOW)
+        hi = min(len(body), m.end() + _MONEY_WINDOW)
+        window = body[lo:hi]
+        if _CURRENCY_NEAR_RE.search(window) or _NON_MONEY_CTX_RE.search(window):
+            continue
+        frag = " ".join(window.split())[:70]
+        if frag in seen:
+            continue
+        seen.add(frag)
+        findings.append({
+            "check": "amount_without_currency", "repairable": True,
+            "note": (f"مقدارٌ بلا عملةٍ ولا وحدةٍ معلَنة: «{m.group(0)}» — "
+                     f"القسم «{_reader_section_of(body, m.start())}»: "
+                     f"…{frag}…")})
+    return findings[:5]
+
+
+def _check_stale_data_without_year(dr: dict, text: str = "") -> list[dict]:
+    """`stale_data_without_year` (الصنف ٣، تحذيريّ): **قيمةٌ** من بياناتٍ
+    أقدمَ من ثلاثِ سنواتٍ مذكورةٌ في النثر بلا سنتها المطبوعة قريباً.
+
+    القارئُ لا يستطيع تقديرَ صلاحيةِ رقمٍ لا يعرف سنته؛ و«بيانات 2018 بلا
+    سنةٍ مطبوعة» هي العلّةُ المرصودة حرفياً.
+
+    **الشرطُ قيمةٌ مذكورةٌ لا سنةٌ موجودةٌ في الأدلة** (تضييقٌ جاء من
+    القياس): مدوّنةُ الكويت تحمل دليلاً من 2021 لا يذكره المتنُ أصلاً —
+    ومطالبةُ تقريرٍ بطبعِ سنةِ رقمٍ لم يستعمله لومٌ على ما لم يفعل. فتُقرَأ
+    قيمةُ كلّ حقيقةٍ متقادِمة، ويُطلَق الفحصُ حين تظهر القيمةُ في النثر
+    ولا تظهر سنةٌ في نافذتها.
+
+    **وهذه القاعدةُ إنفاذُ ما كان الموجّهُ يأمر به بلا حارس:** البند 2.1 من
+    «إفصاح جودة البيانات» (`silk_ai_judge.deep_report`) يُلزِم الكاتبَ بحملِ
+    وسمِ السنة «حيثما ذكرت تلك الحقيقة في السرد… كي لا تُقرأ كأنها راهنة»
+    — ولم يكن شيءٌ يتحقّق منه. قاعدةٌ في موجّهٍ بلا فحصٍ أمنيةٌ لا قاعدة.
+    """
+    body = _split_off_appendix(text or _report_text(dr))
+    if not body:
+        return []
+    try:
+        cutoff = int(os.environ.get("SILK_STALE_DATA_YEARS",
+                                    _STALE_YEARS_DEFAULT))
+    except ValueError:
+        cutoff = _STALE_YEARS_DEFAULT
+    import datetime
+    now = datetime.date.today().year
+    # حقائقُ الأدلة بقِيَمها وسنواتها — نفسُ منبعِ `_stale_years_in_view`.
+    facts: list = []
+    for m in (dr.get("missions") or {}).values():
+        facts.extend((m or {}).get("findings") or [])
+    for dps in ((dr.get("analyst") or {}).get("by_category") or {}).values():
+        facts.extend(dps or [])
+    findings: list[dict] = []
+    seen: set = set()
+    for f in facts:
+        if not isinstance(f, dict):
+            continue
+        yr = f.get("data_year")
+        val = f.get("value")
+        if not (isinstance(yr, (int, float)) and not isinstance(yr, bool)):
+            continue
+        yr = int(yr)
+        if now - yr <= cutoff:
+            continue
+        num = _as_number(val)
+        if num is None:
+            continue
+        for m in _significant_number_mentions(body, num):
+            win = body[max(0, m[0] - _STALE_YEAR_WINDOW):
+                       m[1] + _STALE_YEAR_WINDOW]
+            if _ANY_YEAR_RE.search(win):
+                continue
+            key = (yr, m[0])
+            if key in seen:
+                continue
+            seen.add(key)
+            findings.append({
+                "check": "stale_data_without_year", "repairable": True,
+                "note": (f"رقمٌ من بيانات {yr} (أقدمُ من {cutoff} سنوات) "
+                         f"مذكورٌ بلا سنته — القسم "
+                         f"«{_reader_section_of(body, m[0])}»: "
+                         f"…{_reader_snippet(body, m[0], m[1])}…")})
+            break
+    return findings[:5]
+
+
+def _check_observation_date_equals_run_date(view: dict) -> list[dict]:
+    """`observation_date_equals_run_date` (الصنف ٣، تحذيريّ): تاريخُ الرصد
+    المطبوع يساوي تاريخَ تشغيل التقرير.
+
+    ساعةُ خطِّ التجميع ليست معطىً: تاريخٌ يساوي تاريخَ التشغيل يعني — على
+    الأرجح — أنه **استُعير** من الساعة لا من المصدر، فيقرأ القارئُ بياناتٍ
+    قديمةً كأنها رُصدت اليوم. يُقارَن بـ`view["date"]` لا بساعةِ الفحص، كي
+    لا يطلق الفحصُ على تقريرٍ قديمٍ يُعاد قراءته.
+    """
+    if not isinstance(view, dict):
+        return []
+    run = str(view.get("date") or "").strip()
+    if not run:
+        return []
+    dr = view.get("deep_research") or {}
+    body = _report_text(dr)
+    surfaces = [body] + [str(x) for x in (dr.get("limits") or [])]
+    for blob in surfaces:
+        for m in _OBSERVED_LABEL_RE.finditer(blob or ""):
+            if m.group(1) == run:
+                return [{
+                    "check": "observation_date_equals_run_date",
+                    "repairable": True,
+                    "note": (f"تاريخُ الرصد المطبوع ({m.group(1)}) يساوي "
+                             "تاريخَ تشغيل التقرير — ساعةُ التشغيل ليست "
+                             "معطىً؛ يُطبَع تاريخُ الرصد إن وُجد في "
+                             "البيانات، وإلّا يُقال «تاريخ الرصد غير "
+                             "معروف» (silk_narrative.fmt_observed_at)")}]
+    return []
+
+
+# ══════ الصنف ٤ (موجة عيوب التقرير) — انزياحُ التسمية والمصطلح ══════
+# بلاغُ المالك: «الحكومة الحوثية» و«السلطات الحوثية» و«الحكومة» لجهةٍ واحدة
+# في تقريرٍ واحد؛ وتسمياتُ نشاطٍ إنجليزية في جدولٍ عربيّ؛ ومصطلحاتٌ بلا تعريف.
+#
+# **التسمياتُ الإنجليزية مغطّاةٌ أصلاً بحاجز** (`language_consistency`) —
+# مقيسٌ على «| Import export company |». فلا قاعدةَ ثانيةً لها هنا: عيبٌ
+# واحدٌ بتسميتين يُضاعِف الضجيجَ ولا يزيد تغطية. الفكسُ (جدولُ الترجمة عند
+# حدِّ العرض) في `silk_style_contract.activity_label_ar`.
+#
+# والقاعدتان أدناه تحذيريّتان، وتعملان **بلا انتظارِ تهيئة**: تسمياتُ السلطة
+# المحيَّدة تُهيَّأ في `data/market_profiles.json` وتصير التسميةَ المفضَّلة
+# متى حضرت، لكنّ كشفَ الانزياح مبنيٌّ على نصّ التقرير نفسِه — فلا يكون
+# الحارسُ نائماً بانتظار بياناتٍ لم تُهيَّأ بعد (سابقةُ الدرس 98).
+
+# جهةٌ مُنسَبة: رأسٌ رسميّ + نسبةٌ تُعرِّفه («الحكومة الحوثية»، «سلطات عدن»).
+_AUTHORITY_QUALIFIED_RE = re.compile(
+    r"(الحكومة|حكومة|السلطات|السلطة|سلطات|الإدارة|إدارة|الهيئة|هيئة)"
+    r"\s+((?:ال)?[^\W\d_]{3,}[\u064b-\u0652]?)")
+# رأسٌ عارٍ بلا نسبة: «وتفرض الحكومة رسماً» — مبهمٌ حين تُذكر جهتان.
+_AUTHORITY_BARE_RE = re.compile(
+    r"(?<![^\W\d_])(الحكومة|السلطات|السلطة)(?![^\W\d_])")
+# نِسَبٌ لا تُعرِّف جهةً: صفةٌ عامّة أو كلمةُ ربطٍ تلي الرأسَ مصادفةً.
+_AUTHORITY_GENERIC_QUAL = frozenset({
+    "المحلية", "المحلي", "الرسمية", "الرسمي", "المعنية", "المختصة",
+    "المركزية", "الوطنية", "الاتحادية", "الجديدة", "نفسها", "هناك",
+    "التي", "الذي", "قد", "لم", "لا", "أن", "إن", "على", "في", "من",
+    "بأن", "بأنه", "ذاتها", "المضيفة", "المستوردة", "المصدرة",
+})
+
+
+# اسمٌ منصوبٌ منوَّن («قيداً»، «رسماً»، «تصريحاً») مفعولُ الفعل لا نسبةُ
+# الجهة — إشارةٌ صرفيةٌ عربيةٌ حقيقية، وهي بعينها ما أخطأت به الصيغةُ الأولى
+# («وتفرض الحكومة قيداً ثالثاً» عُدَّت جهةً ثالثة).
+_ACCUSATIVE_TANWEEN_RE = re.compile("(?:\u064b|\u0627\u064b|\u064b\u0627)$")
+
+
+def _authority_mentions(body: str) -> dict:
+    """{النسبة المُطبَّعة → {الرؤوسُ المستعملة معها}} — حتميّ، بلا معجم.
+
+    الرؤوسُ تُحفَظ **بهجائها الأصليّ** للعرض (التطبيعُ للمطابقة لا للبلاغ:
+    «الحكمه» في رسالةٍ يقرؤها مشغّلٌ خطأٌ في ذاته).
+    """
+    generic = {_norm_ar(g).replace("ال", "", 1)
+               for g in _AUTHORITY_GENERIC_QUAL}
+    out: dict = {}
+    for m in _AUTHORITY_QUALIFIED_RE.finditer(body):
+        head, qual = m.group(1), m.group(2)
+        if qual in _AUTHORITY_GENERIC_QUAL:
+            continue
+        if _norm_ar(qual).replace("ال", "", 1) in generic:
+            continue
+        if _ACCUSATIVE_TANWEEN_RE.search(qual):
+            continue
+        key = _norm_ar(qual)
+        out.setdefault(key, {"qual": qual, "heads": {}})
+        out[key]["heads"].setdefault(_norm_ar(head), head)
+    return out
+
+
+# المرآةُ الإنجليزية — قفلُ التكافؤ (`test_no_undeclared_arabic_only_check`)
+# التقطَ أن الصيغةَ الأولى عربيةُ المِجَسّ وحدها، فتخمُد صامتةً على تقريرٍ
+# إنجليزيّ والمشغّلُ يقرأ PASS ويظنّه قياساً. والعيبُ نفسُه قائمٌ بالإنجليزية
+# («the Houthi government» / «the Houthi authorities»)، فالمرآةُ أصدقُ من
+# إعلانِ خمود.
+_AUTHORITY_QUALIFIED_EN_RE = re.compile(
+    r"\b(government|authorities|authority|administration)\s+"
+    r"(?:of\s+)?([A-Z][A-Za-z'-]{2,})"
+    r"|\b([A-Z][A-Za-z'-]{2,})\s+"
+    r"(government|authorities|authority|administration)\b")
+_AUTHORITY_BARE_EN_RE = re.compile(
+    r"\bthe\s+(government|authorities)\b(?!\s+of\b)", re.I)
+_AUTHORITY_GENERIC_QUAL_EN = frozenset({
+    "Local", "Official", "Central", "National", "Federal", "Competent",
+    "Relevant", "Host", "Importing", "Exporting", "The",
+})
+
+
+def _authority_mentions_en(body: str) -> dict:
+    """نظيرُ `_authority_mentions` للإنجليزية — {النسبة → {الرؤوس}}."""
+    out: dict = {}
+    for m in _AUTHORITY_QUALIFIED_EN_RE.finditer(body):
+        head = (m.group(1) or m.group(4) or "").lower()
+        qual = m.group(2) or m.group(3) or ""
+        if not head or not qual or qual in _AUTHORITY_GENERIC_QUAL_EN:
+            continue
+        out.setdefault(qual, {"qual": qual, "heads": {}})
+        # الترتيبُ الطبيعيّ إنجليزياً «Houthi government» لا «government
+        # Houthi» — البلاغُ يقرؤه مشغّلٌ، فلا يُقلَب.
+        out[qual]["heads"].setdefault(head, f"{qual} {head}")
+    return out
+
+
+def _check_authority_naming_drift(view: dict, dr: dict,
+                                  lang: str = "ar") -> list[dict]:
+    """`authority_naming_drift` (الصنف ٤، تحذيريّ): جهةٌ واحدة بتسميتين، أو
+    رأسٌ عارٍ («الحكومة») حيث يذكر التقريرُ جهتين مُنسَبتين.
+
+    القارئُ لا يعرف أيَّ جهةٍ تعني عند تعدّد السلطات، وهو فرقٌ عمليّ: كلُّ
+    جهةٍ تتحكّم بمنفذٍ وقيودٍ ورسومٍ مختلفة. التسمياتُ المفضَّلة تُهيَّأ في
+    `data/market_profiles.json` (`authorities`) وتُذكَر في البلاغ حين تحضر.
+    """
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    findings: list[dict] = []
+    en = str(lang).lower().startswith("en")
+    mentions = (_authority_mentions_en(body) if en
+                else _authority_mentions(body))
+    for row in mentions.values():
+        if len(row["heads"]) > 1:
+            findings.append({
+                "check": "authority_naming_drift", "repairable": True,
+                "note": (f"جهةٌ واحدة («{row['qual']}») مُسمَّاةٌ بأكثر من "
+                         f"رأسٍ في التقرير: "
+                         # القيمةُ المحفوظة جاهزةٌ للعرض بلغتها: العربيةُ
+                         # تحفظ الرأسَ وحده والإنجليزيةُ تحفظ الترتيبَ كاملاً.
+                         + "، ".join(
+                             f"«{h}»" if " " in h else f"«{h} {row['qual']}»"
+                             for h in sorted(row["heads"].values()))
+                         + " — تسميةٌ واحدةٌ محيَّدةٌ للتقرير كلّه")})
+            break
+    if len(mentions) >= 2:
+        bare = (_AUTHORITY_BARE_EN_RE if en
+                else _AUTHORITY_BARE_RE).search(body)
+        if bare:
+            names = "، ".join(f"«{r['qual']}»" for r in
+                              list(mentions.values())[:3])
+            preferred = _configured_authorities(view)
+            tail = (f" التسمياتُ المُهيَّأة لهذا السوق: {preferred}."
+                    if preferred else
+                    " ولا تسمياتَ مُهيَّأة لهذا السوق في "
+                    "data/market_profiles.json — تُهيَّأ موثَّقةً.")
+            findings.append({
+                "check": "authority_naming_drift", "repairable": True,
+                "note": (f"«{bare.group(1)}» بلا نسبةٍ تُعرِّفها بينما يذكر "
+                         f"التقريرُ جهتين أو أكثر ({names}) — القارئُ لا "
+                         "يعرف أيَّ جهةٍ تعني، وكلُّ جهةٍ منفذٌ وقيودٌ "
+                         "ورسومٌ مختلفة." + tail)})
+    return findings
+
+
+def _configured_authorities(view: dict) -> str:
+    """تسمياتُ السلطة المُهيَّأة لسوق التقرير — نصٌّ للعرض أو فراغ.
+
+    مأخذُ المراجعة الذاتية: كان يقرأ `view["market"]["iso3"]` وحدَه، وهو
+    **غيرُ موجودٍ** في العرض الذي يبنيه `build_view` (الرمزُ في
+    `deep_research.market.iso3`، كما تقرؤه الفحوصُ الشقيقة) — فالبلاغُ كان
+    سيبقى يقول «لا تسمياتَ مُهيَّأة» بعد تهيئتِها (الدرس ١٨٦: اختبِر المفتاحَ
+    الذي يبنيه `build_view` فعلاً).
+    """
+    try:
+        import silk_profiles
+        _v = view or {}
+        _dr = (_v.get("deep_research") or {}) if isinstance(_v, dict) else {}
+        iso3 = str((_v.get("market") or {}).get("iso3")
+                   or (_dr.get("market") or {}).get("iso3") or "").upper()
+        prof = silk_profiles.market_profile(iso3) if iso3 else None
+        rows = (prof or {}).get("authorities") or []
+        names = [str(silk_profiles.cited_value(r) or "").strip()
+                 for r in rows if r]
+        return "، ".join(f"«{n}»" for n in names if n)
+    except Exception:  # noqa: BLE001 — التهيئةُ تحسينُ بلاغٍ لا شرطُ فحص
+        return ""
+
+
+def _check_defined_term_without_definition(view: dict, dr: dict) -> list[dict]:
+    """`defined_term_without_definition` (الصنف ٤، تحذيريّ): مصطلحٌ مُعرَّفٌ
+    في المسرد يُستعمَل في المتن بلا أن يصل تعريفُه أيَّ سطحٍ يقرؤه القارئ.
+
+    التعريفاتُ الثابتة (المرآة/عتباتُ التركّز/سعرُ الحدود/نسبةُ التحقّق)
+    تُبنى حتمياً في `silk_render._apply_merchant_language` وتُعرَض في
+    «مسرد المصطلحات». هذا حارسُ انحدارٍ لذلك المسار: مصطلحٌ في المتن بلا
+    مدخلٍ في `view["deep_research"]["glossary"]` يعني أنّ بانيَ المسرد لم
+    يمرّ على هذا النصّ (سطحُ عرضٍ ثانٍ يتباعد — العطبُ الذي تسدّه الموجة).
+    """
+    from silk_style_contract import METHODOLOGY_DEFINITIONS_ORDER
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    plain = _norm_ar(body)
+    defined = {_norm_ar(str((g or {}).get("term") or ""))
+               for g in (dr.get("glossary") or [])}
+    seen_gloss: set = set()
+    missing: list = []
+    for term, definition in METHODOLOGY_DEFINITIONS_ORDER:
+        if definition in seen_gloss:
+            continue
+        if _norm_ar(term) not in plain:
+            continue
+        seen_gloss.add(definition)
+        if not any(_norm_ar(term) in d or d in _norm_ar(term)
+                   for d in defined if d):
+            missing.append(term)
+    if not missing:
+        return []
+    return [{"check": "defined_term_without_definition", "repairable": True,
+             "note": ("مصطلحٌ مُستعمَلٌ في المتن بلا تعريفه في المسرد: "
+                      + "، ".join(f"«{t}»" for t in missing[:4])
+                      + " — التعريفُ سطرٌ واحدٌ ثابتٌ يُعرَض حين يَرِد "
+                        "المصطلح (silk_style_contract."
+                        "METHODOLOGY_DEFINITIONS)")}]
+
+
+# ══════════ الصنف ٥ (موجة عيوب التقرير) — التكرار ══════════
+# بلاغُ المالك: القرارُ التنظيميّ نفسُه مشروحٌ في خمسة أقسام، و«وهذا يعني»
+# في كلّ فقرةٍ تقريباً. الجذرُ: كلُّ قسمٍ يُولَّد باستقلالٍ فلا يعرف ما شُرِح
+# قبله — فالقاعدةُ في الموجّه (`SINGLE_EXPLANATION_RULE`) والإنفاذُ هنا.
+#
+# **ما هو مغطّىً أصلاً ولا يُكرَّر:** `_check_repeated_span` يلتقط تكراراً
+# **حرفياً** لثماني كلماتٍ **داخل الفقرة الواحدة** — ونطاقُه الفقرةُ عمداً
+# (§58: ذيلُ استشهادٍ متكرر عبر الأقسام نثرٌ مشروع). و`_check_style` يعدّ
+# خمسةَ روابطَ ثقيلة **على مستوى المستند** (WARN عند ٣، FAIL عند ٥).
+# فالناقصُ قناتان: **إعادةُ الصياغة** عبر الأقسام (لا تكرارٌ حرفيّ فلا
+# يبلغها الأول)، و**تكرارُ الرابط داخل الفقرة** (العدّ المستنديّ لا يراه:
+# «وهذا يعني» مرّتين في فقرةٍ ومرّةً في فقرتين = ٤ فقط).
+_XSEC_MIN_WORDS = 8          # جملةٌ أقصرُ لا تحمل معنىً يُقارَن
+# **مُعايَرٌ بالفصل المقيس** (تصحيحُ المراجعة الذاتية): أعلى تشابهٍ في إحدى
+# عشرةَ مدوّنةٍ **سالبة** = 0.333 (قطر)، والعيبُ الحقيقيّ في التثبيتة
+# الموجَبة = 0.538 (مصر: شرطُ التسجيل مشروحٌ في الخلاصة والتنظيم معاً).
+# فالعتبةُ 0.45 بينهما: هامشٌ 35% فوق السالب و20% تحت الموجَب. القيمةُ
+# الأولى (0.55) قِيست بسؤالٍ أضعف («هل يبلغ زوجٌ 0.45؟») فكانت **تفوّت
+# العيبَ** — القياسُ الناقص أخطرُ من غيابه لأنه يُطمئن.
+_XSEC_SIM_DEFAULT = 0.45
+_XSEC_SENT_SPLIT = re.compile(r"(?<=[.!?؟])\s+|\n")
+_XSEC_WORD_SPLIT = re.compile(r"[^\w؀-ۿ]+")
+
+
+def _report_sections(text: str) -> list:
+    """[(عنوانُ القسم، متنُه)] — تقسيمٌ على العناوين نفسِها التي يعرفها
+    `_HEADING_RE`، فلا تعريفَ ثانياً للقسم يتباعد."""
+    out: list = []
+    cur, buf = "قبل أول عنوان", []
+    for line in (text or "").splitlines():
+        m = _HEADING_RE.match(line)
+        if m:
+            out.append((cur, "\n".join(buf)))
+            cur, buf = m.group(1).strip(), []
+        else:
+            buf.append(line)
+    out.append((cur, "\n".join(buf)))
+    return out
+
+
+def _xsec_sentences(text: str) -> list:
+    """[(القسم، الجملة، مجموعةُ كلماتها المُطبَّعة)] — نثرٌ فقط."""
+    out: list = []
+    for name, body in _report_sections(text):
+        for raw in _XSEC_SENT_SPLIT.split(body or ""):
+            sent = " ".join(raw.split())
+            if not sent or sent.startswith(("|", "#", ">", "-", "*")):
+                continue
+            words = [w for w in _XSEC_WORD_SPLIT.split(_norm_ar(sent))
+                     if len(w) > 2]
+            if len(words) >= _XSEC_MIN_WORDS:
+                out.append((name, sent, frozenset(words)))
+    return out
+
+
+def _check_cross_section_near_duplicate(text: str) -> list[dict]:
+    """`cross_section_near_duplicate` (الصنف ٥، تحذيريّ): الحقيقةُ نفسُها
+    مشروحةٌ في قسمين — **إعادةُ صياغةٍ** لا تكرارٌ حرفيّ.
+
+    القياسُ تشابهُ مجموعتَي الكلمات (Dice/Jaccard على الكلمات المُطبَّعة
+    الأطولَ من حرفين) — نفسُ أسلوبِ مطابقةِ الأسماء المحافظ في
+    `correlation.py`. العتبةُ **0.45 مُعايَرةٌ بالفصل المقيس** كما يشرح
+    تعليقُ `_XSEC_SIM_DEFAULT`: أعلى تشابهٍ سالبٍ 0.333 والعيبُ الموجَب
+    0.538. (كان هذا السطرُ يقول 0.55 — قيمةً سابقةً قِيست بسؤالٍ أضعف
+    فكانت تفوّت العيب؛ ومأخذُ المراجعة الذاتية أنّ التوثيقَ بقي عليها.)
+    تُضبَط بـ`SILK_XSEC_SIM`.
+
+    الجملُ داخل القسم الواحد **مستثناة**: تفصيلٌ متدرّجٌ داخل قسمه مشروع،
+    والعيبُ المرصود عبورُ الأقسام.
+    """
+    if not text:
+        return []
+    try:
+        thresh = float(os.environ.get("SILK_XSEC_SIM", _XSEC_SIM_DEFAULT))
+    except ValueError:
+        thresh = _XSEC_SIM_DEFAULT
+    sents = _xsec_sentences(_split_off_appendix(text))
+    best = None
+    for i in range(len(sents)):
+        for j in range(i + 1, len(sents)):
+            if sents[i][0] == sents[j][0]:
+                continue
+            a, b = sents[i][2], sents[j][2]
+            union = len(a | b)
+            if not union:
+                continue
+            sim = len(a & b) / union
+            if sim >= thresh and (best is None or sim > best[0]):
+                best = (sim, sents[i], sents[j])
+    if not best:
+        return []
+    sim, first, second = best
+    return [{"check": "cross_section_near_duplicate", "repairable": True,
+             "note": (f"الحقيقةُ نفسُها مشروحةٌ في قسمين (تشابه "
+                      f"{round(sim * 100)}%): «{first[0]}» و«{second[0]}» — "
+                      f"«{first[1][:80]}» مقابل «{second[1][:80]}». قسمٌ "
+                      "واحدٌ يشرحها كاملةً، والآخرُ يُحيل إليها بجملةٍ واحدة")}]
+
+
+def _check_connector_repeated_in_paragraph(text: str,
+                                           lang: str = "ar") -> list[dict]:
+    """`connector_repeated_in_paragraph` (الصنف ٥، تحذيريّ): الرابطُ نفسُه
+    أكثرَ من مرّةٍ في الفقرة الواحدة.
+
+    العدّ المستنديّ في `_check_style` لا يرى هذا: «وهذا يعني» مرّتين في
+    فقرةٍ ومرّةً في فقرتين = أربعٌ، دون عتبةِ الخمس. والعيبُ المرصود
+    («وهذا يعني» في كلّ فقرةٍ تقريباً) يظهر في **توزيعه** لا في مجموعه.
+    """
+    if not text:
+        return []
+    from silk_style_contract import (REPEATED_CONNECTORS,
+                                     REPEATED_CONNECTORS_EN)
+    en = str(lang).lower().startswith("en")
+    conns = REPEATED_CONNECTORS_EN if en else REPEATED_CONNECTORS
+    body = _split_off_appendix(text)
+    findings: list[dict] = []
+    # **المراجعةُ الذاتية للفرق (البند ٥٨)**: موضعُ القسم كان يُؤخَذ بـ
+    # `body.find(أوّلُ كلمةٍ في الفقرة)` — وهي تُطابِق **أوّلَ ورودٍ في
+    # المستند كلِّه**، فكلمةٌ شائعةٌ («في»، «السوق») تُرجِع موضعاً في قسمٍ
+    # آخر ويُسمّى قسمٌ سليمٌ في البلاغ. الموضعُ الآن **موضعُ الفقرة نفسِها**
+    # مُتعقَّباً بالتقطيع لا بالبحث.
+    _pos = 0
+    for para in re.split(r"(\n\s*\n)", body):
+        if not para.strip() or para.startswith("\n"):
+            _pos += len(para)
+            continue
+        _para_at = _pos
+        _pos += len(para)
+        # عنوانٌ يلاصق متنَه بلا سطرٍ فارغ يجعل الفقرةَ تبدأ بـ«##»، وإسقاطُ
+        # الفقرة كلّها حينها يُخمِد الفحصَ على نصفِ التقارير — تُسقَط
+        # **الأسطرُ** غيرُ النثرية وحدها (قياسٌ: القاعدةُ لم تُطلِق أصلاً).
+        prose = [ln for ln in para.splitlines()
+                 if not ln.strip().startswith(("|", "#", ">"))]
+        flat = " ".join(" ".join(prose).split())
+        if not flat:
+            continue
+        # موضعُ أوّلِ سطرٍ **نثريّ** داخل الفقرة لا موضعُ الفقرة: الفقرةُ قد
+        # تبدأ بعنوانها بلا سطرٍ فاصل، فيقع الموضعُ على العنوان نفسِه
+        # فيُبلَّغ «قبل أول عنوان» خطأً.
+        _first = next((ln for ln in prose if ln.strip()), "")
+        _at = _para_at + (para.find(_first) if _first else 0)
+        hay = flat.lower() if en else _norm_ar(flat)
+        for c in conns:
+            needle = c.lower() if en else _norm_ar(c)
+            n = hay.count(needle)
+            if n > 1:
+                findings.append({
+                    "check": "connector_repeated_in_paragraph",
+                    "repairable": True,
+                    "note": (f"الرابط «{c}» تكرّر {n} مرّات في فقرةٍ واحدة "
+                             # موضعُ أوّلِ سطرٍ نثريّ لا موضعُ الفقرة: الفقرةُ
+                             # قد تبدأ بعنوانها، فيقع الموضعُ **قبله**
+                             # فيُبلَّغ «قبل أول عنوان» خطأً.
+                             f"— القسم «{_reader_section_of(body, _at)}»: "
+                             f"…{flat[:70]}… للمعنى الواحد صيغٌ عدّة، أو "
+                             "اذكر النتيجة بلا رابط")})
+                break
+    return findings[:3]
+
+
+# ══════ الصنف ٦ (موجة عيوب التقرير) — قيمتان لمؤشرٍ واحد ══════
+# بلاغُ المالك: «الحصة السعودية 10.44% في الملخّص و12.42% في الجدول»،
+# و«10.44% هي أيضاً حصةُ الصين لعام 2023». رقمٌ واحدٌ بقراءتين، وقراءةٌ
+# واحدة لكيانين.
+#
+# الجذرُ (`silk_ai_judge._facts`): الأرقامُ تصل الكاتبَ **نصّاً بلا هوية**،
+# فلا شيء يربط رقماً في §1 برقمٍ في §6. العلاجُ `silk_figure_store`:
+# معرّفٌ ثابتٌ لكلّ قراءة، وقاعدةٌ واحدةٌ موثَّقة تختار قراءةَ القرار.
+#
+# **خلف رايةٍ مطفأةٍ افتراضياً** (`SILK_FIGURE_STORE`): الفحصُ لا يدخل
+# مجموعةَ الحجب إلّا بها (قرار المالك: لا حجب جديداً بلا راية). وحين تُطفأ
+# يبقى تحذيرياً — يُقاس ولا يحجب.
+
+# إفصاحٌ يسمّي الفرقَ بين قراءتين ⇒ ذكرُهما معاً صحيحٌ لا تعارض.
+_DIVERGENCE_DISCLOSED_RE = re.compile(
+    r"مرآة|المرآة|تصريح\s+مباشر|مباشرة|فجوة|فارق|الفارق|مقابل|بينما"
+    r"|لنفس\s+السنة|سنة\s+أخرى|mirror|directly\s+reported|gap\b",
+    re.IGNORECASE)
+_DIVERGENCE_WINDOW = 220
+
+
+def _rendered_figure_positions(body: str, value: float) -> list:
+    """مواضعُ ظهورِ قيمةٍ في النثر.
+
+    `_significant_number_mentions` يشترط ≥1000 كي لا يُطابِق رقماً صغيراً
+    مصادفةً — والحصصُ والنِّسَب (10.44) دونه. فالقيمُ الصغيرة تُطابَق
+    **بحرفها متبوعةً بعلامة نسبة** حصراً: قيدٌ يمنع مطابقةَ «10» من «2010».
+    """
+    if abs(value) >= 1000:
+        return _significant_number_mentions(body, value) or []
+    out: list = []
+    for form in {f"{value:g}", f"{value:.2f}".rstrip("0").rstrip(".")}:
+        if len(form) < 2:
+            continue
+        # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الصيغةُ المشتقّة من `:g`
+        # تُسقِط الصفرَ العشريّ («30.0» ⇒ «30»)، والريبو يطبع الحصصَ
+        # الصحيحةَ بصفرٍ عشريّ («30.0%») — فكان المُطابِقُ يفوّتها ويصمت
+        # الفحصُ الحاجبُ (عائلةُ الدرس 98: حارسٌ لا يمكن أن يُطلِق).
+        # الأصفارُ العشريةُ اللاحقةُ مقبولةٌ بعد الرقم صراحةً.
+        for m in re.finditer(
+                rf"(?<![\d.]){re.escape(form)}(?:\.0+)?\s*[%٪]", body):
+            out.append((m.start(), m.end()))
+            break
+    return out
+
+
+def _check_metric_value_divergence(view: dict, dr: dict) -> list[dict]:
+    """`metric_value_divergence` (الصنف ٦): قراءتان لمؤشرٍ واحد تُعرَضان في
+    التقرير **بلا تسميةِ الفرق**.
+
+    حاجبٌ حين رايةُ `SILK_FIGURE_STORE` مفعّلة، وتحذيريٌّ بدونها.
+
+    وذكرُ قراءتين **مع تسميةِ الفرق** صحيحٌ ومطلوب — تمييزُ المباشر عن
+    المرآة عقدٌ محفوظ، وقد أثبت الصنف ١١ أنّ معاقبتَه كانت تحجب تقارير
+    سليمة. فالشرطُ غيابُ الإفصاح لا وجودُ قراءتين.
+    """
+    import silk_figure_store as FS
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    store = FS.build(dr.get("missions"), dr.get("analyst"))
+    blocking = FS.enabled()
+    findings: list[dict] = []
+    for metric, ids in (store.get("by_metric") or {}).items():
+        if len(ids) < 2:
+            continue
+        figs = {f["id"]: f for f in store["figures"]}
+        shown: list = []
+        for fid in ids:
+            fig = figs[fid]
+            for lo, hi in _rendered_figure_positions(body, fig["value"]):
+                shown.append((lo, hi, fig))
+                break
+        # قيمٌ **متمايزة** معروضة — تكرارُ القيمة نفسِها ليس تعارضاً.
+        distinct = {round(f["value"], 6) for _, _, f in shown}
+        if len(shown) < 2 or len(distinct) < 2:
+            continue
+        shown.sort(key=lambda t: (t[0], t[1]))   # بالموضع لا بالقاموس
+        lo = max(0, shown[0][0] - 40)
+        hi = min(len(body), shown[-1][1] + 40)
+        span = body[lo:hi]
+        if len(span) <= _DIVERGENCE_WINDOW * 2 \
+                and _DIVERGENCE_DISCLOSED_RE.search(span):
+            continue
+        near = body[max(0, shown[0][0] - _DIVERGENCE_WINDOW):
+                    shown[0][1] + _DIVERGENCE_WINDOW]
+        if _DIVERGENCE_DISCLOSED_RE.search(near):
+            continue
+        vals = "، ".join(f"{f['id']}={_fmt_gate_num(f['value'])}"
+                         for _, _, f in shown[:3])
+        findings.append({
+            "check": "metric_value_divergence",
+            "repairable": not blocking,
+            "note": (f"قراءتان أو أكثر للمؤشّر «{metric}» معروضتان في "
+                     f"التقرير بلا تسميةِ الفرق: {vals} — سمِّ الفرق "
+                     "(سنةٌ أخرى، تصريحٌ مباشر مقابل مرآة) أو اعرض قراءةً "
+                     "واحدةً هي قراءةُ القرار "
+                     f"({store['decision_reading'].get(metric)})")})
+    return findings[:3]
+
+
+# ── تحذيرٌ مرافق: قيمةٌ واحدة لكيانين في قسمٍ واحد ──────────────────────────
+# «10.44% هي أيضاً حصةُ الصين لعام 2023» — تطابقٌ يكاد يكون نسخاً، ويستحقّ
+# سؤالاً لا حجباً (قد يتطابق رقمان صدقاً).
+_ENTITY_SHARE_RE = re.compile(
+    r"([^\W\d_]{3,})\s*[:،]?\s*"
+    r"(?:بحصة|حصة|بنسبة|عند|تبلغ|البالغة)?\s*"
+    r"(\d{1,3}(?:\.\d+)?)\s*[%٪]")
+# روابطُ بدايةِ الكلمة تُسقَط من الاسم المُبلَّغ («والصين» → «الصين»).
+_ENTITY_LEAD_CONJ_RE = re.compile(r"^[وف]")
+
+
+def _check_shared_value_across_entities(dr: dict) -> list[dict]:
+    """`shared_value_across_entities` (الصنف ٦، تحذيريّ دائماً): نسبةٌ واحدة
+    منسوبةٌ لكيانين مختلفين في القسم نفسِه."""
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    findings: list[dict] = []
+    for name, sect in _report_sections(body):
+        seen: dict = {}
+        for m in _ENTITY_SHARE_RE.finditer(sect or ""):
+            ent = _ENTITY_LEAD_CONJ_RE.sub("", " ".join(m.group(1).split()))
+            pct = m.group(2)
+            prior = seen.get(pct)
+            if prior and _norm_ar(prior) != _norm_ar(ent):
+                findings.append({
+                    "check": "shared_value_across_entities",
+                    "repairable": True,
+                    "note": (f"النسبةُ {pct}% منسوبةٌ لكيانين في القسم "
+                             f"«{name}»: «{prior}» و«{ent}» — تطابقٌ يستحقّ "
+                             "مراجعةً (قد يكون نسخاً لا صدفة)")})
+                break
+            seen.setdefault(pct, ent)
+        if findings:
+            break
+    return findings
+
+
+# ══════ الصنف ٧ (موجة عيوب التقرير) — عددُ الشروط المفتوحة ══════
+# بلاغُ المالك: «ثلاثةٌ في الملخّص، واثنان في التوصيات، وثلاثةٌ في إعادة
+# التقييم». الجذرُ في `silk_render.open_conditions` (قائمةٌ واحدة، خمسةُ
+# سطوحٍ بأربعِ سلوكيّات) — وهذا الفحصُ يقيس **ما يقوله النثرُ** مقابل
+# القائمة الواحدة: عددٌ مذكورٌ في جملةٍ يخالف عددَ الشروط الفعليّ.
+#
+# حاجبٌ خلف رايةِ `SILK_OPEN_CONDITIONS_SINGLE`، وتحذيريٌّ بدونها.
+
+# عددٌ عربيّ لفظاً — العيبُ المرصود كُتب لفظاً («شرطين») لا رقماً.
+_AR_COUNT_WORDS = {
+    "شرط واحد": 1, "شرطاً واحداً": 1, "شرطٌ واحد": 1,
+    "شرطين": 2, "شرطان": 2, "شرطَين": 2,
+    "ثلاثة شروط": 3, "ثلاث شروط": 3, "ثلاثةُ شروط": 3,
+    "أربعة شروط": 4, "أربع شروط": 4, "أربعةُ شروط": 4,
+    "خمسة شروط": 5, "خمس شروط": 5, "خمسةُ شروط": 5,
+    "ستة شروط": 6, "ست شروط": 6, "ستةُ شروط": 6,
+    "سبعة شروط": 7, "سبع شروط": 7,
+    "ثمانية شروط": 8, "ثماني شروط": 8,
+}
+# صيغةٌ رقمية: «٣ شروط مفتوحة» / «شرطان (2)» / «2 شروط».
+_DIGIT_COUNT_RE = re.compile(
+    r"(\d{1,2})\s*(?:شرط|شروط|شرطاً|شروطاً)"
+    r"|(?:شرط|شروط|شرطاً|شروطاً)\s*[\(（]\s*(\d{1,2})\s*[\)）]")
+# سياقُ «مفتوح» شرطٌ لازم: «ثلاثة شروط صحّية» ليست عدَّ شروطِ القرار.
+_OPEN_COND_CTX_RE = re.compile(r"مفتوح|مفتوحة|مفتوحين|مفتوحان|غير محسوم"
+                               r"|لم تُغلَق|لم تغلق|قائمة")
+_OPEN_COND_WINDOW = 60
+
+
+def _stated_condition_counts(body: str) -> list:
+    """[(العدد المذكور، الموضع، المقتطف)] — لفظاً ورقماً، بسياق «مفتوح»."""
+    out: list = []
+    plain = _norm_ar(body)
+    for phrase, n in _AR_COUNT_WORDS.items():
+        i = plain.find(_norm_ar(phrase))
+        if i < 0:
+            continue
+        win = plain[max(0, i - _OPEN_COND_WINDOW):i + _OPEN_COND_WINDOW]
+        if _OPEN_COND_CTX_RE.search(win):
+            out.append((n, i, phrase))
+    for m in _DIGIT_COUNT_RE.finditer(body):
+        n = int(m.group(1) or m.group(2))
+        win = body[max(0, m.start() - _OPEN_COND_WINDOW):
+                   m.end() + _OPEN_COND_WINDOW]
+        if _OPEN_COND_CTX_RE.search(_norm_ar(win)):
+            out.append((n, m.start(), m.group(0).strip()))
+    return out
+
+
+def _check_open_conditions_count_mismatch(view: dict, dr: dict) -> list[dict]:
+    """`open_conditions_count_mismatch` (الصنف ٧): عددٌ مذكورٌ في النثر
+    يخالف عددَ الشروط المفتوحة الفعليّ، أو عددان مختلفان في تقريرٍ واحد.
+
+    حاجبٌ خلف الراية، تحذيريٌّ بدونها. والعددُ المرجعيّ من **القائمة
+    الواحدة** (`silk_render.open_conditions`) لا من عدِّ أسطرٍ في سطح.
+    """
+    import silk_render as R
+    body = _split_off_appendix(_report_text(dr))
+    if not body:
+        return []
+    top = ((view.get("markets") or [None])[0]
+           if isinstance(view, dict) else None) or {}
+    ed = top.get("entry_decision") or top.get("decision") or {}
+    actual = R.open_conditions(ed)["count"]
+    stated = _stated_condition_counts(body)
+    if not stated:
+        return []
+    blocking = R.open_conditions_single()
+    distinct = sorted({n for n, _, _ in stated})
+    findings: list[dict] = []
+    if len(distinct) > 1:
+        shown = "، ".join(
+            f"«{frag}» ({n}) في القسم «{_reader_section_of(body, pos)}»"
+            for n, pos, frag in stated[:3])
+        findings.append({
+            "check": "open_conditions_count_mismatch",
+            "repairable": not blocking,
+            "note": (f"عددُ الشروط المفتوحة مذكورٌ بأكثر من قيمة في تقريرٍ "
+                     f"واحد: {shown} — قائمةٌ واحدة وعددٌ واحد")})
+    elif actual and distinct and distinct[0] != actual:
+        n, pos, frag = stated[0]
+        findings.append({
+            "check": "open_conditions_count_mismatch",
+            "repairable": not blocking,
+            "note": (f"النثرُ يذكر «{frag}» ({n}) بينما الشروطُ المفتوحة "
+                     f"الفعلية {actual} — القسم "
+                     f"«{_reader_section_of(body, pos)}». العددُ يُقرأ من "
+                     "القائمة الواحدة لا يُكتَب يدوياً")})
+    return findings
+
+
+# ══════ الصنف ٨ (موجة عيوب التقرير) — ثقةٌ عالية بمدخلاتٍ ناقصة ══════
+# بلاغُ المالك: «ثقة عالية بينما عمودٌ أساسيٌّ غائب»، و«درجة 65 — عند
+# العتبة بالضبط — وعمودُ الربحية مجهول»، و«نسبةُ التحقّق معروضةٌ كثقةِ حكم».
+#
+# القاعدةُ تُقال للقارئ لا تُخفى: لا «ثقةً عالية» مع جانبٍ أساسيٍّ مجهول أو
+# شرطين مفتوحين. حاجبٌ خلف رايةِ `SILK_CONFIDENCE_DISCIPLINE`، تحذيريٌّ
+# بدونها.
+_HIGH_CONF_RE = re.compile(r"ثقة\s*عالية|ثقةٌ\s*عالية|عالية\s*\(\d{1,3}\s*%\)"
+                           r"|high\s+confidence", re.IGNORECASE)
+
+
+def _check_high_confidence_with_missing_pillar(view: dict,
+                                               dr: dict) -> list[dict]:
+    """`high_confidence_with_missing_pillar` (الصنف ٨): تسميةُ «ثقة عالية»
+    على سطحٍ يقرؤه القارئ بينما جانبٌ أساسيٌّ مجهولٌ أو الشروطُ ≥٢.
+
+    تُفحَص سطوحُ العرض **والنثر** معاً: العيبُ ظهر في الاثنين (لوحةُ الأساس
+    تحمل التسمية، والكاتبُ يكتبها نثراً).
+    """
+    import silk_decision as D
+    import silk_render as R
+    if not isinstance(view, dict):
+        return []
+    top = ((view.get("markets") or [None])[0]) or {}
+    ed = top.get("entry_decision") or top.get("decision") or {}
+    pillars = ed.get("pillars") or {}
+    if not pillars:
+        return []
+    cap = D.confidence_band_cap(pillars, ed.get("conditions"))
+    if not cap:
+        return []
+    basis = ((view.get("decision") or {}).get("basis") or {})
+    surfaces = [str(basis.get("confidence_band") or ""),
+                str(basis.get("score_line") or ""),
+                _split_off_appendix(_report_text(dr))]
+    hit = next((s for s in surfaces if s and _HIGH_CONF_RE.search(s)), None)
+    if not hit:
+        return []
+    missing = D.missing_core_pillars(pillars)
+    why = (f"الجانبُ الأساسيّ «{D.pillar_label(missing[0])}» مجهول"
+           if missing else
+           f"{len(ed.get('conditions') or [])} شروطٌ مفتوحة")
+    return [{
+        "check": "high_confidence_with_missing_pillar",
+        "repairable": not R.confidence_discipline(),
+        "note": (f"تسميةُ «ثقة عالية» على سطحٍ يقرؤه القارئ بينما {why} — "
+                 "السقفُ «متوسطة» حتى يُكمَل الجانبُ أو تُغلَق الشروط "
+                 "(silk_decision.confidence_band_cap). الرقمُ لا يُمَسّ، "
+                 "التسميةُ وحدها تُسقَّف")}]
+
+
 _ABSENCE_FORBIDDEN = ("لم يُرصَد بعد", "لم يرصد بعد", "فجوة معلنة",
                       "يتعذّر الحساب", "يتعذر الحساب",
                       "غير محدد ضمن الحقائق", "غير قابل للحساب",
@@ -4312,6 +6304,21 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_derived_number_has_inputs(view)
     # البند 6: تناقض تسعيري محسوب بلا تحذير إلزامي — لا يُسلَّم.
     findings += _check_pricing_contradiction_flagged(view)
+    # الصنف ٩: رقمٌ لبندٍ يُعلنه المحرك مجهولاً (حاجبٌ خلف رايته)، وسقفُ
+    # مخاطرةٍ مفردٍ فوق أساسٍ استُبعد منه مكوّن (تحذيريّ).
+    findings += _check_reference_to_nonexistent_figure(view)
+    findings += _check_max_loss_without_components(view)
+    # الصنف ١٢: فجوةٌ مُعلَنةٌ لمعطىً تحمله بعثتُه فعلاً — تحذيريّ.
+    findings += _check_observed_value_declared_unavailable(view)
+    # الصنف ١٣: خانةُ قيمةٍ خارج المنسِّق الواحد — تحذيريّ.
+    findings += _check_decision_number_format_drift(view)
+    # الصنف ١٠: افتراضاتُ بنية السوق — ستّةُ حرّاسَ تحذيريةٍ تقرأ النصَّ أوّلاً.
+    findings += _check_zero_fx_volatility(view)
+    findings += _check_target_region_missing(view, dr, _lang)
+    findings += _check_broad_hs_scope_undisclosed(view)
+    findings += _check_border_price_out_of_range(view)
+    findings += _check_lead_outside_activity_allowlist(view)
+    findings += _check_regime_not_belonging_to_country(view)
     # البند 7: ترقية حكم مع تدهور كل مؤشرات الدليل — لا تُسلَّم.
     findings += _check_verdict_evidence_direction(view)
     # البند 10: تسمية «عدم دخول» فوق متنٍ يوصي بباب دخول مسمّى — لا تُسلَّم.
@@ -4327,6 +6334,40 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_empty_citation(text)
     findings += _check_dead_table(text)
     findings += _check_system_language_leak(text)
+    # الصنف ١ (موجة عيوب التقرير): لغةُ نظامٍ داخلية تصل صاحبَ القرار —
+    # تحذيريّ، وبلاغُه يحمل القسمَ والنصَّ. يقرأ قوائمه من
+    # `silk_style_contract` (المصدرُ الذي يقرؤه الموجّهُ والمراجعُ أيضاً).
+    findings += _check_reader_language_leak(text, _lang)
+    # الصنف ٢ (موجة عيوب التقرير): جملةٌ كسرتها خانةٌ فارغة، أو إحالةٌ إلى ما
+    # أُعلِن غائباً، أو صدى كيانٍ في وصفِه — تحذيريّ. مِعيارُ «سليم» هو
+    # `silk_i18n.repair_interpolation` نفسُها (قاعدةُ الإصلاح = قاعدةُ الفحص).
+    findings += _check_template_interpolation(text, _lang)
+    # الصنف ٣ (موجة عيوب التقرير): عرضُ الأرقام والوحدات والتواريخ — أربعُ
+    # قواعدَ تحذيرية، حرّاسُ انحدارٍ للمُنسِّق الواحد وحرّاسٌ أصليّون لنثرِ
+    # الكاتب الذي لا يمرّ عليه.
+    # الصنف ٤ (موجة عيوب التقرير): تسميةُ الجهة الواحدة، والمصطلحُ بلا
+    # تعريفه — تحذيريّتان. تسمياتُ النشاط الإنجليزية يغطّيها
+    # `language_consistency` الحاجز أصلاً، فلا قاعدةَ ثانيةً لها.
+    # الصنف ٥ (موجة عيوب التقرير): إعادةُ صياغةٍ عبر الأقسام، وتكرارُ
+    # الرابط داخل الفقرة — قناتان لا يبلغهما `_check_repeated_span`
+    # (نطاقُه الفقرة وتكرارُه حرفيّ) ولا عدّادُ `_check_style` المستنديّ.
+    # الصنف ٦ (موجة عيوب التقرير): قراءتان لمؤشرٍ واحد بلا تسميةِ الفرق —
+    # حاجبٌ خلف رايةِ `SILK_FIGURE_STORE` وتحذيريٌّ بدونها؛ ونسبةٌ واحدة
+    # لكيانين تحذيرٌ دائم.
+    findings += _check_metric_value_divergence(view, dr)
+    # الصنف ٧: عددٌ مذكورٌ يخالف القائمةَ الواحدة — حاجبٌ خلف رايته.
+    findings += _check_open_conditions_count_mismatch(view, dr)
+    # الصنف ٨: «ثقة عالية» مع جانبٍ أساسيٍّ مجهول — حاجبٌ خلف رايته.
+    findings += _check_high_confidence_with_missing_pillar(view, dr)
+    findings += _check_shared_value_across_entities(dr)
+    findings += _check_cross_section_near_duplicate(text)
+    findings += _check_connector_repeated_in_paragraph(text, _lang)
+    findings += _check_authority_naming_drift(view, dr, _lang)
+    findings += _check_defined_term_without_definition(view, dr)
+    findings += _check_score_format_drift(text)
+    findings += _check_amount_without_currency(text)
+    findings += _check_stale_data_without_year(dr, text)
+    findings += _check_observation_date_equals_run_date(view)
     findings += _check_absence_vocabulary(text)
     # D4 (دراسة #12): مفردات الغياب على **أسطح العرض** أيضاً — جدول الأعمدة
     # («لم يُرصَد بعد») وشروط القرار وحدود التقرير قوائم view لا يمر عليها
@@ -4482,7 +6523,7 @@ def run_quality_gate(view: dict) -> dict:
     severe = non_repairable + guard_fired
     if not findings:
         verdict = PASS
-    elif any(f["check"] in FAIL_TRIGGER_CHECKS for f in non_repairable) \
+    elif any(f["check"] in effective_fail_triggers() for f in non_repairable) \
             or guard_fired:
         verdict = FAIL
     else:
