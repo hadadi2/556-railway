@@ -3498,14 +3498,40 @@ def _dn_needle(name: object) -> str:
     return " ".join(words[:2])
 
 
+# بنودٌ **زمنية** بطبعها: رقمُ الزمن فيها قيمةٌ لا جدولٌ زمنيّ.
+_TIME_ITEM_RE = re.compile(r"زمن|مدة|مدّة|توقيت")
+# رقمٌ ملتصقٌ بوحدةِ زمنٍ — جدولٌ زمنيٌّ لا قيمةُ بند. الإبرةُ تُقرَأ على
+# النصِّ **المطبَّع** (`_norm_ar` يطوي الهمزة)، فكلُّ وحدةٍ بصيغتيها.
+_TIME_QTY_RE = re.compile(
+    r"\d+(?:[.,]\d+)?\s*(?:يوم|أيام|ايام|يوما|أسبوع|اسبوع|أسابيع|اسابيع|"
+    r"أسبوعا|اسبوعا|شهر|شهور|أشهر|اشهر|شهرا|سنة|سنه|سنوات|سنين|عام|أعوام|"
+    r"اعوام|ربع|أرباع|ارباع)")
+
+
+def _shows_a_value(seg: str, time_item: bool) -> bool:
+    """هل تعرض الجملةُ **قيمةً** للبند، أم جدولاً زمنياً فحسب؟"""
+    if not _ANY_DIGIT_RE.search(seg):
+        return False
+    if time_item:
+        return True
+    return bool(_ANY_DIGIT_RE.search(_TIME_QTY_RE.sub(" ", seg)))
+
+
 def _check_reference_to_nonexistent_figure(view: dict) -> list[dict]:
     """`reference_to_nonexistent_figure` (الصنف ٩ — حاجبٌ خلف رايته): المتنُ
     يُسمّي بندَ قرارٍ برقمٍ في إطارٍ محسوب بينما المحرّكُ يُعلنه فجوة.
 
+    **مأخذُ المراجعة الذاتية:** «أيُّ رقمٍ» كان يُحتسَب عرضاً لقيمةٍ، فجملةٌ
+    مشروعةٌ تُعلِن **جدولاً زمنياً** («نقطةُ التعادل ستتضح بعد أول 3 أشهر من
+    التشغيل») تُفشِل التقريرَ بفحصٍ غيرِ قابلٍ للإصلاح. فالرقمُ الملتصقُ
+    بوحدةِ **زمن** ليس قيمةً للبند — إلّا حين يكون البندُ نفسُه زمنياً
+    («الزمن من القرار إلى أول فاتورة»)، فيُقرأ من اسمِه لا بتفريع.
+
     **منطقةُ العمى المعلنة:** (أ) صياغةٌ لا تحمل إبرةَ اسمِ البند («العتبةُ
     التي تتساوى عندها») لا تُرى؛ (ب) رقمٌ بلا رقمٍ عربيٍّ أو لاتينيّ في
     الجملة نفسها لا يُرى؛ (ج) جملةٌ تحمل رمزَ فجوةٍ معلَنة تُعفى بالتصميم —
-    «نقطةُ التعادل غير محسوبة: الناقصُ تكلفتُك» هي الصيغةُ المشروعة.
+    «نقطةُ التعادل غير محسوبة: الناقصُ تكلفتُك» هي الصيغةُ المشروعة؛
+    (د) رقمٌ زمنيٌّ في بندٍ غيرِ زمنيٍّ لا يُعَدّ قيمةً.
     """
     dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
     text = ((dr.get("report") or {}).get("text") or "")
@@ -3521,8 +3547,9 @@ def _check_reference_to_nonexistent_figure(view: dict) -> list[dict]:
         needle = _dn_needle(e.get("name"))
         if len(needle) < 6:
             continue
+        time_item = bool(_TIME_ITEM_RE.search(str(e.get("name") or "")))
         for seg in plain_segs:
-            if (needle in seg and _ANY_DIGIT_RE.search(seg)
+            if (needle in seg and _shows_a_value(seg, time_item)
                     and not any(g in seg for g in gaps)):
                 nm = str(e.get("name") or "").strip()
                 if nm and nm not in named:
@@ -3913,40 +3940,99 @@ def _check_broad_hs_scope_undisclosed(view: dict) -> list[dict]:
                  "كأنها أرقامُ المنتج. أضف سطرَ إفصاحٍ واحداً")}]
 
 
+# الصنف ١٧: عتبةُ انقلابِ سلسلةِ القيمة — سعرُ حدودٍ يفوق سعرَ الرفّ
+# المرصود بهذه النسبة أو أكثر. مقيسةٌ على المدوّنات الستّ عشرة (أعلى
+# نسبةٍ مشروعةٍ ١.٠٤٧) لا مُقدَّرة — فصلٌ عشرون نقطة.
+_BORDER_ABOVE_SHELF_RATIO = 1.25
+
+
 def _check_border_price_out_of_range(view: dict) -> list[dict]:
     """`border_price_out_of_range` (الصنف ١٠، تحذيريّ): سعرُ الحدود المرصود
-    خارج المدى المعقول المُهيَّأ للمنتج.
+    غيرُ معقولٍ — خارجَ المدى المُهيَّأ للمنتج، أو **فوق سعرِ الرفّ المرصود
+    في التقرير نفسِه** بفارقٍ لا يفسّره اختلافُ عبوةٍ أو رتبة.
 
-    **منطقةُ العمى المعلنة:** يصمت كلياً بلا `price_range` مُهيَّأ — والمفتاحُ
-    غيرُ مُدخَلٍ لأيّ منتجٍ اليوم (قرارُ مالكٍ مسجَّل: المخطَّطُ والمُدقِّقُ
-    والحارسُ تُشحَن، والصفوفُ إدخالٌ لاحقٌ بمصدرٍ). فهو عقدٌ جاهزٌ لا فحصٌ
-    عاملٌ على بياناتٍ قائمة — إعلانٌ صريحٌ لا صمت.
+    فرعان، والثاني هو ما يجعل الفحصَ حيّاً (الدرس ٩٨): الأوّلُ يحتاج
+    `price_range` مُهيَّأً وهو غيرُ مُدخَلٍ لأيّ منتجٍ اليوم (قرارُ مالكٍ
+    مسجَّل: العقدُ يُشحَن والصفوفُ إدخالٌ لاحقٌ بمصدر) — فحارسٌ بهذا الفرع
+    وحدَه **لا يُطلِق في أيّ سوق**. والثاني لا يحتاج تهيئةً قطّ: يقابل ثلاثةَ
+    أرقامٍ **مرصودةٍ في التقرير** (سعرُ الحدود دولاراً/كجم، سعرُ الرفّ بعملةٍ
+    محلّية/كجم، سعرُ الصرف الرسميّ) — وسعرُ حدودٍ يفوق سعرَ الرفّ تناقضٌ في
+    سلسلةِ القيمة لا واقعة.
+
+    **العتبةُ مقيسة** لا مُقدَّرة: أعلى نسبةٍ مشروعةٍ على المدوّنات الستّ
+    عشرة ١.٠٤٧ (ليبيا: ٢.٠٥ مقابل ١.٩٥٩ دولار/كجم — فارقُ عبوةٍ ورتبةٍ
+    محتمَل)، فالعتبةُ ١.٢٥ تُبقي صفرَ إطلاقةٍ على المدوّنات كلِّها بفصلٍ
+    مقيسٍ عشرين نقطة (سابقةُ الصنف ١١: قاعدةٌ تُطلِق على الصحيح لا تُشحَن).
+
+    **مناطقُ العمى المعلنة:** (أ) الفرعُ الأوّل صامتٌ حتى تُدخَل الصفوف؛
+    (ب) الفرعُ الثاني يحتاج الأرقامَ الثلاثة معاً — وهي مجتمعةٌ في ثلاثٍ من
+    ستّ عشرةَ مدوّنة، فسوقٌ بلا سعرِ رفٍّ أو بلا سعرِ صرفٍ مرصودٍ لا يُرى؛
+    (ج) سوقٌ بسعرَي صرفٍ متباعدين (رسميٌّ وموازٍ) قد يُظهِر انقلاباً ظاهرياً
+    — ولذلك العتبةُ واسعةٌ والبلاغُ **طلبُ مراجعةٍ** لا حكمٌ بخطأ؛
+    (د) سعرُ رفٍّ بعبوةٍ غيرِ الكيلوغرام يُطبَّع في مسار الأسعار لا هنا.
     """
     dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
     hs = str(view.get("hs_code")
              or (view.get("header") or {}).get("hs_code") or "").strip()
-    if not hs or not dr:
+    if not dr:
         return []
     try:
         import silk_economics as _E
         import silk_market_structure as _MS
-        band = _MS.price_range(hs)
-        if not band:
-            return []
+        band = _MS.price_range(hs) if hs else None
         val, note = _E._mission_numeric(
             dr, "trade_flow", ("متوسط سعر استيراد", "قيمة الوحدة الحدودية",
                               "unit value"), 0.0, 100_000.0)
     except Exception:  # noqa: BLE001
         return []
-    if val is None or band["min"] <= val <= band["max"]:
+    if val is None:
         return []
+    if band and not (band["min"] <= val <= band["max"]):
+        return [{
+            "check": "border_price_out_of_range", "repairable": True,
+            "note": (f"سعرُ الحدود المرصود {_fmt_gate_num(val)} دولار/كجم خارج "
+                     f"المدى المعقول المُهيَّأ للمنتج "
+                     f"({_fmt_gate_num(band['min'])}–"
+                     f"{_fmt_gate_num(band['max'])})"
+                     f" — «{str(note)[:40]}»؛ راجع البند أو المصدر قبل بناء "
+                     "هامشٍ عليه")}]
+    try:
+        shelf, s_note = _E._mission_numeric(
+            dr, "pricing_scout", ("سعر رف", "سعر تجزئة", "shelf"),
+            0.0, 10 ** 9)
+        if shelf is None:
+            return []
+        # المراجعةُ الذاتية (البند ٢): إبرةٌ فضفاضة «سعر الصرف» تُطابِق
+        # «تقلب سعر الصرف 12.4%» فتُقرَأ **نسبةٌ** سعرَ صرف — والملاحظتان
+        # متعاقبتان في بعثة المخاطر نفسِها. الإبرةُ هي إبرةُ السابقة القائمة
+        # في `silk_economics` حرفياً («سعر الصرف الرسمي») بحدودِها نفسِها.
+        # المراجعةُ الذاتية (البند ٣): قسمةٌ بلا فحصِ عملة — سعرُ رفٍّ
+        # مرصودٌ **بالدولار** كان يُقسَم على سعر الصرف فيصير خمسَ قيمته،
+        # فيُطلِق الحارسُ على تقريرٍ سعرُ رفِّه ضِعفُ سعرِ الحدود. نفسُ
+        # استثناء `silk_economics` القائم (`_cur in ("$","USD","دولار")`).
+        cur = _E.currency_in_note(s_note)
+        if cur in ("$", "USD", "دولار"):
+            shelf_usd, rate = shelf, None
+        else:
+            rate, _fx_note = _E._mission_numeric(
+                dr, "risk_news", ("سعر الصرف الرسمي",), 1e-4, 100_000.0)
+            if not rate:
+                return []
+            shelf_usd = shelf / rate
+    except Exception:  # noqa: BLE001
+        return []
+    if shelf_usd <= 0 or val < _BORDER_ABOVE_SHELF_RATIO * shelf_usd:
+        return []
+    basis = (f" بسعر الصرف الرسمي {_fmt_gate_num(rate)}" if rate
+             else " والسعرُ مرصودٌ بالدولار")
     return [{
         "check": "border_price_out_of_range", "repairable": True,
-        "note": (f"سعرُ الحدود المرصود {_fmt_gate_num(val)} دولار/كجم خارج "
-                 f"المدى المعقول المُهيَّأ للمنتج "
-                 f"({_fmt_gate_num(band['min'])}–{_fmt_gate_num(band['max'])})"
-                 f" — «{str(note)[:40]}»؛ راجع البند أو المصدر قبل بناء "
-                 "هامشٍ عليه")}]
+        "note": (f"سعرُ الحدود المرصود {_fmt_gate_num(val)} دولار/كجم يفوق "
+                 f"سعرَ الرفّ المرصود في التقرير نفسِه "
+                 f"({_fmt_gate_num(shelf_usd)} دولار/كجم{basis}) — "
+                 f"«{str(s_note)[:40]}»؛ سلسلةُ القيمة "
+                 "لا تحتمل هذا الاتجاه، فراجع وحدةَ أحدِ الرقمين أو مستوى "
+                 "السعر قبل بناء هامشٍ عليه")}]
 
 
 def _check_lead_outside_activity_allowlist(view: dict) -> list[dict]:
@@ -4002,7 +4088,10 @@ def _check_regime_not_belonging_to_country(view: dict) -> list[dict]:
     نظامُ السوق لا نظامُ غيره.
     """
     dr = (view.get("deep_research") or {}) if isinstance(view, dict) else {}
-    text = ((dr.get("report") or {}).get("text") or "")
+    # مأخذُ المراجعة الذاتية: الملحقُ يُقرَأ متناً، فرابطُ مصدرٍ
+    # (`fda.gov`, `ce-marking`) يُحتسَب نظاماً أجنبياً في قائمة الاشتراطات.
+    # قصُّ الملحق هو اصطلاحُ كلّ فحصٍ نصّيٍّ في هذا الملف.
+    text = _split_off_appendix(((dr.get("report") or {}).get("text") or ""))
     if not text:
         return []
     iso3 = str((view.get("market") or {}).get("iso3")
@@ -5145,10 +5234,20 @@ def _check_authority_naming_drift(view: dict, dr: dict,
 
 
 def _configured_authorities(view: dict) -> str:
-    """تسمياتُ السلطة المُهيَّأة لسوق التقرير — نصٌّ للعرض أو فراغ."""
+    """تسمياتُ السلطة المُهيَّأة لسوق التقرير — نصٌّ للعرض أو فراغ.
+
+    مأخذُ المراجعة الذاتية: كان يقرأ `view["market"]["iso3"]` وحدَه، وهو
+    **غيرُ موجودٍ** في العرض الذي يبنيه `build_view` (الرمزُ في
+    `deep_research.market.iso3`، كما تقرؤه الفحوصُ الشقيقة) — فالبلاغُ كان
+    سيبقى يقول «لا تسمياتَ مُهيَّأة» بعد تهيئتِها (الدرس ١٨٦: اختبِر المفتاحَ
+    الذي يبنيه `build_view` فعلاً).
+    """
     try:
         import silk_profiles
-        iso3 = str(((view or {}).get("market") or {}).get("iso3") or "").upper()
+        _v = view or {}
+        _dr = (_v.get("deep_research") or {}) if isinstance(_v, dict) else {}
+        iso3 = str((_v.get("market") or {}).get("iso3")
+                   or (_dr.get("market") or {}).get("iso3") or "").upper()
         prof = silk_profiles.market_profile(iso3) if iso3 else None
         rows = (prof or {}).get("authorities") or []
         names = [str(silk_profiles.cited_value(r) or "").strip()
@@ -5257,8 +5356,11 @@ def _check_cross_section_near_duplicate(text: str) -> list[dict]:
 
     القياسُ تشابهُ مجموعتَي الكلمات (Dice/Jaccard على الكلمات المُطبَّعة
     الأطولَ من حرفين) — نفسُ أسلوبِ مطابقةِ الأسماء المحافظ في
-    `correlation.py`. العتبةُ 0.55 و**مُعايَرةٌ**: صفرُ زوجٍ يبلغ 0.45 في
-    المدوّنات العشر، فهامشُ الأمان ضِعف. تُضبَط بـ`SILK_XSEC_SIM`.
+    `correlation.py`. العتبةُ **0.45 مُعايَرةٌ بالفصل المقيس** كما يشرح
+    تعليقُ `_XSEC_SIM_DEFAULT`: أعلى تشابهٍ سالبٍ 0.333 والعيبُ الموجَب
+    0.538. (كان هذا السطرُ يقول 0.55 — قيمةً سابقةً قِيست بسؤالٍ أضعف
+    فكانت تفوّت العيب؛ ومأخذُ المراجعة الذاتية أنّ التوثيقَ بقي عليها.)
+    تُضبَط بـ`SILK_XSEC_SIM`.
 
     الجملُ داخل القسم الواحد **مستثناة**: تفصيلٌ متدرّجٌ داخل قسمه مشروع،
     والعيبُ المرصود عبورُ الأقسام.

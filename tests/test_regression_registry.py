@@ -4571,6 +4571,25 @@ _LESSONS = {
                  "def test_manual_form_source_and_old_classify_button_completion_are_fenced")(),
         _needles("tests/e2e/platform_flow.cjs", "factory_manual_hs_persisted")(),
         _needles("tests/test_lessons_enforcement.py", '(230, ')()),
+    250: lambda: (
+        _needles("silk_quality_gate.py",
+                 "_BORDER_ABOVE_SHELF_RATIO = 1.25")(),
+        _needles("tests/test_market_structure_config.py",
+                 "def test_c17_the_border_price_guard_can_fire_without_any_"
+                 "configuration")(),
+        _needles("tests/test_lessons_enforcement.py", '(250, ')()),
+    251: lambda: (
+        _needles("silk_ai_judge.py", "_HS_CATEGORY_SCOPED",
+                 "_SCOPED_REGIME_TAIL")(),
+        _needles("tests/test_market_structure_config.py",
+                 "def test_c18_regulatory_emphasis_names_no_foreign_regime_"
+                 "when_scoped")(),
+        _needles("tests/test_lessons_enforcement.py", '(251, ')()),
+    252: lambda: (
+        _needles("tests/test_market_structure_config.py",
+                 "def test_c19_currency_reverse_lookup_is_scoped_to_the_"
+                 "exporters_own_currency")(),
+        _needles("tests/test_lessons_enforcement.py", '(252, ')()),
     249: lambda: (
         _needles("silk_quality_gate.py", "def _flat_ar")(),
         _absent("silk_quality_gate.py",

@@ -1093,8 +1093,39 @@ _HS_CATEGORY: "list[tuple[range, str, str]]" = [
 ]
 
 
+# الصنف ١٨: النصفُ الثاني من جذر الصنف ١٠. الجدولُ أعلاه يُلحِق بموجّه
+# الكاتب أسماءَ **أنظمةٍ أوروبية** (REACH، علامة CE، قيود azo) **بحسب فصلِ
+# البند الجمركيّ لا بحسب السوق** — فتقريرُ سوقٍ غيرِ أوروبيٍّ يُذكَّر
+# بتسجيلِ REACH وعلامةِ CE. وهو بعينه ما أُصلِح في `silk_missions.py:202`
+# (SONCAP/CIQ/SFDA لكلّ سوق) وبقي هنا مُعلَناً بنداً لاحقاً. والفكسُ
+# **بلا أيّ تفريعٍ قُطريّ**: تُحذَف أسماءُ أنظمةِ الكتلة ويحلّ محلَّها تقييدٌ
+# بسوق الهدف — والمعاييرُ الدوليةُ حقّاً (HACCP/BRC/IFS/FSSC) والمصطلحاتُ
+# التقنيةُ العامّة (التوافق الكهرومغناطيسي، اعتماد النوع) تبقى.
+_SCOPED_REGIME_TAIL = ("وسمِّ أنظمةَ المطابقة الخاصّة بسوق الهدف كما يعيدها "
+                       "lookup_reference، ولا تذكر نظامَ دولةٍ أو كتلةٍ أخرى")
+_HS_CATEGORY_SCOPED: "dict[str, str]" = {
+    "منتج كيميائي/بلاستيكي":
+        "بطاقات بيانات السلامة وحدود المواد المقيَّدة، " + _SCOPED_REGIME_TAIL,
+    "منسوجات/ملابس/أحذية":
+        "بطاقات المحتوى والعناية، قيود الأصباغ، وسلامة المنتج "
+        "الاستهلاكي، " + _SCOPED_REGIME_TAIL,
+    "آلات/معدّات كهربائية":
+        "التوافق الكهرومغناطيسي (EMC) وتوجيهات السلامة، "
+        + _SCOPED_REGIME_TAIL,
+    "أجهزة/أدوات دقيقة":
+        "متطلبات الأجهزة الطبية حيث انطبقت، " + _SCOPED_REGIME_TAIL,
+    "أثاث/ألعاب/سلع استهلاكية":
+        "سلامة المنتج الاستهلاكي وسلامة الألعاب وقيود المواد المقيَّدة، "
+        + _SCOPED_REGIME_TAIL,
+}
+
+
 def _product_category(hs_code: object) -> "tuple[str, str] | None":
-    """(اسم الفئة، تركيز الاشتراطات) من فصل HS — None إن تعذّر/غير مصنَّف."""
+    """(اسم الفئة، تركيز الاشتراطات) من فصل HS — None إن تعذّر/غير مصنَّف.
+
+    التركيزُ **مقيَّدٌ بسوق الهدف** حين تكون رايةُ الصنف ١٠ مفعّلة، وبالنصّ
+    السابق حرفياً بدونها (فلا يتغيّر موجّهٌ ولا خرجُ eval بالراية مطفأة).
+    """
     s = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
     if len(s) < 2:
         return None
@@ -1102,8 +1133,15 @@ def _product_category(hs_code: object) -> "tuple[str, str] | None":
         chapter = int(s[:2])
     except ValueError:
         return None
+    try:
+        import silk_market_structure as _MS
+        scoped = _MS.enabled()
+    except Exception:  # noqa: BLE001 — التقييد تحسينٌ لا شرطُ كتابة
+        scoped = False
     for rng, name, emphasis in _HS_CATEGORY:
         if chapter in rng:
+            if scoped:
+                return name, _HS_CATEGORY_SCOPED.get(name, emphasis)
             return name, emphasis
     return None
 

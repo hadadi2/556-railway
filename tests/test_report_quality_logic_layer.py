@@ -216,7 +216,13 @@ def test_c6_mirror_and_direct_are_one_metric_two_methods():
     import silk_figure_store as FS
     assert FS.classify("مرآة صادرات الشركاء 2023") == ("imports", "mirror")
     assert FS.classify("واردات مصرَّحة 2023") == ("imports", "direct")
-    assert FS.classify("حصة السعودية") == ("supplier_share", "reported")
+    # **تحديثُ قفلٍ مُعلَن (تشديد):** كان هذا التأكيدُ يُقنِّن العيبَ الذي
+    # كشفته المراجعةُ الذاتية — مؤشِّرٌ يخصّ كياناً بمفتاحٍ بلا كيان، فحصتا
+    # مورّدَين تصيران قراءتين متعارضتين ويُفشَل تقريرٌ صحيح. المفتاحُ الآن
+    # يحمل مؤهِّلَه، والطريقةُ كما هي.
+    assert FS.classify("حصة السعودية") == ("supplier_share:السعودية",
+                                            "reported")
+    assert FS.classify("حصة سوقية %") == ("supplier_share", "reported")
     assert FS.classify("HHI تركّز") == ("concentration", "reported")
     assert FS.classify("بلا ملاحظة مطابقة") == ("other", "reported")
 

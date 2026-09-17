@@ -374,9 +374,10 @@ def test_regime_guard_fires_on_a_foreign_scheme_and_spares_origin():
     assert G._check_regime_not_belonging_to_country(ok) == []
 
 
-def test_border_price_guard_is_dormant_until_a_range_is_configured():
-    """إعلانٌ صريحٌ لا صمت: المفتاحُ عقدٌ مُدقَّقٌ بلا صفوفٍ بعد، فالفحصُ
-    يصمت — ويُطلِق على مدىً مُهيَّأً حين يُدخَل."""
+def test_border_price_configured_branch_waits_for_its_rows():
+    """الفرعُ **المُهيَّأ** وحدَه ينتظر صفوفَه: المفتاحُ عقدٌ مُدقَّقٌ بلا
+    صفوفٍ بعد، فلا مدىً يُقابَل. أمّا حياةُ الفحص فمن الفرع المرصود —
+    `test_c17_*` (الصنف ١٧: حارسٌ بفرعٍ مُهيَّأٍ وحدَه لا يُطلِق أبداً)."""
     import silk_market_structure as M
     import silk_quality_gate as G
     with block_network():
@@ -795,3 +796,299 @@ def test_review_connector_finding_names_its_own_paragraph_section():
     assert len(out) == 2
     assert "الخلاصة" in out[0]["note"]
     assert "المشهد التنافسي" in out[1]["note"]
+
+
+# ════════ الصنف ١٧ — حارسٌ لا يمكن أن يُطلِق ليس حارساً (الدرس ٩٨) ════════
+
+def test_c17_the_border_price_guard_can_fire_without_any_configuration():
+    """العيبُ المُعاد إنتاجُه: `border_price_out_of_range` شُحِن بفرعٍ واحدٍ
+    يشترط `price_range` مُهيَّأً — والمفتاحُ غيرُ مُدخَلٍ لأيّ منتج، فالفحصُ
+    **لا يُطلِق في أيّ سوق** ولا اختبارَ يُطلِقه (كان اختبارُه الوحيد يؤكّد
+    سكونَه). الفرعُ الثاني يقابل ثلاثةَ أرقامٍ مرصودةٍ في التقرير نفسِه بلا
+    تهيئةٍ قطّ."""
+    import silk_quality_gate as G
+
+    def _dp(v, note, src="UN Comtrade", conf=0.8):
+        return {"value": v, "source": src, "confidence": conf,
+                "note": note, "retrieved_at": "2026-09-10"}
+
+    def _m(findings):
+        return {"agent_name": "a", "summary": "s", "findings": findings,
+                "failed": False}
+
+    def _blob_with(border, shelf, fx):
+        return {"hs_code": "200819", "deep_research": {"missions": {
+            "trade_flow": _m([_dp(border,
+                                  "متوسط سعر استيراد دولار/كجم 2024")]),
+            "pricing_scout": _m([_dp(shelf, "سعر رف تجزئة لعبوة 1 كجم، دينار",
+                                     "بحث ويب", 0.7)]),
+            "risk_news": _m([_dp(fx, "سعر الصرف الرسمي مقابل الدولار 2024",
+                                 "World Bank", 0.7)])}}}
+
+    # سعرُ حدودٍ ٤ دولار فوق سعرِ رفٍّ ١.٩٦ دولار ⇒ انقلابُ سلسلةِ قيمة.
+    fired = G._check_border_price_out_of_range(_blob_with(4.0, 9.5, 4.85))
+    assert len(fired) == 1 and fired[0]["check"] == "border_price_out_of_range"
+    assert "يفوق سعرَ الرفّ" in fired[0]["note"]
+    # وضمن العتبة المقيسة لا يُطلِق — الفارقُ الصغير فارقُ عبوةٍ أو رتبة.
+    assert G._check_border_price_out_of_range(
+        _blob_with(2.05, 9.5, 4.85)) == []
+    # وبلا سعرِ صرفٍ مرصودٍ لا يُخمَّن تحويل (منطقةُ عمىً معلنة).
+    assert G._check_border_price_out_of_range(
+        _blob_with(4.0, 9.5, None)) == []
+
+
+def test_c17_a_volatility_percent_is_never_read_as_an_exchange_rate():
+    """مأخذُ المراجعة الذاتية: إبرةٌ فضفاضة «سعر الصرف» تُطابِق «تقلب سعر
+    الصرف 12.4%» — والملاحظتان متعاقبتان في بعثة المخاطر نفسِها — فتُقسَم
+    قيمةٌ على **نسبةٍ** فيُطلِق الحارسُ على تقريرٍ سليم. الإبرةُ صارت إبرةَ
+    السابقة القائمة حرفياً («سعر الصرف الرسمي»)."""
+    import silk_quality_gate as G
+
+    def _dp(v, note, src="World Bank", conf=0.7):
+        return {"value": v, "source": src, "confidence": conf,
+                "note": note, "retrieved_at": "2026-09-10"}
+
+    def _m(f):
+        return {"agent_name": "a", "summary": "s", "findings": f,
+                "failed": False}
+
+    v = {"hs_code": "200819", "deep_research": {"missions": {
+        "trade_flow": _m([_dp(3.10, "متوسط سعر استيراد دولار/كجم 2024",
+                              "UN Comtrade", 0.8)]),
+        "pricing_scout": _m([_dp(23.3, "سعر رف تجزئة لعبوة 1 كجم، شيكل",
+                                 "بحث ويب")]),
+        "risk_news": _m([_dp(12.4, "تقلب سعر الصرف 12.4% — مستنتَج بقاعدة "
+                                   "معلنة")])}}}
+    assert G._check_border_price_out_of_range(v) == []
+
+
+def test_c17_a_shelf_price_already_in_dollars_is_not_divided_again():
+    """مأخذُ المراجعة الذاتية: قسمةٌ بلا فحصِ عملة — سعرُ رفٍّ مرصودٌ
+    بالدولار كان يُقسَم على سعر الصرف فيصير خمسَ قيمته، فيُطلِق الحارسُ على
+    تقريرٍ سعرُ رفِّه ضِعفُ سعرِ الحدود. نفسُ استثناء `silk_economics`."""
+    import silk_quality_gate as G
+
+    def _dp(v, note, src="World Bank", conf=0.7):
+        return {"value": v, "source": src, "confidence": conf,
+                "note": note, "retrieved_at": "2026-09-10"}
+
+    def _m(f):
+        return {"agent_name": "a", "summary": "s", "findings": f,
+                "failed": False}
+
+    def _v(border, shelf):
+        return {"hs_code": "200819", "deep_research": {"missions": {
+            "trade_flow": _m([_dp(border, "متوسط سعر استيراد دولار/كجم 2024",
+                                  "UN Comtrade", 0.8)]),
+            "pricing_scout": _m([_dp(shelf, "سعر رف 4.20 دولار/كجم",
+                                     "بحث ويب")]),
+            "risk_news": _m([_dp(3.6725, "سعر الصرف الرسمي مقابل الدولار "
+                                         "2024")])}}}
+    assert G._check_border_price_out_of_range(_v(3.10, 4.20)) == []
+    fired = G._check_border_price_out_of_range(_v(9.0, 4.20))
+    assert len(fired) == 1 and "مرصودٌ بالدولار" in fired[0]["note"]
+
+
+def test_c17_threshold_is_measured_and_keeps_every_corpus_silent():
+    """العتبةُ مقيسةٌ لا مُقدَّرة (سابقةُ الصنف ١١): أعلى نسبةٍ مشروعةٍ على
+    المدوّنات ١.٠٤٧، فالعتبةُ ١.٢٥ تفصل عشرين نقطةً — وصفرُ إطلاقةٍ على
+    الستّ عشرة بالرايتين."""
+    import silk_quality_gate as G
+    assert G._BORDER_ABOVE_SHELF_RATIO == 1.25
+    for flag in ("", "1"):
+        with _env(SILK_MARKET_STRUCTURE_CONFIG=flag,
+                  SILK_RECOGNITION_VOCABULARY=flag), block_network():
+            for key in _canonical_keys():
+                assert G._check_border_price_out_of_range(_view(key)) == [], \
+                    (key, flag)
+
+
+# ═══ الصنف ١٨ — تشديدُ مطابقةٍ أوروبيٌّ بحسب فصلِ البند لا بحسب السوق ═══
+
+_EU_ONLY_REGIMES = ("REACH", "علامة CE", "CE،")
+
+
+def test_c18_regulatory_emphasis_names_no_foreign_regime_when_scoped():
+    """العيبُ المُعاد إنتاجُه: `_HS_CATEGORY` يُلحِق بموجّه الكاتب «تسجيل
+    REACH» و«علامة CE» **بحسب فصلِ البند الجمركيّ لا بحسب السوق** — فتقريرُ
+    كينيا أو نيجيريا يُذكَّر بنظامٍ أوروبيّ. وهو النصفُ الثاني من جذر الصنف
+    ١٠ (`silk_missions.py:202`) الذي بقي مُعلَناً بنداً لاحقاً."""
+    import silk_ai_judge as J
+    chapters = ("390210", "610910", "847989", "940360", "300490")
+    with _env(SILK_MARKET_STRUCTURE_CONFIG=""):
+        legacy = [J._product_category(hs)[1] for hs in chapters]
+    assert any(any(r in e for r in _EU_ONLY_REGIMES) for e in legacy), \
+        "العيبُ لم يُعَد إنتاجُه — النصُّ السابق لم يحمل نظاماً أوروبياً"
+    with _env(SILK_MARKET_STRUCTURE_CONFIG="1"):
+        scoped = [J._product_category(hs)[1] for hs in chapters]
+    for emphasis in scoped:
+        for regime in _EU_ONLY_REGIMES:
+            assert regime not in emphasis, (regime, emphasis)
+        assert "سوق الهدف" in emphasis
+    # ولا تُمَسّ الفئةُ نفسُها ولا الفئاتُ الخاليةُ أصلاً من اسمِ نظام.
+    with _env(SILK_MARKET_STRUCTURE_CONFIG="1"):
+        assert J._product_category("040900")[0] == "منتج غذائي/زراعي"
+        assert J._product_category("720610")[1] == \
+            J.__dict__["_HS_CATEGORY"][3][2]
+        assert J._product_category("1") is None
+
+
+def test_c18_the_leak_is_caught_in_the_text_by_the_existing_gate_rule():
+    """قاعدةُ البوابة الدائمة للصنف ١٨ هي حارسُ الصنف ١٠ نفسُه — يقرأ المتنَ،
+    فيمسك النظامَ الأجنبيَّ من أيّ طريقٍ وصل (موجّهٌ أو نموذج)."""
+    import silk_quality_gate as G
+    v = {"market": {"iso3": "KEN", "name_ar": "كينيا"},
+         "deep_research": {"report": {"text": (
+             "## 7. التنظيم والوصول للسوق\n"
+             "يلزم تسجيل REACH وعلامة CE قبل الشحن.")}}}
+    out = G._check_regime_not_belonging_to_country(v)
+    assert len(out) == 1 and "REACH" in out[0]["note"]
+
+
+# ═══ الصنف ١٩ — قفلُ نطاقِ عكسِ العملة (تصحيحُ خطرٍ مُعلَنٍ بأوسعَ منه) ═══
+
+def test_c19_currency_reverse_lookup_is_scoped_to_the_exporters_own_currency():
+    """`LOGIC_ISSUES.md` أعلن الخطرَ «سعرُ رفٍّ مرصودٌ في قطر أو اليمن أو
+    عُمان يُوسَم SAR». والقياسُ يقول أضيقَ من ذلك: `iso_currency` (الاتجاهُ
+    **العكسيّ**: اسمٌ ⇒ رمز) لها مستهلكٌ إنتاجيٌّ واحد — `_unit_cur` — ولا
+    يقرأ إلّا عملةَ تكلفةِ المُصدِّر المُصرَّحة في بطاقة المنتج، لا عملةَ
+    سعرٍ مرصودٍ في السوق. والسعرُ المرصود يسلك `currency_in_note` فيبقى
+    **باسمه العربيّ** بلا رمز. هذا القفلُ يُبقي النطاقَ ضيقاً: أيُّ مستهلكٍ
+    جديدٍ لـ`iso_currency` يفشِل هنا فيُقرَّر له سياقُه.
+
+    والاتجاهُ الأماميّ (`fmt_amount`: رمزٌ ⇒ اسم) آمنٌ بطبعه — `QAR` تُطبَع
+    «ريال قطري» و`OMR` تبقى برمزها كما تُعلِن سياسةُ السجلّ."""
+    import re
+    import silk_narrative as N
+    callers = []
+    for name in ("silk_narrative.py", "silk_economics.py", "silk_reports.py",
+                 "silk_render.py", "silk_decision.py", "silk_quality_gate.py",
+                 "silk_ai_judge.py", "silk_missions.py"):
+        for line in _repo(name).splitlines():
+            if "iso_currency" in line and not line.lstrip().startswith("#"):
+                if "def iso_currency" in line or "`iso_currency`" in line:
+                    continue
+                callers.append((name, line.strip()))
+    assert len(callers) == 1, callers
+    assert callers[0][0] == "silk_economics.py"
+    assert "silk_narrative.iso_currency(cur)" in callers[0][1]
+    body = re.search(r"def _unit_cur\(.*?\n(?:.*?\n)*?\n\n",
+                     _repo("silk_economics.py"))
+    assert body and "cost_currency" in body.group(0)
+    # والأسماءُ الواسعةُ لا رمزَ لها أصلاً، فالخطرُ محصورٌ بـ«ريال» وحدها.
+    for wide in ("درهم", "دينار", "روبية", "شلن", "جنيه"):
+        assert N.iso_currency(wide) == "", wide
+    assert N.iso_currency("ريال") == "SAR"
+
+
+# ════ أقفالُ المراجعة الذاتية الثانية — ثمانيةُ مآخذَ كلُّها مُعادُ إنتاجُه ════
+
+def test_review2_entity_scoped_metric_is_not_a_divergence():
+    """المأخذُ الأوّل (الأخطر): `classify` كان يفتح المفتاحَ على الملاحظة
+    **بلا الكيان**، فحصةُ الصين ١٢.٤٢٪ وحصةُ السعودية ١٠.٤٤٪ تصيران قراءتين
+    متعارضتين لمؤشِّرٍ واحد — و`metric_value_divergence` غيرُ قابلٍ للإصلاح
+    وفي مجموعة الحجب بالراية، فتقريرٌ **صحيحٌ** يسرد حصصَ المورّدين يُفشَل."""
+    import silk_figure_store as FS
+    rows = [{"value": 12.42, "source": "UN Comtrade", "confidence": 0.8,
+             "note": "حصة الصين % 2023", "data_year": 2023},
+            {"value": 10.44, "source": "UN Comtrade", "confidence": 0.8,
+             "note": "حصة السعودية % 2023", "data_year": 2023}]
+    st = FS.build({"competitors": {"agent_name": "a", "summary": "s",
+                                   "failed": False, "findings": rows}})
+    assert sorted(st["by_metric"]) == ["supplier_share:السعودية",
+                                       "supplier_share:الصين"]
+    assert all(len(v) == 1 for v in st["by_metric"].values())
+    # والتعارضُ الحقيقيّ (مباشرٌ مقابل مرآة لنفس المؤشِّر) يبقى مكشوفاً.
+    flow = [{"value": 18_400_000, "source": "UN Comtrade", "confidence": 0.8,
+             "note": "واردات مصرَّحة 2024", "data_year": 2024},
+            {"value": 19_100_000, "source": "UN Comtrade", "confidence": 0.7,
+             "note": "مرآة صادرات الشركاء 2023", "data_year": 2023}]
+    st2 = FS.build({"trade_flow": {"agent_name": "a", "summary": "s",
+                                   "failed": False, "findings": flow}})
+    assert len(st2["by_metric"]["imports"]) == 2
+    # والمؤهِّلُ لا يُلحَق إلّا بالمؤشِّر المرصودِ عيبُه — لا بالأسعار:
+    # قِياسٌ أثبت أنّ مؤهِّلَ سعرٍ يصير **اسمَ العملة** فيفترق مفتاحُ سعرَين
+    # لنفس المؤشِّر ويضيع الكشفُ الذي وُضع له الصنفُ ٦.
+    assert "imports" in st2["by_metric"]
+    assert FS.qualifier("حصة الصين % 2023") == "الصين"
+    assert FS.classify("حصة سوقية %") == ("supplier_share", "reported")
+    assert FS.classify("سعر رف تجزئة لعبوة 1 كجم، دينار") \
+        == ("retail_price", "reported")
+
+
+def test_review2_a_timeline_is_not_a_value_for_a_declared_gap():
+    """المأخذُ الرابع: «أيُّ رقم» كان يُحتسَب قيمةً، فجملةٌ تُعلِن **جدولاً
+    زمنياً** تُفشِل التقريرَ بفحصٍ غيرِ قابلٍ للإصلاح. والبندُ الزمنيُّ
+    يُقرَأ من اسمِه فيبقى رقمُه قيمةً."""
+    import silk_quality_gate as G
+    # الإبرةُ تُقرَأ على النصّ المطبَّع (الهمزةُ مطويّة) — كما في الفحص.
+    _n = G._norm_ar
+    assert G._shows_a_value(_n("نقطة التعادل ستتضح بعد أول 3 أشهر"),
+                            False) is False
+    assert G._shows_a_value(_n("نقطة التعادل 12,400 دولار"), False) is True
+    assert G._shows_a_value(_n("الزمن إلى أول فاتورة 6 أسابيع"), True) is True
+    v = {"deep_research": {
+        "report": {"text": "نقطة التعادل ستتضح بعد أول 3 أشهر من التشغيل."},
+        "economics": {"decision_numbers": [
+            {"tier": "gap", "name": "نقطة التعادل",
+             "missing": "تكلفة الوحدة"}]}}}
+    assert G._check_reference_to_nonexistent_figure(v) == []
+    v["deep_research"]["report"]["text"] = "نقطة التعادل 12,400 دولار."
+    assert len(G._check_reference_to_nonexistent_figure(v)) == 1
+
+
+def test_review2_reference_urls_are_not_foreign_regimes():
+    """المأخذُ الخامس: الملحقُ كان يُقرَأ متناً، فرابطُ مصدرٍ (`fda.gov`،
+    `ce-marking`) يُحتسَب نظاماً أجنبياً في قائمة الاشتراطات."""
+    import silk_quality_gate as G
+    body = ("## 7. التنظيم والوصول للسوق\n"
+            "تشترط الهيئة الكينية للمواصفات شهادة مطابقة.\n\n"
+            "## 11. الملاحق\nhttps://www.fda.gov/food و ce-marking")
+    v = {"market": {"iso3": "KEN"},
+         "deep_research": {"report": {"text": body}}}
+    assert G._check_regime_not_belonging_to_country(v) == []
+
+
+def test_review2_documented_similarity_threshold_matches_the_code():
+    """المأخذُ السادس: الثابتُ ٠.٤٥ **مقيسٌ** والتوثيقُ بقي على ٠.٥٥ في
+    سلسلةِ الدالّة وفي `.env.example` — والقيمةُ الأضعفُ كانت تفوّت العيب."""
+    import silk_quality_gate as G
+    assert G._XSEC_SIM_DEFAULT == 0.45
+    doc = G._check_cross_section_near_duplicate.__doc__ or ""
+    assert "0.45" in doc and "العتبةُ 0.55 و**مُعايَرةٌ**" not in doc
+    assert "# SILK_XSEC_SIM=0.45" in _repo(".env.example")
+
+
+def test_review2_one_normalizer_for_the_activity_filter_and_the_label():
+    """المأخذُ السابع: المِصفاةُ تُطبِّع بـ`lower()` والعرضُ يطوي الشرطةَ
+    السفلى والفراغ — فـ«Auto_parts_store» تمرّ ثمّ تُعرَض «متجر قطع غيار»
+    المستبعَدة. مُطبِّعٌ واحدٌ للطرفين."""
+    import silk_style_contract as S
+    for raw in ("Auto_parts_store", "auto parts store", "متجر قطع غيار",
+                "  AUTO   PARTS  STORE "):
+        assert S.lead_activity_allowed(raw) is False, raw
+        assert S.activity_label_ar(raw) == "متجر قطع غيار", raw
+    assert S.lead_activity_allowed("wholesaler") is True
+    assert S.lead_activity_allowed("unknown thing") is True   # المجهولُ يمرّ
+
+
+def test_review2_authority_config_is_read_from_the_key_build_view_builds():
+    """المأخذُ الثامن (الدرس ١٨٦): `_configured_authorities` كان يقرأ
+    `view["market"]["iso3"]` وهو **غيرُ موجودٍ** في العرض — الرمزُ في
+    `deep_research.market.iso3` — فالبلاغُ كان سيبقى يقول «لا تسمياتَ
+    مُهيَّأة» بعد تهيئتِها."""
+    import silk_profiles
+    import silk_quality_gate as G
+    with block_network():
+        v = _view("egypt_olive_oil")
+    assert (v.get("market") or {}).get("iso3") is None
+    assert ((v.get("deep_research") or {}).get("market") or {})["iso3"] == "EGY"
+    cite = {"source_url": "https://example.gov", "review_date": "2026-09-17"}
+    orig = silk_profiles.market_profile
+    try:
+        silk_profiles.market_profile = (
+            lambda i: {"authorities": [{"value": "جهة أ", **cite}]}
+            if i == "EGY" else orig(i))
+        assert G._configured_authorities(v) == "«جهة أ»"
+    finally:
+        silk_profiles.market_profile = orig

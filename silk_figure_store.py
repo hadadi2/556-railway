@@ -65,12 +65,51 @@ def _get(row: object, key: str, default=None):
     return getattr(row, key, default)
 
 
+# مؤشِّراتٌ **تخصّ كياناً** لا السوقَ ككلّ: «حصة الصين» و«حصة السعودية»
+# قراءتان لكيانين لا قراءتان لمؤشِّرٍ واحد. مأخذُ المراجعة الذاتية: التصنيفُ
+# كان بالملاحظة **بلا الكيان**، فصار الرقمان تعارضاً — و`metric_value_
+# divergence` غيرُ قابلٍ للإصلاح وفي مجموعة الحجب بالراية، فتقريرٌ صحيحٌ
+# يسرد حصصَ المورّدين كان يُفشَل. والتمييزُ **بيانيٌّ لا قُطريّ**: مؤهِّلُ
+# الملاحظة هو ما بقي بعد طيّ كلماتِ المؤشِّر والأرقام والسنوات.
+# **مقصورةٌ على المؤشِّر المرصودِ عيبُه.** جُرِّبت أوسعَ (بأسعار الرفّ
+# والحدود) فقِيس أنّ المؤهِّلَ يصير **اسمَ العملة** لا كياناً
+# (`retail_price:دينار`) — فيفترق مفتاحُ سعرَين لنفس المؤشِّر ويضيع الكشفُ
+# الذي وُضع له الصنفُ ٦. فالتوسيعُ يحتاج قياسَه لا حدسَه.
+_ENTITY_SCOPED_METRICS = frozenset({"supplier_share"})
+# كلماتُ المؤشِّر **بحدودِ كلمة** — وإلّا ابتلعت «سوق» صدرَ «سوقية» فصار
+# المؤهِّلُ «ية» (قِياسٌ على هذه الدالّة نفسِها كشفه قبل الكوميت).
+_QUALIFIER_DROP_WORDS_RE = re.compile(
+    r"\b(?:حصة|حصه|حصص|نصيب|سوق|سوقية|سوقيه|share|market|سعر|price|رف|"
+    r"تجزئة|تجزئه|retail|حدود|border|استيراد|imports?|للكيلوغرام|كجم|كغم|"
+    r"كغ|لكل|عبوة|عبوه|متوسط|مرصود|مصرحة|مصرَّحة|value|unit)\b", re.I)
+_QUALIFIER_DROP_CHARS_RE = re.compile(r"[%٪\d،,\.\-—()«»/]+")
+
+
+def qualifier(note: object) -> str:
+    """مؤهِّلُ القراءة — ما يبقى من الملاحظة بعد طيّ كلماتِ المؤشِّر وأرقامِه.
+
+    «حصة الصين % 2023» ⇒ «الصين»، و«حصة السعودية % 2023» ⇒ «السعودية».
+    وملاحظةٌ بلا مؤهِّلٍ تُعيد فراغاً فيبقى المفتاحُ هو المؤشِّرَ وحدَه.
+    """
+    rest = _QUALIFIER_DROP_CHARS_RE.sub(" ", str(note or ""))
+    rest = _QUALIFIER_DROP_WORDS_RE.sub(" ", rest)
+    return " ".join(w for w in rest.split() if len(w) > 2)
+
+
 def classify(note: object) -> tuple:
-    """(المؤشّر، الطريقة) من ملاحظة القراءة — `("other", "reported")` افتراضاً."""
+    """(المؤشّر، الطريقة) من ملاحظة القراءة — `("other", "reported")` افتراضاً.
+
+    ومؤشِّرٌ يخصّ كياناً يحمل مؤهِّلَه في مفتاحه (`supplier_share:الصين`)
+    كي لا يُقرأَ كيانان قراءتين متعارضتين لمؤشِّرٍ واحد.
+    """
     text = str(note or "")
     for name, rex in _METRIC_PATTERNS:
         if rex.search(text):
             metric, method = _METHOD_OF_METRIC.get(name, (name, "reported"))
+            if metric in _ENTITY_SCOPED_METRICS:
+                q = qualifier(text)
+                if q:
+                    metric = f"{metric}:{q}"
             return metric, method
     return "other", "reported"
 

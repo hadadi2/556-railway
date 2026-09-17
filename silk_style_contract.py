@@ -439,6 +439,11 @@ LEAD_ACTIVITY_ALLOWED: frozenset = frozenset({
 })
 
 
+def _activity_key(raw: object) -> str:
+    """مفتاحُ النشاط المطبَّع — المصدرُ الواحد للمِصفاة وللعرض معاً."""
+    return " ".join(str(raw or "").strip().lower().replace("_", " ").split())
+
+
 def lead_activity_allowed(raw: object) -> bool:
     """هل نشاطُ الرابط ضمن السماح؟ — والمجهولُ يمرّ (انظر أعلاه).
 
@@ -448,7 +453,11 @@ def lead_activity_allowed(raw: object) -> bool:
     given = str(raw or "").strip()
     if not given:
         return True
-    key = given.lower()
+    # مأخذُ المراجعة الذاتية: التطبيعُ هنا كان `lower()` وحدَه بينما
+    # `activity_label_ar` يطوي الشرطةَ السفلى والفراغَ — فـ«Auto_parts_store»
+    # تمرّ المِصفاةَ ثمّ تُعرَض «متجر قطع غيار» المستبعَدة. مُطبِّعٌ **واحد**
+    # للطرفين كي لا يفترقا مرّةً أخرى.
+    key = _activity_key(given)
     # تُحلّ التسميةُ العربية إلى مفتاحها الخام أوّلاً — وإلّا مرّ «متجر قطع
     # غيار» المترجَمُ بينما يُمنَع أصلُه الإنجليزيّ (قِياسٌ على هذه الدالّة
     # نفسِها كشف العيبَ قبل الشحن).
@@ -469,8 +478,7 @@ def activity_label_ar(raw: object) -> str:
     اللغة (`_check_language_consistency`) ويُعلَن النقصُ بدل أن يُستَر
     بترجمةٍ مختلَقة — نفسُ منطقِ العملة في الصنف ٣.
     """
-    key = " ".join(str(raw or "").strip().lower().replace("_", " ").split())
-    return ACTIVITY_LABEL_AR.get(key, str(raw or "").strip())
+    return ACTIVITY_LABEL_AR.get(_activity_key(raw), str(raw or "").strip())
 
 
 # (ب) تعريفاتُ المنهجية — سطرٌ واحدٌ ثابتٌ لكلّ مصطلحٍ **يُعرَض حين يَرِد**.

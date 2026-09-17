@@ -207,6 +207,17 @@ _DOC_ANCHORS = [
 
 # كل مدخلة: (رقم الدرس، ملف الاختبار، دوال اختبار يجب أن تبقى).
 _TEST_ANCHORS = [
+    # ٢٥٠–٢٥٢ — سدُّ الفجوات: حارسٌ بلا فرعٍ مرصودٍ لا يُطلِق، وتشديدُ
+    # مطابقةٍ بحسب البند لا السوق، وحدٌّ مُعلَنٌ أوسعَ من قياسه.
+    (250, "tests/test_market_structure_config.py",
+     ["def test_c17_the_border_price_guard_can_fire_without_any_configuration",
+      "def test_c17_threshold_is_measured_and_keeps_every_corpus_silent"]),
+    (251, "tests/test_market_structure_config.py",
+     ["def test_c18_regulatory_emphasis_names_no_foreign_regime_when_scoped",
+      "def test_c18_the_leak_is_caught_in_the_text_by_the_existing_gate_rule"]),
+    (252, "tests/test_market_structure_config.py",
+     ["def test_c19_currency_reverse_lookup_is_scoped_to_the_exporters_own_"
+      "currency"]),
     # ٢٤٩ — عبارةٌ إلزاميةٌ يكسرها سطرٌ جديد: مطبِّعُ الحضورِ الحرفيّ.
     (249, "tests/test_market_structure_config.py",
      ["def test_c16_a_mandatory_warning_survives_a_line_wrap",
@@ -605,6 +616,10 @@ _TEST_ANCHORS = [
 
 # حراس رمزية للبندين ١٢/١٣ (المصالحة + نقِّ-لا-ترفض) — وجود الدوال في المصدر.
 _SYMBOL_ANCHORS_EXTRA = [
+    (250, "silk_quality_gate.py",
+     ["_BORDER_ABOVE_SHELF_RATIO = 1.25", "يفوق سعرَ الرفّ"]),
+    (251, "silk_ai_judge.py",
+     ["_HS_CATEGORY_SCOPED", "_SCOPED_REGIME_TAIL"]),
     (249, "silk_quality_gate.py", ["def _flat_ar", "_flat_ar(text)"]),
     # ٢٤٧/٢٤٨ — تضييقُ حارسَين بقائمتين مقيستين لا بحدس.
     (247, "silk_quality_gate.py",
