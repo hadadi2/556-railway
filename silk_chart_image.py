@@ -27,7 +27,11 @@ _BLUE = (0x25 / 255, 0x63 / 255, 0xEB / 255)
 _GOLD = (0xC9 / 255, 0xA2 / 255, 0x27 / 255)
 _TRACK = (0xEE / 255, 0xF2 / 255, 0xF7 / 255)
 _MUTED = (0x64 / 255, 0x74 / 255, 0x8B / 255)
-_INK = (0x11 / 255, 0x28 / 255, 0x37 / 255)
+# لونُ الحبر **نصّاً** (CSS) لا مُتَّجهاً: النصوصُ تُرسَم بـ`insert_htmlbox`
+# لا بـ`Shape.finish`. وكان المُتَّجهُ معرَّفاً بلا مستعمِلٍ قطّ، والقيمةُ
+# الحرفيةُ في النداءات رقمين مُبدَّلين عن حبر الهوية — فلونٌ سادسٌ خارج
+# الخمسة المسموحة كان يطبع نصوصَ الصورة (تدقيقٌ قبل الدمج).
+_INK = "#111827"
 
 _FONT_DIRS = ("/usr/share/fonts/truetype/ibmplex",)
 _FONT_FILES = ("IBMPlexSansArabic-Regular.ttf",)
@@ -168,7 +172,7 @@ def chart_png(chart: dict, lang: str = "ar") -> "bytes | None":
 
         # عنوانُ الرسم
         _text(page, css, arch, pymupdf.Rect(8, 4, _W - 8, 24),
-              _label_html(chart.get("title") or "", 13.5, "right", "#112837"))
+              _label_html(chart.get("title") or "", 13.5, "right", _INK))
 
         if kind == "gauge":
             bands = [b for b in (chart.get("bands") or [])
@@ -205,7 +209,7 @@ def chart_png(chart: dict, lang: str = "ar") -> "bytes | None":
                                              y + _BAR_H + 3))
                 shape.finish(color=None, fill=_GOLD)
             _text(page, css, arch, pymupdf.Rect(8, y, _VAL, y + _BAR_H),
-                  _label_html(_num(chart, value), 11.5, "left", "#112837"))
+                  _label_html(_num(chart, value), 11.5, "left", _INK))
             _text(page, css, arch,
                   pymupdf.Rect(x0 + bar_w + 6, y, _W - 6, y + _BAR_H),
                   _label_html(rows[0].get("label") or ""))
@@ -235,7 +239,7 @@ def chart_png(chart: dict, lang: str = "ar") -> "bytes | None":
                     else:
                         bar(y, xhi, _BLUE)
                 _text(page, css, arch, pymupdf.Rect(8, y, _VAL, y + _BAR_H),
-                      _label_html(_num(chart, shown), 11.5, "left", "#112837"))
+                      _label_html(_num(chart, shown), 11.5, "left", _INK))
                 _text(page, css, arch,
                       pymupdf.Rect(x0 + bar_w + 6, y, _W - 6, y + _BAR_H),
                       _label_html(r.get("label") or ""))
@@ -252,7 +256,7 @@ def chart_png(chart: dict, lang: str = "ar") -> "bytes | None":
                         0.55 if r.get("muted") else 1.0)
                 _text(page, css, arch, pymupdf.Rect(8, y, _VAL, y + _BAR_H),
                       _label_html(_num(chart, r.get("value")), 11.5, "left",
-                                  "#112837"))
+                                  _INK))
                 _text(page, css, arch,
                       pymupdf.Rect(x0 + bar_w + 6, y, _W - 6, y + _BAR_H),
                       _label_html(r.get("label") or ""))

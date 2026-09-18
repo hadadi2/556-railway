@@ -382,3 +382,22 @@ def test_a_missing_value_draws_no_bar_measured_in_ink():
 
     assert blue(0) == 0, "لا عمودَ لقيمةٍ غائبة"
     assert blue(1) > 100, "والقيمةُ الحاضرة عمودٌ مرسوم"
+
+
+def test_the_image_renderer_uses_only_branding_colours():
+    """تدقيقٌ قبل الدمج: اختبارُ الألوان كان يفحص `web/platform.html` وحدَها،
+    ومُصيِّرُ الصورة يطبع النصَّ بلونٍ سادسٍ (رقمان مُبدَّلان عن حبر الهوية).
+    السطحان يقرآن العقدَ نفسَه فليقرآ ملفَّ الهوية نفسَه — خمسةٌ لا ستّة."""
+    import re
+    allowed = {"#2563EB", "#C9A227", "#EEF2F7", "#64748B", "#111827"}
+    src = open(CI.__file__, encoding="utf-8").read()
+    hexes = {h.upper() for h in re.findall(r"#[0-9A-Fa-f]{6}", src)}
+    assert hexes <= allowed, hexes - allowed
+    # والمُتَّجهاتُ (للأشكال) هي الأربعةُ نفسُها بصيغة 0–1.
+    tuples = {(f"#{r}{g}{b}").upper() for r, g, b in re.findall(
+        r"0x([0-9A-Fa-f]{2}) / 255, 0x([0-9A-Fa-f]{2}) / 255, "
+        r"0x([0-9A-Fa-f]{2}) / 255", src)}
+    assert tuples <= allowed, tuples - allowed
+    assert len(tuples) >= 4, tuples
+    # وحبرُ النصّ نصٌّ (CSS) لا مُتَّجه: النصُّ يُرسَم بـ`insert_htmlbox`.
+    assert CI._INK == "#111827" and isinstance(CI._INK, str)
