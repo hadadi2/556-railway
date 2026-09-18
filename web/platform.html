@@ -3135,6 +3135,36 @@ function mdLite(text) {
   return '<div class="rtext">' + out.join("") + "</div>";
 }
 
+/* الموجة الخامسة — تسمياتُ مجموعات الرسوم وموضعُها بين أقسام السرد المرقّمة.
+   الأرقامُ هي مرساةُ الكاتب نفسُها (`## N.`) — محايدةٌ لغوياً. */
+const _CHART_GROUP_LABEL = {
+  market: () => ar_en("السوق بالأرقام — بيانياً", "The market in numbers, charted"),
+  competition: () => ar_en("المنافسة والتسعير — بيانياً", "Competition and pricing, charted"),
+  economics: () => ar_en("أرقام القرار — بيانياً", "Decision numbers, charted"),
+};
+/* المنافسةُ بعد القسم السادس (خريطةُ `_CLIENT_SECTION_BY_ORDINAL` نفسُها:
+   6 = المشهد التنافسي). ولا مدخلَ للاقتصاد: قسمُه في مُسلَّم العميل يُبنى
+   **بعد حلقة الأقسام كلِّها** (`_client_economics_section`)، فمجموعتُه تُعرَض
+   في ذيل السرد كما هناك — كان المدخلُ 9 وهو قسمُ المخاطر (مراجعة §58، M8). */
+const _CHART_GROUP_AFTER_ORDINAL = {competition: 6};
+
+/* تقسيمُ نصّ الكاتب على عناوينه المرقّمة `## N.` — كلُّ جزءٍ بترتيبه؛ ما قبل
+   أوّل عنوان جزءٌ بلا ترتيب (null). نصٌّ بلا عناوين = جزءٌ واحد. */
+function _splitWriterSections(text) {
+  const parts = [];
+  let cur = {ordinal: null, lines: []};
+  String(text || "").split("\n").forEach((ln) => {
+    const m = ln.match(/^##\s+(\d+)\.\s/);
+    if (m) {
+      if (cur.lines.length) parts.push(cur);
+      cur = {ordinal: Number(m[1]), lines: []};
+    }
+    cur.lines.push(ln);
+  });
+  if (cur.lines.length) parts.push(cur);
+  return parts.map((p) => ({ordinal: p.ordinal, text: p.lines.join("\n")}));
+}
+
 function viewReportBtn(s) {
   const b = mkBtn(ar_en("عرض التقرير", "View report"), "");
   b.onclick = async () => {
@@ -3302,10 +3332,25 @@ function viewReportBtn(s) {
         html += "<label>" + ar_en("الأسواق بيانياً", "Markets, charted") +
           '</label><div data-role="rep-chart"></div>';
       }
+      /* الموجة الخامسة: الرسومُ عبر التقرير كلّه — كلُّ رسمٍ يحمل قسمَه من
+         الخادم (`section`)، والمجموعاتُ تُحقَن في موضع قسمها: السوقُ بعد
+         كتلة الواردات، والمنافسةُ والاقتصادُ بين أقسام السرد المرقّمة (نفسُ
+         مرساة `_CLIENT_SECTION_BY_ORDINAL` في docx). مجموعةٌ لم تجد قسمَها
+         (سردٌ بلا عناوين مرقّمة) تُعرَض قبل حدود التقرير — لا تختفي. */
       const _charts = dr && Array.isArray(dr.charts) ? dr.charts : [];
-      if (_charts.length)
-        html += "<label>" + ar_en("الرسوم البيانية", "Charts") +
-          '</label><div data-role="rep-charts"></div>';
+      const _chartGroups = {market: [], competition: [], economics: []};
+      _charts.forEach((c) => {
+        const k = c && _chartGroups[c.section] ? c.section : "market";
+        _chartGroups[k].push(c);
+      });
+      const _chartPlaced = new Set();
+      const _chartHostHTML = (sec) => {
+        if (_chartPlaced.has(sec) || !_chartGroups[sec].length) return "";
+        _chartPlaced.add(sec);
+        return "<label>" + esc(_CHART_GROUP_LABEL[sec]()) +
+          '</label><div data-role="rep-charts-' + sec + '"></div>';
+      };
+      html += _chartHostHTML("market");
       const _showScore = !_hide("score"), _showConf = !_hide("confidence");
       if (mkts.length) {
        /* جدولُ الأسواق المرتَّبة يسقط كاملاً حين يُخفى عموداه — وجدولُ
@@ -3405,13 +3450,32 @@ function viewReportBtn(s) {
         const rtext = dr.report && dr.report.text;
         if (rtext) {
           html += "<label>" + ar_en("التقرير المكتوب", "The written report") +
-            "</label>" + mdLite(rtext);
+            "</label>";
+          /* الأقسامُ المرقّمة تستقبل رسومَها بعدها مباشرة (المنافسة بعد ٦).
+             ولا مجموعةَ تُحقَن ⇒ لا تقسيمَ للسرد: القسمةُ تُخرِج كتلاً شقيقة
+             بدل كتلةٍ واحدة، وشكلُ الصفحة بالراية المطفأة يبقى هو نفسَه
+             حرفياً (مراجعة §58، L5). */
+          const _needSplit = Object.keys(_CHART_GROUP_AFTER_ORDINAL)
+            .some((sec) => (_chartGroups[sec] || []).length);
+          if (!_needSplit) {
+            html += mdLite(rtext);
+          } else {
+            _splitWriterSections(rtext).forEach((part) => {
+              html += mdLite(part.text);
+              Object.keys(_CHART_GROUP_AFTER_ORDINAL).forEach((sec) => {
+                if (part.ordinal === _CHART_GROUP_AFTER_ORDINAL[sec])
+                  html += _chartHostHTML(sec);
+              });
+            });
+          }
         } else if (dr.narrative && dr.narrative.available === false) {
           html += '<p class="hint">' +
             ar_en("تعذّر توليد السرد لهذه التشغيلة — الأرقام والحكم أعلاه من التوليف الحتمي.",
                "The narrative could not be generated for this run — the numbers and verdict above come from deterministic synthesis.") +
             "</p>";
         }
+        /* مجموعاتٌ لم تجد قسمَها في السرد تُعرَض هنا لا تُسقَط. */
+        ["competition", "economics"].forEach((sec) => { html += _chartHostHTML(sec); });
         html += potentialClientsHTML(dr);
         const lims = Array.isArray(dr.limits) ? dr.limits : [];
         if (lims.length) {
@@ -3444,9 +3508,12 @@ function viewReportBtn(s) {
           iso3: m.iso3, country: m.country || m.name,
           score: m.score != null ? m.score : m.total_score,
           confidence: m.confidence})), "");
-      /* الموجة الرابعة (البند ٣): رسومُ التقرير من بياناتٍ محضة. */
-      const chartsHost = veil.querySelector('[data-role="rep-charts"]');
-      if (chartsHost) renderReportCharts(chartsHost, _charts);
+      /* الموجة الرابعة (البند ٣) ثم الخامسة: رسومُ التقرير من بياناتٍ محضة،
+         مجموعةً لكلّ قسم (dr.charts[].section). */
+      Object.keys(_chartGroups).forEach((sec) => {
+        const host = veil.querySelector('[data-role="rep-charts-' + sec + '"]');
+        if (host) renderReportCharts(host, _chartGroups[sec]);
+      });
     } catch (e) { tell(ar_en("تعذّر عرض التقرير: ", "Could not show the report: ") + e.message, "err"); }
     b.disabled = false;
   };
@@ -4097,16 +4164,24 @@ function renderStudiesChart(series) {
 function _chartNum(v, unit) {
   const n = Number(v);
   if (unit === "%") return (Math.round(n * 10) / 10) + "%";
+  if (unit === "index") return String(Math.round(n));      /* مؤشّرٌ صحيح */
   if (unit === "USD") {
     const a = Math.abs(n);
     if (a >= 1e9) return "$" + (Math.round(n / 1e7) / 100) + "B";
     if (a >= 1e6) return "$" + (Math.round(n / 1e4) / 100) + "M";
     if (a >= 1e3) return "$" + (Math.round(n / 10) / 100) + "K";
-    return "$" + Math.round(n);
+    /* مبالغُ الوحدة تحت المئة بمنزلتين — «$3» بدل «$3.10» تُخفي فرقاً. */
+    return "$" + (a < 100 ? Math.round(n * 100) / 100 : Math.round(n));
   }
+  /* عملاتٌ ووحداتٌ أخرى: الرقمُ عارياً — الوحدةُ في عنوان الرسم نفسه. */
   return n.toLocaleString("en-US", {maximumFractionDigits: 2});
 }
 
+/* الموجة الخامسة — مُصيِّرٌ واحد لثلاثة أنواع (`ch.kind`): `bars` أعمدةٌ أفقية،
+   `range` شريطٌ من أدنى تقديرٍ إلى أعلاه، `gauge` قيمةٌ على مناطقٍ ثلاث.
+   القواعدُ الخمسة في كلّ نوع: اتجاهُ النصّ ltr للأرقام، العرضُ من الحاوية،
+   ارتفاعٌ صريح + preserveAspectRatio، height:auto، وسلسلةٌ فارغة = حالةٌ معلنة
+   لا محورٌ فارغ؛ والقيمةُ الغائبة «—» بلا عمود. الألوانُ من الهوية فقط. */
 function renderReportCharts(host, charts) {
   host.textContent = "";
   const list = Array.isArray(charts) ? charts : [];
@@ -4116,6 +4191,10 @@ function renderReportCharts(host, charts) {
                                  "Not enough data to chart yet."), "");
     return;
   }
+  /* عددٌ منتهٍ حصراً — `""` كانت تعبر (`Number("") === 0`) فتُرسَم عموداً
+     صفريّاً، و`true` عموداً بقيمة 1، بينما مصيّرُ الصورة يطبع «—» لكلَيهما
+     (مراجعة §58، L2: المصيّران يقرآن القيمةَ قراءةً واحدة). */
+  const known = (x) => typeof x === "number" && Number.isFinite(x);
   list.forEach((ch) => {
     const box = document.createElement("div");
     box.style.margin = "0 0 12px";
@@ -4131,53 +4210,156 @@ function renderReportCharts(host, charts) {
       host.appendChild(box);
       return;
     }
+    const kind = ch.kind === "range" || ch.kind === "gauge" ? ch.kind : "bars";
     const W = Math.max(300, Math.min(560, Math.round(host.clientWidth || 560)));
-    const H = 8 + rows.length * 26;
-    const known = (r) => r.value != null && !Number.isNaN(Number(r.value));
-    const maxV = Math.max(1e-9, ...rows.map((r) => (known(r) ? Number(r.value) : 0)));
+    const H = kind === "gauge" ? 8 + 26 + 20 : 8 + rows.length * 26;
     const LABELS = rows.map((r) => String(r.label));
     const LONGEST = Math.max(3, ...LABELS.map((t) => t.length));
     const GUT = Math.min(Math.round(W * 0.45),
                          Math.max(84, Math.round(LONGEST * 7 + 12)));
     const VAL = 76;                                   // خانة القيمة المطبوعة
     const BAR = Math.max(60, W - GUT - VAL - 16);
+    const X0 = VAL + 8;                               // بداية المسار
     const svg = _svgEl("svg", {viewBox: "0 0 " + W + " " + H,
                                width: String(W), height: String(H),
                                preserveAspectRatio: "xMinYMin meet", role: "img",
                                "aria-label": ch.title || ""});
     svg.style.maxWidth = "100%";
     svg.style.height = "auto";
-    rows.forEach((r, i) => {
-      const y = 4 + i * 26;
-      const v = known(r) ? Number(r.value) : 0;
-      const bw = known(r) ? Math.round((BAR * Math.max(0, v)) / maxV) : 0;
-      const g = _svgEl("g", {});
-      const label = _svgEl("text", {x: W - 8, y: y + 12, "text-anchor": "end",
-        direction: "ltr", "font-size": "12", fill: "#64748B"});
+    /* اتجاهُ التسمية من حرفها لا بالفرض: تسميةٌ عربيةٌ («سعر المصنع (EXW)»)
+       تُفرَض ltr فتنقلب أقواسُها — نفسُ عائلة انعكاس الأقواس التي يحرسها
+       فحصُ الـPDF. الأرقامُ وحدَها ltr دائماً. */
+    const AR = /[\u0600-\u06FF]/;
+    const labelEl = (i, y) => {
+      /* المِرساةُ تتبع الاتجاه: في rtl «start» هو الحرفُ الأيمن، فتمتدّ
+         التسميةُ يساراً من حدّ اللوحة؛ و«end» يفعل ذلك في ltr. خلطُهما
+         يدفع النصَّ خارج اللوحة فلا يبقى منه إلا حرفٌ واحد. */
+      const rtl = AR.test(LABELS[i]);
+      const label = _svgEl("text", {x: W - 8, y: y + 12,
+        "text-anchor": rtl ? "start" : "end",
+        direction: rtl ? "rtl" : "ltr",
+        "font-size": "12", fill: "#64748B"});
       label.textContent = LABELS[i];
       if (LABELS[i].length * 7 > GUT - 10) {
         label.setAttribute("textLength", String(Math.max(30, GUT - 10)));
         label.setAttribute("lengthAdjust", "spacingAndGlyphs");
       }
-      g.appendChild(label);
-      g.appendChild(_svgEl("rect", {x: VAL + 8, y: y, width: String(BAR),
-        height: "16", rx: "4", fill: "#EEF2F7"}));
-      if (bw)
-        g.appendChild(_svgEl("rect", {x: VAL + 8 + (BAR - bw), y: y,
-          width: String(bw), height: "16", rx: "4",
-          fill: r.highlight ? "#C9A227" : "#2563EB",
-          opacity: r.muted ? "0.55" : "1"}));
+      return label;
+    };
+    const valEl = (y, text) => {
       const val = _svgEl("text", {x: VAL, y: y + 12, direction: "ltr",
         "text-anchor": "end", "font-size": "11.5", fill: "#111827"});
-      val.textContent = known(r) ? _chartNum(v, ch.unit) : "—";
-      g.appendChild(val);
+      val.textContent = text;
+      return val;
+    };
+    const tip = (g, text) => {
       const t = _svgEl("title", {});
-      t.textContent = LABELS[i] + " — " +
-        (known(r) ? _chartNum(v, ch.unit)
-                  : ar_en("بلا قيمة", "no value"));
+      t.textContent = text;
       g.appendChild(t);
-      svg.appendChild(g);
-    });
+    };
+    /* المسارُ من اليمين إلى اليسار (القيمةُ عن يسار المسار، التسميةُ عن يمينه):
+       عرضُ العمود يُقاس من نهاية المسار اليمنى. */
+    const track = (g, y) => g.appendChild(_svgEl("rect", {x: X0, y: y,
+      width: String(BAR), height: "16", rx: "4", fill: "#EEF2F7"}));
+    switch (kind) {
+      case "range": {
+        /* شريطٌ من أدنى تقديرٍ إلى أعلاه على محورٍ واحد (أقصى «أعلى»). */
+        const maxV = Math.max(1e-9, ...rows.map((r) => (known(r.high) ? Number(r.high) : 0)));
+        rows.forEach((r, i) => {
+          const y = 4 + i * 26;
+          const g = _svgEl("g", {});
+          g.appendChild(labelEl(i, y));
+          track(g, y);
+          const ok = known(r.low) && known(r.high);
+          if (ok) {
+            const lo = Math.max(0, Number(r.low)), hi = Math.max(lo, Number(r.high));
+            const xLo = Math.round((BAR * lo) / maxV), xHi = Math.round((BAR * hi) / maxV);
+            /* عمودٌ باهتٌ حتى أدنى تقدير («على الأقلّ») وقطعةٌ صريحة للمدى؛
+               تقديرٌ نقطيّ (أدنى = أعلى) عمودٌ كاملٌ واحد. */
+            if (xHi - xLo >= 2) {
+              g.appendChild(_svgEl("rect", {x: X0 + (BAR - xLo), y: y,
+                width: String(xLo), height: "16", rx: "4", fill: "#2563EB",
+                opacity: "0.45"}));
+              g.appendChild(_svgEl("rect", {x: X0 + (BAR - xHi), y: y,
+                width: String(xHi - xLo), height: "16", rx: "4", fill: "#2563EB"}));
+            } else {
+              g.appendChild(_svgEl("rect", {x: X0 + (BAR - xHi), y: y,
+                width: String(Math.max(3, xHi)), height: "16", rx: "4",
+                fill: "#2563EB"}));
+            }
+          }
+          const shown = known(r.value) ? r.value : (ok ? r.high : null);
+          g.appendChild(valEl(y, known(shown) ? _chartNum(shown, ch.unit) : "—"));
+          tip(g, LABELS[i] + " — " + (ok
+            ? _chartNum(r.low, ch.unit) + " – " + _chartNum(r.high, ch.unit)
+            : ar_en("بلا قيمة", "no value")));
+          svg.appendChild(g);
+        });
+        break;
+      }
+      case "gauge": {
+        /* قيمةٌ واحدة على مناطقٍ ثلاث [from,to) من الخادم؛ المؤشّرُ ذهبيّ. */
+        const bands = Array.isArray(ch.bands) ? ch.bands : [];
+        const last = bands.length ? bands[bands.length - 1] : null;
+        const scale = Math.max(1e-9,
+          last && known(last.to) ? Number(last.to) : 1);
+        const y = 4;
+        const g = _svgEl("g", {});
+        g.appendChild(labelEl(0, y));
+        track(g, y);
+        const SHADE = ["#EEF2F7", "#64748B", "#64748B"];
+        const ALPHA = ["1", "0.35", "0.7"];
+        bands.forEach((b, i) => {
+          if (!known(b.from) || !known(b.to)) return;
+          const xa = Math.round((BAR * Number(b.from)) / scale);
+          const xb = Math.round((BAR * Number(b.to)) / scale);
+          g.appendChild(_svgEl("rect", {x: X0 + (BAR - xb), y: y,
+            width: String(Math.max(0, xb - xa)), height: "16",
+            fill: SHADE[i % 3], opacity: ALPHA[i % 3]}));
+          /* تسميةٌ لا تجد عرضاً تُسقَط — التراكبُ يُخفي الرسمَ نفسَه؛
+             ومنطقةُ القيمة مسمّاةٌ في خانة التسمية على كلّ حال. */
+          if (xb - xa < 52) return;
+          const blText = String(b.label || "");
+          const bl = _svgEl("text", {x: X0 + (BAR - Math.round((xa + xb) / 2)),
+            y: y + 30, "text-anchor": "middle",
+            direction: AR.test(blText) ? "rtl" : "ltr",
+            "font-size": "10.5", fill: "#64748B"});
+          bl.textContent = blText;
+          g.appendChild(bl);
+        });
+        const v = known(ch.value) ? Number(ch.value) : (known(rows[0].value) ? Number(rows[0].value) : null);
+        if (v != null) {
+          const xv = Math.round((BAR * Math.min(Math.max(0, v), scale)) / scale);
+          g.appendChild(_svgEl("rect", {x: X0 + (BAR - xv) - 2, y: y - 3,
+            width: "4", height: "22", rx: "2", fill: "#C9A227"}));
+        }
+        g.appendChild(valEl(y, v != null ? _chartNum(v, ch.unit) : "—"));
+        tip(g, LABELS[0] + " — " + (v != null ? _chartNum(v, ch.unit)
+                                              : ar_en("بلا قيمة", "no value")));
+        svg.appendChild(g);
+        break;
+      }
+      default: {
+        const maxV = Math.max(1e-9, ...rows.map((r) => (known(r.value) ? Number(r.value) : 0)));
+        rows.forEach((r, i) => {
+          const y = 4 + i * 26;
+          const v = known(r.value) ? Number(r.value) : 0;
+          const bw = known(r.value) ? Math.round((BAR * Math.max(0, v)) / maxV) : 0;
+          const g = _svgEl("g", {});
+          g.appendChild(labelEl(i, y));
+          track(g, y);
+          if (bw)
+            g.appendChild(_svgEl("rect", {x: X0 + (BAR - bw), y: y,
+              width: String(bw), height: "16", rx: "4",
+              fill: r.highlight ? "#C9A227" : "#2563EB",
+              opacity: r.muted ? "0.55" : "1"}));
+          g.appendChild(valEl(y, known(r.value) ? _chartNum(v, ch.unit) : "—"));
+          tip(g, LABELS[i] + " — " + (known(r.value) ? _chartNum(v, ch.unit)
+                                                     : ar_en("بلا قيمة", "no value")));
+          svg.appendChild(g);
+        });
+      }
+    }
     box.appendChild(svg);
     /* مصدرُ الرسم وسنتُه وملاحظةُ نقصه تحته حرفياً — رقمٌ بلا مصدرٍ مستحيل. */
     const prov = document.createElement("div");

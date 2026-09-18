@@ -4597,6 +4597,32 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    260: lambda: (
+        _needles("silk_render.py", "def _chart_declare_year",
+                 "_MEASURED_CHART_IDS")(),
+        _needles("silk_economics.py", '"cost_currency": _cost_cur or None')(),
+        _needles("silk_reports.py", "def _client_chart_text_safe")(),
+        _needles("silk_chart_image.py", "def _jsround")(),
+        _needles("web/platform.html",
+                 'typeof x === "number" && Number.isFinite(x)')(),
+        _needles("tests/test_report_charts_docx.py",
+                 "def test_text_drawn_inside_the_image_passes_the_client_"
+                 "guard")(),
+        _needles("tests/test_lessons_enforcement.py", '(260, ')()),
+    259: lambda: (
+        _needles("silk_render.py", "CHART_SECTIONS", "CHART_KINDS",
+                 "def _chart_landed_cost_ladder",
+                 "def _charts_decision_ranges")(),
+        _needles("silk_chart_image.py", "def chart_png")(),
+        _needles("silk_reports.py", "def _client_charts")(),
+        _needles("silk_economics.py", "def hhi_band")(),
+        _needles("silk_quality_gate.py", "def _check_chart_backing")(),
+        _needles("web/platform.html", "switch (kind)",
+                 'data-role="rep-charts-')(),
+        _needles("tests/test_report_charts_docx.py",
+                 "def test_every_chart_in_the_view_becomes_one_picture_in_"
+                 "the_docx")(),
+        _needles("tests/test_lessons_enforcement.py", '(259, ')()),
     258: lambda: (
         _needles("silk_deep_pillars.py", "def import_series",
                  "def top_supplier_shares")(),

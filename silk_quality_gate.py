@@ -6217,6 +6217,97 @@ def _check_client_metric_exposure(view: dict, dr: dict) -> list[dict]:
                       "أو الكاتبُ كتب التسميةَ من عنده")}]
 
 
+# ── الموجة الخامسة: رسمٌ بقيمةٍ بلا حقيقةٍ خلفها ──────────────────────────
+def _chart_backing_numbers(dr: dict) -> set:
+    """كلُّ رقمٍ يجوز رسمُه: حقائقُ البعثات وأرقامُ العرض الاقتصادي وسلسلةُ
+    الواردات — المجموعةُ التي **يجب** أن تنتمي إليها كلُّ قيمةٍ مرسومة."""
+    nums: set = set()
+
+    def add(v) -> None:
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            nums.add(round(float(v), 6))
+
+    for m in ((dr or {}).get("missions") or {}).values():
+        findings = (m.get("findings") if isinstance(m, dict)
+                    else getattr(m, "findings", None)) or []
+        for f in findings:
+            val = f.get("value") if isinstance(f, dict) else getattr(f, "value", None)
+            add(val)
+            if isinstance(val, dict):
+                for k, v in val.items():
+                    add(v)
+                    if k == "top_suppliers" and isinstance(v, list):
+                        for row in v:
+                            if isinstance(row, dict):
+                                add(row.get("share"))
+    eco = (dr or {}).get("economics") or {}
+    add(eco.get("hhi"))
+    for st in (eco.get("waterfall") or []):
+        if isinstance(st, dict):
+            add(st.get("value"))
+    rs = eco.get("reverse_solve") or {}
+    add(rs.get("max_exw"))
+    add(rs.get("shelf_price"))
+    for sc in (rs.get("scenarios") or []):
+        if isinstance(sc, dict):
+            add(sc.get("max_exw"))
+    for e in (eco.get("decision_numbers") or []):
+        if isinstance(e, dict):
+            add(e.get("value"))
+            rng = e.get("range") or {}
+            add(rng.get("low"))
+            add(rng.get("high"))
+    anchor_p = eco.get("anchor_price") or {}
+    for k in ("per_unit", "per_kg", "per_litre", "raw_value", "value_usd"):
+        add(anchor_p.get(k))
+    for pt in (((dr or {}).get("imports") or {}).get("series") or []):
+        if isinstance(pt, dict):
+            add(pt.get("value"))
+    return nums
+
+
+def _check_chart_backing(dr: dict) -> list[dict]:
+    """`chart_without_backing_value` (الموجة الخامسة — تحذيريّ، وخلف راية
+    الرسوم بالبناء: بلا مفتاح `charts` لا فحص): قيمةٌ مرسومة بلا مقابلٍ في
+    حقائق البعثات ولا في أرقام العرض الاقتصادي = رقمٌ ظهر في الرسم من عند
+    المُصيِّر لا من البيانات — عائلةُ الاختلاق نفسُها على سطحٍ بصريّ. ورسمٌ
+    بسلسلةٍ فارغة يُلتقَط أيضاً (قاعدةُ «لا رسمَ بلا بيانات»).
+
+    وحدُّ ما يُثبِته مُعلَنٌ (مراجعة §58): المجموعةُ المرجعية تُبنى من العرض
+    نفسِه الذي تقرؤه الرسوم، فالفحصُ يُثبِت **أن لا حسابَ في المُصيِّر** — لا
+    أنّ الرقمَ صحيحٌ في أصله (ذلك شأنُ فحوص المحرّك). ووحدةُ الرقم وسياقُه
+    ليسا من عمله: يحرسهما بانو الرسوم واختباراتُهم."""
+    charts = (dr or {}).get("charts")
+    if not isinstance(charts, list) or not charts:
+        return []
+    backing = _chart_backing_numbers(dr)
+    hits: list[str] = []
+    for ch in charts:
+        if not isinstance(ch, dict):
+            continue
+        cid = str(ch.get("id") or "?")
+        rows = [r for r in (ch.get("series") or []) if isinstance(r, dict)]
+        if not rows:
+            hits.append(f"{cid}: سلسلةٌ فارغة")
+            continue
+        vals = [ch.get("value")] if "value" in ch else []
+        for r in rows:
+            vals += [r.get("value"), r.get("low"), r.get("high")]
+        for v in vals:
+            if not isinstance(v, (int, float)) or isinstance(v, bool):
+                continue
+            if round(float(v), 6) not in backing:
+                hits.append(f"{cid}: {v}")
+                break
+    if not hits:
+        return []
+    return [{"check": "chart_without_backing_value", "repairable": True,
+             "note": ("قيمةٌ على رسمٍ بلا حقيقةٍ خلفها (أو رسمٌ بلا سلسلة): "
+                      + "؛ ".join(hits[:5])
+                      + " — الرسمُ يقرأ من العرض المبنيّ حصراً، فقيمةٌ لا "
+                        "مقابلَ لها تعني حساباً جديداً في مُصيِّر")}]
+
+
 # فحوصٌ **تقرأ تسميةَ الثقة في النثر** وتصير — مع خصوصية أرقام القياس —
 # خارجَ مسار التوقّع: النثرُ لا يستلم التسميةَ فلا يكتبها. **لا يُحذَف منها
 # شيء** (اثنان في `FAIL_TRIGGER_CHECKS` المجمَّدة تقرؤها عشراتُ الاختبارات
@@ -6238,6 +6329,9 @@ PRESENCE_CONDITIONAL_CHECKS: dict = {
     "high_confidence_with_missing_pillar":
         "حاجبٌ مُفعَّلٌ براية: «ثقة عالية» مع جانبٍ مجهول — يقرأ العرضَ "
         "والنثرَ فيبقى قادراً على الإطلاق على تسريبٍ في أيّهما",
+    "chart_without_backing_value":
+        "تحذيري: قيمةٌ مرسومة بلا حقيقةٍ خلفها — يُطلِق فقط إن وُجدت رسوم "
+        "(راية SILK_REPORT_CHARTS)",
     "client_view_vocabulary":
         "تحذيري: قاعدةُ «بثقة %» وحدَها تصير مشروطةً بالظهور؛ بقيّةُ مفرداته "
         "تُطلِق كما كانت",
@@ -6613,6 +6707,8 @@ def run_quality_gate(view: dict) -> dict:
     # بدقّةٍ زائفة — تحذيريّان خلف رايتيهما.
     findings += _check_client_metric_exposure(view, dr)
     findings += _check_amount_false_precision(text)
+    # الموجة الخامسة: رسمٌ بقيمةٍ بلا حقيقة — تحذيريّ خلف راية الرسوم.
+    findings += _check_chart_backing(dr)
     # البند ٧: تقدير بلا حقوله الأربعة أو واسعٌ معه قيمة — تحذيري.
     findings += _check_estimate_fields_complete(view)
     # البند ٤ (هدف الدراسة الاحترافية): الملخص التنفيذي يفتتح بالتوصية

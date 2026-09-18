@@ -3504,6 +3504,117 @@ def _eco_term(val: object, lang: str) -> str:
     return _ECO_TERM_EN.get(v, v) if lang == "en" else v
 
 
+# ── الموجة الخامسة: رسومُ التقرير داخل مُسلَّم العميل (Word ⇒ PDF) ──────────
+# صمّامُ إطفاءٍ للصور وحدها داخل راية الرسوم: `SILK_REPORT_CHARTS_DOCX_ENABLED=0`
+# يُبقي رسومَ الويب ويُخرِج الصور من المستند بلا إعادة نشرٍ ولا تراجعٍ عن الراية.
+_CHARTS_DOCX_LAYER = "REPORT_CHARTS_DOCX"
+_CHART_IMG_WIDTH_IN = 6.0
+
+
+def _client_chart_text_safe(ch: dict, lang: str = "ar") -> "dict | None":
+    """نسخةُ الرسم بنصوصها **مطهَّرةً بحارس مفردات العميل** — أو `None`.
+
+    النصُّ المرسومُ داخل الصورة لا يقرؤه `_client_assert_clean` ولا بوّابةُ
+    نصّ المُنتَج: الصورةُ عندهما كتلةٌ ثنائية. فثغرةٌ بنيوية — تسميةٌ من نصّ
+    بعثة («[الطلب] مبني على: mean interest…») تصل مُسلَّمَ العميل مرسومةً وهي
+    عينُ ما ترفضه البوّابة مكتوبةً (مراجعة §58، M1). فالتطهيرُ يجري **قبل**
+    الرسم على كلّ نصٍّ يُرسَم: العنوان والتسميات وتسمياتُ المناطق والملاحظة؛
+    وما يبقى فيه ممنوعٌ بعد التطهير ⇒ لا رسمَ أصلاً، وتسميةٌ تُفرَّغ ⇒ لا رسم
+    (عمودٌ بلا تسميةٍ لا يُقرأ).
+    """
+    def clean(t) -> str:
+        return _lang_safe(_client_sanitize(t, lang), lang)
+
+    out = dict(ch)
+    out["title"] = clean(ch.get("title"))
+    out["note"] = clean(ch.get("note"))
+    out["source"] = clean(ch.get("source"))
+    if not out["title"]:
+        return None
+    rows = []
+    for r in (ch.get("series") or []):
+        if not isinstance(r, dict):
+            continue
+        row = dict(r)
+        row["label"] = clean(r.get("label"))
+        if str(r.get("label") or "").strip() and not row["label"]:
+            return None
+        rows.append(row)
+    out["series"] = rows
+    bands = []
+    for b in (ch.get("bands") or []):
+        if not isinstance(b, dict):
+            continue
+        band = dict(b)
+        band["label"] = clean(b.get("label"))
+        bands.append(band)
+    if bands:
+        out["bands"] = bands
+    if "band_label" in out:
+        out["band_label"] = clean(ch.get("band_label"))
+    blob = "\n".join(str(x or "") for x in (
+        [out["title"], out["note"], out["source"], out.get("band_label")]
+        + [r.get("label") for r in rows]
+        + [b.get("label") for b in bands]))
+    hits = _client_forbidden_hits(blob, lang)
+    if hits:
+        log.warning("report chart dropped (%s): %s", ch.get("id"), hits)
+        return None
+    return out
+
+
+def _client_charts(doc, dr: dict, section: str, lang: str = "ar") -> None:
+    """رسومُ قسمٍ واحد صوراً — من `deep_research.charts` نفسِه (لا حساب هنا).
+
+    الراية مطفأةً لا مفتاحَ `charts` أصلاً فلا شيءَ يُضاف. صورةٌ تعذّر رسمُها
+    (`chart_png` تعيد `None`) تُسقَط هي وتعليقُها معاً — لا هيكلَ فارغ ولا
+    تصديرٌ يسقط لأجل صورة. كلُّ صورةٍ يتبعها سطرُ إسنادٍ مقروء (العنوان
+    والمصدر والسنة والملاحظة) يمرّ بحارس المفردات كسائر الفقرات.
+    """
+    charts = [c for c in ((dr or {}).get("charts") or [])
+              if isinstance(c, dict) and c.get("section") == section]
+    if not charts:
+        return
+    import silk_render as _R
+    if not _R.layer_enabled(_CHARTS_DOCX_LAYER):
+        return
+    try:
+        import io
+
+        import silk_chart_image as _CI
+    except ImportError as e:  # noqa: BLE001
+        log.warning("report chart images skipped: %s", e)
+        return
+    for ch in charts:
+        # النصُّ المرسومُ يمرّ بحارس المفردات كسائر الفقرات (لا استثناءَ
+        # للصورة) — وما لا يعبره لا يُرسَم.
+        safe = _client_chart_text_safe(ch, lang)
+        if safe is None:
+            continue
+        # سطرُ الإسناد **أولاً**: صورةٌ تحمل أرقاماً لا يقرؤها حارسُ النصّ،
+        # فإسنادُها هو سبيلُ القارئ الوحيد إلى مصدرها. تعليقٌ يُفرَّغ بالتطهير
+        # أو بالفصل اللغويّ ⇒ لا صورةَ أصلاً (لا رقمَ بلا مصدر).
+        cap = _lang_safe(_client_sanitize(_CI.caption(safe), lang), lang)
+        if not cap:
+            log.warning("report chart dropped (%s): تعليقٌ فارغٌ بعد التطهير",
+                        ch.get("id"))
+            continue
+        png = _CI.chart_png(safe, lang)
+        if not png:
+            continue
+        try:
+            doc.add_picture(io.BytesIO(png), width=_docx_inches(
+                _CHART_IMG_WIDTH_IN))
+        except Exception as e:  # noqa: BLE001
+            log.warning("report chart not inserted (%s): %s", ch.get("id"), e)
+            continue
+        para = doc.add_paragraph(cap)
+        try:
+            para.style = doc.styles["Caption"]
+        except KeyError:          # قالبٌ بلا نمط تعليق — الفقرةُ العادية تكفي
+            pass
+
+
 def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
     """وارداتُ السوق من هذا الصنف في تقرير العميل — الموجة الرابعة (البند ٢).
 
@@ -3555,6 +3666,7 @@ def _client_economics_section(doc, dr: dict, lang: str = "ar") -> None:
         # البند ٧: أرقام القرار تظهر أيضاً بلا حل عكسي — غيابه هو تحديداً
         # حال الفجوات الثلاثية التي يحملها الجدول (عيب E-03 نفسه).
         _client_decision_numbers_table(doc, eco, lang)
+        _client_charts(doc, dr, "economics", lang)
         return
     doc.add_heading(_T("eco_heading", lang), level=1)
     anchor = eco.get("anchor_price") or {}
@@ -3607,6 +3719,9 @@ def _client_economics_section(doc, dr: dict, lang: str = "ar") -> None:
     # البند ٧ (هدف الدراسة الاحترافية): أرقام القرار الحتمية بحقولها —
     # الدقة الكاملة هنا والنثر في قسم «أرقام القرار» للكاتب.
     _client_decision_numbers_table(doc, eco, lang)
+    # الموجة الخامسة: سلّمُ التكلفة وسيناريوهاتُ أقصى سعرِ مصنعٍ ومدى أرقام
+    # القرار صوراً — من نفس الأرقام المعروضة أعلاه.
+    _client_charts(doc, dr, "economics", lang)
 
 
 def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
@@ -4225,8 +4340,12 @@ def render_client_docx(view: dict, path: str) -> str:
         # بالأرقام» ككتلةٍ حتمية — لا قسمَ جديداً (مرساةُ الأقسام ترتيبية).
         if client_head == "السوق بالأرقام":
             _client_imports_section(doc, dr, lang)
+            # الموجة الخامسة: رسومُ السوق تتبع كتلةَ الواردات مباشرةً.
+            _client_charts(doc, dr, "market", lang)
         _client_body_or_fallback(doc, buckets[client_head], dr, client_head,
                                  lang)
+        if client_head == "المنافسة والتسعير والهامش":
+            _client_charts(doc, dr, "competition", lang)
 
     # §A (حزمة الفكس v2.1): جدول مزيج الثقة (✓/◐/○) وجدول مرشّحي خرائط قوقل
     # أُسقطا من بناء العميل — يبقيان في التصدير الداخلي (?internal=1) فقط.

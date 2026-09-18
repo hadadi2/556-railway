@@ -905,6 +905,87 @@ TERMS.update({
         "ar": "السعودية ليست بين أكبر المورِّدين المرصودين لهذه السوق.",
         "en": "Saudi Arabia is not among this market's observed top "
               "suppliers."},
+    # الموجة الخامسة — رسومٌ عبر التقرير كلّه (بيانات محضة، تسمياتٌ تجارية).
+    "chart_demand_interest": {
+        "ar": "اهتمام البحث النسبي بالمنتج (مؤشّر 0–100)",
+        "en": "Relative search interest in the product (index 0–100)"},
+    "chart_demand_interest_note": {
+        "ar": "مؤشّر نسبي من Google Trends: 100 = ذروة الاهتمام بين "
+              "الاستعلامات المقارَنة، لا عددَ عمليات بحث.",
+        "en": "Google Trends relative index: 100 = peak interest among the "
+              "compared queries, not a search count."},
+    "chart_supplier_concentration": {
+        "ar": "تركّز الدول المورِّدة لهذه السوق",
+        "en": "Concentration of this market's supplying countries"},
+    "chart_hhi_note": {
+        "ar": "مقياس التركّز 0–10000 من حصص المورِّدين: دون 1500 سوق مفتوحة، "
+              "1500–2500 متوسطة التركّز، فوق 2500 محكومة بقلّة من المورِّدين.",
+        "en": "Concentration index 0–10000 from suppliers' shares: below 1500 "
+              "an open market, 1500–2500 moderately concentrated, above 2500 "
+              "dominated by a few suppliers."},
+    "chart_band_open": {"ar": "مفتوحة", "en": "open"},
+    "chart_band_moderate": {"ar": "متوسطة التركّز", "en": "moderate"},
+    "chart_band_high": {"ar": "مركّزة", "en": "concentrated"},
+    "chart_landed_cost_ladder": {
+        "ar": "سلّم التكلفة من المصنع إلى الرف ({unit})",
+        "en": "Cost ladder from factory to shelf ({unit})"},
+    # مراجعة §58: ذيلُ الجملة كان «سعر المصنع من بطاقة المنتج»، وطبقةُ
+    # اللغة المبسّطة في مُسلَّم العميل تستبدل «بطاقة المنتج» بـ«سعر المصنع
+    # المُدخَل» — فتُطبَع «سعر المصنع من سعر المصنع المُدخَل». المصدرُ مذكورٌ
+    # في سطر الإسناد أصلاً، فالذيلُ يُحذَف لا يُعاد صياغتُه.
+    "chart_landed_cost_note": {
+        "ar": "الدرجات الباهتة معلمات معلنة قابلة للتعديل (شحن وهوامش "
+              "وضرائب) لا أرقام مرصودة.",
+        "en": "Faded steps are declared, adjustable parameters (freight, "
+              "margins, taxes), not observed figures."},
+    "chart_landed_cost_increment_note": {
+        "ar": "الزيادات المفردة (مبلغ الشحن مثلاً) في جدول التكلفة لا على "
+              "هذا المحور — المحور مستويات متتابعة.",
+        "en": "Single increments (the freight amount, for instance) are in "
+              "the cost table, not on this axis — the axis shows successive "
+              "levels."},
+    "chart_max_exw_scenarios": {
+        "ar": "أقصى سعر مصنع قابل للمنافسة بالسيناريوهات ({unit})",
+        "en": "Maximum competitive factory price by scenario ({unit})"},
+    "chart_max_exw_note": {
+        "ar": "السيناريو المميَّز بالذهبي هو المعتمد في المتن؛ الفرق بين "
+              "السيناريوهات من نسب الشحن والهوامش المعلنة.",
+        "en": "The scenario highlighted in gold is the one used in the text; "
+              "scenarios differ by the declared freight and margin rates."},
+    "chart_max_exw_contradiction_note": {
+        "ar": "تحذير: هذا السقف أدنى من متوسط سعر الاستيراد المرصود لهذه "
+              "الفئة — المنافسة السعرية غير قائمة عملياً، ولا يصلح الرقم "
+              "أساساً للتفاوض.",
+        "en": "Warning: this ceiling is below the observed average import "
+              "price for this category — price competition is not practically "
+              "available, and the figure is not a negotiating basis."},
+    "chart_year_unknown": {
+        "ar": "سنة الرقم غير معلنة في المصدر.",
+        "en": "The figure's year is not stated by the source."},
+    "chart_decision_ranges": {
+        "ar": "مدى أرقام القرار ({unit})",
+        "en": "Decision numbers, estimated range ({unit})"},
+    "chart_decision_ranges_note": {
+        "ar": "كل شريط من أدنى تقدير إلى أعلاه؛ الرقم المطبوع هو التقدير "
+              "المعتمد. ما لم يُقدَّر بعدُ ليس على الرسم بل في «حدود هذا "
+              "التقرير».",
+        "en": "Each bar spans the low to high estimate; the printed figure is "
+              "the adopted estimate. What is not yet estimated is not drawn "
+              "but listed under this report's limits."},
+    "chart_unit_index": {"ar": "مؤشّر", "en": "index"},
+    "chart_scenario_low": {"ar": "منخفض", "en": "low"},
+    "chart_scenario_mid": {"ar": "متوسط", "en": "mid"},
+    "chart_scenario_high": {"ar": "مرتفع", "en": "high"},
+    "chart_source_cost_model": {
+        "ar": "محسوب من سعر المصنع المُدخل والمعلمات المعلنة",
+        "en": "Computed from the entered factory price and declared parameters"},
+    "chart_source_shelf_model": {
+        "ar": "محسوب من سعر الرف المرصود والمعلمات المعلنة",
+        "en": "Computed from the observed shelf price and declared parameters"},
+    "chart_source_estimates": {
+        "ar": "تقديرات معلنة بمداها — التفصيل في جدول أرقام القرار",
+        "en": "Declared estimates with their ranges — detailed in the "
+              "decision numbers table"},
     "imports_col_year": {"ar": "السنة", "en": "Year"},
     "imports_col_value": {"ar": "قيمة الواردات", "en": "Import value"},
 })
