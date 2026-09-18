@@ -19,6 +19,8 @@ from __future__ import annotations
 
 HHI_SCALE_MAX = 10_000
 HHI_HIGH_CONCENTRATION = 2_500   # فوقها تركّز مرتفع (اصطلاح العميل المعلن)
+HHI_MODERATE_CONCENTRATION = 1_500   # بينها و2500 تركّزٌ متوسط — الحدُّ
+# الأدنى المعتاد في أدلّة المنافسة؛ يُقرَأ من هنا حصراً (رسمُ التركّز، الموجة ٥).
 
 
 def hhi(shares_pct) -> int | None:
@@ -48,6 +50,29 @@ def hhi_from_fractions(shares_frac) -> int | None:
                     if s is not None])
     except (TypeError, ValueError):
         return None
+
+
+def hhi_band(value_0_10000) -> "str | None":
+    """منطقةُ التركّز على المقياس الموحّد: "open" دون 1500، "moderate" بين
+    1500 و2500، "high" فوق 2500 — `None` لقيمةٍ غير رقمية أو خارج 0–10000
+    (فجوةٌ لا منطقةٌ مخمَّنة). المصدرُ الواحد لتسمية المنطقة على كلّ سطح.
+
+    **الصفرُ فجوةٌ لا سوقٌ مفتوحة** (مراجعة §58): HHI لسوقٍ حقيقيةٍ أكبرُ من
+    صفرٍ حتماً (أيُّ حصّةٍ مرصودة ترفعه)، والصفرُ يصل من مسارٍ يكتب
+    `hhi = حساب أو 0` حين لا حصّةَ صالحة — فقراءتُه «مفتوحة» حكمٌ على قياسٍ
+    غائب، وهو عينُ ما يحظره عقدُ عدم الاختلاق (البند ٨).
+    """
+    try:
+        v = float(value_0_10000)
+    except (TypeError, ValueError):
+        return None
+    if not (0 < v <= HHI_SCALE_MAX):
+        return None
+    if v > HHI_HIGH_CONCENTRATION:
+        return "high"
+    if v >= HHI_MODERATE_CONCENTRATION:
+        return "moderate"
+    return "open"
 
 
 def hhi_is_high(value_0_10000) -> bool:
@@ -1295,6 +1320,11 @@ def economics_view(dr: dict, product_card: dict | None = None,
         "reverse_solve": reverse,
         "pricing_contradiction": pricing_contradiction,
         "waterfall": waterfall,
+        # عملةُ التكلفة كما صرّح بها المالك في البطاقة — مفتاحٌ إضافيّ لا
+        # يغيّر رقماً (مراجعة §58): كلُّ سطحٍ يعرض مبلغاً مشتقّاً من سعر
+        # المصنع يقرأ عملتَه من هنا، فلا يستنتجها من افتراضٍ داخليّ
+        # (`margin_waterfall(currency="USD")` افتراضٌ لم يصرّح به أحد).
+        "cost_currency": _cost_cur or None,
         "hhi": hhi_val,
         "displacement_required": displacement_required,
         "displacement_measured": displacement_measured,

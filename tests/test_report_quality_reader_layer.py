@@ -1167,3 +1167,49 @@ def test_selfreview_first_round_false_positives_stay_fixed():
     # وكلا العيبين المرصودين ما زالا يُلتقَطان.
     assert chk("## 6. المنافسة\nثم السعودية بالحصة السعودية البالغة 10.44%.")
     assert chk("## 3. السوق\nينقصه:")
+
+
+# ── الدرس ٢٥٥ — مِصفاةُ النشاط كانت حارساً لا يُطلِق (عائلةُ الدرس ٩٨) ─────
+
+def test_lesson255_activity_denylist_is_not_effectively_empty():
+    """قياسٌ كشفَ العيب: جدولُ التعريب ٢٤ مدخلاً وقائمةُ السماح ٢٣ — أي أنّ
+    الممنوعَ **مدخلٌ واحدٌ فعلياً** (`auto parts store`)، والمجهولُ يمرّ
+    بالتصميم. فمِصفاةُ الصنف ١٠ كانت مُفعَّلةً على الإنتاج ولا تُصفّي شيئاً.
+    """
+    from silk_style_contract import ACTIVITY_LABEL_AR, LEAD_ACTIVITY_ALLOWED
+    denied = set(ACTIVITY_LABEL_AR) - set(LEAD_ACTIVITY_ALLOWED)
+    assert len(denied) >= 10, (
+        f"قائمةُ المنعِ الفعّالة {len(denied)} مدخلاً — حارسٌ بهذا الحجم لا "
+        "يُطلِق على تسميةٍ واقعية (الدرس ٩٨)")
+    # مقدّمو الخدماتُ ممنوعون **لأيّ منتج** — لا تفريعَ فئة.
+    for k in ("consultant", "law firm", "accounting firm", "bank",
+              "insurance agency", "real estate agency", "marketing agency"):
+        assert k in denied, k
+
+
+def test_lesson255_live_labels_from_the_blocked_malaysia_study():
+    """التسمياتُ الأربعةُ التي ظهرت **بالإنجليزية داخل جدولٍ عربيّ** في تلك
+    الدراسة: تُعرَّب الآن، و«مستشار» وحدَه يُمنَع — لأنه ليس طرفاً تجارياً
+    لأيّ منتج، بينما بائعُ الخضار طرفٌ تجاريٌّ غيرُ مطابقٍ **لفئة** هذا
+    المنتج تحديداً، ومطابقةُ الفئة محورٌ آخرُ قرارُه للمالك.
+    """
+    from silk_style_contract import activity_label_ar, lead_activity_allowed
+    assert activity_label_ar("Greengrocer") == "بائع خضار وفواكه"
+    assert activity_label_ar("Seafood wholesaler") == "تاجر جملة مأكولات بحرية"
+    assert activity_label_ar("Confectionery wholesaler") == "تاجر جملة حلويات"
+    assert activity_label_ar("Consultant") == "مستشار"
+    assert lead_activity_allowed("Consultant") is False
+    assert lead_activity_allowed("Greengrocer") is True
+    # المجهولُ يبقى يمرّ — الجهلُ بالتسمية ليس دليلَ عدمِ الصلة.
+    assert lead_activity_allowed("Nut Roastery") is True
+
+
+def test_lesson255_normalised_and_translated_forms_agree():
+    """المُطبِّعُ الواحد: الصيغةُ الخام والمترجَمةُ تُعطيان نفسَ الحكم."""
+    from silk_style_contract import (ACTIVITY_LABEL_AR, activity_label_ar,
+                                     lead_activity_allowed)
+    for raw in ACTIVITY_LABEL_AR:
+        ar = activity_label_ar(raw)
+        assert lead_activity_allowed(raw) is lead_activity_allowed(ar), raw
+        assert lead_activity_allowed(raw) is lead_activity_allowed(
+            raw.upper().replace(" ", "_")), raw

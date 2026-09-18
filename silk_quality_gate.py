@@ -2539,6 +2539,47 @@ _FLAGGED_FAIL_TRIGGERS: tuple = (
 )
 
 
+# ── الدرس ٢٥٤ (القفلُ العام): الموجّهُ لا يُخالِف البوّابةَ التي تحكمه ──────
+# حادثةُ ماليزيا: `high_confidence_with_missing_pillar` حاجبٌ يفحص **نثرَ**
+# الكاتب، وعلاجُه (سقفُ التسمية) طُبِّق في العرض وفي البوّابة **ولم يصل
+# موجّهَ الكاتب** — فسلّمه الموجّهُ «عالية (80%)» وأمره بألّا يذكر تسميةً
+# غيرها، ثم حجبت البوّابةُ التقريرَ كلَّه على طاعته. وإعادةُ التوليد لا
+# تُصلِح حتمياً. العيبُ ليس في الفحص بل في غيابِ ما يمنع تكرارَه.
+#
+# السجلُّ أدناه يصنّف **كلَّ** فحصٍ حاجبٍ مُفعَّلٍ براية (`_FLAGGED_FAIL_
+# TRIGGERS`): إمّا «قارئُ نثرٍ بعبارةٍ ممنوعة» فيلزمه نمطٌ مُعلَنٌ + مصدرُ
+# تعليمةٍ في موجّه الكاتب، أو «غيرُ نصّيّ» بسببٍ مكتوب. القفلُ في
+# `tests/test_prose_blocker_prompt_parity.py`: النمطُ الممنوع **لا يجوز أن
+# يُطابِق موجّهَ الكاتب المبنيَّ فعلاً** (لا موجّهاً مُعاد تركيبه — الدرس
+# ١٨٦)، والمصدرُ المُسمّى يجب أن يكون رمزاً موجوداً يصل الموجّه.
+# سجلٌّ تعريفيّ (توثيق-كشيفرة) — لا يقرؤه `run_quality_gate`.
+PROSE_LITERAL_BLOCKERS: dict = {
+    # (اسمُ الفحص): (اسمُ النمط **الثابت** الممنوع في هذه الوحدة،
+    #                (وحدةُ التعليمة المقابلة، رمزُها في موجّه الكاتب))
+    "high_confidence_with_missing_pillar": (
+        "_HIGH_CONF_RE", ("silk_ai_judge", "_summarize_verdict")),
+}
+
+# بقيّةُ الفحوص الحاجبةِ المُفعَّلةِ براية: تقرأ النثرَ أو لا تقرؤه، لكنّ
+# الممنوعَ فيها **ليس نمطاً ثابتاً** يمكن للموجّه أن يُسلِّمه حرفياً — فلا
+# قفلَ «الموجّه لا يحمل الممنوع» عليها. كلٌّ بسببه المقيس، والتصنيفُ
+# إلزاميٌّ لا اختياريّ (الاختبار يرفض فحصاً غيرَ مصنَّف).
+NON_LITERAL_FLAGGED_BLOCKERS: dict = {
+    "metric_value_divergence":
+        "تباعدُ قيمتين لنفس المقياس — مقارنةُ أرقامٍ مخزَّنة لا عبارةٌ "
+        "ممنوعة؛ وتعليمةُ الموجّه المقابلة "
+        "(`silk_figure_store.FIGURE_IDENTITY_RULE`) تُلحَق أصلاً خلف رايتها.",
+    "open_conditions_count_mismatch":
+        "مطابقةُ عددٍ مذكورٍ بعددٍ محسوب (`silk_render.open_conditions`) — "
+        "أيُّ عددٍ صحيحٍ مسموح، والخطأُ في مخالفته الحسابَ لا في لفظه.",
+    "reference_to_nonexistent_figure":
+        "الإبرةُ مُشتقّةٌ من أسماء بنود القرار في التشغيلة نفسها "
+        "(`_dn_needle`) + وجودِ رقم — نمطٌ متغيّرٌ لكلّ دراسة لا ثابت؛ "
+        "وتعليمةُ الموجّه المقابلة (`silk_narrative.DERIVED_PROVENANCE_RULE` "
+        "وسطرُ «قياسات لم يعتمدها محرك القرار») تُلحَقان خلف رايتهما.",
+}
+
+
 def effective_fail_triggers() -> frozenset:
     """مجموعةُ الفحوص الحاجبة الآن — الثابتة زائداً ما تُفعِّله الرايات."""
     extra = set()
@@ -6116,6 +6157,213 @@ def _check_client_view_vocabulary(view: dict) -> list[dict]:
     return []
 
 
+# ── الموجة الرابعة (الدرس ٢٥٧): أرقامُ القياس الداخليّ على سطح العميل ────────
+# قرارُ المالك: درجةُ ثقة الحكم ونسبةُ التحقّق وثقةُ المكوّن والدرجةُ من ١٠٠
+# تخرج من نسخة العميل. المنعُ عند المنبع (`silk_ai_judge._summarize_verdict`)
+# والكتمُ عند العرض (`client_hidden_metrics`) — وهذا **الكشفُ الدائم**: أيُّ
+# سطحٍ ينسى السياسةَ لاحقاً، أو نموذجٌ يكتب التسميةَ من عنده، يُلتقَط بحزمةٍ
+# حمراء لا ببلاغِ مالك. تحذيريٌّ لا حاجب («لا حجب جديداً»)، وخلف الراية:
+# بدونها الأرقامُ معروضةٌ شرعاً فلا معنى لفحص غيابها.
+# مراجعة §58: «40 من 100 شركة» و«ثقة عالية بأنّ…» نثرٌ تجاريّ سليم — فالدرجةُ
+# تُلتقَط بقرينة قياسٍ قبلها، والتسميةُ تُستثنى حين يتبعها ما يجعلها كلاماً
+# عاديّاً لا مقياساً.
+_CLIENT_METRIC_PROBES: tuple = (
+    re.compile(r"(?:قوة|درجة|تقييم|التقييم|نقاط|بدرجة|يبلغ|تبلغ)[^.\n]{0,25}?"
+               r"\d{1,3}\s*من\s*100(?!\s*(?:شركة|مستورد|مستجيب|موزّع|موزع|عيّنة|عينة))"),
+    re.compile(r"(?:ب|و)?ثقة\s*(?:عالية|متوسطة|منخفضة)"
+               r"(?!\s*(?:بأن|بأنّ|لدى|في|من|أن|أنّ|بين|تجاه|نحو))"),
+    re.compile(r"نسبة\s*التحق[قّ]"),
+    re.compile(r"\d{1,3}\s*%\s*من\s*البيانات"),
+    re.compile(r"\b(?:rate|rated|score|rating)[^.\n]{0,25}?\b\d{1,3}\s*(?:/|out of)\s*100\b",
+               re.I),
+    re.compile(r"\b(?:high|medium|low)\s+confidence\b(?!\s+(?:that|in|among|of))",
+               re.I),
+    re.compile(r"\bverification\s+rate\b", re.I),
+    re.compile(r"\bconfidence\s*(?:level|score)?\s*[:=]?\s*\d{1,3}\s*%", re.I),
+)
+
+
+def _check_client_metric_exposure(view: dict, dr: dict) -> list[dict]:
+    """`client_metric_exposure` (الموجة الرابعة — تحذيري خلف
+    `SILK_CLIENT_METRIC_PRIVACY`): مقياسٌ داخليّ («NN من 100»، «بثقة عالية»،
+    «نسبة التحقق»، «NN% من البيانات» ومرآتها الإنجليزية) على سطحٍ يقرؤه
+    العميل — المختصرُ ونصُّ التقرير (بلا ملحقه) وحدودُه. ثنائيُّ المِجَسّ
+    بالبناء (أنماطٌ عربيةٌ وإنجليزية معاً في `_CLIENT_METRIC_PROBES`)."""
+    import silk_render as R
+    if not R.client_metric_privacy() or not isinstance(view, dict):
+        return []
+    # ما يقرؤه **العميل** فقط: `basis.score_line` يبقى في العرض للمشغّل
+    # والبوّابة (لا مفتاحَ يُحذَف) وتُسقِطه سطوحُ العميل بالقائمة — فلا يُفحَص.
+    surfaces = {
+        "brief": "\n".join(str(x) for x in (view.get("brief") or [])),
+        "report": _split_off_appendix(_report_text(dr or {})),
+        "limits": "\n".join(str(x) for x in ((dr or {}).get("limits") or [])),
+    }
+    hits = []
+    for name, blob in surfaces.items():
+        if not blob:
+            continue
+        for pat in _CLIENT_METRIC_PROBES:
+            m = pat.search(blob)
+            if m:
+                hits.append(f"{name}: «{m.group(0)}»")
+                break
+    if not hits:
+        return []
+    return [{"check": "client_metric_exposure", "repairable": True,
+             "note": ("رقمُ قياسٍ داخليّ على سطح العميل رغم سياسة الإخفاء "
+                      "(SILK_CLIENT_METRIC_PRIVACY): " + "؛ ".join(hits)
+                      + " — السطحُ المعنيّ لا يقرأ `client_hidden_metrics` "
+                      "أو الكاتبُ كتب التسميةَ من عنده")}]
+
+
+# ── الموجة الخامسة: رسمٌ بقيمةٍ بلا حقيقةٍ خلفها ──────────────────────────
+def _chart_backing_numbers(dr: dict) -> set:
+    """كلُّ رقمٍ يجوز رسمُه: حقائقُ البعثات وأرقامُ العرض الاقتصادي وسلسلةُ
+    الواردات — المجموعةُ التي **يجب** أن تنتمي إليها كلُّ قيمةٍ مرسومة."""
+    nums: set = set()
+
+    def add(v) -> None:
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            nums.add(round(float(v), 6))
+
+    for m in ((dr or {}).get("missions") or {}).values():
+        findings = (m.get("findings") if isinstance(m, dict)
+                    else getattr(m, "findings", None)) or []
+        for f in findings:
+            val = f.get("value") if isinstance(f, dict) else getattr(f, "value", None)
+            add(val)
+            if isinstance(val, dict):
+                for k, v in val.items():
+                    add(v)
+                    if k == "top_suppliers" and isinstance(v, list):
+                        for row in v:
+                            if isinstance(row, dict):
+                                add(row.get("share"))
+    eco = (dr or {}).get("economics") or {}
+    add(eco.get("hhi"))
+    for st in (eco.get("waterfall") or []):
+        if isinstance(st, dict):
+            add(st.get("value"))
+    rs = eco.get("reverse_solve") or {}
+    add(rs.get("max_exw"))
+    add(rs.get("shelf_price"))
+    for sc in (rs.get("scenarios") or []):
+        if isinstance(sc, dict):
+            add(sc.get("max_exw"))
+    for e in (eco.get("decision_numbers") or []):
+        if isinstance(e, dict):
+            add(e.get("value"))
+            rng = e.get("range") or {}
+            add(rng.get("low"))
+            add(rng.get("high"))
+    anchor_p = eco.get("anchor_price") or {}
+    for k in ("per_unit", "per_kg", "per_litre", "raw_value", "value_usd"):
+        add(anchor_p.get(k))
+    for pt in (((dr or {}).get("imports") or {}).get("series") or []):
+        if isinstance(pt, dict):
+            add(pt.get("value"))
+    return nums
+
+
+def _check_chart_backing(dr: dict) -> list[dict]:
+    """`chart_without_backing_value` (الموجة الخامسة — تحذيريّ، وخلف راية
+    الرسوم بالبناء: بلا مفتاح `charts` لا فحص): قيمةٌ مرسومة بلا مقابلٍ في
+    حقائق البعثات ولا في أرقام العرض الاقتصادي = رقمٌ ظهر في الرسم من عند
+    المُصيِّر لا من البيانات — عائلةُ الاختلاق نفسُها على سطحٍ بصريّ. ورسمٌ
+    بسلسلةٍ فارغة يُلتقَط أيضاً (قاعدةُ «لا رسمَ بلا بيانات»).
+
+    وحدُّ ما يُثبِته مُعلَنٌ (مراجعة §58): المجموعةُ المرجعية تُبنى من العرض
+    نفسِه الذي تقرؤه الرسوم، فالفحصُ يُثبِت **أن لا حسابَ في المُصيِّر** — لا
+    أنّ الرقمَ صحيحٌ في أصله (ذلك شأنُ فحوص المحرّك). ووحدةُ الرقم وسياقُه
+    ليسا من عمله: يحرسهما بانو الرسوم واختباراتُهم."""
+    charts = (dr or {}).get("charts")
+    if not isinstance(charts, list) or not charts:
+        return []
+    backing = _chart_backing_numbers(dr)
+    hits: list[str] = []
+    for ch in charts:
+        if not isinstance(ch, dict):
+            continue
+        cid = str(ch.get("id") or "?")
+        rows = [r for r in (ch.get("series") or []) if isinstance(r, dict)]
+        if not rows:
+            hits.append(f"{cid}: سلسلةٌ فارغة")
+            continue
+        vals = [ch.get("value")] if "value" in ch else []
+        for r in rows:
+            vals += [r.get("value"), r.get("low"), r.get("high")]
+        for v in vals:
+            if not isinstance(v, (int, float)) or isinstance(v, bool):
+                continue
+            if round(float(v), 6) not in backing:
+                hits.append(f"{cid}: {v}")
+                break
+    if not hits:
+        return []
+    return [{"check": "chart_without_backing_value", "repairable": True,
+             "note": ("قيمةٌ على رسمٍ بلا حقيقةٍ خلفها (أو رسمٌ بلا سلسلة): "
+                      + "؛ ".join(hits[:5])
+                      + " — الرسمُ يقرأ من العرض المبنيّ حصراً، فقيمةٌ لا "
+                        "مقابلَ لها تعني حساباً جديداً في مُصيِّر")}]
+
+
+# فحوصٌ **تقرأ تسميةَ الثقة في النثر** وتصير — مع خصوصية أرقام القياس —
+# خارجَ مسار التوقّع: النثرُ لا يستلم التسميةَ فلا يكتبها. **لا يُحذَف منها
+# شيء** (اثنان في `FAIL_TRIGGER_CHECKS` المجمَّدة تقرؤها عشراتُ الاختبارات
+# عقداً). القرارُ المُسجَّل (الدرس ٩٨ — حارسٌ لا يُطلِق عيب): كلُّها تُعاد
+# قراءتها **حارسَ «صحيحٌ إن ظهر»** — شبكةُ التقاطِ تسريبٍ يكتبه النموذجُ من
+# عنده أو تقريرٍ مخزَّنٍ يُعاد عرضُه، وتبقى قادرةً على الإطلاق على مسارات
+# `/analyze` والأكاديميّ والمشغّل التي تحتفظ بالتسمية. ومع
+# `client_metric_exposure` يكتمل الزوج: صحّةٌ-إن-ظهر + غيابٌ-مطلوب.
+# سجلٌّ تعريفيّ يقرؤه الاختبار (tests/test_client_metric_privacy.py): كلُّ
+# اسمٍ يجب أن يُصدِره فحصٌ قائم، ويجب أن يُطلِق فعلاً على نصٍّ مُسرَّب والرايةُ
+# مفعَّلة.
+PRESENCE_CONDITIONAL_CHECKS: dict = {
+    "confidence_band_mismatch":
+        "حاجبٌ مجمَّد: تسميةٌ لا تطابق رقمها — يُطلِق فقط إن ظهر الزوج",
+    "confidence_value_conflict":
+        "حاجبٌ مجمَّد: نسبتا ثقةٍ مختلفتان — يُطلِق فقط إن ظهرت نسبتان",
+    "narrative_confidence_mismatch":
+        "تحذيري: نسبةُ النثر تخالف نسبةَ الحكم — يُطلِق فقط إن ظهرت نسبة",
+    "high_confidence_with_missing_pillar":
+        "حاجبٌ مُفعَّلٌ براية: «ثقة عالية» مع جانبٍ مجهول — يقرأ العرضَ "
+        "والنثرَ فيبقى قادراً على الإطلاق على تسريبٍ في أيّهما",
+    "chart_without_backing_value":
+        "تحذيري: قيمةٌ مرسومة بلا حقيقةٍ خلفها — يُطلِق فقط إن وُجدت رسوم "
+        "(راية SILK_REPORT_CHARTS)",
+    "client_view_vocabulary":
+        "تحذيري: قاعدةُ «بثقة %» وحدَها تصير مشروطةً بالظهور؛ بقيّةُ مفرداته "
+        "تُطلِق كما كانت",
+}
+
+
+# ── الموجة الرابعة (الدرس ٢٥٨): مبلغٌ بدقّةٍ عشرية زائفة ──────────────────
+# نمطُ `hhi_false_precision` حرفياً على المبالغ: المُصلِحُ
+# `silk_render._fix_amount_false_precision` يقرّب قبل التخزين/العرض، وهذا
+# الفحصُ يلتقط ما فات الإصلاحَ. تحذيريٌّ (لا حجبَ جديداً) وخلف راية الواردات
+# — نفسِ راية المُصلِح — فمطفأةً البوّابةُ حرفياً كما كانت.
+_AMOUNT_DECIMAL_RE = re.compile(
+    r"(?<![\d.,])(?:\d{1,3}(?:,\d{3})+|\d{5,})\.\d{3,}(?!\d)")
+
+
+def _check_amount_false_precision(text: str) -> list[dict]:
+    """`amount_false_precision` — مبلغٌ كبيرٌ (فواصلُ آلافٍ أو ≥٥ خانات) بثلاث
+    منازلَ عشريةٍ فأكثر: دقّةٌ لم تُحسَب فعلاً بهذا التفصيل (رقمُ استيرادٍ
+    بالدولار لا يحمل أجزاءَ السنت)."""
+    import silk_render as R
+    if not text or not R.imports_spotlight():
+        return []
+    # الملاحقُ خارج النطاق — الدقّةُ الكاملة هناك مشروعة (نفسُ حدّ المُصلِح).
+    m = _AMOUNT_DECIMAL_RE.search(_split_off_appendix(text))
+    if not m:
+        return []
+    return [{"check": "amount_false_precision", "repairable": True,
+             "note": (f"مبلغٌ بدقّةٍ عشرية زائفة «{m.group(0)}» — يُعرَض "
+                      "بمنزلتين كحدٍّ أقصى (silk_render._fix_amount_false_"
+                      "precision)؛ الرقمُ المخزَّن لا يُمَسّ")}]
+
+
 def _check_uncomputed_repetition(text: str) -> list[dict]:
     """`uncomputed_repetition` (هدف الدراسة الاحترافية البند ٢ — تحذيري على
     معيار الدرس 135): أكثر من إعلانَي غيابٍ داخل قسم «أرقام القرار» —
@@ -6455,6 +6703,12 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_uncomputed_repetition(text)
     # البند ٣: مصطلح قياس داخلي على أسطح عرض العميل — تحذيري (درس 146).
     findings += _check_client_view_vocabulary(view)
+    # الموجة الرابعة: أرقامُ القياس على سطح العميل رغم سياسة الإخفاء، ومبلغٌ
+    # بدقّةٍ زائفة — تحذيريّان خلف رايتيهما.
+    findings += _check_client_metric_exposure(view, dr)
+    findings += _check_amount_false_precision(text)
+    # الموجة الخامسة: رسمٌ بقيمةٍ بلا حقيقة — تحذيريّ خلف راية الرسوم.
+    findings += _check_chart_backing(dr)
     # البند ٧: تقدير بلا حقوله الأربعة أو واسعٌ معه قيمة — تحذيري.
     findings += _check_estimate_fields_complete(view)
     # البند ٤ (هدف الدراسة الاحترافية): الملخص التنفيذي يفتتح بالتوصية

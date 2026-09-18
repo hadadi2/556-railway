@@ -660,6 +660,10 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     product_card=product_card_dict,
                     importer_leads=importer_leads,
                     seed_draft=_seed_draft,
+                    # الدرس ٢٥٤: قرارُ المحرّك المحسوبُ سلفاً (الموجة Z) —
+                    # الكاتبُ يستلم منه سقفَ تسمية الثقة نفسَه الذي تفرضه
+                    # بوّابةُ الجودة، فلا يُحجَب التقريرُ على طاعةِ الموجّه.
+                    entry_decision=_deep_decision,
                     on_stage=lambda s: silk_context.snapshot_research_progress(
                         analysis_id, s)) if ai_ok else
                     {"report": None, "review_cycles": 0, "unresolved_notes": []})

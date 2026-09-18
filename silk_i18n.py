@@ -846,6 +846,152 @@ TERMS: dict[str, dict[str, str]] = {
 }
 
 
+# ── الموجة الرابعة (تقريرٌ تنفيذيّ): وارداتُ السوق والرسومُ بلغة القارئ ──────
+# لا مصطلحَ قياسٍ داخليّ هنا عمداً (لا «درجة الثقة» ولا score/confidence): هذه
+# السلاسل تصل متنَ العميل ويحرسها `_client_forbidden_hits`.
+TERMS.update({
+    "imports_head": {
+        "ar": "واردات السوق من هذا الصنف",
+        "en": "The market's imports of this product"},
+    "imports_value_line": {
+        "ar": "واردات السوق من هذا الصنف بلغت {amount} في {year} وفق {source}.",
+        "en": "The market imported {amount} of this product in {year}, "
+              "according to {source}."},
+    "imports_growth_line": {
+        "ar": "{phrase}.",
+        "en": "Imports {verb} {growth} between {first_year} and {last_year} "
+              "— a compound annual rate of {cagr}."},
+    # لا نقطتين رأسيتين قبل خانةٍ قد تفرغ (اختبار «كلّ قالبٍ ينجو بخاناتٍ فارغة»).
+    "imports_saudi_line": {
+        "ar": "نصيب السعودية من هذه الواردات {pct} ({year}).",
+        "en": "Saudi Arabia holds {pct} of these imports ({year})."},
+    "imports_saudi_line_noyear": {
+        "ar": "نصيب السعودية من هذه الواردات {pct} (سنة الحصة لم يذكرها "
+              "المصدر).",
+        "en": "Saudi Arabia holds {pct} of these imports (the source does not "
+              "state the year of this share)."},
+    "imports_growth_line_nocagr": {
+        "ar": "{phrase}.",
+        "en": "Imports {verb} {growth} between {first_year} and {last_year}; "
+              "the compound annual rate is not computed for this series."},
+    "imports_trend_not_computed": {
+        "ar": "سنتان فأكثر مرصودتان لكن النمو لم يُحسب لهذه السلسلة.",
+        "en": "Two or more years are observed, but growth is not computed "
+              "for this series."},
+    "imports_single_year_note": {
+        "ar": "سنة واحدة مرصودة ({year}) — لا يُرسَم مسار بلا سنتين على الأقل.",
+        "en": "Only one year observed ({year}) — no trend is drawn without "
+              "at least two years."},
+    "imports_gap_years_note": {
+        "ar": "سنوات لم يُجلب رقمها: {years} — لم تُقدَّر ولم تُملأ.",
+        "en": "Years without a fetched figure: {years} — not estimated, "
+              "not filled in."},
+    "imports_mirrored_note": {
+        "ar": "قيمة {years} مقدَّرة من تصريحات الشركاء التجاريين (مرآة) — "
+              "أقل يقيناً من تصريح مباشر.",
+        "en": "The {years} value is estimated from trading partners' "
+              "declarations (mirror data) — less certain than a direct "
+              "declaration."},
+    "chart_imports_trend": {
+        "ar": "واردات السوق بالسنوات (دولار)",
+        "en": "Market imports by year (USD)"},
+    "chart_supplier_shares": {
+        "ar": "حصص الدول المورِّدة لهذه السوق (%)",
+        "en": "Supplying countries' shares of this market (%)"},
+    "chart_saudi_highlight_note": {
+        "ar": "حصة السعودية مميَّزة بالذهبي.",
+        "en": "Saudi Arabia's share is highlighted in gold."},
+    "chart_saudi_absent_note": {
+        "ar": "السعودية ليست بين أكبر المورِّدين المرصودين لهذه السوق.",
+        "en": "Saudi Arabia is not among this market's observed top "
+              "suppliers."},
+    # الموجة الخامسة — رسومٌ عبر التقرير كلّه (بيانات محضة، تسمياتٌ تجارية).
+    "chart_demand_interest": {
+        "ar": "اهتمام البحث النسبي بالمنتج (مؤشّر 0–100)",
+        "en": "Relative search interest in the product (index 0–100)"},
+    "chart_demand_interest_note": {
+        "ar": "مؤشّر نسبي من Google Trends: 100 = ذروة الاهتمام بين "
+              "الاستعلامات المقارَنة، لا عددَ عمليات بحث.",
+        "en": "Google Trends relative index: 100 = peak interest among the "
+              "compared queries, not a search count."},
+    "chart_supplier_concentration": {
+        "ar": "تركّز الدول المورِّدة لهذه السوق",
+        "en": "Concentration of this market's supplying countries"},
+    "chart_hhi_note": {
+        "ar": "مقياس التركّز 0–10000 من حصص المورِّدين: دون 1500 سوق مفتوحة، "
+              "1500–2500 متوسطة التركّز، فوق 2500 محكومة بقلّة من المورِّدين.",
+        "en": "Concentration index 0–10000 from suppliers' shares: below 1500 "
+              "an open market, 1500–2500 moderately concentrated, above 2500 "
+              "dominated by a few suppliers."},
+    "chart_band_open": {"ar": "مفتوحة", "en": "open"},
+    "chart_band_moderate": {"ar": "متوسطة التركّز", "en": "moderate"},
+    "chart_band_high": {"ar": "مركّزة", "en": "concentrated"},
+    "chart_landed_cost_ladder": {
+        "ar": "سلّم التكلفة من المصنع إلى الرف ({unit})",
+        "en": "Cost ladder from factory to shelf ({unit})"},
+    # مراجعة §58: ذيلُ الجملة كان «سعر المصنع من بطاقة المنتج»، وطبقةُ
+    # اللغة المبسّطة في مُسلَّم العميل تستبدل «بطاقة المنتج» بـ«سعر المصنع
+    # المُدخَل» — فتُطبَع «سعر المصنع من سعر المصنع المُدخَل». المصدرُ مذكورٌ
+    # في سطر الإسناد أصلاً، فالذيلُ يُحذَف لا يُعاد صياغتُه.
+    "chart_landed_cost_note": {
+        "ar": "الدرجات الباهتة معلمات معلنة قابلة للتعديل (شحن وهوامش "
+              "وضرائب) لا أرقام مرصودة.",
+        "en": "Faded steps are declared, adjustable parameters (freight, "
+              "margins, taxes), not observed figures."},
+    "chart_landed_cost_increment_note": {
+        "ar": "الزيادات المفردة (مبلغ الشحن مثلاً) في جدول التكلفة لا على "
+              "هذا المحور — المحور مستويات متتابعة.",
+        "en": "Single increments (the freight amount, for instance) are in "
+              "the cost table, not on this axis — the axis shows successive "
+              "levels."},
+    "chart_max_exw_scenarios": {
+        "ar": "أقصى سعر مصنع قابل للمنافسة بالسيناريوهات ({unit})",
+        "en": "Maximum competitive factory price by scenario ({unit})"},
+    "chart_max_exw_note": {
+        "ar": "السيناريو المميَّز بالذهبي هو المعتمد في المتن؛ الفرق بين "
+              "السيناريوهات من نسب الشحن والهوامش المعلنة.",
+        "en": "The scenario highlighted in gold is the one used in the text; "
+              "scenarios differ by the declared freight and margin rates."},
+    "chart_max_exw_contradiction_note": {
+        "ar": "تحذير: هذا السقف أدنى من متوسط سعر الاستيراد المرصود لهذه "
+              "الفئة — المنافسة السعرية غير قائمة عملياً، ولا يصلح الرقم "
+              "أساساً للتفاوض.",
+        "en": "Warning: this ceiling is below the observed average import "
+              "price for this category — price competition is not practically "
+              "available, and the figure is not a negotiating basis."},
+    "chart_year_unknown": {
+        "ar": "سنة الرقم غير معلنة في المصدر.",
+        "en": "The figure's year is not stated by the source."},
+    "chart_decision_ranges": {
+        "ar": "مدى أرقام القرار ({unit})",
+        "en": "Decision numbers, estimated range ({unit})"},
+    "chart_decision_ranges_note": {
+        "ar": "كل شريط من أدنى تقدير إلى أعلاه؛ الرقم المطبوع هو التقدير "
+              "المعتمد. ما لم يُقدَّر بعدُ ليس على الرسم بل في «حدود هذا "
+              "التقرير».",
+        "en": "Each bar spans the low to high estimate; the printed figure is "
+              "the adopted estimate. What is not yet estimated is not drawn "
+              "but listed under this report's limits."},
+    "chart_unit_index": {"ar": "مؤشّر", "en": "index"},
+    "chart_scenario_low": {"ar": "منخفض", "en": "low"},
+    "chart_scenario_mid": {"ar": "متوسط", "en": "mid"},
+    "chart_scenario_high": {"ar": "مرتفع", "en": "high"},
+    "chart_source_cost_model": {
+        "ar": "محسوب من سعر المصنع المُدخل والمعلمات المعلنة",
+        "en": "Computed from the entered factory price and declared parameters"},
+    "chart_source_shelf_model": {
+        "ar": "محسوب من سعر الرف المرصود والمعلمات المعلنة",
+        "en": "Computed from the observed shelf price and declared parameters"},
+    "chart_source_estimates": {
+        "ar": "تقديرات معلنة بمداها — التفصيل في جدول أرقام القرار",
+        "en": "Declared estimates with their ranges — detailed in the "
+              "decision numbers table"},
+    "imports_col_year": {"ar": "السنة", "en": "Year"},
+    "imports_col_value": {"ar": "قيمة الواردات", "en": "Import value"},
+})
+
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # الصنف ٢ (موجة عيوب التقرير) — خانةٌ فارغة لا تكسر جملة
 # ════════════════════════════════════════════════════════════════════════════

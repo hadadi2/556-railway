@@ -416,6 +416,35 @@ ACTIVITY_LABEL_AR: dict[str, str] = {
     "dairy store": "متجر ألبان",
     "dairy farm": "مزرعة ألبان",
     "auto parts store": "متجر قطع غيار",
+    # ── الدرس ٢٥٥ — تسمياتٌ **مقيسةٌ من تقارير حيّة** لا مُختلَقة ──────────
+    # (دراسة ماليزيا × قهوة محمصة، ٢٠٢٦-٠٩-١٧): جدولُ العملاء المحتملين حمل
+    # `Greengrocer` و`Seafood wholesaler` و`Confectionery wholesaler` و
+    # `Consultant` **بالإنجليزية داخل جدولٍ عربيّ**، لأن الجدولَ لم يعرفها
+    # (٢٤ مدخلاً) فأعادها `activity_label_ar` كما هي. تُعرَّب هنا، فيزول
+    # خلطُ اللغة؛ وتصنيفُ صلتِها بالمنتج شيءٌ آخر (انظر قائمةَ السماح).
+    "greengrocer": "بائع خضار وفواكه",
+    "seafood wholesaler": "تاجر جملة مأكولات بحرية",
+    "confectionery wholesaler": "تاجر جملة حلويات",
+    "food wholesaler": "تاجر جملة أغذية",
+    "beverage distributor": "موزّع مشروبات",
+    "coffee wholesaler": "تاجر جملة قهوة",
+    "coffee store": "متجر قهوة",
+    "spice store": "متجر بهارات",
+    "butcher shop": "ملحمة",
+    "bakery": "مخبز",
+    # ── مقدّمو خدماتٍ **ليسوا أطرافاً تجارية لأيّ منتج** (منعٌ عامّ لا
+    # يتعلّق بفئة المنتج إطلاقاً — ولذلك يصحّ عامّاً): ظهر `Consultant`
+    # صفّاً أوّلَ في جدول تلك الدراسة وهو لا يستورد ولا يوزّع ولا يخلّص.
+    "consultant": "مستشار",
+    "business management consultant": "مستشار إدارة أعمال",
+    "consulting agency": "مكتب استشارات",
+    "marketing agency": "وكالة تسويق",
+    "advertising agency": "وكالة إعلان",
+    "law firm": "مكتب محاماة",
+    "accounting firm": "مكتب محاسبة",
+    "bank": "بنك",
+    "insurance agency": "وكالة تأمين",
+    "real estate agency": "مكتب عقارات",
 }
 
 
@@ -436,6 +465,19 @@ LEAD_ACTIVITY_ALLOWED: frozenset = frozenset({
     "warehouse", "logistics service", "freight forwarding service",
     "customs broker", "confectionery", "candy store", "dairy store",
     "dairy farm",
+    # ── الدرس ٢٥٥ — أطرافٌ تجاريةٌ مقيسةٌ من تقارير حيّة ───────────────────
+    # تُدرَج **مسموحةً**: كلُّها تشتري أو توزّع سلعاً، وكونُ بائعِ الخضار
+    # غيرَ ذي صلةٍ بالقهوة تحديداً هو **محورُ مطابقةِ فئةِ المنتج** لا محورُ
+    # «طرفٌ تجاريّ أم لا» — والمِصفاةُ هنا عامّةٌ بالتصميم (لا تفريعَ منتج).
+    # فحصرُها على فئةِ المنتج قرارُ مالكٍ مفتوحٌ مُعلَنٌ في
+    # `docs/report-quality/LOGIC_ISSUES.md`، لا يُقرَّر هنا ضمناً: منعُ
+    # «ملحمة» عامّاً يُسقِط الرابطَ الصحيحَ لمصدّرِ لحوم.
+    "greengrocer", "seafood wholesaler", "confectionery wholesaler",
+    "food wholesaler", "beverage distributor", "coffee wholesaler",
+    "coffee store", "spice store", "butcher shop", "bakery",
+    # وما **لا** يُدرَج هنا وهو في جدول التعريب أعلاه = ممنوعٌ صريحاً:
+    # مقدّمو الخدمات (مستشار/محاماة/محاسبة/تسويق/بنك/تأمين/عقارات) ومتجرُ
+    # قطع الغيار — ليسوا أطرافاً تجاريةً لأيّ منتجٍ مُصدَّر.
 })
 
 
