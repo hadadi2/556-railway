@@ -2959,10 +2959,26 @@ _CLIENT_REDACT_PLACEHOLDER_EN = {
 
 
 def _client_forbidden_for(lang: str = "ar") -> list:
-    """قائمة الحارس بلغة التقرير — نفس المعنى المحروس، أنماطٌ تناسب اللغة."""
-    return (_CLIENT_FORBIDDEN_PATTERNS_EN
-            if silk_i18n.normalize(lang) == "en"
-            else _CLIENT_FORBIDDEN_PATTERNS)
+    """قائمة الحارس بلغة التقرير — نفس المعنى المحروس، أنماطٌ تناسب اللغة.
+
+    الموجة د-١: فوق الأنماط الحرفية تُقرأ صفوفُ `data/client_forbidden_terms_l1.csv`
+    (قائمةٌ يحدّثها المالك بلا كود): أسماءُ حالات السجلّ تسميةً، وأسماءُ
+    المفاتيح والفحوص والبعثات والوكلاء عاريةً."""
+    ln = "en" if silk_i18n.normalize(lang) == "en" else "ar"
+    base = _CLIENT_FORBIDDEN_PATTERNS_EN if ln == "en" else _CLIENT_FORBIDDEN_PATTERNS
+    from silk_style_contract import client_forbidden_terms
+    return list(base) + [(r["label"], r["regex"])
+                         for r in client_forbidden_terms() if ln in r["langs"]]
+
+
+def _client_file_replacements(lang: str = "ar") -> dict:
+    """بدائلُ صفوف الملفّ بلغة التقرير — صفوفُ `<refuse>` لا بديلَ لها عمداً
+    (تُرفَض كما `{{`)."""
+    ln = "en" if silk_i18n.normalize(lang) == "en" else "ar"
+    from silk_style_contract import client_forbidden_terms
+    return {r["label"]: (r["replacement_en"] if ln == "en" else r["replacement_ar"])
+            for r in client_forbidden_terms()
+            if ln in r["langs"] and not r["refuse"]}
 
 
 def _client_forbidden_hits(blob: str, lang: str = "ar") -> list[str]:
@@ -3012,8 +3028,14 @@ def _client_redact_text(text: str, lang: str = "ar") -> str:
     إنجليزيّ («in this دورة تحليل») تسرّبٌ لا تنقية."""
     s = str(text or "")
     en = silk_i18n.normalize(lang) == "en"
-    holder = _CLIENT_REDACT_PLACEHOLDER_EN if en else _CLIENT_REDACT_PLACEHOLDER
+    holder = dict(_CLIENT_REDACT_PLACEHOLDER_EN if en
+                  else _CLIENT_REDACT_PLACEHOLDER)
+    holder.update(_client_file_replacements(lang))
+    from silk_style_contract import client_forbidden_terms
+    refuse = {r["label"] for r in client_forbidden_terms() if r["refuse"]}
     for label, pat in _client_forbidden_for(lang):
+        if label in refuse:
+            continue          # يُرفَض لا يُنقّى — الحارسُ النهائي يلتقطه
         s = pat.sub(holder.get(label, "—"), s)
     return re.sub(r"[ \t]{2,}", " ", s)
 
@@ -3749,7 +3771,9 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
                          f"{e['confirm']} — {e['confirm_time']}"])
         else:
             rows.append([e["name"],
-                         f"لا نعرفه بعد — الناقص: {e['missing']}",
+                         # «الناقص:» اسمُ حالةٍ لا لغةُ قارئ (الموجة د-١) —
+                         # في منشئه هنا، والملفُّ يُنقّي المخزَّنَ القديم.
+                         f"لا نعرفه بعد — يلزم: {e['missing']}",
                          f"أثره: {e['impact']}",
                          f"سبيل الإغلاق: {e['closure']}"])
     _add_table(doc, ["الرقم", "القيمة/المدى", "كيف اشتُق",

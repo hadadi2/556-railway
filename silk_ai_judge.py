@@ -1164,26 +1164,86 @@ def _confidence_mention_rule() -> str:
 # المنتج وتالياً تركيز اشتراطات القسم ٧ (غذاء→سلامة غذائية، صناعي→توافق
 # تقني/CE، استهلاكي→سلامة منتج/REACH). اشتقاق حتمي بلا شبكة ولا مفتاح؛
 # فئة غير معروفة = تركيز عام لا تخمين.
-_HS_CATEGORY: "list[tuple[range, str, str]]" = [
-    (range(1, 25), "منتج غذائي/زراعي",
-     "سلامة الغذاء، حدود الملوّثات والمبيدات، مكافحة الآفات، وشهادات "
-     "الجودة الغذائية (BRC/IFS/FSSC) والحلال حيث انطبق"),
-    (range(28, 40), "منتج كيميائي/بلاستيكي",
-     "تسجيل REACH وبطاقات بيانات السلامة وحدود المواد المقيَّدة"),
-    (range(50, 68), "منسوجات/ملابس/أحذية",
-     "بطاقات المحتوى والعناية، قيود الأصباغ (azo) ضمن REACH، وسلامة "
-     "المنتج الاستهلاكي"),
-    (range(72, 84), "معادن/مصنوعات معدنية",
-     "المعايير التقنية ومطابقة المواصفات القياسية للسوق"),
-    (range(84, 86), "آلات/معدّات كهربائية",
-     "علامة CE، التوافق الكهرومغناطيسي (EMC)، وتوجيهات السلامة"),
-    (range(86, 90), "مركبات/معدّات نقل",
-     "اعتماد النوع (homologation) والمطابقة التقنية الإلزامية"),
-    (range(90, 93), "أجهزة/أدوات دقيقة",
-     "علامة CE، ومتطلبات الأجهزة الطبية حيث انطبقت"),
-    (range(94, 97), "أثاث/ألعاب/سلع استهلاكية",
-     "سلامة المنتج الاستهلاكي، سلامة الألعاب، وقيود REACH"),
-]
+_HS_CATEGORY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "data", "hs_category_l1.csv")
+
+
+def _load_hs_category_rows(path: str = _HS_CATEGORY_PATH) -> list:
+    """صفوفُ `data/hs_category_l1.csv` كما هي (فصلٌ من/إلى، فئة، صلةُ الدين،
+    درجةُ التصنيع، تركيزُ الاشتراطات). الموجة د-١: الجدولُ ملفُّ بياناتٍ يُحدَّث
+    بلا كود؛ تعذُّرُ قراءته = قائمةٌ فارغة (فئةٌ غيرُ معروفة، لا تخمين) وسطرُ
+    خطأٍ في السجلّ."""
+    import csv
+    rows: list = []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for r in csv.DictReader(l for l in fh if not l.startswith("#")):
+                try:
+                    rows.append({
+                        "lo": int(r["chapter_from"]), "hi": int(r["chapter_to"]),
+                        "order": int(r.get("order") or 999),
+                        "category": (r.get("category") or "").strip(),
+                        "religion_relevance": (r.get("religion_relevance") or "").strip(),
+                        "processing_level": (r.get("processing_level") or "").strip(),
+                        "emphasis": (r.get("emphasis_ar") or "").strip(),
+                        "source": (r.get("source") or "").strip(),
+                        "note": (r.get("note") or "").strip()})
+                except (KeyError, ValueError, TypeError):
+                    continue
+    except OSError as e:  # noqa: BLE001 — غيابُ الملف يُعلَن ولا يكسر الاستيراد
+        log.error("hs_category_l1.csv unreadable: %s", e)
+    return rows
+
+
+def _build_hs_category(rows: list) -> list:
+    """القائمةُ القانونية `(range, name, emphasis)` من الصفوف: الصفوفُ التي
+    تشترك في الاسم تُدمَج مدىً واحداً (أدنى..أعلى)، وتُرتَّب بعمود `order` —
+    فتبقى الفئاتُ الثماني الأصلية بترتيبها وفهارسها (اختباراتٌ تفهرسها)."""
+    merged: dict = {}
+    for r in rows:
+        if not r["category"]:
+            continue
+        m = merged.setdefault(r["category"], {"lo": r["lo"], "hi": r["hi"],
+                                              "order": r["order"],
+                                              "emphasis": r["emphasis"]})
+        m["lo"], m["hi"] = min(m["lo"], r["lo"]), max(m["hi"], r["hi"])
+        m["order"] = min(m["order"], r["order"])
+    return [(range(m["lo"], m["hi"] + 1), name, m["emphasis"])
+            for name, m in sorted(merged.items(), key=lambda kv: kv[1]["order"])]
+
+
+_HS_CATEGORY_ROWS: list = _load_hs_category_rows()
+_HS_CATEGORY: "list[tuple[range, str, str]]" = _build_hs_category(_HS_CATEGORY_ROWS)
+
+
+def product_profile(hs_code: object) -> "dict | None":
+    """صفُّ الفصل الدقيق: {category, religion_relevance, processing_level,
+    emphasis, source} — None لرمزٍ غائبٍ أو فصلٍ غيرِ مصنَّف (لا تخمين)."""
+    s = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
+    if len(s) < 2:
+        return None
+    try:
+        chapter = int(s[:2])
+    except ValueError:
+        return None
+    for r in _HS_CATEGORY_ROWS:
+        if r["lo"] <= chapter <= r["hi"]:
+            return {k: r[k] for k in ("category", "religion_relevance",
+                                      "processing_level", "emphasis", "source")}
+    return None
+
+
+def religion_relevance(hs_code: object) -> "str | None":
+    """affects / inherent / none — أو None لفصلٍ غيرِ مصنَّف. القاعدةُ عامّةٌ
+    بالفصل (ملفُّ بيانات)، لا منطقَ لمنتجٍ أو سوقٍ بعينه."""
+    prof = product_profile(hs_code)
+    return (prof or {}).get("religion_relevance") or None
+
+
+def processing_level(hs_code: object) -> "str | None":
+    """raw / semi / processed — أو None لفصلٍ غيرِ مصنَّف."""
+    prof = product_profile(hs_code)
+    return (prof or {}).get("processing_level") or None
 
 
 # الصنف ١٨: النصفُ الثاني من جذر الصنف ١٠. الجدولُ أعلاه يُلحِق بموجّه

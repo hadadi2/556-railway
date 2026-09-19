@@ -10,7 +10,7 @@
 #   فخطأُ ترجمةٍ هنا أقصى أثره أن يفوت إبقاءَ رابطٍ، لا أن يحذف رابطاً صحيحاً
 #   ولا أن يختلق معطى.
 #
-# التغطية: فئاتُ فصول HS السبع (silk_ai_judge._HS_CATEGORY) × لغاتِ أسواق سِلك
+# التغطية: فئاتُ فصول HS (data/hs_category_l1.csv — كانت silk_ai_judge._HS_CATEGORY) × لغاتِ أسواق سِلك
 #   الـ38 (data/market_locale.csv:lang_primary). صفٌّ غائب => محورُ اللغة
 #   **يُعلَن متخطّى** لذلك السوق، ولا يُخمَّن.
 #
@@ -87,3 +87,40 @@ category,lang,terms,source,note
 أجهزة/أدوات دقيقة,it,"strumenti,dispositivi medici,laboratorio,misura,ottica",lexical,
 أجهزة/أدوات دقيقة,nl,"instrumenten,medische hulpmiddelen,laboratorium,meting,optiek",lexical,
 أجهزة/أدوات دقيقة,tr,"cihaz,tıbbi cihaz,laboratuvar,ölçüm,optik",lexical,
+أثاث/ألعاب/سلع استهلاكية,ar,"أثاث,مفروشات,ألعاب,سلع استهلاكية,إضاءة,فرش",lexical,أُضيفت في الموجة د-١ (كانت بلا صفوف)
+أثاث/ألعاب/سلع استهلاكية,en,"furniture,furnishings,toys,games,lighting,bedding,homeware,household goods",lexical,
+أثاث/ألعاب/سلع استهلاكية,fr,"meubles,mobilier,jouets,luminaires,literie",lexical,
+أثاث/ألعاب/سلع استهلاكية,de,"möbel,spielwaren,spielzeug,leuchten,bettwaren",lexical,
+أثاث/ألعاب/سلع استهلاكية,it,"mobili,arredamento,giocattoli,illuminazione",lexical,
+أثاث/ألعاب/سلع استهلاكية,tr,"mobilya,oyuncak,aydınlatma,ev eşyası",lexical,
+خامات معدنية/وقود,ar,"خامات,معادن خام,وقود,نفط,أسمنت,جبس,ملح,كبريت",lexical,فصول 25–27
+خامات معدنية/وقود,en,"ores,minerals,mineral,fuel,fuels,petroleum,oil products,cement,gypsum,salt,sulphur,bitumen",lexical,
+خامات معدنية/وقود,fr,"minerais,minéraux,carburants,pétrole,ciment",lexical,
+خامات معدنية/وقود,de,"erze,mineralien,brennstoffe,erdöl,zement",lexical,
+خامات معدنية/وقود,tr,"cevher,mineral,yakıt,petrol,çimento",lexical,
+مطاط ومنتجاته,ar,"مطاط,إطارات,منتجات مطاطية",lexical,فصل 40
+مطاط ومنتجاته,en,"rubber,tyres,tires,rubber products,latex",lexical,
+مطاط ومنتجاته,fr,"caoutchouc,pneus",lexical,
+مطاط ومنتجاته,de,"gummi,kautschuk,reifen",lexical,
+مطاط ومنتجاته,tr,"kauçuk,lastik",lexical,
+جلود ومصنوعات جلدية,ar,"جلود,جلد,مصنوعات جلدية,حقائب,دباغة,فراء",lexical,فصول 41–43
+جلود ومصنوعات جلدية,en,"leather,hides,skins,leather goods,tannery,bags,fur",lexical,
+جلود ومصنوعات جلدية,fr,"cuir,peaux,maroquinerie,tannerie",lexical,
+جلود ومصنوعات جلدية,de,"leder,häute,lederwaren,gerberei",lexical,
+جلود ومصنوعات جلدية,it,"pelle,pelletteria,cuoio,conceria",lexical,
+جلود ومصنوعات جلدية,tr,"deri,deri ürünleri,tabakhane",lexical,
+خشب وورق ومنتجاتهما,ar,"خشب,أخشاب,ورق,كرتون,لب الورق,فلين,مطبوعات",lexical,فصول 44–49
+خشب وورق ومنتجاتهما,en,"wood,timber,lumber,paper,cardboard,pulp,cork,printed matter,packaging paper",lexical,
+خشب وورق ومنتجاتهما,fr,"bois,papier,carton,pâte à papier,liège",lexical,
+خشب وورق ومنتجاتهما,de,"holz,papier,pappe,zellstoff,kork",lexical,
+خشب وورق ومنتجاتهما,tr,"ahşap,kereste,kağıt,karton,mantar",lexical,
+حجر وزجاج وخزف ومجوهرات,ar,"حجر,رخام,جرانيت,زجاج,خزف,سيراميك,مجوهرات,ذهب,أحجار كريمة",lexical,فصول 68–71
+حجر وزجاج وخزف ومجوهرات,en,"stone,marble,granite,glass,ceramic,ceramics,porcelain,jewellery,jewelry,gold,gemstones,pearls",lexical,
+حجر وزجاج وخزف ومجوهرات,fr,"pierre,marbre,verre,céramique,bijouterie",lexical,
+حجر وزجاج وخزف ومجوهرات,de,"stein,marmor,glas,keramik,schmuck",lexical,
+حجر وزجاج وخزف ومجوهرات,it,"pietra,marmo,vetro,ceramica,gioielleria",lexical,
+حجر وزجاج وخزف ومجوهرات,tr,"taş,mermer,cam,seramik,mücevher,kuyumculuk",lexical,
+تحف وأعمال فنية,ar,"تحف,أعمال فنية,لوحات,مقتنيات,أنتيكات",lexical,فصل 97
+تحف وأعمال فنية,en,"antiques,art,artworks,paintings,collectibles,gallery",lexical,
+تحف وأعمال فنية,fr,"antiquités,art,galerie,tableaux",lexical,
+تحف وأعمال فنية,de,"antiquitäten,kunst,galerie,gemälde",lexical,

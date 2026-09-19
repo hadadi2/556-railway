@@ -323,7 +323,8 @@ def test_markdown_and_client_docx_show_decision_numbers(tmp_path):
         render_client_docx(view, path)
     text = docx_all_text(path)
     assert "أرقام القرار (محسوبة حتمياً)" in text
-    assert "لا نعرفه بعد — الناقص:" in text      # فجوات الزمن/التعادل
+    assert "لا نعرفه بعد — يلزم:" in text        # فجوات الزمن/التعادل (د-١: لغة قارئ)
+    assert "الناقص:" not in text
 
 
 def test_writer_prompt_transfers_precomputed_numbers_verbatim():

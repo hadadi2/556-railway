@@ -1,0 +1,29 @@
+# مفرداتٌ داخليةٌ لا تصل نصَّ العميل — client-forbidden internal vocabulary (L1).
+# الغرض: قائمةُ ممنوعاتٍ **قابلةٌ للتحديث بلا كود** (قرار المالك، الموجة د) تُغذّي
+#   حارسَ تصدير العميل القائم (`silk_reports._client_forbidden_hits`) فوق أنماطه
+#   الحرفية. النطاق: **ما أصدرته سِلك يوماً** من أسماء حالاتٍ تسميةً (بين قوسين،
+#   خليّةَ جدول، بعد نقطتين) — لا كلماتٌ عربيةٌ أو إنجليزيةٌ عامّة («ضعيف»، «تقدير»،
+#   «estimate») لأنّ الكاتبَ يستعملها في نثرٍ مشروع وإسقاطَها يُسقِط جدولَه كلَّه
+#   (مراجعةٌ ذاتية §58)؛ وأسماءُ المفاتيح والفحوص والبعثات والوكلاء عاريةً بأيّ سياق.
+# السياسة: «نقِّ لا ترفض» — كلُّ صفٍّ يحمل بديلَه الطبيعي بلغتي التقرير؛ الصفُّ
+#   الذي بديلُه `<refuse>` لا يُنقّى بل يُرفض التصدير (كما `{{`). البديلُ قد يحمل
+#   مراجعَ مجموعات (\1 \2) للحفاظ على الفراغات المحيطة.
+# الأعمدة: label (اسمُ العائلة كما يظهر في تقرير الحارس)، lang (ar / en / both)،
+#   pattern (تعبيرٌ نمطيٌّ بصيغة Python re، يُترجَم كما هو؛ صفٌّ بنمطٍ فاسد
+#   يُتخطّى بتحذير لا يكسر التصدير)، replacement_ar، replacement_en، note.
+# تبقى المصطلحاتُ ظاهرةً في نسخة المدقّق (?internal=1) التي لا تمرّ بالحارس.
+label,lang,pattern,replacement_ar,replacement_en,note
+ledger_status_missing_label,ar,"(?<=[(|:«\[])(\s*)ناقص(\s*)(?=[)|»\]\n]|$)",\1لم يُعرَف بعد\2,,«ناقص» تسميةً — الكلمةُ في جملةٍ عاديةٍ لا تُمنَع
+ledger_status_weak_label,ar,"(?<=[(|:«\[])(\s*)(?:مرصود بتوثيق ضعيف|ضعيف التوثيق)(\s*)(?=[)|»\]\n]|$)",\1من مصادر غير رسمية فقط\2,,«ضعيف» وحدَها كلمةُ تقييمٍ عاديةٌ فلا تُدرَج
+ledger_status_observed_label,ar,"(?<=[(|:«\[])(\s*)مرصود(\s*)(?=[)|»\]\n]|$)",\1متاح\2,,«مرصود» تسميةً فقط؛ «سعر مرصود» في الجملة مشروع؛ البديلُ محايدٌ لا يرفع الادّعاء
+ledger_weak_suffix,ar,—\s*مرصود بتوثيق ضعيف,— من مصادر غير رسمية فقط,,ذيلُ القيمة القديم في الرموز المملوءة
+ledger_missing_colon,ar,—\s*الناقص\s*:,— يلزم:,,«لا نعرفه بعد — الناقص: X» ⇒ «— يلزم: X»؛ «المبلغ الناقص: 500» نثرٌ عاديٌّ لا يُمَسّ
+ledger_status_missing_label_en,en,"(?<=[(|:\[])(\s*)not observed(\s*)(?=[)|\]\n]|$)",,\1not yet known\2,label context only — ما أصدرته سِلك فقط
+ledger_status_weak_label_en,en,"(?<=[(|:\[])(\s*)(?:observed, weakly documented|weakly documented)(\s*)(?=[)|\]\n]|$)",,\1from unofficial sources only\2,«(estimate)» و«(observed)» إنجليزيةٌ تجاريةٌ عاديةٌ فلا تُدرَج
+ledger_weak_suffix_en,en,"—\s*observed, weakly documented",,— from unofficial sources only,
+ledger_key_name,both,"\b(?:market_imports_usd|imports_latest_year|import_growth_pct|import_cagr_pct|saudi_share_pct|top_supplier_share_pct|border_price_usd_kg|tariff_applied_pct|per_capita_income_usd|open_conditions|requirements_count|competitor_prices|blocking_condition|hs_code|hs6|iso3)\b",,,أسماءُ مفاتيح السجلّ ومعرّفاتٌ داخلية — تُحذَف
+ledger_snake_case,both,"(?<![/.=?&@#\-\w])[a-z]{2,}_[a-z]{2,}(?:_[a-z0-9]{2,})+(?![./\w])",,,أيُّ معرّفٍ ثلاثيِّ المقاطع بشرطات سفلية — خارجَ الروابط والبريد
+ledger_check_name,both,\b(?:ledger_[a-z_]+|chart_year_mismatch|blocking_condition_drift)\b,,,أسماءُ فحوص الاتساق
+mission_key,both,\b(?:pricing_scout|consumer_culture|trade_flow|demographics_economy|customs_requirements|tariffs_agreements|channels_importers|demand_trends|risk_news|opportunity_gaps)\b,,,مفاتيحُ البعثات الاثنتي عشرة (competitors وlogistics كلمتان عاديتان فلا تُدرَجان)
+agent_class,both,"\b(?:BaseAgent|CompetitionAgent|CompetitorAgent|ConsumerDemandAgent|DistributionChannelsAgent|DynamicsAgent|EconomicAgent|ExpleeAgent|FaostatAgent|ImportersAgent|LLMMissionAgent|LocalPriceAgent|LogisticsAgent|MapsAgent|MarketSizeAgent|NamedCompetitorsAgent|PricingAgent|RegulatoryAgent|RequirementsAgent|ResearchAgent|RiskAgent|SupplierAgent|TariffsAgent|TradeFlowAgent|TrendsAgent|VolzaAgent|WebSearchAgent)\b",فريق البحث,the research,أصنافُ الوكلاء الحقيقية بأسمائها — لا نمطاً عامّاً يبتلع «SuperAgent Logistics»
+ledger_token,both,\{\{|\}\},<refuse>,<refuse>,رمزٌ داخليٌّ غيرُ مملوء — يُرفض لا يُنقّى

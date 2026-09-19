@@ -4597,6 +4597,20 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    265: lambda: (
+        _needles("silk_fact_ledger.py", "def insight_entry", "KeyRow = namedtuple",
+                 "ESTIMATE, INFERENCE")(),
+        _absent("silk_fact_ledger.py", 'frozenset({"open_conditions", "blocking_condition"})')(),
+        _needles("silk_ai_judge.py", "def product_profile",
+                 "def religion_relevance", "_load_hs_category_rows")(),
+        _absent("silk_ai_judge.py", '(range(1, 25), "منتج غذائي/زراعي",')(),
+        _needles("silk_style_contract.py", "def client_forbidden_terms")(),
+        _needles("data/hs_category_l1.csv", "religion_relevance")(),
+        _needles("data/client_forbidden_terms_l1.csv", "<refuse>")(),
+        _needles("tests/test_wave_d1_structure.py",
+                 "def test_every_codex_client_report_is_free_of_file_terms",
+                 "def test_an_estimate_without_assumption_or_range_is_refused")(),
+        _needles("tests/test_lessons_enforcement.py", "(265, ")()),
     264: lambda: (
         _needles("silk_fact_ledger.py", "def gaps_table", "def _split_gap",
                  "def clip_clause", "_ACTIONABLE_RE")(),

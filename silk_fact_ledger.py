@@ -43,52 +43,94 @@ MAX_REVISIONS_FLAG = "SILK_LEDGER_MAX_REVISIONS"
 TOKEN_RE = re.compile(r"\{\{\s*(status:)?([a-z_]+)(:sentence)?\s*\}\}")
 
 OBSERVED, WEAK, MISSING = "observed", "weak", "missing"
+#: درجتان للاستنتاج (الموجة د): تقديرٌ بنطاقٍ وافتراضٍ معلن، واستنتاجٌ يسمّي
+#: ما يستند إليه. لا تدخلان `build_pillar_inputs` فلا تُحرّكان حكماً (قيدُ
+#: المالك: التقديراتُ لا تُحتسب متحققاً منها) — تعيشان في السجلّ وسطوحه فقط.
+ESTIMATE, INFERENCE = "estimate", "inference"
+STATUSES = (OBSERVED, WEAK, MISSING, ESTIMATE, INFERENCE)
+#: الدرجاتُ ذاتُ النطاق: رقمُها في النثر لا يُقارَن بقيمةٍ واحدة.
+_RANGED = frozenset({ESTIMATE, INFERENCE})
+
+from collections import namedtuple
+
+#: صفُّ مفتاحٍ بأعلامه (الموجة د-١): قوائمُ التخطّي التي كانت تُعدَّد يدوياً في
+#: `facts_block`/`draft_issues`/`check`/`repair`/`build_ledger` تُشتقّ من هذه
+#: الأعلام — إضافةُ مفتاحٍ = سطرٌ واحد. الحقولُ الخمسةُ الأولى بترتيبها القديم
+#: فيبقى الوصولُ بالفهرس (`row[1]`, `row[4]`) صالحاً.
+KeyRow = namedtuple("KeyRow", (
+    "key", "label_ar", "label_en", "unit", "words",
+    "kind",              # fact | insight
+    "mandatory",         # رمزٌ إلزاميٌّ للكاتب (لا يكتب قيمتَه ولا حالتَه)
+    "self_describing",   # صيغتُه تصف نفسَها عند الغياب فلا تُبدَّل جملتُه
+    "numeric_check",     # رقمُه في النثر يُقارَن بالسجلّ
+    "engine_computed",   # يحسبه المحرّك حتمياً — لا درجةَ مصدرٍ له
+    "writer_hidden",     # لا يُعرَض على الكاتب في [LEDGER]
+    "gap_listed",        # يدخل قائمةَ الفجوات حين يغيب
+), defaults=("fact", False, False, True, False, False, True))
+
+
+def _fact(key, label_ar, label_en, unit, words=(), **flags):
+    return KeyRow(key, label_ar, label_en, unit, tuple(words), **flags)
+
 
 #: المفاتيح القانونية بترتيب العرض — (المفتاح، التسمية العربية، الإنجليزية،
-#: الوحدة، مفردات التعرّف عليها في النص).
+#: الوحدة، مفردات التعرّف عليها في النص) + الأعلام.
 KEYS: tuple = (
-    ("market_imports_usd", "واردات السوق", "market imports", "USD",
-     ("واردات السوق", "إجمالي الواردات", "الواردات المصرَّحة", "TAM",
-      "market imports")),
-    ("imports_latest_year", "أحدث سنة بيانات للواردات",
-     "latest imports data year", "", ()),
-    ("import_growth_pct", "نمو الواردات", "imports growth", "%",
-     ("نمو الواردات", "نمو السوق", "imports growth", "market growth")),
-    ("import_cagr_pct", "معدل النمو السنوي المركّب", "import CAGR", "%",
-     ("معدل النمو السنوي المركّب", "نمو مركّب", "CAGR")),
-    ("saudi_share_pct", "الحصة السعودية", "Saudi share", "%",
-     ("الحصة السعودية", "حصة السعودية", "تستحوذ السعودية", "Saudi share")),
-    ("hhi", "مؤشر تركّز المورّدين", "supplier concentration (HHI)", "",
-     ("مؤشر التركّز", "تركّز المورّدين", "HHI")),
-    ("top_supplier_share_pct", "حصة المورّد الأكبر", "top supplier share",
-     "%", ("حصة المورّد الأكبر", "أكبر مورّد", "top supplier")),
-    ("border_price_usd_kg", "متوسط سعر الاستيراد الحدودي",
-     "border unit value", "USD/kg",
-     ("سعر الاستيراد الحدودي", "سعر الوحدة عند الحدود", "سعر الحدود",
-      "border unit value")),
-    ("tariff_applied_pct", "الرسوم الجمركية المطبَّقة", "applied tariff",
-     "%", ("الرسوم الجمركية", "التعرفة", "التعريفة", "الرسم الجمركي",
-           "tariff", "customs duty")),
-    ("per_capita_income_usd", "دخل الفرد", "GDP per capita", "USD",
-     ("دخل الفرد", "نصيب الفرد", "per capita")),
-    ("population", "عدد السكان", "population", "",
-     ("عدد السكان", "population")),
-    ("open_conditions", "الشروط المفتوحة", "open conditions", "",
-     ("الشروط المفتوحة", "شروط مفتوحة", "open conditions")),
-    ("requirements_count", "بنود الاشتراطات", "entry requirements", "",
-     ("بنود الاشتراطات", "قائمة الاشتراطات", "entry requirements")),
-    ("competitor_prices", "أسعار المنافسين", "competitor prices", "",
-     ("أسعار المنافسين", "competitor prices")),
-    ("blocking_condition", "الشرط الحاجب", "blocking condition", "",
-     ("الشرط الحاجب", "blocking condition")),
+    _fact("market_imports_usd", "واردات السوق", "market imports", "USD",
+          ("واردات السوق", "إجمالي الواردات", "الواردات المصرَّحة", "TAM",
+           "market imports")),
+    _fact("imports_latest_year", "أحدث سنة بيانات للواردات",
+          "latest imports data year", "", (), mandatory=True,
+          gap_listed=False),
+    _fact("import_growth_pct", "نمو الواردات", "imports growth", "%",
+          ("نمو الواردات", "نمو السوق", "imports growth", "market growth")),
+    _fact("import_cagr_pct", "معدل النمو السنوي المركّب", "import CAGR", "%",
+          ("معدل النمو السنوي المركّب", "نمو مركّب", "CAGR")),
+    _fact("saudi_share_pct", "الحصة السعودية", "Saudi share", "%",
+          ("الحصة السعودية", "حصة السعودية", "تستحوذ السعودية", "Saudi share")),
+    _fact("hhi", "مؤشر تركّز المورّدين", "supplier concentration (HHI)", "",
+          ("مؤشر التركّز", "تركّز المورّدين", "HHI")),
+    _fact("top_supplier_share_pct", "حصة المورّد الأكبر", "top supplier share",
+          "%", ("حصة المورّد الأكبر", "أكبر مورّد", "top supplier")),
+    _fact("border_price_usd_kg", "متوسط سعر الاستيراد الحدودي",
+          "border unit value", "USD/kg",
+          ("سعر الاستيراد الحدودي", "سعر الوحدة عند الحدود", "سعر الحدود",
+           "border unit value")),
+    _fact("tariff_applied_pct", "الرسوم الجمركية المطبَّقة", "applied tariff",
+          "%", ("الرسوم الجمركية", "التعرفة", "التعريفة", "الرسم الجمركي",
+                "tariff", "customs duty"), mandatory=True),
+    _fact("per_capita_income_usd", "دخل الفرد", "GDP per capita", "USD",
+          ("دخل الفرد", "نصيب الفرد", "per capita")),
+    _fact("population", "عدد السكان", "population", "",
+          ("عدد السكان", "population")),
+    _fact("open_conditions", "الشروط المفتوحة", "open conditions", "",
+          ("الشروط المفتوحة", "شروط مفتوحة", "open conditions"),
+          mandatory=True, self_describing=True, numeric_check=False,
+          engine_computed=True),
+    _fact("requirements_count", "بنود الاشتراطات", "entry requirements", "",
+          ("بنود الاشتراطات", "قائمة الاشتراطات", "entry requirements"),
+          mandatory=True, self_describing=True, numeric_check=False),
+    _fact("competitor_prices", "أسعار المنافسين", "competitor prices", "",
+          ("أسعار المنافسين", "competitor prices"), numeric_check=False,
+          writer_hidden=True),
+    _fact("blocking_condition", "الشرط الحاجب", "blocking condition", "",
+          ("الشرط الحاجب", "blocking condition"), mandatory=True,
+          self_describing=True, numeric_check=False, engine_computed=True,
+          gap_listed=False),
 )
-_KEY_ROWS = {k[0]: k for k in KEYS}
+_KEY_ROWS = {r.key: r for r in KEYS}
 
 #: الرموز الإلزامية الستة (قرار المالك) — الكاتب لا يكتب لها قيمة ولا حالة.
+#: الترتيبُ ثابتٌ (يظهر في نصّ القاعدة)؛ والعضويةُ تُشتقّ من علم `mandatory`.
 MANDATORY_TOKEN_KEYS: tuple = ("tariff_applied_pct", "open_conditions",
                                "requirements_count", "blocking_condition",
                                "imports_latest_year")
+assert set(MANDATORY_TOKEN_KEYS) == {r.key for r in KEYS if r.mandatory}
 #: `{{status:key}}` السادس — حالة أي مفتاح.
+#: مفاتيحُ يحسبها المحرّكُ حتمياً (لا مصدرَ خارجيّ فلا درجةَ مصدر)، ومفاتيحُ
+#: صيغتُها تصف نفسَها عند الغياب — كلاهما من الأعلام.
+_ENGINE_COMPUTED = frozenset(r.key for r in KEYS if r.engine_computed)
+_SELF_DESCRIBING_KEYS = frozenset(r.key for r in KEYS if r.self_describing)
 
 #: الأرقام المشتقة المسموح بها صراحةً في النثر بلا مفتاح: سياقاتٌ يُقاس
 #: بها الرقم (إن وقعت كلمةٌ منها في جملة الرقم لا يُعَدّ رقماً عارياً).
@@ -154,11 +196,6 @@ def _num(v: object) -> "float | None":
         return None
 
 
-#: مفاتيحُ يحسبها المحرّكُ حتمياً من مدخلاتٍ مُسنَدةٍ سلفاً (لا مصدرَ خارجيّ
-#: لها فلا تُصنَّف درجةَ مصدر): عددُ الشروط والشرطُ الحاجب.
-_ENGINE_COMPUTED = frozenset({"open_conditions", "blocking_condition"})
-
-
 def _entry(key: str, value=None, *, source: str = "", confidence=None,
            note: str = "", year=None, unit: str | None = None,
            mirrored: bool = False, origin: str = "", items=None) -> dict:
@@ -182,6 +219,42 @@ def _entry(key: str, value=None, *, source: str = "", confidence=None,
             "source": str(source or ""), "confidence": _num(confidence),
             "note": str(note or ""), "year": year, "mirrored": bool(mirrored),
             "origin": origin}
+
+
+def insight_entry(key: str, value, *, grade: str, assumption: str = "",
+                  range=None, basis=(), flip_if: str = "", source: str = "",
+                  note: str = "", unit: str | None = None, year=None,
+                  how_to_close: str = "") -> dict:
+    """بندُ استنتاجٍ (الموجة د): تقديرٌ أو استنتاجٌ **يُصرِّح** بدرجته — عكسُ
+    `_entry` التي تحسب الدرجةَ من المصدر. قيدُ المالك بنيويّ: لا تقديرَ بلا
+    افتراضٍ معلنٍ ونطاق، ولا استنتاجَ بلا ما يستند إليه (يرفع ValueError).
+    """
+    if grade not in _RANGED:
+        raise ValueError(f"insight grade must be estimate/inference, got {grade!r}")
+    rng = tuple(range) if isinstance(range, (list, tuple)) else None
+    if grade == ESTIMATE:
+        lo = _num(rng[0]) if rng and len(rng) == 2 else None
+        hi = _num(rng[1]) if rng and len(rng) == 2 else None
+        if not str(assumption).strip() or lo is None or hi is None or lo > hi:
+            raise ValueError("an estimate needs a declared assumption and a "
+                             "numeric (low, high) range with low <= high — "
+                             "لا تقدير بلا افتراض معلن ونطاق")
+        rng = (lo, hi)
+    basis = tuple(basis or ())
+    unknown = [b for b in basis if b not in _KEY_ROWS]
+    if unknown:
+        raise ValueError(f"basis names unknown ledger keys: {unknown}")
+    if grade == INFERENCE and not basis:
+        raise ValueError("an inference must name the ledger keys it rests on")
+    row = _KEY_ROWS[key]
+    return {"key": key, "label_ar": row.label_ar, "label_en": row.label_en,
+            "unit": unit if unit is not None else row.unit,
+            "status": grade, "value": value, "items": None,
+            "source": str(source or "حساب من السجلّ"), "confidence": None,
+            "note": str(note or ""), "year": year, "mirrored": False,
+            "origin": "insight", "assumption": str(assumption or ""),
+            "range": rng, "basis": basis, "flip_if": str(flip_if or ""),
+            "how_to_close": str(how_to_close or "")}
 
 
 def _dp_entry(key: str, dp: object, origin: str, *, value=None) -> dict:
@@ -250,7 +323,7 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
              "label_en": e["label_en"], "status": e["status"],
              "note": e["note"], "source": e["source"]}
             for e in ordered if e["status"] in (MISSING, WEAK)
-            and e["key"] not in ("blocking_condition", "imports_latest_year")]
+            and _KEY_ROWS[e["key"]].gap_listed]
     return {"schema": "silk.ledger/v1", "lang": lang,
             "entries": {e["key"]: e for e in ordered},
             "order": [k[0] for k in KEYS], "gaps": gaps,
@@ -482,6 +555,16 @@ def render_value(entry: dict, lang: str = "ar") -> str:
         return "no blocking condition" if lang == "en" else "لا شرط حاجب"
     if st == MISSING:
         return "not available" if lang == "en" else "غير متاح"
+    if st == ESTIMATE:
+        # النطاقُ والافتراضُ في **كلّ** سياق — حتى خليّةِ جدولٍ يملؤها `bind`
+        # مباشرةً — وإلا خرج التقديرُ رقماً عارياً (قيدُ المالك).
+        return _estimate_text(entry, lang)
+    if st == INFERENCE:
+        body = (_value_text(entry, lang) if _num(entry.get("value")) is not None
+                else str(entry.get("value") or ""))
+        basis = _basis_labels(entry, lang)
+        return (f"{body} (inferred from {basis})" if lang == "en"
+                else f"{body} (يشير إليه {basis})")
     v = entry.get("value")
     if key == "open_conditions":
         return count_text(int(v or 0), lang, "شرط", "شرطان", "شروط", "شرطاً",
@@ -502,9 +585,29 @@ def render_value(entry: dict, lang: str = "ar") -> str:
     tail = " ".join(x for x in (entry.get("source") or "",
                                 str(entry.get("year") or "")) if x)
     if st == WEAK:
-        body += (" — observed, weakly documented" if lang == "en"
-                 else " — مرصود بتوثيق ضعيف")
+        # لغةُ قارئ لا اسمُ حالة — الذيلُ يصل نصَّ العميل عبر الرمز المملوء.
+        body += (" — from unofficial sources only" if lang == "en"
+                 else " — من مصادر غير رسمية فقط")
     return f"{body} ({tail})" if tail else body
+
+
+def _estimate_text(entry: dict, lang: str) -> str:
+    from silk_narrative import fmt_number
+    lo, hi = entry.get("range") or (None, None)
+    hi_txt = _value_text({**entry, "value": hi}, lang)
+    a = entry.get("assumption") or ""
+    return (f"between {fmt_number(lo)} and {hi_txt}, assuming {a}" if lang == "en"
+            else f"بين {fmt_number(lo)} و{hi_txt}، إذا افترضنا {a}")
+
+
+def _basis_labels(entry: dict, lang: str) -> str:
+    labels = []
+    for k in entry.get("basis") or ():
+        row = _KEY_ROWS.get(k)
+        labels.append((row.label_en if lang == "en" else row.label_ar)
+                      if row else str(k))
+    return (" and ".join(labels) if lang == "en" else " و".join(labels)) or (
+        "observed figures" if lang == "en" else "أرقام مرصودة")
 
 
 def render_sentence(entry: dict, lang: str = "ar") -> str:
@@ -513,6 +616,15 @@ def render_sentence(entry: dict, lang: str = "ar") -> str:
     key, st = entry["key"], entry["status"]
     label = entry["label_en"] if lang == "en" else entry["label_ar"]
     en = lang == "en"
+    if st == ESTIMATE:
+        return (f"We estimate {label} {render_value(entry, lang)}." if en
+                else f"نقدّر {label} {render_value(entry, lang)}.")
+    if st == INFERENCE:
+        body = (_value_text(entry, lang) if _num(entry.get("value")) is not None
+                else str(entry.get("value") or ""))
+        basis = _basis_labels(entry, lang)
+        return (f"{basis} point to {label}: {body}." if en
+                else f"يشير {basis} إلى أن {label}: {body}.")
     if key == "open_conditions":
         n = int(entry.get("value") or 0)
         if n == 0:
@@ -538,11 +650,20 @@ def render_sentence(entry: dict, lang: str = "ar") -> str:
 
 
 def render_status(entry: dict, lang: str = "ar") -> str:
-    """حالة معطى — `{{status:key}}`: مرصود / مرصود بتوثيق ضعيف / غير متاح."""
+    """حالة معطى — `{{status:key}}` بلغة قارئ: متاح من مصدر موثّق / متاح من
+    مصادر غير رسمية فقط / غير متاح / مُقدَّر بافتراض معلن / مستنتَج."""
     en = lang == "en"
-    return {OBSERVED: "observed" if en else "مرصود",
-            WEAK: "observed, weakly documented" if en else "مرصود بتوثيق ضعيف",
-            MISSING: "not available" if en else "غير متاح"}[entry["status"]]
+    # لغةُ قارئ لا أسماءُ حالات (بلاغ المالك، الموجة د): «مرصود» و«ناقص»
+    # و«تقدير» تسمياتٌ داخلية لا تصل العميل ولو عبر `{{status:key}}`.
+    return {OBSERVED: ("available from a documented source" if en
+                       else "متاح من مصدر موثّق"),
+            WEAK: ("available from unofficial sources only" if en
+                   else "متاح من مصادر غير رسمية فقط"),
+            MISSING: "not available" if en else "غير متاح",
+            ESTIMATE: ("estimated under a declared assumption" if en
+                       else "مُقدَّر بافتراض معلن"),
+            INFERENCE: ("inferred from observed figures" if en
+                        else "مستنتَج من أرقام مرصودة")}[entry["status"]]
 
 
 def count_text(n: int, lang: str, one: str, two: str, plural: str,
@@ -564,7 +685,7 @@ def facts_block(ledger: dict, lang: str = "ar") -> str:
         st = render_status(e, lang)
         if key in MANDATORY_TOKEN_KEYS:
             lines.append(f"- {{{{{key}}}}} = {label} ({st}) — اكتب الرمز لا القيمة")
-        elif key == "competitor_prices":
+        elif _KEY_ROWS[key].writer_hidden:
             continue
         else:
             val = render_value(e, lang) if e["status"] != MISSING else st
@@ -675,10 +796,6 @@ def _trailing_space(part: str) -> str:
     return part[len(stripped):]
 
 
-#: مفاتيحُ صيغتُها تصف نفسَها عند الغياب (عددٌ صفريّ/لا شرط)، فلا تُبدِّل
-#: جملتَها: «لا شروط مفتوحة» صحيحةٌ في مكانها.
-_SELF_DESCRIBING_KEYS = frozenset({"open_conditions", "requirements_count",
-                                   "blocking_condition"})
 #: تقطيعٌ يحفظ الفواصل — الجملةُ تُستبدَل بعلامتها لا بدونها.
 _SENT_KEEP_RE = re.compile(r"(?<=[.؛!؟])")
 
@@ -714,6 +831,8 @@ def stale_keys(snapshot: dict, ledger: dict) -> list:
         e = entries.get(key)
         if e is None:
             continue
+        if seen.get("status") == MISSING and e["status"] in _RANGED:
+            continue      # غيابٌ صار تقديراً: تحسينٌ لا انزياح (الموجة د)
         if e["status"] != seen.get("status") or not _same_value(
                 e.get("value"), seen.get("value")):
             out.append({"key": key, "label_ar": e["label_ar"],
@@ -746,10 +865,18 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
                           "استعمل رمزاً من [LEDGER]")
     stripped = TOKEN_RE.sub(" ", draft)
     for key, e in entries.items():
-        words = _KEY_ROWS[key][4]
-        if not words or key == "competitor_prices":
+        row = _KEY_ROWS[key]
+        words = row.words
+        if not words or row.writer_hidden:
             continue
-        mandatory = key in MANDATORY_TOKEN_KEYS
+        if e["status"] in _RANGED:
+            bare = _ranged_bare_sentence(stripped, words, e)
+            if bare:
+                issues.append(f"«{e['label_ar']}» تقديرٌ بنطاقٍ في السجلّ "
+                              f"({render_value(e, lang)}) لكن الجملة تكتبه رقماً "
+                              f"واحداً بلا نطاق — أعد صياغتها بالنطاق والافتراض: «{bare}»")
+            continue
+        mandatory = row.mandatory
         for w in words:
             m = re.search(re.escape(w), stripped)
             if not m:
@@ -794,6 +921,26 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
                                   f"صياغة الجملة بالقيمة الصحيحة: «{sent}»")
                     break
     return issues
+
+
+#: علاماتُ النطاق في الجملة — وجودُ إحداها قربَ التقدير يعني أنّه كُتب نطاقاً.
+_RANGE_MARK_RE = re.compile(r"بين|نقدّر|نقدر|تقريباً|نحو|between|estimate|"
+                            r"approximately|roughly|about", re.IGNORECASE)
+
+
+def _ranged_bare_sentence(text: str, words: tuple, entry: dict) -> str:
+    """الجملةُ التي تكتب تقديراً رقماً واحداً بلا نطاق — أو "" إن سلمت."""
+    for w in words:
+        for m in re.finditer(re.escape(w), text):
+            win = text[m.end():m.end() + _VALUE_WINDOW].split("\n")[0]
+            nm = _NUM_RE.search(win)
+            if not nm or _is_bare_year(nm, entry["key"]):
+                continue
+            sent = _sentence_at(text, m.start())
+            if _RANGE_MARK_RE.search(sent):
+                continue
+            return sent
+    return ""
 
 
 def _is_bare_year(match, key: str) -> bool:
@@ -894,9 +1041,19 @@ def check(view: dict, text: str) -> list:
             f"«{s['label_ar']}» تغيّر منذ كتابة التقرير ({s['was'].get('value')} "
             f"→ {s['now'].get('value')}) — القسم مُعلَّم قديماً ويحتاج إعادة توليد"))
     for key, e in entries.items():
-        words = _KEY_ROWS[key][4]
-        if not words or key in ("open_conditions", "requirements_count",
-                                "competitor_prices", "blocking_condition"):
+        row = _KEY_ROWS[key]
+        words = row.words
+        if not words or not row.numeric_check:
+            continue
+        if e["status"] in _RANGED:
+            # التقديرُ لا يُقارَن بقيمةٍ واحدة — لكنّ رقماً واحداً بلا نطاقٍ
+            # قربَ تسميته هو عينُ «التقدير رقماً عارياً» (مراجعة §58).
+            bare = _ranged_bare_sentence(text, words, e)
+            if bare:
+                findings.append(_finding(
+                    "ledger_value_mismatch",
+                    f"«{e['label_ar']}» تقديرٌ بنطاقٍ ({render_value(e)}) بينما "
+                    f"النص يكتبه رقماً واحداً بلا نطاق قرب «…{bare[:60]}…»"))
             continue
         for w in words:
             for m in re.finditer(re.escape(w), text):
@@ -1012,10 +1169,9 @@ def repair(text: str, ledger: dict, lang: str = "ar") -> tuple:
             out.append(_keep_list_prefix(part, new) + tail)
             continue
         for key, e in entries.items():
-            words = _KEY_ROWS[key][4]
-            if e["status"] == MISSING or not words or key in (
-                    "open_conditions", "requirements_count",
-                    "competitor_prices", "blocking_condition"):
+            row = _KEY_ROWS[key]
+            words = row.words
+            if e["status"] == MISSING or not words or not row.numeric_check:
                 continue
             if any(w in part for w in words) and _ABSENCE_RE.search(part):
                 new = render_sentence(e, lang)

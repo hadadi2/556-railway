@@ -73,7 +73,10 @@ def test_weak_is_not_missing():
     gone = L._entry("hhi", None, note="لا ملخّص مورّدين")
     assert (obs["status"], weak["status"], gone["status"]) == (
         L.OBSERVED, L.WEAK, L.MISSING)
-    assert "ضعيف" in L.render_status(weak)
+    # الموجة د-١: صيغُ الحالة لغةُ قارئ («من مصادر غير رسمية») لا أسماءُ
+    # حالات — والفرقُ بين الثلاث يبقى مقروءاً.
+    assert "غير رسمية" in L.render_status(weak)
+    assert L.render_status(weak) != L.render_status(obs)
     assert L.render_status(gone) == "غير متاح"
 
 
@@ -175,7 +178,7 @@ def test_missing_fact_replaces_the_whole_line_not_the_slot():
 def test_status_token_renders_a_word_not_a_number():
     led = _ledger_with("hhi", 3800.0)
     out, _ = L.bind("حالة التركّز: {{status:hhi}}.", led)
-    assert out == "حالة التركّز: مرصود."
+    assert out == "حالة التركّز: متاح من مصدر موثّق."
 
 
 # ── ٧) اللقطة: رمز قديم يُعلَّم ولا يُملأ بصمت (الشرط ١) ────────────────────
