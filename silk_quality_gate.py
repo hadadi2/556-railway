@@ -2519,6 +2519,9 @@ FAIL_TRIGGER_CHECKS = frozenset({
     # هدف الدراسة الاحترافية (البند ١): «غير محسوب» يسمّي تحويل وحدةٍ ثابتُها
     # مسجّل مدخلاً ناقصاً — حجبُ رقمٍ محسوبٍ حتمياً لا يُسلَّم (عائلة الدرس 84).
     "unit_conversion_refusal",
+    # الدرس ٢٦٢: رمزُ سجلٍّ داخليٌّ غيرُ مملوء وصل نصاً مُصيَّراً — بنيةٌ
+    # داخلية لا تصل عميلاً بأيّ حال، فحاجبٌ بلا راية.
+    "ledger_token_unbound",
 })
 
 
@@ -2528,6 +2531,15 @@ FAIL_TRIGGER_CHECKS = frozenset({
 # نفسُها **لا تُمَسّ** — عشراتُ الاختبارات تقرؤها عقداً ثابتاً — فتُحسَب
 # المجموعةُ الفعّالة عند الحكم: مطفأةً = المجموعةُ الأصلية حرفياً.
 _FLAGGED_FAIL_TRIGGERS: tuple = (
+    # الدرس ٢٦٢: فحوصُ سجلّ الحقائق — تحذيريةٌ في وضع القياس (الافتراضي)،
+    # وحاجبةٌ حين يفعّل المالكُ `SILK_LEDGER_ENFORCE` بعد أسبوع القياس.
+    ("ledger_value_mismatch", "silk_fact_ledger", "enforce"),
+    ("ledger_status_mismatch", "silk_fact_ledger", "enforce"),
+    ("ledger_count_mismatch", "silk_fact_ledger", "enforce"),
+    ("ledger_series_year_mismatch", "silk_fact_ledger", "enforce"),
+    ("chart_year_mismatch", "silk_fact_ledger", "enforce"),
+    ("blocking_condition_drift", "silk_fact_ledger", "enforce"),
+    ("ledger_stale", "silk_fact_ledger", "enforce"),
     # (اسمُ الفحص، الوحدةُ التي تحمل رايتَه، اسمُ دالّة الراية)
     ("metric_value_divergence", "silk_figure_store", "enabled"),
     ("open_conditions_count_mismatch", "silk_render",
@@ -2565,6 +2577,30 @@ PROSE_LITERAL_BLOCKERS: dict = {
 # قفلَ «الموجّه لا يحمل الممنوع» عليها. كلٌّ بسببه المقيس، والتصنيفُ
 # إلزاميٌّ لا اختياريّ (الاختبار يرفض فحصاً غيرَ مصنَّف).
 NON_LITERAL_FLAGGED_BLOCKERS: dict = {
+    # الدرس ٢٦٢: فحوصُ السجلّ **غيرُ نصّية** — تقابل رقماً أو حالةً أو عدداً
+    # في النصّ بقيمةٍ مخزَّنة، لا عبارةً ممنوعةً يمكن للموجّه أن يُملِيها.
+    # وتعليمةُ الموجّه المقابلة (`silk_fact_ledger.LEDGER_TOKEN_RULE`) تُلحَق
+    # أصلاً حين يوجد سجلّ، وبوّابةُ المسوّدة (`draft_issues`) تردّ المخالفةَ
+    # للكاتب **قبل التخزين** فلا يبلغ الحجبَ إلا ما تعذّر إصلاحُه.
+    "ledger_value_mismatch":
+        "مقابلةُ رقمٍ في النصّ بقيمةٍ مخزَّنة بتسامح تقريبٍ مقيس — أيُّ رقمٍ "
+        "صحيحٍ مسموح، والخطأُ في مخالفته السجلَّ لا في لفظه.",
+    "ledger_status_mismatch":
+        "مقابلةُ إعلانِ غيابٍ بحالةٍ محسوبةٍ في السجلّ — الممنوعُ أن يخالف "
+        "الحالةَ المخزَّنة، لا عبارةُ الغياب نفسُها (وهي مسموحةٌ حين تصدق).",
+    "ledger_count_mismatch":
+        "مطابقةُ عددٍ مذكورٍ بعددٍ محسوب (`silk_fact_ledger` عن قائمة محرّك "
+        "القرار) — أيُّ عددٍ صحيحٍ مسموح.",
+    "ledger_series_year_mismatch":
+        "مقارنةُ سنةٍ في النصّ بأحدث سنةٍ مرصودةٍ في السلسلة — رقمٌ لا عبارة.",
+    "chart_year_mismatch":
+        "مقارنةُ سنةِ رسمٍ ببيانات السلسلة — بنيويٌّ لا نصّيّ (لا يقرأ متناً).",
+    "blocking_condition_drift":
+        "مطابقةُ تعريفِ الشرط الحاجب بنصّ السجلّ — النصُّ متغيّرٌ لكلّ دراسة "
+        "لا ثابتٌ يمكن حظرُه.",
+    "ledger_stale":
+        "مقارنةُ لقطةِ الكاتب بالسجلّ الحاليّ — حالةُ بياناتٍ لا عبارةٌ في "
+        "المتن؛ لا موجّهَ يمكنه تفاديها بالصياغة.",
     "metric_value_divergence":
         "تباعدُ قيمتين لنفس المقياس — مقارنةُ أرقامٍ مخزَّنة لا عبارةٌ "
         "ممنوعة؛ وتعليمةُ الموجّه المقابلة "
@@ -6580,6 +6616,24 @@ def consecutive_clean_runs(check: str, n: int = 3, *,
             "ready": streak >= n}
 
 
+def _ledger_findings(view: dict) -> list[dict]:
+    """ملاحظاتُ سجلّ الحقائق على النصّ المُصيَّر — قائمةٌ فارغة بلا سجلّ.
+
+    تُستدعى على المسارين (بـ`deep_research` وبدونه): تقريرُ /analyze كان
+    يمرّ بلا فحصِ اتساقٍ إطلاقاً، وهو الذي تقرؤه لوحةُ المصنع.
+    """
+    if not isinstance(view, dict) or not view.get("ledger"):
+        return []
+    try:
+        import silk_fact_ledger as _FL
+        import silk_reports
+        text = silk_reports.render_markdown(view)
+        return _FL.check(view, text)
+    except Exception as exc:  # noqa: BLE001 — الفحصُ إضافةٌ لا شرطُ حكم
+        log.warning("ledger check skipped: %s", exc)
+        return []
+
+
 def run_quality_gate(view: dict) -> dict:
     """شغّل بوابة الجودة على `view["deep_research"]` — يعيد
     {"verdict": PASS|WARN|FAIL, "findings": [...], "methodology_notes": [...]}.
@@ -6590,7 +6644,18 @@ def run_quality_gate(view: dict) -> dict:
     عرضها كملاحظة منهجية يكرر معلومة صحيحة الآن بلا داعٍ)."""
     dr = view.get("deep_research") if isinstance(view, dict) else None
     if not dr:
-        return {"verdict": PASS, "findings": [], "methodology_notes": []}
+        # الدرس ٢٦٢: تقاريرُ /analyze كانت تمرّ **بلا أيّ فحصِ اتساق** (تعود
+        # PASS فوراً) — وهي التي يقرؤها المصنع. فحصُ السجلّ يعمل عليها الآن
+        # على نصّها المُصيَّر، **والحكمُ يُحسَب من ملاحظاته** بنفس قاعدة
+        # المسار العميق: تثبيتُ PASS هنا كان يجعل الحاجبَ عاجزاً عن الحجب
+        # على المسار الذي أُضيف من أجله (مراجعة §58).
+        _lf = _ledger_findings(view)
+        _severe = [f for f in _lf if not f["repairable"]]
+        return {"verdict": (FAIL if any(
+            f["check"] in effective_fail_triggers() for f in _severe)
+            else (WARN if _lf else PASS)),
+                "findings": _lf,
+                "methodology_notes": [f["note"] for f in _severe]}
 
     text = ((dr.get("report") or {}).get("text") or "")
     summaries = " ".join(str((m or {}).get("summary") or "")
@@ -6838,6 +6903,9 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_lpi_year_mismatch(dr)
     # لغة التاجر — تحذيري (سطح العميل يُصلَح حتمياً في silk_reports).
     findings += _check_plain_language(view, dr)
+    # الدرس ٢٦٢: مقابلةُ النصّ المُصيَّر بسجلّ الحقائق الواحد — تحذيريّة في
+    # وضع القياس، وحاجبةٌ تحت `SILK_LEDGER_ENFORCE` بعد محاولة الإصلاح.
+    findings += _ledger_findings(view)
 
     non_repairable = [f for f in findings if not f["repairable"]]
     guard_fired = [f for f in findings if f["check"] in _REGRESSION_GUARD_FIRED]

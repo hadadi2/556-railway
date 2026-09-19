@@ -131,6 +131,16 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
             return {"leads": [], "path": "gap",
                     "note": f"تعذّر جمع الروابط: {type(e).__name__}"}
 
+    def _build_ledger_safe(result: dict, lang: str) -> dict:
+        """سجلّ الحقائق **قبل الكاتب** (الدرس ٢٦٢) — عطلُه يعيد `{}` فيبقى
+        الموجّه كما كان حرفياً (إضافةٌ لا شرطُ تشغيل)."""
+        try:
+            import silk_fact_ledger
+            return silk_fact_ledger.build_ledger(result, lang)
+        except Exception as exc:  # noqa: BLE001 — لا تُسقِط تشغيلةً مدفوعة
+            log.warning("pre-writer ledger skipped: %s", exc)
+            return {}
+
     def _run_research_pipeline(market_ref, product: str, hs_code: str | None,
                                hs_note: str | None, product_card_dict: dict | None,
                                ai_ok: bool, ai_note: str, prefs: dict | None,
@@ -648,6 +658,13 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                                  if (_rp.get("status") == "succeeded"
                                      and (_rp.get("payload") or {}).get("report"))
                                  else None)
+                # الدرس ٢٦٢ — السجلُّ يُبنى **قبل** الكاتب: فتُكتب الخلاصةُ
+                # وكلُّ قسمٍ على الحقائق نفسِها التي ستُعرَض، والرموزُ الستة
+                # تصل الموجّه. صفرُ نداءٍ إضافي؛ عطلُه يُبقي السلوكَ كما كان.
+                _ledger = _build_ledger_safe(
+                    {"deep_research": {"missions": mission_reports},
+                     "markets": [{"decision": _deep_decision or {}}],
+                     "regulatory": _deep_reg or {}}, lang)
                 report_out = _saved_report if _saved_report is not None else (
                     write_reviewed_report(
                     mission_reports, analyst_input.get("summary", ""), verdict,
@@ -664,6 +681,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     # الكاتبُ يستلم منه سقفَ تسمية الثقة نفسَه الذي تفرضه
                     # بوّابةُ الجودة، فلا يُحجَب التقريرُ على طاعةِ الموجّه.
                     entry_decision=_deep_decision,
+                    ledger=_ledger,
                     on_stage=lambda s: silk_context.snapshot_research_progress(
                         analysis_id, s)) if ai_ok else
                     {"report": None, "review_cycles": 0, "unresolved_notes": []})
@@ -827,6 +845,10 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 # C5 (Command #5b): قائمة مستوردين/موزعين قابلين للتواصل
                 # (خرائط قوقل/Places + مرشّحو ويب) — تُعرَض في قسم الدخول.
                 "importer_leads": importer_leads,
+                # الدرس ٢٦٢: لقطةُ رموز السجلّ كما رآها الكاتب — يقرؤها العرضُ
+                # ليكشف ما تقادَم منها بدل ملئه بصمت.
+                "ledger_snapshot": (report_out or {}).get("ledger_snapshot") or {},
+                "ledger_unresolved": (report_out or {}).get("ledger_unresolved") or [],
                 "trace_id": research_run.get("trace_id"),
                 # P1 (حادثة نفاد الاعتمادات): سقف بلغ حدّه = إنهاء رشيق
                 # بفجوات معلنة، لا خطأ صلب — لكن يُذكَر صراحةً أيّ سقف.

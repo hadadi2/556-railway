@@ -138,6 +138,26 @@ def _margin_pct(price: float, landed: float) -> float:
     return round(100.0 * (price - landed) / price, 1) if price else 0.0
 
 
+def _coverage_line(matched: int, named: int, listings: int) -> str:
+    """سطرُ تغطية الأسعار الواحد — يذكر المرصودَ والمطابَقَ معاً.
+
+    الدرس ٢٦٢: «٣ أسعار مرصودة» في جدولٍ و«سعر غير مرصود» في خيطٍ ليسا
+    تناقضاً بل قياسان مختلفان — الجملةُ تسمّي الفرق فلا يُقرأ تعارضاً.
+    """
+    if not named:
+        if listings:
+            return (f"{listings} سعراً مرصوداً في السوق بلا منافسٍ مسمّى "
+                    "يُنسَب إليه — فعّل طبقة المنافسين لربط السعر باسمه")
+        return ("لا مرشحي منافسين مرصودين — فعّل طبقتي المنافسين "
+                "والأسعار لرصدهم")
+    line = f"{matched} من {named} منافساً لهم أسعار مرصودة"
+    unmatched = max(0, listings - matched)
+    if unmatched:
+        line += (f"، و{unmatched} سعراً مرصوداً في السوق لم يُطابَق باسم "
+                 "منافسٍ بعينه")
+    return line + " — لرفع التغطية فعّل طبقة التعميق"
+
+
 def correlate(row: dict, product_card: dict, product_name: str = "") -> dict:
     """اربط خيوط سوق واحد — correlate one market row around the user's product.
 
@@ -261,11 +281,12 @@ def correlate(row: dict, product_card: dict, product_name: str = "") -> dict:
         "feasibility_threads": feasibility_threads,
         "entry_thread": entry_thread,
         "contacts_thread": contacts_thread,
-        "coverage": (f"{observed} من {len(competitor_threads)} منافساً لهم "
-                     "أسعار مرصودة — لرفع التغطية فعّل طبقة التعميق"
-                     if competitor_threads else
-                     "لا مرشحي منافسين مرصودين — فعّل طبقتي المنافسين "
-                     "والأسعار لرصدهم"),
+        # الدرس ٢٦٢ — **جملةٌ واحدة تصالح الجدول والخيط**: كان الجدول يعرض
+        # أسعاراً مرصودة بينما خيطُ كل منافسٍ يقول «سعر غير مرصود» (بلاغ
+        # التقرير 6)، وكلاهما صادقٌ بذاته: السعرُ مرصودٌ في السوق لكنه لم
+        # يُطابَق باسم منافسٍ بعينه. الفرقُ يُقال صراحةً بدل أن يُقرأ تناقضاً.
+        "coverage": _coverage_line(observed, len(competitor_threads),
+                                   len(listings)),
         "note": ("خيوط مربوطة من نتائج الوكلاء في الذاكرة حصراً — صفر "
                  "استدعاءات خارجية؛ كل نقص معلن لا مُخمّن."),
     }

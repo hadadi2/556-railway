@@ -3871,6 +3871,58 @@ def create_app():
         return PlainTextResponse(text,
                                  media_type="text/markdown; charset=utf-8")
 
+    @app.get("/analyses/{analysis_id}/consistency")
+    def analysis_consistency(analysis_id: int, request: Request):
+        """الدرس ٢٦٢ — قياسُ اتساق تقريرٍ مخزَّن: السجلُّ الواحد وملاحظاتُه.
+
+        **قراءةٌ محضة**: تبني العرضَ وتشغّل فحصَ السجلّ على النصّ المُصيَّر
+        فعلاً — صفرُ كتابة، صفرُ نداءٍ مدفوع. بها يُقاس «قبل/بعد» على
+        الإنتاج (طلب المالك: التقرير 6 والتقارير السابقة) بلا إعادة تشغيل.
+        محروسةٌ بالمفتاح كبقية سطوح المشغّل.
+        """
+        _require_key(request)
+        _rate_limit(request)
+        found = silk_storage.get_analysis(analysis_id)
+        if found is None:
+            raise HTTPException(status_code=404,
+                                detail=f"analysis {analysis_id} not found")
+        from silk_render import build_view
+        import silk_fact_ledger as _FL
+        import silk_reports
+        view = build_view(found)
+        ledger = view.get("ledger") or {}
+        try:
+            findings = _FL.check(view, silk_reports.render_markdown(view))
+        except Exception as exc:  # noqa: BLE001 — قراءةٌ لا تُسقِط طلباً
+            raise HTTPException(status_code=503, detail=_redact_text(str(exc)))
+        dr = view.get("deep_research") or {}
+        return _json({
+            "analysis_id": analysis_id,
+            "enforcing": _FL.enforce(),
+            "findings": findings,
+            "finding_count": len(findings),
+            "stale": dr.get("ledger_stale") or [],
+            "unresolved": dr.get("ledger_unresolved") or [],
+            "entries": {k: {kk: e[kk] for kk in
+                            ("status", "value", "unit", "source", "year")}
+                        for k, e in (ledger.get("entries") or {}).items()},
+            "gaps": ledger.get("gaps") or []})
+
+    @app.get("/ops/ledger-stats")
+    def ops_ledger_stats(request: Request, n: int = 200):
+        """نسبةُ رفض المسوّدات بسبب السجلّ (الشرط ٣) — من سجلّ المشغّل.
+
+        قراءةٌ محضة: تعدّ أحداث `ledger_draft_reject` المسجَّلة، فيقرأ المالكُ
+        كلفةَ البوّابة على التشغيلات الحقيقية قبل تفعيل الإنفاذ.
+        """
+        _require_key(request)
+        _rate_limit(request)
+        import silk_ops_log
+        rows = silk_ops_log.last_errors(max(1, min(1000, int(n or 200))))
+        rejects = [r for r in rows if r.get("kind") == "ledger_draft_reject"]
+        return _json({"window": len(rows), "rejects": len(rejects),
+                      "recent": rejects[:10]})
+
     @app.get("/analyses/{analysis_id}/writer-diagnostics")
     def writer_diagnostics(analysis_id: int, request: Request):
         """أحداث `report_call` الخام لتشغيلة — الدليل غير المُطهَّر لفشل الكاتب.

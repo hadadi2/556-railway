@@ -1211,6 +1211,35 @@ def exec_summary(view: dict) -> list[str]:
     return [p1, p2, p3]
 
 
+def count_sentence(n: int, one: str, two: str, plural: str,
+                   acc_sing: str) -> str:
+    """عددٌ ومعدودٌ بمطابقة العربية — «شرط واحد»، «شرطان»، «ثلاثة شروط»،
+    «أحد عشر شرطاً». الدرس ٢٦٢: استبدالُ الرقم وحده في جملةٍ مكتوبة يُنتِج
+    «2 شروط»؛ الصيغةُ تُبنى كاملةً من العدد.
+    """
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        n = 0
+    if n <= 0:
+        return f"لا {plural}"
+    if n == 1:
+        return f"{one} واحد"
+    if n == 2:
+        return two
+    if n <= 10:
+        return f"{_AR_ONES[n]} {plural}"
+    return f"{_AR_TEENS.get(n, str(n))} {acc_sing}"
+
+
+#: أسماء الأعداد ٣–١٠ (تُضاف للجمع) و١١–١٩ (تُضاف للمفرد المنصوب).
+_AR_ONES = {3: "ثلاثة", 4: "أربعة", 5: "خمسة", 6: "ستة", 7: "سبعة",
+            8: "ثمانية", 9: "تسعة", 10: "عشرة"}
+_AR_TEENS = {11: "أحد عشر", 12: "اثنا عشر", 13: "ثلاثة عشر",
+             14: "أربعة عشر", 15: "خمسة عشر", 16: "ستة عشر",
+             17: "سبعة عشر", 18: "ثمانية عشر", 19: "تسعة عشر"}
+
+
 def brief_lines(view: dict) -> list[str]:
     """سطور المختصر البشرية — بديل شعارات «القرار: X (ثقة 0.52)» الآلية."""
     d = view.get("decision") or {}

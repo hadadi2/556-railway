@@ -1293,7 +1293,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                 on_attempt: "Callable[[], None] | None" = None,
                 seed_draft: str | None = None,
                 revision_draft: str | None = None,
-                entry_decision: dict | None = None) -> str | None:
+                entry_decision: dict | None = None,
+                ledger: dict | None = None) -> str | None:
     """اكتب تقرير البحث العميق — the 11-section international-structure report
     (وكيل الكتابة، الموجة ١٠ — أسلوب Euromonitor/ESOMAR).
 
@@ -1366,6 +1367,20 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     if _voice:
         contract = contract + "\n\n" + _voice
     facts = _isolate(_facts(list(mission_reports.values())))
+    # الدرس ٢٦٢ — سجلّ الحقائق الواحد يصل الكاتب: ستةُ معطياتٍ برموزها
+    # (لا يكتب لها قيمةً ولا حالة)، وبقيتُها بقيمتها ليكتبها بصيغته الطبيعية
+    # فتُفحَص بعدها بتسامح التقريب. بلا سجلّ لا يُلحَق حرف.
+    _ledger_rule = ""
+    if ledger and (ledger.get("entries") or {}):
+        try:
+            import silk_fact_ledger as _FL
+            _ledger_rule = (_FL.LEDGER_TOKEN_RULE_EN if lang == "en"
+                            else _FL.LEDGER_TOKEN_RULE)
+            facts = (facts + "\n\n[LEDGER]\n"
+                     + _isolate(_FL.facts_block(ledger, lang)))
+        except Exception as _le:  # noqa: BLE001 — السجلُّ إضافةٌ لا شرطُ كتابة
+            log.warning("ledger block skipped: %s", _le)
+            _ledger_rule = ""
     # الصنف ٦ (موجة عيوب التقرير) — **خلف رايةٍ مطفأةٍ افتراضياً**: الأرقامُ
     # تصل الكاتبَ بمعرّفاتٍ ثابتة ([F1]، [F2]…) فيصير تعارضُ قراءتين قابلاً
     # للكشف بدل أن يُنسَخ الرقمُ مرّتين بقيمتين. بلا الراية يبقى مسارُ
@@ -1407,6 +1422,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         contract,
         # الصنف ٦: قاعدةُ هويةِ الرقم — فارغةٌ بلا الراية فلا تُغيّر الموجّه.
         *([_figure_rule] if _figure_rule else []),
+        # الدرس ٢٦٢: قاعدةُ رموز السجلّ — فارغةٌ بلا سجلّ.
+        *([_ledger_rule] if _ledger_rule else []),
         # الصنف ٩: قاعدةُ إسنادِ الرقم المشتقّ — كذلك فارغةٌ بلا رايتها.
         *([_derived_rule] if _derived_rule else []),
         "قارن أسعار عروض تطابق نوع المنتج وشكله الفعلي فقط. لا تغيّر اسم "
@@ -3025,6 +3042,48 @@ def _heading_sample(text: str) -> str:
     return " | ".join(hits[:_HEADING_SAMPLE_MAX_LINES]) or "—"
 
 
+def _ledger_revision_budget(ledger: dict | None) -> int:
+    """سقفُ إعادات الكتابة بسبب السجلّ — صفرٌ بلا سجلّ (لا نداءَ جديد)."""
+    if not ledger:
+        return 0
+    try:
+        import silk_fact_ledger as _FL
+        return _FL.max_revisions()
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+def _ledger_draft_issues(draft: str | None, ledger: dict | None) -> list:
+    """مخالفاتُ المسوّدة مقابل السجلّ — قائمةٌ فارغة بلا سجلّ أو عند عطل."""
+    if not draft or not ledger:
+        return []
+    try:
+        import silk_fact_ledger as _FL
+        return _FL.draft_issues(draft, ledger)
+    except Exception as exc:  # noqa: BLE001 — البوّابةُ لا تُسقِط كتابة
+        log.warning("ledger draft gate skipped: %s", exc)
+        return []
+
+
+def _record_ledger_reject(issues: list, trace_id: str | None) -> None:
+    """قِس نسبةَ الرفض (الشرط ٣): حدثٌ في الأثر وسطرٌ في سجلّ المشغّل."""
+    try:
+        if trace_id:
+            import silk_trace
+            silk_trace.append_event(trace_id, event="ledger_draft_reject",
+                                    issue_count=len(issues),
+                                    issues=[str(i)[:160] for i in issues[:5]])
+        import silk_ops_log
+        from silk_render import _strip_internal_plumbing
+        silk_ops_log.record_error(
+            "ledger_draft_reject",
+            _strip_internal_plumbing("؛ ".join(str(i) for i in issues[:3]))
+            or "مخالفةُ سجلٍّ بلا نصّ",
+            context={"trace_id": trace_id, "issue_count": len(issues)})
+    except Exception as exc:  # noqa: BLE001 — قناةُ قياسٍ جانبية
+        log.warning("ledger reject not recorded: %s", exc)
+
+
 def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                           verdict: dict, product: str, market_name: str,
                           max_cycles: "int | None" = None,
@@ -3037,7 +3096,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                           product_card: dict | None = None,
                           seed_draft: str | None = None,
                           importer_leads: dict | None = None,
-                          entry_decision: dict | None = None) -> dict:
+                          entry_decision: dict | None = None,
+                          ledger: dict | None = None) -> dict:
     """حلقة الكتابة والمراجعة — Writer → Reviewer.
 
     `lang` (الموجة ٠): لغة التقرير المولَّد — تُمرَّر للكاتب والمراجع معاً فلا
@@ -3099,7 +3159,7 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                         lang=lang, product_card=product_card,
                         on_attempt=lambda: _stage("writer"),
                         seed_draft=seed_draft,
-                        entry_decision=entry_decision)
+                        entry_decision=entry_decision, ledger=ledger)
     draft = _decision_language(draft)
     if not draft:
         out = {"report": None, "review_cycles": 0, "unresolved_notes": [],
@@ -3151,6 +3211,31 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     notes: list = []
     review_status = "unavailable"
     cycles = 0
+    # الدرس ٢٦٢ — بوّابةُ المسوّدة الحتمية (قبل التخزين لا عند التصدير):
+    # رقمٌ عارٍ أو إعلانُ غيابٍ لمعطىً إلزاميِّ الرمز، ورقمٌ طبيعيّ يخالف
+    # السجلّ خارج تسامح التقريب. سقفُ محاولاتها معلَنٌ (`max_revisions`)،
+    # وبلوغُه **لا يُهدِر التشغيلة**: تُسلَّم موسومةً `ledger_unresolved`
+    # بقائمة المخالفات، ويُعالِجها `repair` عند العرض.
+    _ledger_budget = _ledger_revision_budget(ledger)
+    _ledger_unresolved: list = []
+    for _ in range(_ledger_budget + 1):
+        _ledger_unresolved = _ledger_draft_issues(draft, ledger)
+        if not _ledger_unresolved or _ledger_budget <= 0:
+            break
+        _record_ledger_reject(_ledger_unresolved, trace_id)
+        _stage("writer")
+        fixed = deep_report(mission_reports, analyst_summary, verdict, product,
+                            market_name, review_notes=_ledger_unresolved,
+                            trace_id=trace_id, hs_code=hs_code,
+                            hs_confirmation=hs_confirmation, style=style,
+                            lang=lang, product_card=product_card,
+                            on_attempt=lambda: _stage("writer"),
+                            revision_draft=draft,
+                            entry_decision=entry_decision, ledger=ledger)
+        if not fixed or _writer_incomplete(fixed, lang):
+            break
+        draft = _decision_language(fixed)
+        _ledger_budget -= 1
     for cycles in range(1, max(1, max_cycles) + 1):
         _stage("reviewer")
         review = review_report(draft, mission_reports, trace_id=trace_id,
@@ -3178,15 +3263,30 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             lang=lang, product_card=product_card,
                             on_attempt=lambda: _stage("writer"),
                             revision_draft=draft,
-                            entry_decision=entry_decision)
+                            entry_decision=entry_decision, ledger=ledger)
         if fixed:
             fixed = _decision_language(fixed)
             if _writer_incomplete(fixed, lang):
                 notes = list(notes) + ["لم يكتمل التنقيح؛ حُفظت المسوّدة الكاملة السابقة بملاحظاتها."]
                 break
             draft = fixed
-    return {"report": draft, "review_cycles": cycles, "unresolved_notes": notes,
-            "review_status": review_status}
+    # مراجعة §58: تنقيحُ المراجع يُعيد كتابة النصّ **بعد** بوّابة السجلّ،
+    # فكانت `ledger_unresolved` واللقطةُ تصفان مسوّدةً لم تُسلَّم. تُعاد
+    # القراءةُ هنا على النصّ النهائيّ فعلاً — قياسٌ بلا نداءٍ إضافيّ.
+    _ledger_unresolved = _ledger_draft_issues(draft, ledger)
+    out = {"report": draft, "review_cycles": cycles,
+           "unresolved_notes": notes, "review_status": review_status}
+    # الدرس ٢٦٢: لقطةُ الرموز التي استعملها الكاتب فعلاً — تُخزَّن مع التقرير
+    # فيُقارَن بها السجلُّ عند كل عرض (قِدَمُ معطىً يُعلَّم ولا يُملأ بصمت).
+    if ledger:
+        try:
+            import silk_fact_ledger as _FL
+            out["ledger_snapshot"] = _FL.snapshot_for(draft or "", ledger)
+        except Exception as _se:  # noqa: BLE001 — اللقطةُ إضافةٌ لا شرط
+            log.warning("ledger snapshot skipped: %s", _se)
+    if _ledger_unresolved:
+        out["ledger_unresolved"] = list(_ledger_unresolved)
+    return out
 
 
 # صف «المراجع» في لوحة إعدادات الوكلاء — تسجيل إضافي (نفس نمط silk_missions).

@@ -221,8 +221,14 @@ def open_conditions(ed: object, cap: "int | None" = None) -> dict:
     """
     items = [str(c) for c in ((ed or {}).get("conditions") or [])
              if str(c).strip()] if isinstance(ed, dict) else []
-    limit = (OPEN_CONDITIONS_CAP if open_conditions_single()
-             else (cap if isinstance(cap, int) else None))
+    # الدرس ٢٦٢: **سقفُ عرضٍ واحد** لكل السطوح (كان 3/4/6/بلا سقف حسب
+    # المُنادي، فيبدو عددُ الشروط مختلفاً في أقسامٍ من تقريرٍ واحد). العددُ
+    # الكامل `count` كان صادقاً دوماً؛ المعروضُ هو ما تباعد. `cap` يبقى في
+    # التوقيع لمُنادٍ يريد سقفاً أضيق صراحةً، ولا مُنادي إنتاجيّ يستعمله.
+    limit = OPEN_CONDITIONS_CAP if cap is None or cap >= OPEN_CONDITIONS_CAP \
+        else cap
+    if open_conditions_single():
+        limit = OPEN_CONDITIONS_CAP
     shown = items[:limit] if isinstance(limit, int) else list(items)
     hidden = len(items) - len(shown)
     note = ""
@@ -826,6 +832,15 @@ def _section_dps(row: dict, sec: str) -> list[dict]:
                         "value": pt.get("value"),
                         "note": f"سنة {pt.get('year')} من خط الاتجاه"})
         _walk_dps(row.get("trends"), dps)      # إشارة Google Trends
+        # الدرس ٢٦٢: النموُّ ومعدّلُه المركّب **حقائقُ اتجاهٍ محسوبةٌ فعلاً**
+        # من حزمة البحث (`MarketSizeAgent`) — استبعادُهما كان يُنتِج «بيانات
+        # غير كافية لقسم الاتجاه» في تقريرٍ يطبع معدّل النمو نفسَه.
+        research = row.get("research") or {}
+        _ms = (research.get("agents") or {}).get("market_size") or {}
+        for f in (_ms.get("findings") or []):
+            if isinstance(f, dict) and f.get("metric") in (
+                    "import_growth_pct", "import_cagr_pct"):
+                _walk_dps(f, dps)
     elif sec == "pricing":
         for f in _SECTION_FIELDS.get(sec, ()):
             _walk_dps(row.get(f), dps)
@@ -2824,7 +2839,8 @@ def _incomplete_banner(missing: list, lang: str = "ar") -> str:
             "مبتور). القرار والأقسام المكتوبة سليمة.")
 
 
-def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
+def _deep_research_view(result: dict, lang: str = "ar",
+                        _ledger: dict | None = None) -> dict | None:
     """قسم البحث العميق (الموجة ٤، V5) — إضافي بحت، لا يمسّ أي مفتاح قائم.
 
     `lang` (الموجة ٠) يحكم **العرض وحده**: التصنيفات والأرقام والحكم الحتمي
@@ -3103,7 +3119,25 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
     # يُنتج نصّاً مختلطاً تحجبه البوابةُ الحاجزة، فلا يخرج تقريرٌ أصلاً.
     # وليست حاجةً هناك أصلاً: عقدُ الكاتب الإنجليزيّ يفرض شرحَ الاختصار **عند
     # أوّل ورود** داخل النثر نفسه (§34) — فالنصّ مفهومٌ بذاته بلا حَقن.
-    _clean_report = _strip_internal_plumbing(report_out.get("report"), lang)
+    # الدرس ٢٦٢ — **ملءُ رموز السجلّ أوّلاً، قبل أيّ مُطهِّر**: الرموزُ
+    # داخليةٌ بين الكاتب والمخزن حصراً، ومُطهِّرُ السباكة يعرّب أسماءها
+    # الإنجليزية فيُفسِدها قبل ملئها (قِياسٌ على هذه الدالّة كشفه). تُملأ
+    # هنا مرّةً واحدة فلا يصل قوسٌ أيَّ مُصدِّر. وما تقادَم من المعطيات منذ
+    # الكتابة **لا يُملأ بصمت**: يُسجَّل في `ledger_stale` ويُعلَّم.
+    _raw_report = report_out.get("report")
+    _ledger_stale: list = []
+    _ledger_bind: dict = {}
+    if _ledger and _raw_report:
+        try:
+            import silk_fact_ledger as _FL
+            _ledger_stale = _FL.stale_keys(dr.get("ledger_snapshot") or {},
+                                           _ledger)
+            _ledger["stale"] = _ledger_stale
+            _raw_report, _ledger_bind = _FL.bind(str(_raw_report), _ledger,
+                                                 lang)
+        except Exception as _be:  # noqa: BLE001 — الملءُ لا يُسقِط عرضاً
+            log.warning("ledger bind skipped: %s", _be)
+    _clean_report = _strip_internal_plumbing(_raw_report, lang)
     # الدرس ٢٦١ — نقطةُ التطبيع **عند القراءة**: تقريرٌ مخزَّنٌ كتب الكاتبُ
     # عناوينَه بصيغةٍ أخرى (`# N)` بدل `## N.`) كان يُقرَأ صفرَ أقسامٍ فيُطلِق
     # حاجبَي البنية وقسمِ العميل معاً ويُحجَب تنزيلُه (409) — رغم أنّ نصَّه
@@ -3283,6 +3317,11 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
             ((result.get("market") or {}).get("name_ar") if lang == "ar"
              else (result.get("market") or {}).get("name_en")) or "",
             lang, (dr.get("verdict") or {}).get("decision_missing_components")),
+        # الدرس ٢٦٢: ما تقادَم من معطيات السجلّ منذ كتابة التقرير — يقرؤه
+        # المدقّقُ والبوّابة، وتُبنى عليه إعادةُ التوليد تحت الإنفاذ.
+        "ledger_stale": _ledger_stale,
+        "ledger_bind": _ledger_bind,
+        "ledger_unresolved": dr.get("ledger_unresolved") or [],
         "report": {"text": _report_text_glossed,
                   "review_cycles": report_out.get("review_cycles", 0),
                   "unresolved_notes": clean_unresolved,
@@ -3972,6 +4011,16 @@ def _regulatory_state(result: dict) -> dict:
             "access_timeline": timeline}
 
 
+def _ledger_safe(result: dict, lang: str = "ar") -> dict:
+    """سجلّ الحقائق بغلافٍ آمن (الدرس ٢٦٢) — عطلُه لا يُسقِط تصييراً."""
+    try:
+        import silk_fact_ledger
+        return silk_fact_ledger.build_ledger(result, lang)
+    except Exception as exc:  # noqa: BLE001 — إضافةٌ لا شرطُ عرض
+        log.warning("fact ledger skipped: %s", exc)
+        return {}
+
+
 def build_view(result: dict, lang: str = "ar") -> dict:
     """ابنِ نموذج العرض القانوني — the ONE canonical view-model (vision §10.1).
 
@@ -4096,6 +4145,10 @@ def build_view(result: dict, lang: str = "ar") -> dict:
     # إفصاحُ مصدر الرمز يظهر على مسار /analyze أيضاً لا على /research وحده
     # (لا إصلاحَ على مسارٍ واحد — الدرسان ٣٥/٣٧). عند وجود بحثٍ عميق يكون
     # السطرُ محقوناً سلفاً في حدوده، فيُمنَع التكرار أدناه.
+    # الدرس ٢٦٢ — سجلّ الحقائق الواحد: يُبنى مرّةً **قبل** الحدود والفجوات
+    # فيقرأ منه كلُّ سطح (الأقسام الحتمية، الخلاصة، جدول النواقص، ونثرُ
+    # الكاتب بعد ملء رموزه). أيُّ عطلٍ يترك العرضَ كما كان — إضافةٌ لا شرط.
+    _ledger = _ledger_safe(result, lang)
     hs_prov = _hs_provenance(result)
     limits = [f"{m['country']}: {_humanize_gap_note(f)}" for m in markets[:5]
               for f in (m.get("quality_flags") or [])]
@@ -4104,7 +4157,7 @@ def build_view(result: dict, lang: str = "ar") -> dict:
                      if result.get("hs_note")
                      else silk_i18n.t("limit_unclassified", lang))
     # قسم البحث العميق (الموجة ٤، V5) — إضافي بحت؛ None لتحليل /analyze عادي.
-    dr_view = _deep_research_view(result, lang)
+    dr_view = _deep_research_view(result, lang, _ledger)
     if dr_view:
         # HF3: حارسُ المعقولية عبر المصادر — يقارن المقاديرَ المكشوطة (حجم سوقٍ)
         # بمرتكزات التشغيلة المُتحقَّقة (واردات/سكان) قبل التصيير، فيُسجّل العلاماتِ
@@ -4190,6 +4243,8 @@ def build_view(result: dict, lang: str = "ar") -> dict:
         "brief": (_deep_research_brief(dr_view, lang) if dr_view
                  else _brief(decision, cp, lang)),
         "limits": limits,
+        # الدرس ٢٦٢: السجلّ الواحد — إضافيٌّ بحت، ومستهلكوه يقرأون منه.
+        "ledger": _ledger,
         "provenance": _provenance(result),   # Stage 2A: لا فشل صامتاً
         # اقتصاد البيانات (persist-5): عدّاد مرصود — مخزن/ذاكرة مقابل جلب حي.
         "data_economics": result.get("data_economics"),
@@ -4255,7 +4310,7 @@ def render_text(view: dict) -> str:
                  f"— النقاط {_sc_txt} — الثقة "
                  f"{confidence_phrase(ed.get('confidence'))} — {ed.get('why')}")
         # الصنف ٧: المصدرُ الواحد — السقفُ القائم (٣) يبقى مطفأةً.
-        _oc = open_conditions(ed, 3)
+        _oc = open_conditions(ed)
         for c in _oc["shown"]:
             L.append(f"  شرط: {c}")
         if _oc["more_note"]:
@@ -4397,7 +4452,7 @@ def analysis_context(result: dict, max_chars: int = 6000) -> str:
             L.append(f"فجوة {k_ar}: {_humanize_gap_note(g)}")
     ed = top.get("entry_decision") or {}
     # الصنف ٧: المصدرُ الواحد — السقفُ القائم (٤) يبقى مطفأةً.
-    _oc = open_conditions(ed, 4)
+    _oc = open_conditions(ed)
     for cnd in _oc["shown"]:
         L.append(f"شرط مفتوح: {cnd}")
     if _oc["more_note"]:

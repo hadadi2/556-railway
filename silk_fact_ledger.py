@@ -1,0 +1,1040 @@
+"""سجلّ الحقائق الواحد — one fact ledger for every report surface (الدرس ٢٦٢).
+
+**الجذر المُعالَج (بلاغ المالك 2026-09-19، التقرير 6):** كل قسم كان يعيد
+استخراج الحقيقة بنفسه — قسم الاقتصاد يقرأ التعرفة بـregex فوق نثر البعثة
+بمفردات «تعرفة» فتفوته «التعريفة المطبَّقة» ويعلن «0% — غير متاحة» بينما
+القسم ٧ يطبع 25%؛ عدد الشروط يُعرض بخمسة سطوح بسقوف مختلفة؛ خيط المنافس
+يقول «سعر غير مرصود» والجدول يعرض أسعاراً؛ النمو محسوب في مكوّن ومعلَن
+ناقصاً في قسم آخر. مسارُ استخراجٍ ثانٍ = تناقضٌ حتميّ عاجلاً أو آجلاً.
+
+**القاعدة:** الاستخراج يقع **مرة واحدة** هنا (`build_ledger`)، وكلُّ سطح —
+الأقسام الحتمية، الخلاصة، جدول النواقص، ونثرُ الكاتب — يقرأ النتيجة نفسها.
+
+**نثر الكاتب — النهج المختلط (قرار المالك):**
+- ستة معطيات **رموزٌ إلزامية** لا يكتب الكاتب لها قيمة ولا حالة من عنده:
+  التعرفة، عدد الشروط المفتوحة، عدد بنود الاشتراطات، حالة أي معطى
+  (`{{status:key}}`)، الشرط الحاجب، السنة الأحدث للسلسلة. التصيير يملؤها
+  (`bind`) بجمل سليمة لغوياً حسب الحالة والعدد.
+- بقية الأرقام يكتبها الكاتب بصيغته الطبيعية (تقريب، مقارنات) وتُفحص بعد
+  الكتابة (`draft_issues`) مقابل السجلّ بتسامح التقريب؛ المخالفة تُعاد
+  صياغتها جملةً وحدها داخل حلقة المراجع قبل التخزين.
+- الرموز **داخلية حصراً**: لا تصل أي سطح عميل (كل مُصدِّر يقرأ نصاً مملوءاً
+  من `build_view`، وحارس التصدير يرفض `{{` متبقّية).
+- **لقطة** للرموز التي استخدمها الكاتب فعلاً تُخزَّن مع التقرير
+  (`snapshot_for`)؛ عند العرض إن اختلفت عن السجلّ الحالي لا يُملأ بصمت:
+  يُعلَّم القسم قديماً (`stale_keys`) ويُعاد التوليد في الخلفية تحت الإنفاذ.
+- **الأرقام المشتقة:** كل رقم إمّا مفتاح هنا (يُفحص بالتسامح) أو مسموح
+  صراحةً في `DERIVED_ALLOWED`.
+
+**التقارير المخزونة قبل الفكس** (نص بلا رموز): `check` شبكة أمان — وضع
+القياس افتراضاً (تحذيري، يُسجَّل)، والإنفاذ خلف `SILK_LEDGER_ENFORCE=1`
+بإصلاح تلقائي من السجلّ أولاً (`repair`، إعادة صياغة الجملة كاملة) ثم حجب
+ما لم يُصلَح.
+
+stdlib فقط؛ الاستيرادات الداخلية كسولة (كل وحدة تُستورد بلا مفتاح ولا شبكة).
+"""
+from __future__ import annotations
+
+import os
+import re
+
+ENFORCE_FLAG = "SILK_LEDGER_ENFORCE"
+MAX_REVISIONS_FLAG = "SILK_LEDGER_MAX_REVISIONS"
+TOKEN_RE = re.compile(r"\{\{\s*(status:)?([a-z_]+)(:sentence)?\s*\}\}")
+
+OBSERVED, WEAK, MISSING = "observed", "weak", "missing"
+
+#: المفاتيح القانونية بترتيب العرض — (المفتاح، التسمية العربية، الإنجليزية،
+#: الوحدة، مفردات التعرّف عليها في النص).
+KEYS: tuple = (
+    ("market_imports_usd", "واردات السوق", "market imports", "USD",
+     ("واردات السوق", "إجمالي الواردات", "الواردات المصرَّحة", "TAM",
+      "market imports")),
+    ("imports_latest_year", "أحدث سنة بيانات للواردات",
+     "latest imports data year", "", ()),
+    ("import_growth_pct", "نمو الواردات", "imports growth", "%",
+     ("نمو الواردات", "نمو السوق", "imports growth", "market growth")),
+    ("import_cagr_pct", "معدل النمو السنوي المركّب", "import CAGR", "%",
+     ("معدل النمو السنوي المركّب", "نمو مركّب", "CAGR")),
+    ("saudi_share_pct", "الحصة السعودية", "Saudi share", "%",
+     ("الحصة السعودية", "حصة السعودية", "تستحوذ السعودية", "Saudi share")),
+    ("hhi", "مؤشر تركّز المورّدين", "supplier concentration (HHI)", "",
+     ("مؤشر التركّز", "تركّز المورّدين", "HHI")),
+    ("top_supplier_share_pct", "حصة المورّد الأكبر", "top supplier share",
+     "%", ("حصة المورّد الأكبر", "أكبر مورّد", "top supplier")),
+    ("border_price_usd_kg", "متوسط سعر الاستيراد الحدودي",
+     "border unit value", "USD/kg",
+     ("سعر الاستيراد الحدودي", "سعر الوحدة عند الحدود", "سعر الحدود",
+      "border unit value")),
+    ("tariff_applied_pct", "الرسوم الجمركية المطبَّقة", "applied tariff",
+     "%", ("الرسوم الجمركية", "التعرفة", "التعريفة", "الرسم الجمركي",
+           "tariff", "customs duty")),
+    ("per_capita_income_usd", "دخل الفرد", "GDP per capita", "USD",
+     ("دخل الفرد", "نصيب الفرد", "per capita")),
+    ("population", "عدد السكان", "population", "",
+     ("عدد السكان", "population")),
+    ("open_conditions", "الشروط المفتوحة", "open conditions", "",
+     ("الشروط المفتوحة", "شروط مفتوحة", "open conditions")),
+    ("requirements_count", "بنود الاشتراطات", "entry requirements", "",
+     ("بنود الاشتراطات", "قائمة الاشتراطات", "entry requirements")),
+    ("competitor_prices", "أسعار المنافسين", "competitor prices", "",
+     ("أسعار المنافسين", "competitor prices")),
+    ("blocking_condition", "الشرط الحاجب", "blocking condition", "",
+     ("الشرط الحاجب", "blocking condition")),
+)
+_KEY_ROWS = {k[0]: k for k in KEYS}
+
+#: الرموز الإلزامية الستة (قرار المالك) — الكاتب لا يكتب لها قيمة ولا حالة.
+MANDATORY_TOKEN_KEYS: tuple = ("tariff_applied_pct", "open_conditions",
+                               "requirements_count", "blocking_condition",
+                               "imports_latest_year")
+#: `{{status:key}}` السادس — حالة أي مفتاح.
+
+#: الأرقام المشتقة المسموح بها صراحةً في النثر بلا مفتاح: سياقاتٌ يُقاس
+#: بها الرقم (إن وقعت كلمةٌ منها في جملة الرقم لا يُعَدّ رقماً عارياً).
+DERIVED_ALLOWED: tuple = (
+    "الشحنة التجريبية", "كلفة الدخول", "نقطة التعادل", "أقصى خسارة",
+    "أقصى سعر مصنع", "التكلفة الواصلة", "حصة", "نصيب", "سنة", "عام",
+    "trial shipment", "entry cost", "break-even", "maximum loss", "share",
+)
+
+# مفردات الغياب التي يُسمَح بها لأي سطح — ما ليس هنا تحظره البوابة أصلاً.
+_ABSENCE_RE = re.compile(
+    r"غير\s*متاح(?:ة)?|غير\s*محسوب(?:ة)?|لم\s*نتمكّن|لم\s*نتمكن|لم\s*يُرصد"
+    r"|لم\s*يرصد|غير\s*مرصود(?:ة)?|not\s+available|unavailable|not\s+computed",
+    re.IGNORECASE)
+_NUM_RE = re.compile(r"(?<![\w.])(\d{1,3}(?:[,\d]{0,12})(?:\.\d+)?)\s*(%|٪|مليون|مليار|ألف|million|billion)?")
+_YEAR_RE = re.compile(r"\b(20\d\d|19\d\d)\b")
+_WINDOW = 70
+#: نافذةُ **مطابقة القيمة** أضيق من نافذة الحالة: رقمٌ بعيدٌ عن التسمية
+#: غالباً رقمُ مفهومٍ آخر في الجملة نفسها (قِياسٌ على المدوّنات: «حصة
+#: السعودية المنخفضة مقابل نمو السوق 9.3%» — الرقمُ نموٌّ لا حصة).
+_VALUE_WINDOW = 45
+#: فاصلٌ يمنع المطابقة: تعريفٌ أو عتبةٌ أو مفهومٌ آخر بين التسمية والرقم.
+#: العيبُ المرصود (الدرس ٢٣٩ نفسُه): «HHI مؤشر يقيس تركّز السوق — فوق 2500
+#: يعني سوقاً مركّزاً» ليس قراءةَ تركّزٍ لهذا السوق بل تعريفَ المقياس.
+_DEFINITION_RE = re.compile(
+    r"يعني|يقيس|مقياس|عتبة|تعريف|فوق|أعلى\s*من|دون|أقل\s*من|بين|مثال"
+    r"|means|measures|threshold|above|below|scale")
+_TOLERANCE = 0.02
+_SENT_SPLIT_RE = re.compile(r"(?<=[.؛!؟\n])")
+_SCALE = {"مليون": 1e6, "million": 1e6, "مليار": 1e9, "billion": 1e9,
+          "ألف": 1e3}
+
+
+def enforce() -> bool:
+    """هل وضعُ الإنفاذ مفعّل؟ — افتراضاً لا (قياس فقط، قرار المالك)."""
+    return os.environ.get(ENFORCE_FLAG, "").strip().lower() in ("1", "true",
+                                                                "yes", "on")
+
+
+def max_revisions() -> int:
+    """سقف دورات التنقيح بسبب السجلّ — افتراضه ١، أقصاه ٢ (الشرط ٣)."""
+    try:
+        n = int(os.environ.get(MAX_REVISIONS_FLAG, "1"))
+    except ValueError:
+        n = 1
+    return max(0, min(2, n))
+
+
+# ── مساعدات القراءة · readers ────────────────────────────────────────────────
+
+def _g(obj: object, key: str, default=None):
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _num(v: object) -> "float | None":
+    if v is None or isinstance(v, bool):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+#: مفاتيحُ يحسبها المحرّكُ حتمياً من مدخلاتٍ مُسنَدةٍ سلفاً (لا مصدرَ خارجيّ
+#: لها فلا تُصنَّف درجةَ مصدر): عددُ الشروط والشرطُ الحاجب.
+_ENGINE_COMPUTED = frozenset({"open_conditions", "blocking_condition"})
+
+
+def _entry(key: str, value=None, *, source: str = "", confidence=None,
+           note: str = "", year=None, unit: str | None = None,
+           mirrored: bool = False, origin: str = "", items=None) -> dict:
+    """بندُ سجلّ واحد بحالته المحسوبة — الحالة **لا تُصرَّح** من المصدر."""
+    row = _KEY_ROWS[key]
+    if value is None and not items:
+        status = MISSING
+    elif key in _ENGINE_COMPUTED:
+        status = OBSERVED
+    else:
+        from silk_fact_records import classify_tier
+        from silk_narrative import EVIDENCE_SECONDARY_MIN
+        tier = classify_tier(source, note)
+        conf = _num(confidence)
+        weak = (tier in ("C", "X") or mirrored
+                or (conf is not None and conf < EVIDENCE_SECONDARY_MIN))
+        status = WEAK if weak else OBSERVED
+    return {"key": key, "label_ar": row[1], "label_en": row[2],
+            "unit": unit if unit is not None else row[3],
+            "status": status, "value": value, "items": items,
+            "source": str(source or ""), "confidence": _num(confidence),
+            "note": str(note or ""), "year": year, "mirrored": bool(mirrored),
+            "origin": origin}
+
+
+def _dp_entry(key: str, dp: object, origin: str, *, value=None) -> dict:
+    d = dp if isinstance(dp, dict) else {
+        "value": _g(dp, "value"), "source": _g(dp, "source", ""),
+        "confidence": _g(dp, "confidence"), "note": _g(dp, "note", ""),
+        "status": _g(dp, "status", ""), "data_year": _g(dp, "data_year")}
+    src = str(d.get("source") or "")
+    st = str(d.get("status") or "")
+    mirrored = ("مرآة" in src or "mirror" in src.lower() or st == "mirrored")
+    return _entry(key, d.get("value") if value is None else value,
+                  source=src, confidence=d.get("confidence"),
+                  note=str(d.get("note") or ""), year=d.get("data_year"),
+                  mirrored=mirrored, origin=origin)
+
+
+def _bundle_finding(row: dict, agent: str, metric: str) -> "dict | None":
+    """اكتشافٌ من حزمة البحث الحتمية (`row["research"]["agents"]`) بشكل
+    `{metric, value, sources[], note}` → dict بشكل DataPoint."""
+    research = row.get("research") or {}
+    findings = ((research.get("agents") or {}).get(agent) or {}).get("findings") or []
+    for f in findings:
+        if _g(f, "metric") != metric:
+            continue
+        srcs = _g(f, "sources") or []
+        s0 = srcs[0] if srcs and isinstance(srcs[0], dict) else {}
+        return {"value": _g(f, "value"), "source": str(s0.get("source") or ""),
+                "confidence": s0.get("confidence"), "note": _g(f, "note", ""),
+                "status": "", "data_year": s0.get("data_year")}
+    return None
+
+
+# ── البناء · build ───────────────────────────────────────────────────────────
+
+def build_ledger(result: dict, lang: str = "ar") -> dict:
+    """ابنِ السجلّ من النتيجة الخام (المسارين معاً) — نقيّ، بلا شبكة.
+
+    /research: بعثات `deep_research` عبر مستخلِصات `silk_deep_pillars`
+    (المصدر الوحيد للأعمدة أيضاً) + مفردات التعرفة الموسَّعة دائماً.
+    /analyze: صفّ السوق الأعلى — حزمة البحث الحتمية + DataPoints الطبقات.
+    أي عطل في مفتاح = بند `missing` بملاحظة، لا كسر عرض.
+    """
+    result = result or {}
+    markets = result.get("markets") or []
+    row = markets[0] if markets and isinstance(markets[0], dict) else {}
+    dr = result.get("deep_research") or {}
+    entries: dict = {}
+
+    def put(e: dict) -> None:
+        entries[e["key"]] = e
+
+    try:
+        if dr:
+            _fill_from_research(dr, put)
+        else:
+            _fill_from_analyze(row, put)
+    except Exception:  # noqa: BLE001 — عطل استخراج = فجوات معلنة لا كسر
+        pass
+    _fill_decision(row, result, put)
+    _fill_competitor_prices(row, put)
+    for key, *_ in KEYS:
+        if key not in entries:
+            put(_entry(key, None, note="لم تُحاوَل قراءة هذا المعطى"))
+    ordered = [entries[k[0]] for k in KEYS]
+    gaps = [{"key": e["key"], "label_ar": e["label_ar"],
+             "label_en": e["label_en"], "status": e["status"],
+             "note": e["note"], "source": e["source"]}
+            for e in ordered if e["status"] in (MISSING, WEAK)
+            and e["key"] not in ("blocking_condition", "imports_latest_year")]
+    return {"schema": "silk.ledger/v1", "lang": lang,
+            "entries": {e["key"]: e for e in ordered},
+            "order": [k[0] for k in KEYS], "gaps": gaps,
+            "repairs": [], "findings": [], "stale": []}
+
+
+def _fill_from_research(dr: dict, put) -> None:
+    """المسار العميق — **قارئٌ واحد**: قيمُ المفاتيح من `build_pillar_inputs`
+    نفسِه الذي يقرؤه محرّكُ القرار، لا من مستخلِصٍ ثانٍ.
+
+    الدرس ٢٦٢: مستخلِصٌ خاصٌّ بالسجلّ كان يقول «لا ملخّص مورّدين» بينما
+    المحرّك يحمل HHI — أي أنّه يخلق التناقضَ الذي وُضع ليمنعه. الإسنادُ
+    (المصدر/السنة/الثقة) يُقرأ من الاكتشاف نفسِه بعد معرفة القيمة.
+    """
+    import silk_deep_pillars as P
+    missions = dr.get("missions") or {}
+    try:
+        pi = P.build_pillar_inputs(dr)
+    except Exception:  # noqa: BLE001 — تعذّر القراءة = فجواتٌ معلنة
+        pi = {}
+    flat: dict = {}
+    for group in (pi or {}).values():
+        if isinstance(group, dict):
+            flat.update(group)
+
+    # (المفتاح في السجلّ، مفتاح المحرّك، البعثة المسؤولة)
+    _MAP = (("market_imports_usd", "tam_usd", "trade_flow"),
+            ("import_cagr_pct", "import_cagr_pct", "trade_flow"),
+            ("saudi_share_pct", "saudi_share_pct", "trade_flow"),
+            ("hhi", "hhi", "competitors"),
+            ("top_supplier_share_pct", "top_supplier_share_pct", "competitors"),
+            ("border_price_usd_kg", "border_unit_value_usd_kg", "trade_flow"),
+            ("tariff_applied_pct", "tariff_applied_pct", "tariffs_agreements"),
+            ("per_capita_income_usd", "gdp_per_capita_usd",
+             "demographics_economy"),
+            ("requirements_count", "entry_requirements_count",
+             "customs_requirements"))
+    for key, metric, mission in _MAP:
+        value = flat.get(metric)
+        if value is None:
+            put(_entry(key, None, origin=mission,
+                       note="لم يرصده المحرّك في نتائج هذه البعثة"))
+            continue
+        put(_entry(key, value, origin=mission,
+                   **_attribution(missions, mission, metric, value)))
+    _fill_series(missions, put)
+    put(_entry("population", None, note="لا يُقرأ عدد السكان من البعثات"))
+
+
+def _attribution(missions: dict, mission: str, metric: str,
+                 value: float) -> dict:
+    """المصدر/السنة/الثقة للقيمة التي قرأها المحرّك — من الاكتشاف الحامل لها.
+
+    المطابقةُ بالقيمة نفسِها (لا بإعادة استخراج): تعذُّرها يترك الإسنادَ
+    فارغاً فتُحسَب الحالةُ على أقسى تقدير، ولا يُختلَق مصدر.
+    """
+    import silk_deep_pillars as P
+    try:
+        findings = P._metric_findings(missions or {}, mission)
+    except Exception:  # noqa: BLE001
+        findings = []
+    for f in findings:
+        raw = _g(f, "value")
+        num = _num(raw if not isinstance(raw, dict) else None)
+        blob = f"{_g(f, 'note', '')} {raw if isinstance(raw, str) else ''}"
+        hit = (num is not None and abs(num - float(value)) < 1e-6) or \
+            (f"{value:g}" in blob)
+        if not hit:
+            continue
+        src = str(_g(f, "source", "") or "")
+        st = str(_g(f, "status", "") or "")
+        return {"source": src, "confidence": _g(f, "confidence"),
+                "note": str(_g(f, "note", "") or ""),
+                "year": _g(f, "data_year"),
+                "mirrored": ("مرآة" in src or "mirror" in src.lower()
+                             or st == "mirrored")}
+    return {"source": "", "confidence": None,
+            "note": "قرأه المحرّك من نتائج البعثة", "year": None}
+
+
+def _fill_series(missions: dict, put) -> None:
+    """السلسلة الزمنية وأحدثُ سنةٍ مرصودة + نموُّ الواردات منها."""
+    import silk_deep_pillars as P
+    try:
+        series = P.import_series(missions)
+    except Exception:  # noqa: BLE001
+        series = {}
+    pts = series.get("series") or []
+    if not pts:
+        put(_entry("imports_latest_year", None, note="لا سلسلة واردات مرصودة"))
+        put(_entry("import_growth_pct", None, note="لا سلسلة واردات مرصودة"))
+        return
+    latest = max(int(p["year"]) for p in pts)
+    put(_entry("imports_latest_year", latest, source="UN Comtrade",
+               confidence=0.9, note="أحدث سنة مرصودة في سلسلة الواردات",
+               origin="trade_flow", items=[dict(p) for p in pts]))
+    g = _num(series.get("growth_pct"))
+    put(_entry("import_growth_pct", g, source="UN Comtrade", confidence=0.9,
+               origin="trade_flow",
+               note=("نمو الواردات بين أول وآخر سنة مرصودة" if g is not None
+                     else "يتطلب سنتين مرصودتين")))
+
+
+def _fill_from_analyze(row: dict, put) -> None:
+    from silk_render import _dp
+    comps = row.get("components") or {}
+    if comps.get("market_size"):
+        put(_dp_entry("market_imports_usd", _dp(comps["market_size"]),
+                      "market_size"))
+    for metric, key in (("import_growth_pct", "import_growth_pct"),
+                        ("import_cagr_pct", "import_cagr_pct")):
+        f = _bundle_finding(row, "market_size", metric)
+        put(_dp_entry(key, f, "market_size") if f else
+            _entry(key, None, note="لا سلسلة سنوات كافية"))
+    tr = row.get("trend") or {}
+    pts = [p for p in (tr.get("series") or []) if p.get("value") is not None]
+    if pts:
+        put(_entry("imports_latest_year", max(int(p["year"]) for p in pts),
+                   source=tr.get("source") or "UN Comtrade", confidence=0.9,
+                   note="أحدث سنة مرصودة في خط الاتجاه", origin="trend",
+                   items=[dict(p) for p in pts]))
+    elif row.get("year_used"):
+        put(_entry("imports_latest_year", int(row["year_used"]),
+                   source="UN Comtrade", confidence=0.9,
+                   note="سنة بيانات الواردات المعتمدة", origin="market_size"))
+    for agent, metric, key in (("competitor", "hhi", "hhi"),
+                               ("competitor", "top_supplier_share_pct",
+                                "top_supplier_share_pct"),
+                               ("competitor", "saudi_share_pct", "saudi_share_pct"),
+                               ("pricing", "border_unit_value_usd_kg",
+                                "border_price_usd_kg"),
+                               ("regulatory", "entry_requirements_count",
+                                "requirements_count")):
+        f = _bundle_finding(row, agent, metric)
+        put(_dp_entry(key, f, agent) if f else
+            _entry(key, None, note="لا اكتشاف يحمل هذا المعطى"))
+    tdp = row.get("tariff")
+    f = _bundle_finding(row, "regulatory", "tariff_applied_pct")
+    if tdp is not None and _g(tdp, "value") is not None:
+        put(_dp_entry("tariff_applied_pct", tdp, "tariffs"))
+    elif f:
+        put(_dp_entry("tariff_applied_pct", f, "regulatory"))
+    else:
+        put(_entry("tariff_applied_pct", None, origin="tariffs",
+                   note=str(_g(tdp, "note") or "التعرفة غير مرصودة")))
+    for key, field, gap in (("per_capita_income_usd", "income_ppp",
+                             "دخل الفرد غير متاح"),
+                            ("population", "population", "عدد السكان غير متاح")):
+        dp = row.get(field)
+        put(_dp_entry(key, dp, "economic")
+            if dp is not None and _g(dp, "value") is not None
+            else _entry(key, None, note=gap))
+
+
+def _fill_decision(row: dict, result: dict, put) -> None:
+    """الشروط المفتوحة **كاملة بلا سقف** + الشرط الحاجب بتعريف واحد."""
+    ed = row.get("decision") if isinstance(row.get("decision"), dict) else {}
+    conds = [str(c) for c in (ed.get("conditions") or []) if str(c).strip()]
+    put(_entry("open_conditions", len(conds), source="محرك القرار",
+               confidence=1.0, items=conds or None,
+               note="قائمة محرك القرار الواحدة", origin="decision"))
+    reg = result.get("regulatory") if isinstance(result.get("regulatory"), dict) \
+        else (row.get("regulatory") if isinstance(row.get("regulatory"), dict) else {})
+    pillars = ed.get("pillars") if isinstance(ed.get("pillars"), dict) else {}
+    if (reg or {}).get("blocked") or (pillars.get("regulatory") or {}).get(
+            "eligibility_gate"):
+        blocking = next((c for c in conds if "أهلية" in c), None) or \
+            "بوابة أهلية أمامية مفتوحة — لا تقدّم قبل عبورها"
+    elif ed.get("critical_risk"):
+        blocking = "خطر حرج مرصود (الاستقرار السياسي دون العتبة)"
+    else:
+        blocking = next((c for c in conds if "غائب" in c), None)
+    put(_entry("blocking_condition", blocking, source="محرك القرار",
+               confidence=1.0, origin="decision",
+               note="شرط واحد بتعريف واحد لكل الأقسام" if blocking
+               else "لا شرط حاجب"))
+
+
+def _fill_competitor_prices(row: dict, put) -> None:
+    """المنافسون المسمَّون وأسعارهم — من خيوط الترابط نفسها (مصدر واحد للجدول
+    والخيط): {named, matched, listings}."""
+    cp = row.get("competitive_position") if isinstance(
+        row.get("competitive_position"), dict) else {}
+    threads = cp.get("competitor_threads") or []
+    listings = [v for v in _real_values(row.get("localprice"))
+                if isinstance(v, dict) and v.get("price") is not None]
+    named = [{"name": t.get("name"),
+              "price": (t.get("observed_price") or {}).get("value")}
+             for t in threads if isinstance(t, dict)]
+    if not named and not listings:
+        put(_entry("competitor_prices", None,
+                   note="لا منافس مسمّى ولا سعر مرصود", origin="correlation"))
+        return
+    matched = sum(1 for n in named if n["price"] is not None)
+    put(_entry("competitor_prices",
+               {"named": len(named), "matched": matched, "listings": len(listings)},
+               source="طبقة الأسعار المرصودة", confidence=0.6,
+               items=named, origin="correlation",
+               note=f"{len(listings)} سعر مرصود في الجدول، {matched} منها يطابق "
+                    f"منافساً مسمّى من {len(named)}"))
+
+
+def _real_values(obj) -> list:
+    return [v for v in (_g(f, "value") for f in (obj or [])) if v is not None]
+
+
+# ── العرض · rendering (الشرط ٢: صيغ سليمة لغوياً حسب الحالة والعدد) ──────────
+
+def _value_text(entry: dict, lang: str) -> str:
+    from silk_narrative import fmt_amount, fmt_number, fmt_pct
+    key, v, unit = entry["key"], entry.get("value"), entry.get("unit") or ""
+    if unit == "%":
+        return fmt_pct(v)
+    if unit == "USD":
+        return f"{fmt_number(v)} USD" if lang == "en" else fmt_amount(v, "USD")
+    if unit == "USD/kg":
+        return (f"{fmt_number(v)} USD/kg" if lang == "en"
+                else f"{fmt_number(v)} دولار/كجم")
+    if key == "imports_latest_year":
+        return str(int(v))
+    return fmt_number(v)
+
+
+def render_value(entry: dict, lang: str = "ar") -> str:
+    """القيمة بمصدرها — للرمز داخل جملة رقمية (`{{key}}`)."""
+    st, key = entry["status"], entry["key"]
+    if key == "blocking_condition" and not entry.get("value"):
+        # قرارٌ محسوبٌ («لا شرطَ يحجب») لا فجوةٌ غيرُ مقيسة.
+        return "no blocking condition" if lang == "en" else "لا شرط حاجب"
+    if st == MISSING:
+        return "not available" if lang == "en" else "غير متاح"
+    v = entry.get("value")
+    if key == "open_conditions":
+        return count_text(int(v or 0), lang, "شرط", "شرطان", "شروط", "شرطاً",
+                          "condition")
+    if key == "requirements_count":
+        return count_text(int(v or 0), lang, "بند", "بندان", "بنود", "بنداً",
+                          "requirement")
+    if key == "blocking_condition":
+        return str(v)
+    if key == "competitor_prices":
+        d = v or {}
+        return (f"{d.get('listings', 0)} observed prices, {d.get('matched', 0)} "
+                f"matched to a named competitor out of {d.get('named', 0)}"
+                if lang == "en" else
+                f"{d.get('listings', 0)} سعر مرصود، {d.get('matched', 0)} منها "
+                f"يطابق منافساً مسمّى من {d.get('named', 0)}")
+    body = _value_text(entry, lang)
+    tail = " ".join(x for x in (entry.get("source") or "",
+                                str(entry.get("year") or "")) if x)
+    if st == WEAK:
+        body += (" — observed, weakly documented" if lang == "en"
+                 else " — مرصود بتوثيق ضعيف")
+    return f"{body} ({tail})" if tail else body
+
+
+def render_sentence(entry: dict, lang: str = "ar") -> str:
+    """جملة كاملة سليمة — للرمز حين يكون هو الجملة (`{{key:sentence}}`)
+    ولاستبدال سطرٍ كُتب لرقمٍ غاب معطاه."""
+    key, st = entry["key"], entry["status"]
+    label = entry["label_en"] if lang == "en" else entry["label_ar"]
+    en = lang == "en"
+    if key == "open_conditions":
+        n = int(entry.get("value") or 0)
+        if n == 0:
+            return "There are no open conditions." if en else "لا شروط مفتوحة."
+        return (f"There are {render_value(entry, lang)} open." if en
+                else f"الشروط المفتوحة {render_value(entry, lang)}.")
+    if key == "requirements_count":
+        n = int(entry.get("value") or 0) if st != MISSING else 0
+        if st == MISSING or n == 0:
+            return ("No entry requirement items were observed." if en
+                    else "لم تُرصد بنود اشتراطات لهذا السوق.")
+        return (f"The entry checklist holds {render_value(entry, lang)}." if en
+                else f"قائمة الاشتراطات تضم {render_value(entry, lang)}.")
+    if key == "blocking_condition":
+        v = entry.get("value")
+        if not v:
+            return "No single condition blocks the decision." if en else \
+                "لا شرط حاجب يعلّق القرار."
+        return f"The blocking condition: {v}." if en else f"الشرط الحاجب: {v}."
+    if st == MISSING:
+        return f"{label} is not available." if en else f"{label} غير متاح."
+    return f"{label}: {render_value(entry, lang)}."
+
+
+def render_status(entry: dict, lang: str = "ar") -> str:
+    """حالة معطى — `{{status:key}}`: مرصود / مرصود بتوثيق ضعيف / غير متاح."""
+    en = lang == "en"
+    return {OBSERVED: "observed" if en else "مرصود",
+            WEAK: "observed, weakly documented" if en else "مرصود بتوثيق ضعيف",
+            MISSING: "not available" if en else "غير متاح"}[entry["status"]]
+
+
+def count_text(n: int, lang: str, one: str, two: str, plural: str,
+               acc_sing: str, en_noun: str) -> str:
+    """عددٌ ومعدود بمطابقة العربية — يفوّض إلى `silk_narrative.count_sentence`."""
+    if lang == "en":
+        return f"{n} {en_noun}{'' if n == 1 else 's'}"
+    from silk_narrative import count_sentence
+    return count_sentence(n, one, two, plural, acc_sing)
+
+
+def facts_block(ledger: dict, lang: str = "ar") -> str:
+    """كتلة الرموز التي يستلمها الكاتب — الستة الإلزامية برموزها، وبقية
+    المعطيات بقيمتها كي يكتبها بصيغته الطبيعية (تُفحص بعدها بالتسامح)."""
+    lines = []
+    for key in ledger.get("order") or []:
+        e = ledger["entries"][key]
+        label = e["label_en"] if lang == "en" else e["label_ar"]
+        st = render_status(e, lang)
+        if key in MANDATORY_TOKEN_KEYS:
+            lines.append(f"- {{{{{key}}}}} = {label} ({st}) — اكتب الرمز لا القيمة")
+        elif key == "competitor_prices":
+            continue
+        else:
+            val = render_value(e, lang) if e["status"] != MISSING else st
+            lines.append(f"- {label}: {val} — {{{{status:{key}}}}} لحالته")
+    return "\n".join(lines)
+
+
+LEDGER_TOKEN_RULE = (
+    "**سجلّ الحقائق (إلزامي):** المعطيات الموسومة «اكتب الرمز لا القيمة» في "
+    "[LEDGER] تُكتب برمزها بين قوسين مزدوجين — مثل {{tariff_applied_pct}} "
+    "و{{open_conditions}} و{{requirements_count}} و{{blocking_condition}} "
+    "و{{imports_latest_year}} — ولا تُكتب قيمتها ولا حالتها من عندك؛ النظام "
+    "يستبدلها بالقيمة ومصدرها أو بإعلان الغياب بصيغة سليمة. الرمز بلاحقة "
+    ":sentence (مثل {{open_conditions:sentence}}) يصير جملة كاملة تقف وحدها. "
+    "لتقرير حالة أي معطى آخر (متاح/ضعيف/غير متاح) اكتب {{status:المفتاح}} لا "
+    "كلمة من عندك. بقية الأرقام اكتبها بصيغتك الطبيعية (تقريب، مقارنة) — "
+    "وتُفحص بعد الكتابة مقابل السجلّ بتسامح التقريب؛ رقم يخالفه يُعاد للتنقيح "
+    "بجملته. لا تخترع رموزاً غير المسرودة.")
+LEDGER_TOKEN_RULE_EN = (
+    "**Fact ledger (mandatory):** facts marked 'write the token, not the "
+    "value' under [LEDGER] are written by their double-brace token — e.g. "
+    "{{tariff_applied_pct}}, {{open_conditions}}, {{requirements_count}}, "
+    "{{blocking_condition}}, {{imports_latest_year}} — never their value or "
+    "availability; the system substitutes the value with its source, or a "
+    "well-formed absence sentence. A token with the :sentence suffix (e.g. "
+    "{{open_conditions:sentence}}) becomes a standalone sentence. To state "
+    "the status of any other fact write {{status:key}}. Write all other "
+    "numbers in your natural phrasing (rounding, comparisons); they are "
+    "checked against the ledger with rounding tolerance and a violating "
+    "sentence is sent back. Do not invent tokens.")
+
+
+def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
+    """استبدل كل رمز بصيغته من السجلّ — يعيد (النص، {bound, unknown, used}).
+
+    **الوحدةُ جملةٌ لا سطر** (مراجعة §58): رمزُ قيمةٍ غاب معطاه داخل جملةٍ
+    كُتبت لرقمٍ تُستبدَل **جملتُه وحدها** بجملة الغياب، فلا تُبتَر فقرةٌ
+    كاملة ولا يُهدَر ما حولها من سرد. وصفُّ جدولٍ (`| … |`) لا يُعاد بناؤه
+    أبداً — يُملأ في مكانه بكلمة الغياب كي لا ينكسر عمودُ الجدول.
+    """
+    if not text or "{{" not in text:
+        return text or "", {"bound": 0, "unknown": [], "used": []}
+    entries = (ledger or {}).get("entries") or {}
+    unknown: list = []
+    used: list = []
+    n = 0
+
+    def _render(m, *, in_table: bool) -> str:
+        nonlocal n
+        is_status, key, as_sentence = m.group(1), m.group(2), m.group(3)
+        e = entries.get(key)
+        if e is None:
+            unknown.append(key)
+            return "not available" if lang == "en" else "غير متاح"
+        n += 1
+        used.append(key)
+        if is_status:
+            return render_status(e, lang)
+        if as_sentence and not in_table:
+            return render_sentence(e, lang)
+        return render_value(e, lang)
+
+    out_lines = []
+    for line in text.split("\n"):
+        if "{{" not in line:
+            out_lines.append(line)
+            continue
+        in_table = line.lstrip().startswith("|")
+        if in_table:
+            out_lines.append(TOKEN_RE.sub(
+                lambda m: _render(m, in_table=True), line))
+            continue
+        out_lines.append(_bind_line(line, entries, lang, _render))
+    return "\n".join(out_lines), {"bound": n, "unknown": sorted(set(unknown)),
+                                   "used": sorted(set(used))}
+
+
+def _bind_line(line: str, entries: dict, lang: str, render) -> str:
+    """املأ سطرَ نثرٍ جملةً جملة — الغائبُ يُبدِّل جملتَه لا السطرَ كلَّه."""
+    prefix_m = _LIST_PREFIX_RE.match(line)
+    prefix = prefix_m.group(1) if prefix_m else ""
+    body = line[len(prefix):]
+    parts = _SENT_KEEP_RE.split(body)
+    out = []
+    for part in parts:
+        if "{{" not in part:
+            out.append(part)
+            continue
+        gone = None
+        for m in TOKEN_RE.finditer(part):
+            is_status, key, as_sentence = m.group(1), m.group(2), m.group(3)
+            e = entries.get(key)
+            if (e is not None and not is_status and not as_sentence
+                    and e["status"] == MISSING
+                    and key not in _SELF_DESCRIBING_KEYS):
+                gone = e
+                break
+        if gone is not None:
+            tail = _trailing_space(part)
+            out.append(render_sentence(gone, lang) + tail)
+            continue
+        out.append(TOKEN_RE.sub(lambda m: render(m, in_table=False), part))
+    return prefix + "".join(out)
+
+
+def _trailing_space(part: str) -> str:
+    stripped = part.rstrip()
+    return part[len(stripped):]
+
+
+#: مفاتيحُ صيغتُها تصف نفسَها عند الغياب (عددٌ صفريّ/لا شرط)، فلا تُبدِّل
+#: جملتَها: «لا شروط مفتوحة» صحيحةٌ في مكانها.
+_SELF_DESCRIBING_KEYS = frozenset({"open_conditions", "requirements_count",
+                                   "blocking_condition"})
+#: تقطيعٌ يحفظ الفواصل — الجملةُ تُستبدَل بعلامتها لا بدونها.
+_SENT_KEEP_RE = re.compile(r"(?<=[.؛!؟])")
+
+
+_LIST_PREFIX_RE = re.compile(r"^(\s*(?:[-*•]|\d+[.)]|#+)\s+)")
+
+
+def _keep_list_prefix(line: str, new: str) -> str:
+    m = _LIST_PREFIX_RE.match(line)
+    return (m.group(1) if m else "") + new
+
+
+# ── اللقطة · snapshot (الشرط ١) ─────────────────────────────────────────────
+
+def snapshot_for(text: str, ledger: dict) -> dict:
+    """لقطة الرموز التي **استخدمها الكاتب فعلاً**: القيمة والحالة والمصدر
+    والسنة كما رآها — تُخزَّن مع التقرير. `leads` مستثناة بالبناء (ليست مفتاحاً)."""
+    entries = (ledger or {}).get("entries") or {}
+    snap: dict = {}
+    for _st, key, _s in TOKEN_RE.findall(text or ""):
+        e = entries.get(key)
+        if e is not None and key not in snap:
+            snap[key] = {"value": e.get("value"), "status": e["status"],
+                         "source": e.get("source"), "year": e.get("year")}
+    return snap
+
+
+def stale_keys(snapshot: dict, ledger: dict) -> list:
+    """المفاتيح التي اختلف السجلّ الحالي فيها عن لقطة الكاتب — لا تُملأ بصمت."""
+    entries = (ledger or {}).get("entries") or {}
+    out = []
+    for key, seen in (snapshot or {}).items():
+        e = entries.get(key)
+        if e is None:
+            continue
+        if e["status"] != seen.get("status") or not _same_value(
+                e.get("value"), seen.get("value")):
+            out.append({"key": key, "label_ar": e["label_ar"],
+                        "was": seen, "now": {"value": e.get("value"),
+                                             "status": e["status"]}})
+    return out
+
+
+def _same_value(a, b) -> bool:
+    fa, fb = _num(a), _num(b)
+    if fa is not None and fb is not None:
+        return abs(fa - fb) <= max(abs(fb) * 1e-6, 1e-9)
+    return a == b
+
+
+# ── فحص المسوّدة قبل التخزين · draft gate ───────────────────────────────────
+
+def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
+    """ملاحظات حاجبة حتمية على مسوّدة الكاتب — تعيد المسوّدة للتنقيح:
+    (أ) رمز مخترَع؛ (ب) قيمة أو حالة مكتوبة لمعطى إلزامي الرمز؛ (ج) رقم
+    طبيعي قرب تسمية معطى يخالف السجلّ خارج تسامح التقريب (المقارنات اللفظية
+    لا تُفحص)؛ (د) رقم لمعطى غائب في السجلّ. كل ملاحظة تسمّي الجملة."""
+    if not draft:
+        return []
+    issues: list = []
+    entries = (ledger or {}).get("entries") or {}
+    for _st, key, _s in TOKEN_RE.findall(draft):
+        if key not in entries:
+            issues.append(f"رمز غير مسرود في السجلّ «{{{{{key}}}}}» — احذفه أو "
+                          "استعمل رمزاً من [LEDGER]")
+    stripped = TOKEN_RE.sub(" ", draft)
+    for key, e in entries.items():
+        words = _KEY_ROWS[key][4]
+        if not words or key == "competitor_prices":
+            continue
+        mandatory = key in MANDATORY_TOKEN_KEYS
+        for w in words:
+            m = re.search(re.escape(w), stripped)
+            if not m:
+                continue
+            sent = _sentence_at(stripped, m.start())
+            win = stripped[m.end():m.end() + _WINDOW].split("\n")[0]
+            if mandatory:
+                # نفسُ حرّاس الفرع الآخر (مراجعة §58): رقمُ سنةٍ أو رقمُ
+                # مفهومٍ مجاورٍ أو تعريفٌ أو سياقٌ مسموحٌ **ليس** كتابةً
+                # لقيمة المعطى — ورفضُه يحرق نداءَ كاتبٍ مدفوعاً بلا سبب.
+                nm_m = _NUM_RE.search(win[:_VALUE_WINDOW])
+                wrote_number = bool(
+                    nm_m and not _derived_context(sent, words)
+                    and not _DEFINITION_RE.search(win[:nm_m.start()])
+                    and not _other_key_between(win[:nm_m.start()], key)
+                    and not _is_bare_year(nm_m, key))
+                if _ABSENCE_RE.search(win.split("\n")[0]) or wrote_number:
+                    issues.append(f"«{e['label_ar']}» رمزٌ إلزامي — لا تكتب قيمته "
+                                  f"ولا حالته؛ اكتب {{{{{key}}}}} في: «{sent}»")
+                    break
+                continue
+            if e["status"] != MISSING and _ABSENCE_RE.search(win):
+                issues.append(f"«{e['label_ar']}» مرصود في السجلّ "
+                              f"({render_value(e, lang)}) لكن الجملة تعلنه غير "
+                              f"متاح — أعد صياغتها أو اكتب {{{{status:{key}}}}}: «{sent}»")
+                break
+            nm = _NUM_RE.search(win[:_VALUE_WINDOW])
+            if nm and not _derived_context(sent, words) \
+                    and not _DEFINITION_RE.search(win[:nm.start()]) \
+                    and not _other_key_between(win[:nm.start()], key) \
+                    and not _is_bare_year(nm, key):
+                got = _scaled(nm)
+                if e["status"] == MISSING and got is not None:
+                    issues.append(f"«{e['label_ar']}» غير متاح في السجلّ لكن "
+                                  f"الجملة تذكر رقماً — احذفه أو اكتب "
+                                  f"{{{{status:{key}}}}}: «{sent}»")
+                    break
+                exp = _num(e.get("value"))
+                if got is not None and exp is not None and not _within_tolerance(got, exp, e):
+                    issues.append(f"«{e['label_ar']}» في السجلّ {render_value(e, lang)} "
+                                  f"بينما الجملة تذكر {nm.group(0).strip()} — أعد "
+                                  f"صياغة الجملة بالقيمة الصحيحة: «{sent}»")
+                    break
+    return issues
+
+
+def _is_bare_year(match, key: str) -> bool:
+    """رقمٌ عارٍ بأربع خانات في مدى السنوات = **سنةُ رصدٍ** لا قيمةُ المعطى.
+
+    «دخل الفرد لليمن (2018)» كان يُقرأ قيمةً فيخالف السجلَّ (١٢٠٠ دولار) —
+    إنذارٌ كاذبٌ على تقريرٍ صحيح (عائلة الدرس ٢٣٩).
+    """
+    if key == "imports_latest_year":
+        return False
+    if match.group(2):            # للرقم وحدةٌ (%/مليون…) فليس سنة
+        return False
+    tok = match.group(1).replace(",", "")
+    return bool(_YEAR_RE.fullmatch(tok))
+
+
+def _other_key_between(gap_text: str, key: str) -> bool:
+    """هل يفصل **مفهومٌ آخر** من السجلّ بين التسمية والرقم؟
+
+    جملةٌ تذكر معطيين ورقماً واحداً تنسب الرقمَ إلى الأقرب لا إلى الأول
+    («حصة السعودية المنخفضة مقابل نمو السوق 9.3%»).
+    """
+    for other, row in _KEY_ROWS.items():
+        if other == key:
+            continue
+        if any(w and w in gap_text for w in row[4]):
+            return True
+    return False
+
+
+def _derived_context(sentence: str, words: tuple) -> bool:
+    """هل الرقمُ في سياقٍ مسموحٍ صراحةً (الشرط ٤)؟
+
+    سياقٌ يطابق كلمةً من **تسمية المعطى نفسه** لا يُعَدّ سماحاً («حصة» داخل
+    «الحصة السعودية» كانت تُعطِّل الفحصَ على المعطى الذي وُضع له).
+    """
+    allow = [a for a in DERIVED_ALLOWED
+             if not any(a in w for w in words)]
+    return any(a in sentence for a in allow)
+
+
+def _sentence_at(text: str, pos: int) -> str:
+    start = max(text.rfind(ch, 0, pos) for ch in ".؛\n!؟") + 1
+    end_candidates = [i for i in (text.find(ch, pos) for ch in ".؛\n!؟") if i >= 0]
+    end = min(end_candidates) if end_candidates else len(text)
+    return text[start:end].strip()[:160]
+
+
+def _scaled(m) -> "float | None":
+    v = _num(m.group(1).replace(",", ""))
+    if v is None:
+        return None
+    unit = m.group(2) or ""
+    return v * _SCALE.get(unit, 1.0)
+
+
+def _within_tolerance(got: float, exp: float, entry: dict) -> bool:
+    """تسامح التقريب: ±2%، أو تقريب إلى منزلة معروضة (18.7 مليون ≈ 18,700,000)."""
+    if exp == 0:
+        return abs(got) <= 0.05
+    if abs(got - exp) / abs(exp) <= _TOLERANCE:
+        return True
+    # نسبةٌ مكتوبة بمنزلة أقل («25%» لـ25.4).
+    if entry.get("unit") == "%" and abs(round(exp) - got) < 0.5:
+        return True
+    return False
+
+
+# ── الفحص على النص المُصيَّر · check (شبكة الأمان) ───────────────────────────
+
+def _finding(check: str, note: str, *, always_block: bool = False) -> dict:
+    return {"check": check, "repairable": (not enforce()) and not always_block,
+            "note": note}
+
+
+def check(view: dict, text: str) -> list:
+    """قابِل النصَّ النهائي المُصيَّر بالسجلّ — يعيد ملاحظات بشكل بوابة
+    الجودة. تحذيرية افتراضاً (قياس)، وغير قابلة للإصلاح تحت الإنفاذ؛ رمزٌ
+    غير مملوء حاجب دائماً (رمز داخلي لا يصل العميل)."""
+    if not text:
+        return []
+    ledger = (view or {}).get("ledger") or {}
+    entries = ledger.get("entries") or {}
+    findings: list = []
+    # **يُفحَص قبل أيّ شيء وبلا سجلّ** (مراجعة §58): تعذُّرُ بناء السجلّ هو
+    # نفسُه الحالةُ التي يُتخطّى فيها الملء، فلو اشترط الفحصُ وجودَ سجلٍّ
+    # لمرّت الرموزُ غيرُ المملوءة إلى العميل في الحالة الوحيدة التي تقع فيها.
+    if "{{" in text:
+        findings.append(_finding(
+            "ledger_token_unbound",
+            "رمز سجلّ داخلي غير مملوء وصل نصاً مُصيَّراً — لا يُسلَّم",
+            always_block=True))
+    if not entries:
+        return findings
+    for s in ledger.get("stale") or []:
+        findings.append(_finding(
+            "ledger_stale",
+            f"«{s['label_ar']}» تغيّر منذ كتابة التقرير ({s['was'].get('value')} "
+            f"→ {s['now'].get('value')}) — القسم مُعلَّم قديماً ويحتاج إعادة توليد"))
+    for key, e in entries.items():
+        words = _KEY_ROWS[key][4]
+        if not words or key in ("open_conditions", "requirements_count",
+                                "competitor_prices", "blocking_condition"):
+            continue
+        for w in words:
+            for m in re.finditer(re.escape(w), text):
+                win = text[m.end():m.end() + _WINDOW].split("\n")[0]
+                near = f"…{text[max(0, m.start() - 20):m.end() + 30]}…"
+                if e["status"] != MISSING and _ABSENCE_RE.search(win):
+                    findings.append(_finding(
+                        "ledger_status_mismatch",
+                        f"«{e['label_ar']}» مرصود في السجلّ ({render_value(e)}) "
+                        f"بينما النص يعلنه غير متاح قرب «{near}»"))
+                    break
+                nm = _NUM_RE.search(win[:_VALUE_WINDOW])
+                if nm and e["status"] != MISSING:
+                    sent = _sentence_at(text, m.start())
+                    if _derived_context(sent, words):
+                        continue
+                    # فاصلٌ بين التسمية والرقم (تعريفٌ/عتبةٌ/مفهومٌ آخر) =
+                    # ليست قراءةَ هذا المعطى — لا تُحكَم مخالفةً.
+                    gap_txt = win[:nm.start()]
+                    if _DEFINITION_RE.search(gap_txt) or \
+                            _other_key_between(gap_txt, key) or \
+                            _is_bare_year(nm, key):
+                        continue
+                    got, exp = _scaled(nm), _num(e.get("value"))
+                    if got is not None and exp is not None and \
+                            not _within_tolerance(got, exp, e):
+                        findings.append(_finding(
+                            "ledger_value_mismatch",
+                            f"«{e['label_ar']}» في السجلّ {render_value(e)} بينما "
+                            f"النص يذكر {nm.group(0).strip()} قرب «{near}»"))
+                        break
+            else:
+                continue
+            break
+    oc = entries.get("open_conditions") or {}
+    try:
+        from silk_quality_gate import _stated_condition_counts
+        stated = _stated_condition_counts(text)
+    except Exception:  # noqa: BLE001
+        stated = []
+    actual = int(oc.get("value") or 0)
+    bad = sorted({n for n, _p, _f in stated if n != actual})
+    if stated and bad:
+        findings.append(_finding(
+            "ledger_count_mismatch",
+            f"النص يذكر عدد شروط {bad} بينما قائمة السجلّ الواحدة تحمل {actual}"))
+    ly = entries.get("imports_latest_year") or {}
+    if ly.get("status") != MISSING and ly.get("value"):
+        latest = int(ly["value"])
+        for m in re.finditer(r"واردات|الواردات|imports", text):
+            win = text[m.start():m.end() + 60].split("\n")[0]
+            yrs = [int(y) for y in _YEAR_RE.findall(win)]
+            if yrs and max(yrs) > latest:
+                findings.append(_finding(
+                    "ledger_series_year_mismatch",
+                    f"النص ينسب الواردات إلى سنة {max(yrs)} بينما أحدث سنة "
+                    f"مرصودة في السلسلة {latest}"))
+                break
+        charts = ((view.get("deep_research") or {}).get("charts") or []) \
+            if isinstance(view, dict) else []
+        for ch in charts:
+            cy = _num(ch.get("year")) if isinstance(ch, dict) else None
+            if isinstance(ch, dict) and ch.get("id") == "imports_trend" and cy \
+                    and int(cy) != latest:
+                findings.append(_finding(
+                    "chart_year_mismatch",
+                    f"رسم الواردات موسوم بسنة {int(cy)} بينما أحدث سنة مرصودة "
+                    f"{latest}"))
+    bc = entries.get("blocking_condition") or {}
+    if bc.get("value"):
+        needle = _distinct_tokens(str(bc["value"]))
+        for m in re.finditer(r"الشرط الحاجب", text):
+            sent = text[m.start():m.start() + 200].split("\n")[0]
+            if needle and not any(t in sent for t in needle):
+                findings.append(_finding(
+                    "blocking_condition_drift",
+                    f"النص يذكر «الشرط الحاجب» بغير تعريف السجلّ "
+                    f"({str(bc['value'])[:60]}) قرب «…{sent[:60]}…»"))
+                break
+    return findings
+
+
+def _distinct_tokens(s: str) -> list:
+    return [w for w in re.findall(r"[\w؀-ۿ]{4,}", s) if w not in
+            ("جانب", "غائب", "متاح", "قبل", "قرار", "نهائي", "مصادره")][:4]
+
+
+# ── الإصلاح من السجلّ (وضع الإنفاذ) · repair ─────────────────────────────────
+
+def repair(text: str, ledger: dict, lang: str = "ar") -> tuple:
+    """أصلح النصَّ المُصيَّر من السجلّ قبل الحجب — إعادةُ صياغة **الجملة
+    كاملة** (لا استبدال الرقم وحده، التعديل ٨): عدد الشروط بمطابقة العدد
+    والمعدود، وإعلان غيابٍ لمعطىً مرصود. يعيد (النص، قائمة الإصلاحات).
+
+    **تُعاد المطابقة داخل كل جملة على حدة** (مراجعة §58): مواضعُ
+    `_stated_condition_counts` مقيسةٌ على نصٍّ مُطبَّع بطول مختلف، فاستعمالُها
+    هنا كان يحذف الجملةَ الخطأ ويُبقي المخالِفة.
+    """
+    if not text:
+        return text, []
+    entries = (ledger or {}).get("entries") or {}
+    repairs: list = []
+    oc = entries.get("open_conditions") or {}
+    actual = int(oc.get("value") or 0)
+    out: list = []
+    for part in _SENT_SPLIT_RE.split(text):
+        tail = "\n" if part.endswith("\n") else ""
+        fixed = part
+        if oc and _sentence_states_wrong_count(part, actual):
+            new = render_sentence(oc, lang)
+            repairs.append({"kind": "open_conditions_count",
+                            "before": part.strip(), "after": new})
+            out.append(_keep_list_prefix(part, new) + tail)
+            continue
+        for key, e in entries.items():
+            words = _KEY_ROWS[key][4]
+            if e["status"] == MISSING or not words or key in (
+                    "open_conditions", "requirements_count",
+                    "competitor_prices", "blocking_condition"):
+                continue
+            if any(w in part for w in words) and _ABSENCE_RE.search(part):
+                new = render_sentence(e, lang)
+                repairs.append({"kind": "status", "key": key,
+                                "before": part.strip(), "after": new})
+                fixed = _keep_list_prefix(part, new) + tail
+                break
+        out.append(fixed)
+    return "".join(out), repairs
+
+
+def _sentence_states_wrong_count(sentence: str, actual: int) -> bool:
+    """هل تذكر هذه الجملةُ عددَ شروطٍ مفتوحةٍ يخالف القائمةَ الواحدة؟
+
+    تُقاس **داخل الجملة نفسِها** فلا تنزلق المواضعُ بين نصٍّ ونصٍّ مُطبَّع.
+    """
+    try:
+        from silk_quality_gate import _stated_condition_counts
+        stated = _stated_condition_counts(sentence)
+    except Exception:  # noqa: BLE001 — تعذّرُ القراءة = لا إصلاح
+        return False
+    return any(n != actual for n, _p, _f in stated)

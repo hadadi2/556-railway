@@ -434,11 +434,28 @@ def recognition_vocabulary() -> bool:
                           "").strip().lower() in ("1", "true", "yes")
 
 
+#: مفتاحُ قياسٍ لأداة `tools/consistency_audit.py` وحدَها: يعيد قارئَ التعرفة
+#: إلى مساره الضيّق (سلوكُ ما قبل الدرس ٢٦٢) كي يُقاس عمودُ «قبل» بالتشغيل
+#: لا بالادّعاء. **لا يُضبَط في الإنتاج إطلاقاً** — غيابُه هو الافتراض.
+LEDGER_OFF_FLAG = "SILK_FACT_LEDGER_OFF"
+
+
+def ledger_reader_off() -> bool:
+    import os
+    return os.environ.get(LEDGER_OFF_FLAG, "").strip().lower() in (
+        "1", "true", "yes", "on")
+
+
 def tariff_words() -> tuple:
-    """مفرداتُ التعرّف على التعريفة — الضيّقةُ بلا الراية، والموسَّعةُ معها.
-    الاتحادُ لا الاستبدال: لا بديلَ قائمٌ يسقط (اختبارُ عدم الانحدار)."""
-    return (_TARIFF_WORDS + _TARIFF_WORDS_EXTRA if recognition_vocabulary()
-            else _TARIFF_WORDS)
+    """مفرداتُ التعرّف على التعريفة — **الموسَّعةُ دائماً** بعد الدرس ٢٦٢.
+
+    كانت الموسَّعةُ خلف راية، فيُعتمَد ٠٪ حيث لم تُقرَأ التعريفة ويُعلَن
+    «غير متاحة» بينما القسمُ التنظيميّ يطبعها (بلاغ التقرير 6). الرايةُ
+    تبقى مقبولةً بلا أثرٍ إضافيّ، ومفتاحُ القياس وحدَه يعيد المسارَ الضيّق.
+    """
+    if ledger_reader_off() and not recognition_vocabulary():
+        return _TARIFF_WORDS
+    return _TARIFF_WORDS + _TARIFF_WORDS_EXTRA
 
 
 def currency_in_note(note: object) -> str:
@@ -1068,6 +1085,29 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
     return out
 
 
+def _tariff_from_ledger(dr: dict) -> tuple:
+    """(القيمة، الملاحظة) من سجلّ الحقائق الواحد — أو (None, "") عند تعذّره.
+
+    الدرس ٢٦٢: لا مسارَ استخراجٍ ثانٍ للتعرفة؛ السجلّ هو القارئ الوحيد.
+    """
+    try:
+        import silk_fact_ledger as _FL
+        e = (_FL.build_ledger({"deep_research": dr}).get("entries")
+             or {}).get("tariff_applied_pct") or {}
+    except Exception:  # noqa: BLE001 — السجلُّ إضافةٌ لا شرطُ حساب
+        return None, ""
+    if e.get("status") == _FL.MISSING:
+        return None, ""
+    return _num_or_none(e.get("value")), str(e.get("note") or "")
+
+
+def _num_or_none(v):
+    try:
+        return float(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def economics_view(dr: dict, product_card: dict | None = None,
                    category: str = "") -> dict:
     """قسم الاقتصاد الكامل (§5.4) من نتائج البعثات + بطاقة المنتج إن وُجدت.
@@ -1130,8 +1170,16 @@ def economics_view(dr: dict, product_card: dict | None = None,
         gaps.append("لا سعر رف منافس مرصود — الحل العكسي غير ممكن حتى يُرصد "
                     "سعر واحد على الأقل (بعثة الأسعار)")
 
-    tariff, t_note = _mission_numeric(dr, "tariffs_agreements",
-                                      tariff_words(), 0.0, 100.0)
+    # الدرس ٢٦٢ — **قراءةٌ واحدة للتعرفة**: كانت تُستخرَج هنا بـregex بمفردات
+    # ضيّقة، فتفوت «التعريفة المطبَّقة» (صيغة WTO/WITS الحرفية) فيُعتمَد ٠٪
+    # ويُعلَن «غير متاحة» بينما القسم التنظيميّ يطبع ٢٥٪ — تناقضٌ يراه العميل
+    # في تقريرٍ واحد (بلاغ التقرير 6). المصدرُ الآن سجلُّ الحقائق الواحد،
+    # ومسارُ الregex يبقى احتياطاً حين يتعذّر بناء السجلّ (لا سلوكَ أسوأ).
+    tariff, t_note = (None, "") if ledger_reader_off() \
+        else _tariff_from_ledger(dr)
+    if tariff is None:
+        tariff, t_note = _mission_numeric(dr, "tariffs_agreements",
+                                          tariff_words(), 0.0, 100.0)
     if tariff is None:
         gaps.append("التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي")
     vat, _ = _mission_numeric(dr, "tariffs_agreements", _VAT_WORDS, 0.0, 50.0)

@@ -4597,6 +4597,21 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    262: lambda: (
+        _needles("silk_fact_ledger.py", "def build_ledger", "def bind",
+                 "def draft_issues", "def check", "def repair",
+                 "MANDATORY_TOKEN_KEYS", "ENFORCE_FLAG")(),
+        _needles("silk_render.py", "_ledger_safe", "ledger_stale")(),
+        _needles("silk_economics.py", "def _tariff_from_ledger")(),
+        _needles("silk_deep_pillars.py", "def _tariff_keywords")(),
+        _needles("silk_narrative.py", "def count_sentence")(),
+        _needles("silk_quality_gate.py", "def _ledger_findings",
+                 "ledger_token_unbound")(),
+        _needles("tools/consistency_audit.py", "def audit")(),
+        _needles("tests/test_fact_ledger.py",
+                 "def test_no_false_alarm_on_any_frozen_codex",
+                 "def test_measurement_mode_reports_but_does_not_block")(),
+        _needles("tests/test_lessons_enforcement.py", "(262, ")()),
     261: lambda: (
         _needles("silk_ai_judge.py", "def canonicalize_section_headings",
                  "_HEADING_CANDIDATE_RE", "def _heading_sample",
