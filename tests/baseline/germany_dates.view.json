@@ -725,6 +725,15 @@
     "status": "missing"
    }
   ],
+  "gaps_table": [
+   {
+    "clipped": false,
+    "full": "تعذّر التصنيف",
+    "how": "—",
+    "status": "ناقص",
+    "what": "تعذّر التصنيف"
+   }
+  ],
   "lang": "ar",
   "order": [
    "market_imports_usd",

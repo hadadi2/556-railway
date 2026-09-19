@@ -41,8 +41,12 @@ def test_starved_sections_render_insufficient_never_generic_prose():
     st = v["markets"][0]["section_status"]
     assert all(s["status"] == "insufficient" for s in st.values())
     txt = render_text(v)
-    assert "بيانات غير كافية لقسم" in txt
-    assert "المصادر المُحاوَلة" in txt
+    # الدرس ٢٦٤: الصياغةُ أُعيدت مرّةً واحدة بلغة محلّل — نفسُ المعنى
+    # ونفسُ الأرقام، بلا افتتاحيةٍ آلية.
+    assert "لم يكتمل قسم" in txt
+    # الدرس ٢٦٤: ذيلُ المصادر يقول الحقيقةَ في الحالتين — مصادرُ مُحاوَلة
+    # بالاسم، أو إقرارٌ صريحٌ بأنّ شيئاً لم يُحاوَل (لا ادّعاءَ محاولةٍ فارغة).
+    assert "بعد محاولة: " in txt or "ولم تُحاوَل أي مصادر" in txt
     # الحشو القديم ممنوع بنيوياً في النص المُبوَّب.
     assert "يتطلب مفتاح بحث الويب" not in txt
 
@@ -72,6 +76,6 @@ def test_docx_gated_section_contains_only_the_insufficiency_sentence():
     # (جملة النقص + المصادر المُحاوَلة) انتقلت إلى ملحق المحلّل — مرة واحدة.
     assert "INSUFFICIENT DATA" not in joined
     assert "أقسام دون عتبة الكفاية" in joined
-    assert "بيانات غير كافية" in joined
-    assert "المصادر المُحاوَلة" in joined
+    assert "لم يكتمل قسم" in joined             # الدرس ٢٦٤
+    assert "بعد محاولة: " in joined or "ولم تُحاوَل أي مصادر" in joined
     assert "LOCALPRICE_API_KEY" not in joined      # النثر الإرشادي القديم زال

@@ -1038,3 +1038,174 @@ def _sentence_states_wrong_count(sentence: str, actual: int) -> bool:
     except Exception:  # noqa: BLE001 — تعذّرُ القراءة = لا إصلاح
         return False
     return any(n != actual for n, _p, _f in stated)
+
+
+# ── جدولُ النواقص الواحد · one gaps table (الدرس ٢٦٤) ───────────────────────
+# **بلاغ المالك:** «ادمج النواقص المتشابهة في جدول واحد بدل سردها بالصياغة
+# نفسها». المقيس قبل الإصلاح: ٧٫٥ سطرِ نقصٍ في المتوسط لكلّ تقرير موزّعةً على
+# ٣–٥ أقسام، أغلبُها في قسم الاقتصاد وجدول أرقام القرار — نفسُ المعطى يُعلَن
+# ناقصاً أكثر من مرّة بصياغاتٍ متقاربة.
+#
+# الجدولُ يُبنى من **مصدرٍ واحد** (السجلّ + فجوات الاقتصاد + الحدود المعلنة)
+# بعد إزالة المكرَّر بالمحتوى، ويُفرِّق «ناقص» عن «مرصود بتوثيق ضعيف».
+
+_GAP_NORM_RE = re.compile(r"[\sً-ْـ]+")
+
+
+def _gap_key(text: str) -> str:
+    """مفتاحُ تطبيعٍ للمقارنة — يطوي التشكيل والفراغ وعلامات الترقيم."""
+    t = _GAP_NORM_RE.sub(" ", str(text or "")).strip(" .،؛:-—")
+    return t[:80].lower()
+
+
+def _split_gap(line: str) -> tuple:
+    """(المعطى، سبيلُ الإغلاق) من سطرِ فجوةٍ مكتوب — بلا اختلاق.
+
+    صيغُ الريبو القائمة: «X غير محسوب — الناقص: Y» و«X: Y» و«X غير متاح».
+    ما لا يُفصَّل يبقى كلُّه في عمود المعطى وسبيلُه فارغ (يُقال «—»).
+    """
+    text = str(line or "").strip()
+    for sep in (" — الناقص: ", " - الناقص: ", " — يُغلَق عبر: ",
+                " — يتطلب ", " — يتطلّب "):
+        if sep in text:
+            head, tail = text.split(sep, 1)
+            return head.strip(" .،؛"), tail.strip(" .،؛")
+    # ذيلٌ بعد شرطةٍ يصلح سبيلَ إغلاقٍ **فقط إن كان إجراءً** — «اعتُمدت 0%
+    # في الحل العكسي» نتيجةٌ لا إجراء، ووضعُها في عمود «ما يلزم لإغلاقه»
+    # يجعل الجدولَ يكذب على قارئه.
+    for sep in (" — ", " - "):
+        if sep in text:
+            head, tail = text.split(sep, 1)
+            if _is_actionable(tail):
+                return head.strip(" .،؛"), tail.strip(" .،؛")
+            break
+    # ذيلُ «:» كان يدخل عمودَ الإغلاق بلا شرط، فحطّ شرحُ «بيانات فئة مجاورة»
+    # («رمز HS … لا يشمل صفة المنتج») في خانة «ما يلزم لإغلاقه» — شرحٌ لا
+    # إجراء (مراجعةٌ ذاتية §58). الشرطُ نفسُه يسري هنا.
+    if ": " in text and len(text.split(": ", 1)[0]) <= 45:
+        head, tail = text.split(": ", 1)
+        if _is_actionable(tail):
+            return head.strip(" .،؛"), tail.strip(" .،؛")
+    return text.strip(" .،؛"), ""
+
+
+#: فعلُ إجراءٍ في صدر الذيل — عربيٌّ وإنجليزيّ.
+_ACTIONABLE_RE = re.compile(
+    r"^(أدخل|أكمل|حدِّث|حدث|تحقّق|تحقق|أعد|راجع|اطلب|سجِّل|سجل|احصل|قدِّم"
+    r"|يتطلب|يتطلّب|يلزم|يحتاج|أضف|وفّر|وفر|enter|add|provide|request|verify"
+    r"|update|obtain|submit|supply|needs|requires)\b")
+
+
+def _is_actionable(tail: str) -> bool:
+    """أهذا الذيلُ **إجراءً** يُغلِق الفجوة، أم شرحاً لها؟
+
+    الفعلُ قد تسبقه كلمةٌ واحدةٌ رابطة («إغلاقها يتطلّب بحثاً ميدانياً») —
+    فالمطابقةُ على الصدر وحدَه كانت تترك سبيلَ إغلاقٍ حقيقياً في عمود المعطى
+    (مراجعةٌ ذاتية §58). وما بعد الكلمتين شرحٌ لا إجراء، فلا يُوسَّع أكثر.
+    """
+    t = " ".join(str(tail or "").split())
+    if not t:
+        return False
+    words = t.split(" ", 1)
+    return bool(_ACTIONABLE_RE.match(t) or
+                (len(words) > 1 and _ACTIONABLE_RE.match(words[1])))
+
+
+def clip_clause(text: str, limit: int = 120) -> str:
+    """قصٌّ **صادق**: عند حدّ شبهِ جملة، وبعلامةِ قصٍّ حين لا حدَّ يكفي.
+
+    عيبان قاسهما التحقّقُ قبل الشحن (مراجعةٌ ذاتية §58): الخوارزميةُ الأولى
+    كانت تعيد **أوّلَ** مقطعٍ مهما قصُر فتُسقِط باقي الجملة صامتةً («A — B»
+    تصير «A»)، وحين لا مقطعَ يكفي كانت تقصّ عند الكلمة فيخرج كِسْرٌ مُعلَّق
+    («… لاستكمال أحد»). الآن: أطولُ مقطعٍ يقع داخل الحدّ، وإلّا قصٌّ عند
+    الكلمة بعلامة «…» تقول للقارئ إنّ ثمّة بقيّة. ولا قصَّ أصلاً لما يسع.
+    """
+    t = " ".join(str(text or "").split())
+    if len(t) <= limit:
+        return t
+    best = ""
+    for sep in ("؛", "،", " — ", ". "):
+        if sep not in t:
+            continue
+        acc = ""
+        for piece in t.split(sep):
+            cand = (acc + sep + piece) if acc else piece
+            if len(cand.strip()) > limit:
+                break
+            acc = cand
+        head = acc.strip(" .،؛-—")
+        if len(head) > len(best):
+            best = head
+    # كلُّ اختصارٍ يُعلِن نفسَه: القصُّ عند حدِّ مقطعٍ كان يُسقِط البقيّةَ
+    # **صامتاً** — وهو عينُ ما يمنعه عقدُ «لا فجوةَ مطويّة» (مراجعةٌ ذاتية).
+    if best:
+        return best + "…"
+    cut = t[:max(1, limit - 1)].rsplit(" ", 1)[0].strip(" ،؛-—")
+    return (cut + "…") if cut else t[:limit]
+
+
+#: حدُّ خليّةِ الجدول — فهرسٌ يُقرأ بلمحة. ما تجاوزه يُطبَع كاملاً تحته.
+_GAP_WHAT_LIMIT = 180
+_GAP_HOW_LIMIT = 160
+
+
+def gaps_table(view: dict, lang: str = "ar") -> list:
+    """صفوفُ جدول النواقص الواحد: (المعطى، الحالة، سبيلُ الإغلاق).
+
+    يُدمِج سجلَّ الحقائق وفجواتِ قسم الاقتصاد وحدودَ التقرير في قائمةٍ واحدة
+    بلا تكرار. `[]` حين لا نقص — فلا يُطبَع جدولٌ فارغ.
+    """
+    if not isinstance(view, dict):
+        return []
+    en = lang == "en"
+    lbl_missing = "not observed" if en else "ناقص"
+    lbl_weak = "observed, weakly documented" if en else "مرصود بتوثيق ضعيف"
+    rows: list = []
+    seen: set = set()
+
+    def add(what: str, status: str, how: str) -> None:
+        # قيمةٌ ليست نصّاً (رقمٌ تسرّب إلى `limits`) ليست فجوةً مقروءة.
+        what = what.strip() if isinstance(what, str) else ""
+        if not what or not any(c.isalpha() for c in what):
+            return
+        # المفتاحُ يقطع عند ٨٠ محرفاً بينما المعطى يبلغ ١٨٠: فجوتان تشتركان
+        # في صدرهما كانتا تُطويان في صفٍّ واحدٍ بلا أثر (مراجعةٌ ذاتية §58).
+        key = _gap_key(what) + "|" + _gap_key(how)
+        if key in seen:
+            return
+        seen.add(key)
+        # الحدُّ سخيٌّ عمداً: قياسُ الـPDF الحقيقيّ أثبت أنّ سببَ المحاذاة
+        # اليسارية ليس طولَ النصّ بل **موضعَ العمود** — التفافُ خليّةٍ في
+        # العمود الأيسر يبدأ من هامش اليسار فيطابق إمضاءَ انقلاب jc. فصار
+        # العمودُ الأيسر «الحالة» (مفرداتٌ قصيرةٌ لا تلتفّ)، وبقي النصُّ
+        # كاملاً بلا قصٍّ في أغلب الصفوف.
+        short_what = clip_clause(what, _GAP_WHAT_LIMIT)
+        short_how = clip_clause(how, _GAP_HOW_LIMIT) if how else "—"
+        full = (what + " — " + how) if how else what
+        rows.append({"what": short_what, "status": status, "how": short_how,
+                     # الصفُّ المُختصَر يحمل أصلَه كاملاً: الجدولُ فهرسٌ
+                     # يُقرأ، والتفصيلُ يُطبَع تحته مرّةً — فلا سطرٌ يضيع.
+                     "full": " ".join(full.split()),
+                     "clipped": short_what != what or (
+                         bool(how) and short_how != how)})
+
+    # **ما يُطبَع فعلاً وحدَه** يدخل الجدول: مفتاحٌ لم يقرأه المحرّك ولا
+    # يذكره أيُّ قسمٍ ليس «نقصاً يراه القارئ» — إدراجُه يصنع قائمةَ إخفاقاتٍ
+    # طويلةً بلا سبيلِ إغلاق، وهو عكسُ المطلوب (دمجُ المكرَّر لا تكثيرُه).
+    # ويُستثنى من ذلك **الضعيفُ التوثيق**: مرصودٌ ويُعرَض رقمُه، وحالتُه لا
+    # تظهر اليوم في أيّ سطح رغم أنها فرقٌ طلبه المالك صراحةً.
+    ledger = view.get("ledger") or {}
+    for g in ledger.get("gaps") or []:
+        if g.get("status") != WEAK:
+            continue
+        label = g.get("label_en") if en else g.get("label_ar")
+        add(label, lbl_weak, _split_gap(g.get("note") or "")[1])
+    # فجواتُ قسم الاقتصاد **لا تدخل** الجدول: القسمُ يطبعها بنصّها في
+    # موضعها (وحجبُها هناك أعاد حادثةَ E-03 — غيابٌ صامتٌ بعد إعلان)،
+    # فإدراجُها هنا يجعل التقريرَ يقول المعطى مرّتين بالصياغة نفسها —
+    # وهو بعينه ما طلب المالكُ إنهاءه. قِيس: أربعةٌ من خمسةِ صفوفٍ في
+    # مدوّنة الأردن كانت مكرّرةً حرفياً (مراجعةٌ ذاتية §58).
+    for line in (view.get("limits") or []):
+        what, how = _split_gap(line)
+        add(what, lbl_missing, how)
+    return rows

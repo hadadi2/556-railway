@@ -2220,14 +2220,15 @@ def _docx_deep_research(doc, view: dict) -> None:
     # متن الدراسة — تبقى دعوةً على سطح التسليم (شارة/زرّ اللوحة، web/
     # index.html) لا داخل المستند المُصدَّر نفسه.
 
-    if dr.get("limits"):
+    # الدرس ٢٦٤: الجدولُ الواحد (المعطى/الحالة/ما يلزم لإغلاقه) بدل سردٍ
+    # يُعيد الصياغةَ نفسَها في أكثر من قسم. والعنوانُ يظهر حين **يوجد نقصٌ
+    # مرصود** لا حين تمتلئ قائمةُ `limits` وحدَها: فجواتُ قسم الاقتصاد كانت
+    # تُطبَع في قسمها فقط ولا تبلغ هذا القسم أبداً (قِياسٌ كشفه).
+    import silk_fact_ledger as _FL
+    if dr.get("limits") or _FL.gaps_table(view, "ar"):
         doc.add_heading("حدود قسم البحث العميق", level=2)
-        for x in dr["limits"][:12]:
-            # PART B1: حدود البعثات جُمل واحدة مطهَّرة أصلاً (silk_render)؛ قصّها
-            # عند ٣٠٠ كان يُنهي سطراً منتصفَ جملة بـ«…». سقف أوسع (٦٠٠) +
-            # مصدر الحدّ صار الجملة الأولى لا الملخّص كاملاً => بلا بتر وسط جملة.
-            doc.add_paragraph(_clean_report_text(x, max_len=600),
-                              style="List Bullet")
+        _docx_gaps_table(doc, view, "ar",
+                         sanitize=lambda x: _clean_report_text(x, max_len=600))
 
     _docx_technical_appendix(doc, dr)
 
@@ -3884,6 +3885,14 @@ def _client_gaps_section(doc, dr: dict, lang: str = "ar") -> None:
         doc.add_paragraph(_T("gaps_intro", lang))
         for line in gap_lines:
             doc.add_paragraph(line, style="List Bullet")
+        # الدرس ٢٦٤ (بلاغ المالك): النواقصُ المتشابهةُ تُجمَع في **جدولٍ
+        # واحد** بعمودِ حالةٍ يفرّق «ناقص» عن «مرصود بتوثيق ضعيف»، بدل
+        # سطورٍ متتالية بالصياغة نفسها. البنودُ أعلاه تبقى (فجواتُ قرارٍ
+        # حرجة، لكلّ منها سبيلُ إغلاقٍ مكتوب)، والجدولُ يجمع ما عداها.
+        _docx_gaps_table(doc, {"deep_research": dr, "limits": [],
+                               "ledger": dr.get("ledger") or {}}, lang,
+                         sanitize=lambda x: _lang_safe(
+                             _client_sanitize(x, lang), lang))
         # #13 ص15: التأطير غير الحاجب يقال مرة واحدة سطرَ تمهيدٍ — كان
         # ذيلاً مخبوزاً في قالب كل بند فتكرر حرفياً مع كل فجوة.
         if mission_gap_lines:
@@ -5479,12 +5488,10 @@ def render_docx(view: dict, path: str) -> str:
 
     # ═══ حدود هذا التقرير — قبل التوصيات (§10.3) ═══
     doc.add_heading("حدود هذا التقرير", level=1)
-    limits = view.get("limits") or []
-    if limits:
-        for x in _gap_list_ar(limits[:12]):
-            doc.add_paragraph(str(x), style="List Bullet")
-    else:
-        doc.add_paragraph("لا حدود مسجّلة لهذا التحليل.")
+    # الدرس ٢٦٤: الجدولُ الواحد نفسُه الذي يُصيَّر في md — بعمودِ حالةٍ
+    # يفرّق «ناقص» عن «مرصود بتوثيق ضعيف»، بلا سردٍ مكرّرٍ بالصياغة نفسها.
+    _docx_gaps_table(doc, view, "ar",
+                     empty="لا حدود مسجّلة لهذا التحليل.")
 
     # ═══ ١٤) التوصيات الاستراتيجية ═══ (قرار الدخول انتقل قرب الخلاصة
     # التنفيذية أعلاه — راجع القسم ٣)
@@ -5863,6 +5870,130 @@ def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar",
                       style="Intense Quote")
 
 
+def _gap_cells(rows: list, lang: str = "ar", clean=None) -> list:
+    """(الصفّ، خلاياه المُطهَّرة) لكلّ صفٍّ **ينجو نصُّه** — لا خليّةَ فارغة.
+
+    المعرِّبُ `_gap_list_ar` عربيٌّ بلا وسيط لغة، ونصُّ الفجوات مُؤلَّفٌ
+    بالعربية؛ فكان الحارسُ الإنجليزيُّ يمسح خليّةَ «Fact» فيُسلَّم جدولٌ
+    صفوفُه «not observed» بلا موضوع — فجوةٌ تُعلَن بلا هوية، وهو أسوأُ من
+    ألّا تُعلَن (قِيس في `samples/client_report_latest_en.docx`، مراجعةٌ
+    ذاتية §58). فما لا ينجو لا يُطبَع، ولا يُختلَق له مقابلٌ إنجليزيّ.
+    """
+    _clean = clean or (lambda x: x)
+    out = []
+    for r in rows:
+        raw = [str(r["what"]), str(r["how"])]
+        what, how = raw if lang == "en" else _gap_list_ar(raw)
+        cells = [_clean(what), _clean(how), _clean(str(r["status"]))]
+        if not cells[0].strip():
+            continue
+        # خانةُ «لا سبيلَ مكتوب» تبقى شرطةً ظاهرة: المعرِّبُ يُفرِّغ الشرطةَ
+        # (ليست فجوةً يعرفها)، وخليّةٌ فارغةٌ تُقرأ سهواً لا إقراراً.
+        if not cells[1].strip():
+            cells[1] = "—"
+        out.append((r, cells))
+    return out
+
+
+def _gaps_detail_rows(rows: list, seen: str = "") -> list:
+    """الصفوفُ المُختصَرةُ التي **لم يُقَل نصُّها في موضعٍ آخر** من التقرير.
+
+    الدرس ٢٦٤ بحرفه: «لا تكرار للمعلومة في أكثر من موضع». فجوةٌ يشرحها قسمُ
+    الاقتصاد بنصّها لا يُعاد نصُّها تحت الجدول — الجدولُ يفهرسها وكفى؛ وفجوةٌ
+    لا موضعَ لها سواه تُطبَع كاملةً فلا يُسقِطها التنسيق. (قِيس على المدوّنات:
+    خمسٌ من ستٍّ لا تُذكَر إلا هنا، وواحدةٌ كانت تتكرّر حرفياً.)
+    """
+    flat = " ".join(str(seen or "").split())
+    out = []
+    for r in rows:
+        full = " ".join(str(r.get("full") or "").split())
+        if not (r.get("clipped") and full):
+            continue
+        probe = full[:70]
+        if probe and probe in flat:
+            continue
+        out.append(r)
+    return out
+
+
+def _docx_gaps_table(doc, view: dict, lang: str = "ar", *,
+                     empty: str = "", sanitize=None) -> None:
+    """جدولُ النواقص الواحد في Word — نفسُ صفوف `md` (مصدرٌ واحد لا اثنان)."""
+    import silk_fact_ledger as _FL
+    rows = _FL.gaps_table(view, lang)
+    _clean = sanitize or (lambda x: x)
+    if not rows:
+        limits = [str(x) for x in (view.get("limits") or []) if str(x).strip()]
+        if limits:
+            for x in _gap_list_ar(limits[:12]):
+                doc.add_paragraph(_clean(str(x)), style="List Bullet")
+        elif empty:
+            doc.add_paragraph(_clean(empty))
+        return
+    # ترتيبُ الأعمدة **هندسةٌ لا ذوق**: في جدولٍ عربيّ يتدفّق يميناً يصير
+    # العمودُ الثالث أقصى اليسار، والتفافُ نصٍّ فيه يبدأ من هامش اليسار
+    # فيطابق إمضاءَ انقلاب jc في قياس الـPDF (قِيس مباشرةً: «… مدخلات سلسلة
+    # التكلفة حتى» عند x0=91). فالحالةُ — مفرداتٌ قصيرةٌ لا تلتفّ — آخِراً،
+    # والنصُّ الطويل يبقى كاملاً. نفسُ الترتيب في md ليتطابق السطحان.
+    head = (["Fact", "How it closes", "Status"] if lang == "en"
+            else ["المعطى", "ما يلزم لإغلاقه", "الحالة"])
+    shown = _gap_cells(rows[:12], lang, _clean)
+    if not shown:
+        if empty:
+            doc.add_paragraph(_clean(empty))
+        return
+    _add_table(doc, head, [c for _r, c in shown])
+    _docx_gaps_detail(doc, [r for r, _c in shown], lang, _clean)
+
+
+def _docx_gaps_detail(doc, rows: list, lang: str, clean) -> None:
+    """ما اختُصر في الخليّة يُطبَع كاملاً مرّةً — لا معلومةَ تسقط بالتنسيق."""
+    try:
+        seen = "\n".join(p.text for p in doc.paragraphs)
+    except Exception:                       # noqa: BLE001 — مستندٌ بلا فقرات
+        seen = ""
+    long_rows = _gaps_detail_rows(rows, seen)
+    if not long_rows:
+        return
+    doc.add_paragraph(clean("Detail of the shortened rows:" if lang == "en"
+                            else "تفصيل الصفوف المختصَرة أعلاه:"))
+    for r in long_rows:
+        doc.add_paragraph(clean(str(r["full"])), style="List Bullet")
+
+
+def _gaps_table_md(view: dict, lang: str = "ar", *,
+                   seen: str = "") -> list:
+    """جدولُ النواقص الواحد بصيغة Markdown — أو سطرُ «لا فجوات» الصادق.
+
+    الدرس ٢٦٤: المعطياتُ الناقصةُ والمرصودةُ ضعيفةُ التوثيق كانت تُسرَد
+    بالصياغة نفسها في أكثر من قسم؛ تُجمَع هنا مرّةً واحدة بعمودِ حالةٍ
+    يفرّق بينهما (وهو فرقٌ لم يكن يبلغ القارئ أصلاً).
+    """
+    import silk_fact_ledger as _FL
+    rows = _FL.gaps_table(view, lang)
+    limits = [str(x) for x in (view.get("limits") or []) if str(x).strip()]
+    if not rows:
+        return ([f"- {x}" for x in _gap_list_ar(limits[:12])] if limits
+                else ["- لا فجوات مرصودة"])
+    head = (["Fact", "How it closes", "Status"] if lang == "en"
+            else ["المعطى", "ما يلزم لإغلاقه", "الحالة"])
+    out = ["| " + " | ".join(head) + " |", "|" + "|".join(["---"] * 3) + "|"]
+    pairs = _gap_cells(rows[:12], lang)
+    if not pairs:
+        return ([f"- {x}" for x in _gap_list_ar(limits[:12])] if limits
+                else ["- لا فجوات مرصودة"])
+    for _r, cells in pairs:
+        out.append("| " + " | ".join(str(c).replace("|", "／")
+                                     for c in cells) + " |")
+    long_rows = _gaps_detail_rows([r for r, _c in pairs], seen)
+    if long_rows:
+        out.append("")
+        out.append("Detail of the shortened rows:" if lang == "en"
+                   else "تفصيل الصفوف المختصَرة أعلاه:")
+        out.extend(f"- {str(r['full']).replace('|', '／')}" for r in long_rows)
+    return out
+
+
 def _md_deep_research(view: dict, prefix: list[str]) -> str:
     """التقرير الكامل Markdown لنتيجة /research — يُصيَّر من `view["deep_research"]`
     (نفس مصدر اللوحة وتصدير Word عبر `_docx_deep_research`)، لا من قالب /analyze.
@@ -6009,10 +6140,11 @@ def _md_deep_research(view: dict, prefix: list[str]) -> str:
     L.append("")
 
     # ── حدود هذا التقرير — declared limits ──────────────────────────────────
+    # الدرس ٢٦٤ (بلاغ المالك: «ادمج النواقص المتشابهة في جدول واحد»):
+    # جدولٌ واحدٌ بثلاثة أعمدة يحلّ محلّ سردٍ متكرّرٍ بالصياغة نفسها،
+    # **ويُظهِر الفرقَ الذي لم يكن يظهر**: ناقصٌ مقابل مرصودٍ ضعيفِ التوثيق.
     L += ["## حدود هذا التقرير", ""]
-    limits = view.get("limits") or ["لا فجوات مرصودة"]
-    for x in _gap_list_ar(limits[:12]):
-        L.append(f"- {x}")
+    L += _gaps_table_md(view, seen="\n".join(L))
     L.append("")
 
     # ── التوصية / المختصر — نفس سطور المختصر (لا صياغة موازية) ───────────────
@@ -6237,7 +6369,7 @@ def render_markdown(view: dict) -> str:
     # طبقة الإثراء المحلية خلف بوابة 2B — سطر النقص الصريح فقط دون العتبة.
     st_c = st_all.get("competitors")
     if st_c and st_c.get("status") == "insufficient":
-        L += [insufficient_line("المنافسون", st_c), ""]
+        L += [insufficient_line(_SEC_AR["competitors"], st_c), ""]
     else:
         from silk_narrative import fmt_money
         for c in (top_m.get("supplier_countries") or [])[:6]:
@@ -6274,7 +6406,7 @@ def render_markdown(view: dict) -> str:
                 L.append(f"- {_listing_text(v)} ({_f_srcline(rp)})")
         elif st_p and st_p.get("status") == "insufficient":
             # بوابة 2B: سطر النقص الصريح فقط + فجوة القسم المعلنة بنصّها.
-            L.append(insufficient_line("الأسعار", st_p))
+            L.append(insufficient_line(_SEC_AR["pricing"], st_p))
             gap = next((g for g in (pr.get("gaps") or [])
                         if "retail_prices" in g), None)
             if gap:
@@ -6406,7 +6538,12 @@ def render_markdown(view: dict) -> str:
                      f"{c['attempted']} (درجة {c['score']}){flag}")
             st = st_all.get(sec)
             if st and st.get("status") == "insufficient":
-                L.append(f"  - {insufficient_line(_SEC_AR.get(sec, sec), st)}")
+                # الجملةُ نفسُها كان يطبعها متنُ القسم ثمّ يعيدها جدولُ
+                # التغطية حرفياً في التقرير الواحد (مراجعةٌ ذاتية §58):
+                # تُقال مرّةً، وحيث قيلت أوّلاً.
+                line = insufficient_line(_SEC_AR.get(sec, sec), st)
+                if line not in "\n".join(L):
+                    L.append(f"  - {line}")
     else:
         L.append("- لا تغطية أقسام محسوبة")
     L.append("")
@@ -6427,10 +6564,10 @@ def render_markdown(view: dict) -> str:
     # ── حدود هذا التقرير — declared limits before the recommendation ────────
     # سدّ انحراف (الطبقة ٨): كانت هذه القائمة تُطبع خامة بلا _gap_list_ar
     # — الآن نفس المعالجة المطبَّقة في docx (اتساق المشتقّين، لا مسارين).
+    # والدرس ٢٦٤: مسارُ `/analyze` كان قد بقي سرداً بينما تحوّل docx جدولاً،
+    # فافترق المشتقّان في التقرير نفسِه (مراجعةٌ ذاتية §58). الجدولُ للاثنين.
     L += ["## حدود هذا التقرير", ""]
-    limits = view.get("limits") or ["لا فجوات مرصودة في الأسواق العليا"]
-    for x in _gap_list_ar(limits[:12]):
-        L.append(f"- {x}")
+    L += _gaps_table_md(view, seen="\n".join(L))
     L.append("")
 
     # ── التوصية / المختصر — نفس سطور القالب، لا صياغة موازية ────────────────
