@@ -795,6 +795,15 @@ TERMS: dict[str, dict[str, str]] = {
     # ── جدول المستوردين/الموزّعين · importer & distributor leads ───────────
     "leads_title": {"ar": "قائمة مستوردين وموزعين قابلين للتواصل",
                     "en": "Contactable importers and distributors"},
+    # الدرس ٢٦٣: فرقٌ صادقٌ بين «لم نجد أحداً» و«وجدنا ثمّ استبعدنا غيرَ
+    # المرتبط» — الأولى تقول للعميل إنّ السوق بلا موزّعين مرصودين، والثانية
+    # تقول إنّ التنقية عملت. خلطُهما يُخفي عملَ المِصفاة ويُقرأ نقصَ بحث.
+    "leads_none_filtered": {
+        "ar": "لم نجد موزّعاً مرتبطاً بهذا المنتج في هذا التشغيل — "
+              "الجهاتُ التي ظهرت في البحث لا تتعامل بهذه الفئة",
+        "en": "No distributor related to this product was found in this "
+              "study — the entities that surfaced do not deal in this "
+              "category"},
     "leads_none": {
         "ar": "لا جهات اتصال قابلة للتواصل في هذا التشغيل — القائمة غير متاحة",
         "en": "No contactable leads in this study — the list is not available"},

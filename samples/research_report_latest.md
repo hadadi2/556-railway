@@ -163,8 +163,8 @@ comtrade_competitors:
 
 | الاسم | العنوان | الهاتف | الإيميل | الموقع | التقييم |
 |---|---|---|---|---|---|
-| Ejmar Import BV | Barcelona (نموذج) | +34 93 000 0000 | info@ejmar.example | ejmar.example | 4.4 (76) |
-| Halal Mayorista SL | Madrid (نموذج) | +34 91 000 0000 | ventas@halalm.example | halalm.example | 4.1 (41) |
+| Ejmar Import BV | Barcelona (نموذج) | +34 93 000 0000 | info@ejmar.example | https://maps.google/ejmar | 4.4 (76) |
+| Halal Mayorista SL | Madrid (نموذج) | +34 91 000 0000 | ventas@halalm.example | https://maps.google/halalm | 4.1 (41) |
 
 إدراج النشاط في خرائط قوقل يثبت وجوده وجهة اتصاله فقط، لا أنه يستورد «تمور» — التحقق التجاري خطوة تالية.
 

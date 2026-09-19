@@ -20,6 +20,8 @@
 """
 from __future__ import annotations
 
+import functools
+
 CONTRACT_VERSION = "1.1"
 
 # المصطلح → شرح عربي سطر واحد (B1). المصدر الوحيد المستعمَل في الحقن
@@ -511,6 +513,189 @@ def lead_activity_allowed(raw: object) -> bool:
     if key in LEAD_ACTIVITY_ALLOWED:
         return True
     return key not in ACTIVITY_LABEL_AR
+
+
+# ── الدرس ٢٦٣: صلةُ الرابط بالمنتج · lead ↔ product relevance ──────────────
+# **العيبُ المرصود (بلاغ المالك):** «مؤسسة النخبة لقطع الغيار» في قائمة
+# موزّعي الطحينة. `lead_activity_allowed` عامّةٌ بالتصميم (لا تفريعَ منتج)
+# فمرّ نشاطٌ مُدرَجٌ لا صلةَ له بفئة المنتج، وكان الحسمُ قرارَ مالكٍ معلَّقاً
+# في `docs/report-quality/LOGIC_ISSUES.md` — وقد حُسِم: احذف غير المرتبط.
+#
+# المحورُ الثاني الذي كان ناقصاً: **فئةُ المنتج من فصل HS × فئةُ نشاط
+# الرابط**. النشاطُ المُدرَجُ الذي يخدم فئةً **أخرى** يُسقَط بسببٍ مسمّى؛
+# والنشاطُ العامّ (استيراد/تجارة/جملة/لوجستيات) يخدم كلَّ الفئات فيمرّ.
+#
+# وكلماتُ المنتج **بثلاث لغات** (عربية/إنجليزية/لغة السوق —
+# `data/product_terms_l1.csv`) تُبقي رابطاً لا تحذفه: «Pastificio Milano Srl»
+# صانعُ معكرونة إيطاليّ بلا كلمةٍ عربيةٍ ولا إنجليزية في اسمه.
+
+#: نشاطٌ **يخدم كلَّ الفئات** — وسيطٌ تجاريّ أو ناقلٌ لا يتخصّص بسلعة.
+_ACTIVITY_CATEGORY_FREE: frozenset = frozenset({
+    "import export company", "importer", "exporter", "wholesaler",
+    "distributor", "trading company", "general store", "warehouse",
+    "logistics service", "freight forwarding service", "customs broker",
+})
+#: مقدّمو خدماتٍ **ليسوا طرفاً تجارياً لأيّ منتج** — لا يشترون ولا يوزّعون
+#: ولا يخلّصون. استبعادُهم مقرَّرٌ في الريبو أصلاً (خارج `LEAD_ACTIVITY_
+#: ALLOWED`) وهو **مستقلٌّ عن فئة المنتج**، فيسري بلا راية.
+_ACTIVITY_NON_TRADE: frozenset = frozenset({
+    "consultant", "business management consultant", "consulting agency",
+    "marketing agency", "advertising agency", "law firm", "accounting firm",
+    "bank", "insurance agency", "real estate agency",
+})
+#: نشاطٌ مُدرَجٌ يخدم فئةً بعينها — خارجَها يُسقَط بسببٍ مسمّى.
+_ACTIVITY_CATEGORY: dict = {
+    "منتج غذائي/زراعي": frozenset({
+        "food broker", "food products supplier", "wholesale grocer",
+        "food manufacturer", "grocery store", "supermarket", "hypermarket",
+        "convenience store", "confectionery", "candy store", "dairy store",
+        "dairy farm", "greengrocer", "seafood wholesaler",
+        "confectionery wholesaler", "food wholesaler", "beverage distributor",
+        "coffee wholesaler", "coffee store", "spice store", "butcher shop",
+        "bakery"}),
+    "مركبات/معدّات نقل": frozenset({"auto parts store"}),
+}
+
+
+def _lead_text(lead: object) -> str:
+    fields = ("name", "category", "activity", "description", "snippet",
+              "title")
+    return " ".join(str((lead or {}).get(f) or "") for f in fields
+                    if isinstance(lead, dict)).lower()
+
+
+def _activity_key_of(lead: object) -> str:
+    raw = str((lead or {}).get("category") or "").strip() \
+        if isinstance(lead, dict) else ""
+    if not raw:
+        return ""
+    key = _activity_key(raw)
+    if key not in ACTIVITY_LABEL_AR:
+        for k, v in ACTIVITY_LABEL_AR.items():
+            if v == raw:
+                return k
+    return key
+
+
+@functools.lru_cache(maxsize=256)
+def product_terms(category: str, lang: str) -> tuple:
+    """كلماتُ فئةِ المنتج بلغةٍ بعينها من `data/product_terms_l1.csv`.
+
+    صفٌّ غائب = **محورٌ متخطّى معلَن** (tuple فارغة) لا تخمينَ ترجمة.
+    """
+    import csv
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "product_terms_l1.csv")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            rows = csv.DictReader(l for l in fh if not l.startswith("#"))
+            for row in rows:
+                if (row.get("category") or "").strip() == category and \
+                        (row.get("lang") or "").strip() == lang:
+                    return tuple(t.strip().lower()
+                                 for t in (row.get("terms") or "").split(",")
+                                 if t.strip())
+    except Exception:  # noqa: BLE001 — مرجعٌ مساعد، غيابُه لا يكسر شيئاً
+        return ()
+    return ()
+
+
+@functools.lru_cache(maxsize=64)
+def _market_language(iso3: str) -> str:
+    import csv
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "market_locale.csv")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(l for l in fh if not l.startswith("#")):
+                if (row.get("iso3") or "").strip().upper() == (iso3 or "").upper():
+                    return (row.get("lang_primary") or "").strip()
+    except Exception:  # noqa: BLE001
+        return ""
+    return ""
+
+
+@functools.lru_cache(maxsize=256)
+def _product_words_cached(hs_code: str, product: str, market_iso3: str) -> frozenset:
+    """نسخةٌ مُخزَّنة — الجداولُ ملفاتٌ ثابتة، وكان كلُّ رابطٍ يُعيد قراءة
+    `hs_codes.csv` (آلافُ الصفوف) وجدولين آخرين (مراجعة §58)."""
+    return frozenset(_product_words(hs_code, product, market_iso3))
+
+
+def _product_words(hs_code: object, product: str, market_iso3: str) -> set:
+    """كلماتُ المنتج بالعربية والإنجليزية ولغة السوق — اتحادٌ لا استبدال."""
+    import re as _re
+    words = {w.strip().lower()
+             for w in _re.split(r"[\s,،]+", str(product or ""))
+             if len(w.strip()) >= 3}
+    code = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
+    try:
+        import csv
+        import os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "data", "hs_codes.csv")
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                if code and (row.get("hs_code") or "").strip() == code[:6]:
+                    # **عمودُ `keywords` وحدَه** — وصفُ البند الرسميّ نثرٌ
+                    # جمركيّ عامّ («parts»، «other»، «prepared») فيتطابق مع
+                    # «auto parts store» فيُبقي رابطاً لا صلةَ له (قِياسٌ
+                    # كشفه قبل الشحن). الكلماتُ المنسَّقة مميِّزةٌ بالتصميم.
+                    words |= {k.strip().lower()
+                              for k in (row.get("keywords") or "").split(",")
+                              if len(k.strip()) >= 3}
+    except Exception:  # noqa: BLE001 — المرجعُ مساعدٌ لا شرط
+        pass
+    try:
+        from silk_ai_judge import _product_category
+        cat = (_product_category(hs_code) or ("", ""))[0]
+    except Exception:  # noqa: BLE001
+        cat = ""
+    if cat:
+        for lang in ("ar", "en", _market_language(market_iso3)):
+            if lang:
+                words |= set(product_terms(cat, lang))
+    return {w for w in words if w}
+
+
+def lead_relevant_to_product(lead: object, hs_code: object = None,
+                             product: str = "", market_iso3: str = "") -> tuple:
+    """(هل يُبقى الرابط؟، سببُ الإسقاط) — الدرس ٢٦٣.
+
+    القاعدةُ بترتيبها: تقاطعُ كلمةٍ من كلمات المنتج (ثلاث لغات) يُبقي؛ ثم
+    نشاطٌ عامٌّ يخدم كلَّ الفئات يُبقي؛ ثم نشاطٌ مُدرَجٌ يخدم فئةً أخرى
+    يُسقِط **بسببٍ مسمّى**؛ وما عدا ذلك يُبقى (لا حذفَ بالجهل).
+    """
+    if not isinstance(lead, dict):
+        return False, "ليس صفّاً"
+    text = _lead_text(lead)
+    words = _product_words_cached(str(hs_code or ""), str(product or ""),
+                                  str(market_iso3 or ""))
+    if any(w in text for w in words):
+        return True, ""
+    key = _activity_key_of(lead)
+    if key in _ACTIVITY_NON_TRADE:
+        return False, (f"نشاطُ «{activity_label_ar(key)}» مقدّمُ خدمةٍ لا "
+                       "طرفٌ تجاريّ يشتري أو يوزّع")
+    if not key or key in _ACTIVITY_CATEGORY_FREE:
+        return True, ""
+    try:
+        from silk_ai_judge import _product_category
+        cat = (_product_category(hs_code) or ("", ""))[0]
+    except Exception:  # noqa: BLE001
+        cat = ""
+    if not cat:
+        # فئةُ المنتج مجهولة (رمزٌ غائبٌ أو فصلٌ غيرُ مصنَّف) ⇒ **لا محورَ
+        # للمقارنة**، فلا حذف. الحذفُ يحتاج تعارضاً مقيساً لا جهلاً بطرفيه.
+        return True, ""
+    for other_cat, activities in _ACTIVITY_CATEGORY.items():
+        if key in activities and other_cat != cat:
+            return False, (f"نشاطُ «{activity_label_ar(key)}» يخدم فئة "
+                           f"«{other_cat}» لا فئةَ هذا المنتج"
+                           + (f" «{cat}»" if cat else ""))
+    return True, ""
 
 
 def activity_label_ar(raw: object) -> str:

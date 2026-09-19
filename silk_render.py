@@ -732,11 +732,23 @@ def _prices(row: dict) -> list:
     return out
 
 
-def _client_leads(bundle, market):
-    # The browser and document exports must show the same validated contact rows.
+def _client_leads(bundle, market, product: str = "", hs_code: object = None,
+                  report_text: str = ""):
+    """The browser and document exports must show the same validated rows.
+
+    الدرس ٢٦٣: المنتجُ ورمزُه ومتنُ التقرير يمرّون أيضاً — مِصفاةُ الصلة
+    بفئة المنتج تحتاجهم، وبدونهم كانت تعمل عمياء (تُبقي كلَّ شيء).
+    """
     from silk_reports import _clean_leads
     result = dict(bundle or {"leads": [], "path": "gap"})
-    result["leads"] = _clean_leads(result.get("leads") or [], {"market": market or {}})
+    ctx = {"market": market or {}, "product": product, "hs_code": hs_code,
+           "report": {"text": report_text}}
+    result["leads"] = _clean_leads(result.get("leads") or [], ctx)
+    # أسبابُ الإسقاط تحمل أسماءَ جهاتٍ مرفوضةٍ وتعليلاً داخلياً — **عددُها
+    # وحدَه** يصل العرض (يقرؤه المدقّق)، لا القائمةُ نفسُها (مراجعة §58).
+    _dropped = ctx.get("leads_dropped") or []
+    if _dropped:
+        result["dropped_count"] = len(_dropped)
     return result
 
 
@@ -3339,7 +3351,11 @@ def _deep_research_view(result: dict, lang: str = "ar",
         "glossary": _glossary,
         # C5 (SPEC-v2): قائمة مستوردين/موزعين قابلين للتواصل — بنية يعرضها
         # كل مُصدِّر كجدول في قسم الدخول (خرائط قوقل/Places + مرشّحو ويب).
-        "importer_leads": _client_leads(dr.get("importer_leads"), result.get("market")),
+        "importer_leads": _client_leads(
+            dr.get("importer_leads"), result.get("market"),
+            product=str(result.get("product") or ""),
+            hs_code=result.get("hs_code"),
+            report_text=_report_text_glossed),
         # مصدرُ الرمز حين حُسِم آلياً — يصل **عرضَ البحث العميق** لا الحدودَ
         # وحدها: تقريرُ العميل (المُسلَّم الفعليّ) يبني أقسامَه من
         # `deep_research` لا من `limits`، فوضعُه في الحدود وحدها أخرجه من

@@ -4,7 +4,8 @@ from silk_data_layer import DataPoint
 from silk_gmaps import maps_disclaimer
 
 
-def writer_reports(missions, importer_leads=None, product="", lang="ar", market=""):
+def writer_reports(missions, importer_leads=None, product="", lang="ar",
+                   market="", hs_code=None):
     from silk_search_index_evidence import normalized_reports
     from silk_product_evidence import price_reports
     reports = price_reports(normalized_reports(missions), product)
@@ -18,7 +19,11 @@ def writer_reports(missions, importer_leads=None, product="", lang="ar", market=
     if market_ref is not None:
         from dataclasses import asdict
         from silk_reports import _clean_leads
-        rows = _clean_leads(rows, {"market": asdict(market_ref)})
+        # الدرس ٢٦٣ (مراجعة §58): المنتجُ ورمزُه يمرّان هنا أيضاً — بدونهما
+        # كانت مِصفاةُ الصلة تعمل عمياء على حزمة الكاتب، فيذكر السردُ جهةً
+        # يحذفها الجدول (تباعدُ سردٍ وجدولٍ من نفس العائلة التي نُصلِحها).
+        rows = _clean_leads(rows, {"market": asdict(market_ref),
+                                   "product": product, "hs_code": hs_code})
     findings = []
     for row in rows:
         row = clean_contact(row, target_iso3)

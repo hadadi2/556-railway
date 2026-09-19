@@ -347,6 +347,7 @@
   "hs_provenance": null,
   "hypotheses": [],
   "importer_leads": {
+   "dropped_count": 1,
    "leads": [
     {
      "address": "طرابلس، ليبيا",
@@ -358,19 +359,6 @@
      "phone": "+218 21 000000",
      "rating": "4.2",
      "review_count": "31",
-     "source": "google_maps_scraper",
-     "website": ""
-    },
-    {
-     "address": "بنغازي، ليبيا",
-     "category": "متجر قطع غيار",
-     "doc_level": "◐ مرصود عبر خرائط قوقل",
-     "email": "",
-     "maps_link": "",
-     "name": "مؤسسة النخبة لقطع الغيار",
-     "phone": "+218 61 000000",
-     "rating": "3.9",
-     "review_count": "12",
      "source": "google_maps_scraper",
      "website": ""
     }
