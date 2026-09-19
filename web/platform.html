@@ -3214,14 +3214,26 @@ function viewReportBtn(s) {
         }
         /* المعرّفاتُ تبقى **مرجعاً تقنياً للدعم** لا رسالةً للمصنع (شرط
            المُشرِف F محفوظ: الحجبُ يسمّي فحوصَه): سطرٌ خافتٌ أسفل الجمل. */
-        if (q.blocked_checks && q.blocked_checks.length)
-          html += '<div class="foot" style="opacity:.65;margin-top:4px">' +
-                  ar_en("للدعم الفنّي — الفحوص الحاجبة: ",
-                        "For support — blocking checks: ") +
-                  esc((q.fail_drivers || []).concat(
-                        q.blocked_checks.filter(
-                          (c) => (q.fail_drivers || []).indexOf(c) < 0)
-                      ).join("، ")) + "</div>";
+        /* الدرس ٢٦١: كان السطرُ يدمج `fail_drivers` مع بقيّة `blocked_checks`
+           تحت عنوانٍ واحد «الفحوص الحاجبة» — فيُقرَأ فحصٌ **لا يحجب**
+           (`trends_hollow_completion` مثلاً، وهو ملاحظةٌ منهجيةٌ عمداً) سبباً
+           للحجب، ويُرسَل صاحبُ المصنع خلف علاجٍ لا يفتح شيئاً. الآن صفّان
+           مفصولان بأسمائهما الصادقة. */
+        if (q.blocked_checks && q.blocked_checks.length) {
+          const _drv = q.fail_drivers || [];
+          const _other = q.blocked_checks.filter((c) => _drv.indexOf(c) < 0);
+          html += '<div class="foot" style="opacity:.65;margin-top:4px">';
+          if (_drv.length)
+            html += ar_en("للدعم الفنّي — الفحوص الحاجبة: ",
+                          "For support — blocking checks: ") +
+                    esc(_drv.join("، "));
+          if (_other.length)
+            html += (_drv.length ? "<br>" : "") +
+                    ar_en("ملاحظات لا تحجب التسليم: ",
+                          "Notes that do not block delivery: ") +
+                    esc(_other.join("، "));
+          html += "</div>";
+        }
         html += "</div>";
       }
       /* البطاقات: التغطية/الاكتمال مشتقّان من صفوف الأسواق — للمسار السريع

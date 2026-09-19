@@ -2174,8 +2174,10 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     # المسوّدة الكاملة (نداءٌ غالٍ ~١٦ألف رمز)، وتُكمَل الأقسامُ الناقصة وحدها
     # عبر حلقة الإكمال المحروسة بالتغطية أدناه — قروشٌ بدل إعادة الكاتب صفراً.
     if seed_draft:
-        best = seed_draft
-        truncated = bool(_writer_incomplete(seed_draft, lang))
+        # الدرس ٢٦١: التطبيعُ **قبل** قياس الاكتمال — بذرةٌ عناوينُها بصيغةٍ
+        # أخرى كانت تُقاس 0/11 فتدخل حلقةَ الإكمال المدفوعة بلا سبب.
+        best = canonicalize_section_headings(seed_draft, lang)
+        truncated = bool(_writer_incomplete(best, lang))
         log.info("deep_report: seeded from stored partial (%d chars, "
                  "incomplete=%s) — skipping fresh draft generation",
                  len(seed_draft), truncated)
@@ -2214,6 +2216,9 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                                             max_tokens=cap,
                                             timeout=_LONG_TIMEOUT,
                                             **_writer_call_kw(thinking_disabled)))
+        # الدرس ٢٦١: يُطبَّع مخرَجُ الكاتب فورَ وصوله — كلُّ قياسٍ بعده
+        # (الاكتمال، التغطية، الترتيب) يقرأ الصيغةَ القانونية نفسَها.
+        out = canonicalize_section_headings(out, lang)
         if out and len(out) > len(best):
             best = out
         if last_stop_reason() not in _TRUNCATED:
@@ -2259,9 +2264,11 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         for cont in range(1, _writer_continuations() + 1):
             _ping()
             _fresh_provider_state()
-            completed = _continue_truncated_report(
-                trace_id, user, best, lang,
-                stage_name="draft_continue" if cont == 1 else f"draft_continue{cont}")
+            completed = canonicalize_section_headings(
+                _continue_truncated_report(
+                    trace_id, user, best, lang,
+                    stage_name=("draft_continue" if cont == 1
+                                else f"draft_continue{cont}")), lang)
             grew = bool(completed) and len(completed) > len(best)
             missing_after = _missing_sections(completed, lang) if completed \
                 else missing_before
@@ -2329,6 +2336,145 @@ _SENTENCE_TERMINATORS = ".؟?!。"
 # اقتطاعٌ حقيقيّ لفقرة لا شظيّةٌ مهمَلة — يبقى موسوماً «غير مكتمل» (عقد
 # لا-اختلاق: لا نُخفي اقتطاعاً حقيقياً بقصّ محتوى مدفوع).
 _MAX_TRAILING_FRAGMENT_CHARS = 200
+
+
+# ── الدرس ٢٦١: محدِّدُ العنوانِ الحرفيُّ لا يحجب تقريراً مدفوعاً ────────────
+#
+# **البلاغ الحيّ** (Railway، نشر eacc773، 2026-09-19T05:55:21):
+#   `delivering INCOMPLETE report (17341 chars, 0/11 sections present)`
+# سبعةَ عشرَ ألفَ حرفٍ مدفوعةٍ خرجت من الكاتب، وصفرٌ من الأقسام الأحد عشر
+# تعرّف عليها المحدِّدُ الحرفيُّ — فأطلق حاجبَين معاً (`section_structure`
+# + `client_section_placeholder`) وحُجِب تنزيلُ التقرير كلِّه (409) على
+# **اختلافٍ شكليٍّ في سطرِ عنوان** لا على عيبٍ في محتواه.
+#
+# المحدِّدُ نفسُه يحكم **أربعةَ** مستهلكين (`_writer_incomplete`،
+# `_missing_sections`، `_section_order_issues`، و`silk_reports.
+# _parse_writer_sections_numbered`)، فصيغةٌ واحدةٌ شاذّةٌ تُسقطهم جميعاً.
+# العلاجُ الجذريُّ **حتميٌّ ومجانيّ**: تُعادُ كتابةُ سطرِ العنوان إلى الصيغة
+# القانونية حين — وحين فقط — يطابق عنوانُه أحدَ العناوين القانونية بعد
+# التطبيع. لا نداءَ نموذجٍ إضافيّ، ولا فحصَ حاجبٍ جديد، ولا إعادةَ توليد.
+#
+# **حدودُ الأمان (مقصودةٌ لا قابلةٌ للتوسيع):** المطابقةُ **مساواةٌ** بعد
+# التطبيع لا تشابُهٌ — عنوانٌ مختلفٌ يبقى غائباً ويُعلَن فجوةً صادقة (عقد
+# لا-اختلاق). والسطرُ لا يُعَدّ مرشَّحَ عنوانٍ إلا بعلامةٍ بنيوية: `#`، أو
+# غامقٌ كاملُ السطر، أو ترقيمٌ في أوّله، أو مساواةٌ تامّةٌ للعنوان القانونيّ.
+_HEADING_CANDIDATE_RE = re.compile(
+    r"^[ \t]{0,3}(?P<hashes>#{1,6})?[ \t]*"
+    r"(?P<bold_open>\*\*|__)?[ \t]*"
+    r"(?:(?P<num>[0-9٠-٩]{1,2})[ \t]*[.)\-–—:][ \t]*)?"
+    # مراجعة §58 #3: الغامقُ قد يلفّ **العنوانَ وحدَه** بعد الرقم
+    # (`## 1. **العنوان**`) لا السطرَ كلَّه — كان يُترك قسماً غائباً.
+    r"(?P<bold_in>\*\*|__)?[ \t]*"
+    r"(?P<title>.+?)"
+    r"[ \t]*(?P<bold_close>\*\*|__)?[ \t]*:?[ \t]*$")
+
+# سقفُ طولِ سطرٍ عارٍ (بلا `#` ولا ترقيمٍ ولا غامق) يُقبَل مرشَّحَ عنوان —
+# فقرةٌ طويلةٌ تصادف انتهاءها باسمِ قسمٍ ليست عنواناً.
+_BARE_HEADING_MAX_CHARS = 60
+
+
+def _heading_key(s: object) -> str:
+    """مفتاحُ مقارنةِ العناوين — المُطبِّعُ العربيُّ **الواحد** في الريبو
+    (`silk_quality_gate._norm_ar`: تشكيل/تطويل/أ-إ-آ/ة/ى/مسافات/لاتينية).
+    تعذّرَ استيرادُه = تطبيعٌ أدنى، فالتطبيعُ تحسينٌ لا شرطُ صحّة."""
+    try:
+        from silk_quality_gate import _norm_ar
+        return _norm_ar(s).strip()
+    except Exception:  # noqa: BLE001 — لا نكسر الكتابةَ على مُطبِّع
+        return re.sub(r"[ \t]+", " ", str(s or "")).strip().lower()
+
+
+def _structure_score(text: str, lang: str = "ar") -> tuple:
+    """مقياسُ بنيةِ التقرير — ثلاثيٌّ **الأكبرُ فيه أفضل**، وهو المرجعُ الوحيد
+    لقرارَي «هل يُمَسّ؟» و«هل تحسَّن؟» في `canonicalize_section_headings`.
+
+    1. عددُ الأقسام القانونية المقروءة.
+    2. عددُ العناوين التي تحمل **رقمَها الترتيبيَّ القانونيّ** — ليس تجميلاً:
+       `silk_reports._client_section_for` يوجّه القسمَ إلى دلوِ العميل
+       **بالرقم**، فرقمٌ خاطئٌ يُسقِط قسماً مكتوباً ويُبلِّغه «نصّاً نائباً».
+       (فحصُ الترتيب وحدَه أعمى عن هذا — يقرأ العناوين لا أرقامَها.)
+    3. سالبُ عددِ ملاحظات الترتيب/النقص.
+    """
+    pairs = re.findall(r"^##\s+(\d+)\.\s*(.+?)\s*$", text or "", re.M)
+    sections = report_sections(lang)
+    order = {t: i for i, t in enumerate(sections, 1)}
+    seen = {t for _n, t in pairs if t in order}
+    numbered = sum(1 for n, t in pairs
+                   if t in order and str(order[t]) == n)
+    return (len(seen), numbered, -len(_section_order_issues(text, lang)))
+
+
+def canonicalize_section_headings(text: str, lang: str = "ar") -> str:
+    """أعِد كتابةَ أسطرِ عناوينِ الأقسام إلى الصيغة القانونية `## N. <عنوان>`.
+
+    حتميّ بلا نداء كلود، وidempotent: نصٌّ عناوينُه قانونيةٌ أصلاً يُعاد
+    **بايتاً ببايت**. لا يمسّ متناً، ولا يعيد ترتيب أقسام، ولا يخترع قسماً:
+    السطرُ الذي لا يطابق عنوانُه عنواناً قانونياً يُترك كما هو حرفياً.
+
+    الرقمُ المكتوبُ في سطرِ الكاتب **يُهمَل** ويحلّ محلَّه الترتيبُ القانونيّ
+    للقسم — ترقيمٌ خاطئٌ من الكاتب كان يكسر فحصَ الترتيب وحدَه.
+    """
+    if not text:
+        return text
+    # **الحارسُ الأوّل (مراجعة §58 #1 — خطورةٌ عالية): تقريرٌ سليمُ البنية
+    # لا يُمَسّ إطلاقاً.** بدونه كان سطرُ متنٍ غامقٌ نصُّه اسمُ قسمٍ
+    # (`**تقييم المخاطر**` عنواناً فرعياً داخل قسمٍ آخر) يُرقَّى عنواناً
+    # حقيقياً فيكسر الترتيبَ في تقريرٍ كان **يُسلَّم سليماً** — أي أنّ
+    # العلاجَ يصير سببَ حجبٍ جديد، وهو بالضبط ما نهى عنه المالك.
+    _before = _structure_score(text, lang)
+    if _before == (len(report_sections(lang)), len(report_sections(lang)), 0):
+        return text     # بنيةٌ كاملةٌ ومرقَّمةٌ صحيحاً — لا شيءَ يُصلَح
+    sections = report_sections(lang)
+    canon = {_heading_key(s): (i, s) for i, s in enumerate(sections, 1)}
+    lines = text.split("\n")
+
+    def _candidate(line: str):
+        """(المفتاح، الترتيب، أهو سطرُ عنوانٍ بـ`#`؟) لسطرٍ مرشَّح، أو None."""
+        mm = _HEADING_CANDIDATE_RE.match(line.rstrip())
+        if not mm:
+            return None
+        key = _heading_key((mm.group("title") or "").strip())
+        hit = canon.get(key)
+        if not hit:
+            return None
+        bold = bool((mm.group("bold_open") or mm.group("bold_in"))
+                    and mm.group("bold_close"))
+        if not (mm.group("hashes") or mm.group("num") or bold
+                or len(line.strip()) <= _BARE_HEADING_MAX_CHARS):
+            return None     # جملةُ متنٍ طويلةٌ بلا علامةٍ بنيوية
+        return key, hit, bool(mm.group("hashes"))
+
+    # **مراجعة §58: لا ازدواجَ مصنوع.** سطرُ `#` هو عنوانُ القسم دائماً؛ أمّا
+    # سطرُ المتن (غامقٌ أو مرقَّمٌ أو عارٍ) فلا يُرقَّى إلا لقسمٍ **لا** عنوانَ
+    # `#` له في النصّ كلِّه، ومرّةً واحدة. بلا هذا كان `# 9) تقييم المخاطر`
+    # و`**تقييم المخاطر**` في المتن يُنتجان عنوانَين متطابقَين.
+    covered = {c[0] for c in (_candidate(ln) for ln in lines) if c and c[2]}
+    promoted: set = set()
+    out: list[str] = []
+    changed = False
+    for line in lines:
+        cand = _candidate(line)
+        if cand:
+            key, hit, is_heading = cand
+            if is_heading or (key not in covered and key not in promoted):
+                idx, canonical_title = hit
+                new_line = f"## {idx}. {canonical_title}"
+                changed = changed or new_line != line
+                promoted.add(key)
+                out.append(new_line)
+                continue
+        out.append(line)
+    if not changed:
+        return text
+    fixed = "\n".join(out)
+    # **الحارسُ الثاني: عقدُ «لا يجعله أسوأ» مُقاسٌ لا موعود.** يُعاد النصُّ
+    # الأصليُّ حرفياً إن لم تتحسّن البنيةُ فعلاً — فاستحالةُ الضررِ مُثبَتةٌ
+    # بالقياس لا بحصرِ الأنماط (حصرُ الأنماط يسقط عند أوّل شكلٍ لم نتخيّله).
+    if _structure_score(fixed, lang) < _before:
+        log.warning("heading canonicalization reverted — it did not improve "
+                    "the structure (original text kept verbatim)")
+        return text
+    return fixed
 
 
 def _writer_incomplete(text: str, lang: str = "ar") -> list[str]:
@@ -2858,6 +3004,27 @@ def _max_review_cycles() -> int:
     return max(1, min(2, n))
 
 
+# ── الدرس ٢٦١ (أداةُ القياس): سمِّ الصيغةَ الفعلية، لا تُخمِّنها ────────────
+# حادثةُ 2026-09-19 صُنِّفت «no sufficient evidence» لأنّ السجلَّ حمل العدَّ
+# (`0/11`) ولم يحمل **شكلَ** السطر الذي أخفق. العيّنةُ أدناه تُغلق ذلك:
+# أوّلُ خمسةَ عشرَ سطراً تحمل علامةَ عنوانٍ محتملة، مقصوصةً. نصُّ الكاتب لا
+# يحمل سرّاً (لا مفاتيح ولا متغيّرات بيئة) — نفسُ نمطِ `report_call_failed`.
+_HEADING_SAMPLE_LINE_RE = re.compile(
+    r"^\s*(?:#{1,6}|\*\*|__|[0-9٠-٩]{1,2}[ \t]*[.)\-–—:])")
+_HEADING_SAMPLE_MAX_LINES = 15
+_HEADING_SAMPLE_MAX_CHARS = 80
+# حدُّ «نصٌّ وافرٌ بلا عنوانٍ واحدٍ متعرَّفٍ عليه» — إنذارُ مشغِّلٍ لا حجب.
+_HEADINGS_UNRECOGNIZED_MIN_CHARS = 4000
+
+
+def _heading_sample(text: str) -> str:
+    """عيّنةُ أسطرِ العناوين المحتملة — تشخيصٌ greppable، بلا قرار."""
+    hits = [ln.strip()[:_HEADING_SAMPLE_MAX_CHARS]
+            for ln in str(text or "").split("\n")
+            if _HEADING_SAMPLE_LINE_RE.match(ln)]
+    return " | ".join(hits[:_HEADING_SAMPLE_MAX_LINES]) or "—"
+
+
 def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                           verdict: dict, product: str, market_name: str,
                           max_cycles: "int | None" = None,
@@ -2952,13 +3119,32 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     _incomplete = _writer_incomplete(draft, lang)
     if _incomplete:
         missing = _missing_sections(draft, lang)
+        _all = report_sections(lang)
         log.warning("write_reviewed_report: delivering INCOMPLETE report "
                     "(%d chars, %d/%d sections present) — reviewer skipped, "
                     "flagged incomplete", len(draft),
-                    len(report_sections(lang)) - len(missing),
-                    len(report_sections(lang)))
+                    len(_all) - len(missing), len(_all))
+        _sample = _heading_sample(draft)
+        log.warning("writer_heading_sample: %s", _sample)
+        # الدرس ٢٦١: نصٌّ وافرٌ لم يُعرَف فيه **عنوانٌ واحد** حتى بعد التطبيع
+        # = صيغةٌ خارج الأنماط المعروفة. إنذارُ مشغِّلٍ يسمّيها بعيّنتها —
+        # **والتقريرُ يُسلَّم كما هو موسوماً**: لا حجب، ولا إيقاف، ولا إعادةَ
+        # توليدٍ مدفوعة (قرار المالك 2026-09-19).
+        if len(missing) == len(_all) and len(draft) >= _HEADINGS_UNRECOGNIZED_MIN_CHARS:
+            try:
+                import silk_ops_log
+                from silk_render import _strip_internal_plumbing
+                silk_ops_log.record_error(
+                    "writer_headings_unrecognized",
+                    _strip_internal_plumbing(
+                        f"نصُّ التقرير وصل بـ{len(draft)} حرفاً ولم يُعرَف فيه "
+                        f"أيُّ عنوانِ قسمٍ قانونيّ — عيّنةُ الأسطر: {_sample}"),
+                    context={"chars": len(draft), "trace_id": trace_id})
+            except Exception as _oe:  # noqa: BLE001 — سجلّ المشغّل قناة جانبية
+                log.warning("ops log writer_headings_unrecognized skipped: %s", _oe)
         return {"report": draft, "incomplete": True,
                 "missing_sections": missing, "incomplete_reasons": _incomplete,
+                "heading_sample": _sample,
                 "review_cycles": 0, "unresolved_notes": [],
                 "partial_text": draft}
 
