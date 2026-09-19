@@ -178,6 +178,38 @@ def test_the_dashboard_reads_the_same_rows_the_document_prints(key):
             L.gaps_table(view, view.get("report_language") or "ar"))
 
 
+_STATUS_LABELS = {"ناقص", "مرصود بتوثيق ضعيف", "الحالة",
+                  "not observed", "observed, weakly documented", "Status"}
+
+
+def _client_cells(view):
+    import tempfile
+    from docx import Document
+    with tempfile.TemporaryDirectory() as td:
+        p = os.path.join(td, "c.docx")
+        SR.render_client_docx(view, p)
+        d = Document(p)
+        return [c.text.strip() for t in d.tables for r in t.rows
+                for c in r.cells]
+
+
+@pytest.mark.parametrize("key", _keys())
+def test_no_ledger_status_label_reaches_the_client_report(key):
+    """تسمياتُ حالات السجلّ مفرداتٌ داخلية (بلاغ المالك بعد ٢٦٤): «ناقص» كانت
+    تصل جدولَ العميل رأسَ عمودٍ وخليّة. العميلُ يقرأ عناوين طبيعية."""
+    assert not (_STATUS_LABELS & set(_client_cells(_view(key))))
+
+
+def test_the_client_table_uses_natural_headings_and_a_real_ledger():
+    """كان الجدولُ يُغذّى بـ`dr.get("ledger")` — فارغٌ دائماً — فلا يُطبَع
+    قطّ؛ الآن يقرأ `view["ledger"]` ويعنون «ما لم نعرفه بعد | كيف تعرفه»."""
+    from gen_client_report_sample import build_sample_view
+    cells = _client_cells(build_sample_view("ar"))
+    assert "ما لم نعرفه بعد" in cells and "كيف تعرفه" in cells
+    assert not (_STATUS_LABELS & set(cells))
+    assert any("لا يستند إلا إلى مصادر غير رسمية" in c for c in cells)
+
+
 def test_the_dashboard_renders_that_table_not_its_own_list():
     html = (pathlib.Path(_ROOT) / "web" / "index.html").read_text(
         encoding="utf-8")

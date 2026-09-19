@@ -1183,6 +1183,7 @@ def gaps_table(view: dict, lang: str = "ar") -> list:
         short_how = clip_clause(how, _GAP_HOW_LIMIT) if how else "—"
         full = (what + " — " + how) if how else what
         rows.append({"what": short_what, "status": status, "how": short_how,
+                     "status_code": WEAK if status == lbl_weak else MISSING,
                      # الصفُّ المُختصَر يحمل أصلَه كاملاً: الجدولُ فهرسٌ
                      # يُقرأ، والتفصيلُ يُطبَع تحته مرّةً — فلا سطرٌ يضيع.
                      "full": " ".join(full.split()),

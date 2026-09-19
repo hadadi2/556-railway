@@ -3861,7 +3861,8 @@ def _client_hs_derivation_section(doc, dr: dict, lang: str = "ar") -> None:
         doc.add_paragraph(sub)
 
 
-def _client_gaps_section(doc, dr: dict, lang: str = "ar") -> None:
+def _client_gaps_section(doc, dr: dict, lang: str = "ar",
+                         ledger: dict | None = None) -> None:
     """قسم "ما لم يكتمل للقرار والخطوة التالية" — يحوّل كل تقاطع بلا أدلة
     كافية لصياغة تجارية موحّدة (بلاغ المالك النقطة ٣)، ثم الخطوة التالية.
     لا عناوين فارغة متتالية: إن اكتمل كل شيء، سطر إيجابي واحد. WP-4: يقرأ
@@ -3889,10 +3890,13 @@ def _client_gaps_section(doc, dr: dict, lang: str = "ar") -> None:
         # واحد** بعمودِ حالةٍ يفرّق «ناقص» عن «مرصود بتوثيق ضعيف»، بدل
         # سطورٍ متتالية بالصياغة نفسها. البنودُ أعلاه تبقى (فجواتُ قرارٍ
         # حرجة، لكلّ منها سبيلُ إغلاقٍ مكتوب)، والجدولُ يجمع ما عداها.
+        # السجلُّ يعيش في `view["ledger"]` لا في `dr` — كان يُمرَّر فارغاً
+        # فلا يُطبَع الجدولُ قطّ (مراجعةٌ بعد الدرس ٢٦٤)؛ وعمودُ الحالة يُسقَط.
         _docx_gaps_table(doc, {"deep_research": dr, "limits": [],
-                               "ledger": dr.get("ledger") or {}}, lang,
+                               "ledger": ledger or {}}, lang,
                          sanitize=lambda x: _lang_safe(
-                             _client_sanitize(x, lang), lang))
+                             _client_sanitize(x, lang), lang),
+                         client=True)
         # #13 ص15: التأطير غير الحاجب يقال مرة واحدة سطرَ تمهيدٍ — كان
         # ذيلاً مخبوزاً في قالب كل بند فتكرر حرفياً مع كل فجوة.
         if mission_gap_lines:
@@ -4378,7 +4382,7 @@ def render_client_docx(view: dict, path: str) -> str:
     if "verification" not in _client_hidden(view):
         _client_confidence_section(doc, dr, lang)
     # ٦) ما لم يكتمل للقرار والخطوة التالية (صياغة تجارية للفجوات)
-    _client_gaps_section(doc, dr, lang)
+    _client_gaps_section(doc, dr, lang, ledger=view.get("ledger"))
 
     # ٧) المراجع (تحلّ محلّ «سجل الأدلة للمدققين» — مصادر عمومية فقط، §A)
     _client_references_section(doc, dr, lang)
@@ -5916,9 +5920,21 @@ def _gaps_detail_rows(rows: list, seen: str = "") -> list:
     return out
 
 
+#: صياغةُ «ضعيف التوثيق» في نصّ العميل — جملةٌ طبيعية لا اسمُ حالة.
+_WEAK_CLIENT_SUFFIX = {"ar": " — لا يستند إلا إلى مصادر غير رسمية",
+                       "en": " — supported only by unofficial sources"}
+
+
 def _docx_gaps_table(doc, view: dict, lang: str = "ar", *,
-                     empty: str = "", sanitize=None) -> None:
-    """جدولُ النواقص الواحد في Word — نفسُ صفوف `md` (مصدرٌ واحد لا اثنان)."""
+                     empty: str = "", sanitize=None,
+                     client: bool = False) -> None:
+    """جدولُ النواقص الواحد في Word — نفسُ صفوف `md` (مصدرٌ واحد لا اثنان).
+
+    `client=True` (تقريرُ العميل): عمودُ الحالة **يُسقَط** والعنوانان طبيعيان
+    («ما لم نعرفه بعد | كيف تعرفه») — تسمياتُ حالات السجلّ («ناقص»، «مرصود
+    بتوثيق ضعيف») مفرداتٌ داخلية لا تصل العميل (بلاغ المالك بعد الدرس ٢٦٤)؛
+    الضعيفُ التوثيق يُقال جملةً طبيعية.
+    """
     import silk_fact_ledger as _FL
     rows = _FL.gaps_table(view, lang)
     _clean = sanitize or (lambda x: x)
@@ -5942,7 +5958,19 @@ def _docx_gaps_table(doc, view: dict, lang: str = "ar", *,
         if empty:
             doc.add_paragraph(_clean(empty))
         return
-    _add_table(doc, head, [c for _r, c in shown])
+    if client:
+        weak = _FL.WEAK
+        head = (["What we don't know yet", "How to find out"] if lang == "en"
+                else ["ما لم نعرفه بعد", "كيف تعرفه"])
+        body = []
+        for r, c in shown:
+            what = c[0]
+            if r.get("status_code") == weak:
+                what = _clean(what + _WEAK_CLIENT_SUFFIX.get(lang, "")) or what
+            body.append([what, c[1]])
+        _add_table(doc, head, body)
+    else:
+        _add_table(doc, head, [c for _r, c in shown])
     _docx_gaps_detail(doc, [r for r, _c in shown], lang, _clean)
 
 
