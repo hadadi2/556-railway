@@ -253,7 +253,7 @@ _TEST_ANCHORS = [
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
     # ٢٦٤ — جدولُ نقصٍ واحد، وجملٌ حتميّةٌ بلغة محلّل.
     (264, "silk_fact_ledger.py", ["def gaps_table", "def _split_gap",
-                                  "def clip_clause"]),
+                                  "def clip_clause", "لم يُعرَف بعد"]),
     (264, "silk_reports.py", ["def _gaps_table_md", "def _docx_gaps_table",
                               "def _gap_cells", "def _gaps_detail_rows"]),
     (264, "silk_render.py", ["def insufficient_line", '"gaps_table"']),

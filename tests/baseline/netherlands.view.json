@@ -725,7 +725,8 @@
     "clipped": false,
     "full": "تعذّر التصنيف",
     "how": "—",
-    "status": "ناقص",
+    "status": "لم يُعرَف بعد",
+    "status_code": "missing",
     "what": "تعذّر التصنيف"
    }
   ],

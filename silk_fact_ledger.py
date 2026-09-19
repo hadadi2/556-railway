@@ -1158,8 +1158,12 @@ def gaps_table(view: dict, lang: str = "ar") -> list:
     if not isinstance(view, dict):
         return []
     en = lang == "en"
-    lbl_missing = "not observed" if en else "ناقص"
-    lbl_weak = "observed, weakly documented" if en else "مرصود بتوثيق ضعيف"
+    # تسمياتُ الحالة هنا **لغةُ قارئ** لا أسماءُ حالات السجلّ: «ناقص» و«مرصود
+    # بتوثيق ضعيف» مفرداتٌ داخلية وصلت جدولَ العميل (بلاغ المالك بعد الدرس
+    # ٢٦٤) — تُصلَح في منشئها الواحد فلا يحملها أيُّ سطحٍ حاضرٍ أو قادم.
+    lbl_missing = "not yet known" if en else "لم يُعرَف بعد"
+    lbl_weak = ("from unofficial sources only" if en
+                else "مرصود من مصادر غير رسمية فقط")
     rows: list = []
     seen: set = set()
 
