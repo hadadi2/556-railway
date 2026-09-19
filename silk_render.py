@@ -3104,6 +3104,30 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
     # وليست حاجةً هناك أصلاً: عقدُ الكاتب الإنجليزيّ يفرض شرحَ الاختصار **عند
     # أوّل ورود** داخل النثر نفسه (§34) — فالنصّ مفهومٌ بذاته بلا حَقن.
     _clean_report = _strip_internal_plumbing(report_out.get("report"), lang)
+    # الدرس ٢٦١ — نقطةُ التطبيع **عند القراءة**: تقريرٌ مخزَّنٌ كتب الكاتبُ
+    # عناوينَه بصيغةٍ أخرى (`# N)` بدل `## N.`) كان يُقرَأ صفرَ أقسامٍ فيُطلِق
+    # حاجبَي البنية وقسمِ العميل معاً ويُحجَب تنزيلُه (409) — رغم أنّ نصَّه
+    # كاملٌ سليم. التطبيعُ هنا يشفي **التقاريرَ القائمةَ في القاعدة** بلا
+    # تعديلِ صفٍّ واحدٍ فيها (البند ٤) وبلا إعادةِ توليدٍ مدفوعة؛ وهو
+    # idempotent فلا يغيّر بايتاً في تقريرٍ عناوينُه قانونيةٌ أصلاً.
+    _headings_repaired = False
+    _heading_repairs: list = []
+    try:
+        from silk_ai_judge import canonicalize_section_headings
+        _canon_report = canonicalize_section_headings(_clean_report, lang)
+        _headings_repaired = _canon_report != _clean_report
+        if _headings_repaired:
+            # شرط المُشرِف C (مراجعة §58 #7): **لا تعديلَ صامتاً على نصٍّ
+            # مُسلَّم** — كلُّ سطرِ عنوانٍ أُعيدت كتابتُه يُسجَّل قبل/بعد في
+            # قناة `render_repairs` نفسِها التي تحمل رقعةَ تلعثم البادئة.
+            _old_h = [l for l in _clean_report.split("\n") if l.strip()]
+            _new_h = [l for l in _canon_report.split("\n") if l.strip()]
+            _heading_repairs = [
+                {"kind": "section_heading", "before": a, "after": b}
+                for a, b in zip(_old_h, _new_h) if a != b]
+        _clean_report = _canon_report
+    except Exception as _he:  # noqa: BLE001 — التطبيعُ تحسينٌ لا شرطُ عرض
+        log.warning("heading canonicalization skipped: %s", _he)
     # البند 15 (أمر إصلاح المحرّك): جدول ميت (<50% خانات مملوءة) يُطوى
     # لسطر يسمّي الناقص — قبل أي سطح عرض/تصدير.
     _clean_report = _collapse_dead_tables(_clean_report)
@@ -3123,6 +3147,11 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
     # تُطوى بسجل تدقيق (كل رقعة مسجّلة قبل/بعد/موضعاً — شرط المُشرِف).
     _report_text_glossed, _prefix_repairs = \
         _fix_truncated_prefix_stutter(_report_text_glossed)
+    # الدرس ٢٦١: رقعُ سطورِ العناوين تنضمّ إلى **القناة نفسِها**
+    # (شرط المُشرِف C: لا تعديلَ صامتاً على نصٍّ مُسلَّم). الاسمُ
+    # `_prefix_repairs` مُثبَّتٌ بقفلَي البند ١٧٥ فلا يُعاد تسميتُه.
+    if _heading_repairs:
+        _prefix_repairs = list(_prefix_repairs) + _heading_repairs
     # القاعدة العامة (قرار المالك): سنوات الحقائق المتقادِمة تُحسَب من **مصدرها
     # البنيوي** (silk_staleness) لا من النثر، فتُوسَم أينما وردت بأيّ صياغة، ولا
     # يُوسَم رمزُ HS. ثم تحقّقٌ: أيّ سنة حقيقة متقادِمة بلا وسمٍ في السرد
@@ -3143,6 +3172,26 @@ def _deep_research_view(result: dict, lang: str = "ar") -> dict | None:
     # (مراجعة §58 #4). النصّ يبقى نظيفاً؛ العلَمان أدناه يقودان شاراتِ المُصدِّرين.
     _report_incomplete = bool(report_out.get("incomplete"))
     _missing_sections = list(report_out.get("missing_sections") or [])
+    # **مراجعة §58 #2 (خطورةٌ عالية).** العلَمان مخزَّنان من لحظةِ الكتابة —
+    # أي **قبل** تطبيع العناوين أعلاه. فالتقريرُ الذي يشفيه التطبيعُ كان
+    # سيُسلَّم بأقسامه الأحد عشر حاضرةً وفوقها شارةُ «تقرير غير مكتمل: الأحد
+    # عشر كلُّها غائبة» — إفصاحٌ كاذبٌ يصل العميل. يُعاد القياسُ من **النصّ
+    # المعروض فعلاً**، و**خفضاً فقط**: لا يُوسَم تقريرٌ لم يكن موسوماً (لا
+    # شارةَ جديدة من هذا السطر)، ولا يُخفى نقصٌ حقيقيٌّ باقٍ.
+    if _headings_repaired and _report_incomplete and _clean_report:
+        try:
+            from silk_ai_judge import (_missing_sections as _ms_now,
+                                       _writer_incomplete as _wi_now)
+            # الفحصُ الكامل (نقصٌ بنيويّ **وقطعٌ وسط جملة**): تقريرٌ مقتطعٌ
+            # يبقى موسوماً مهما شُفيت عناوينُه — لا نُخفي اقتطاعاً حقيقياً.
+            _still = list(_ms_now(_clean_report, lang))
+            if not _wi_now(_clean_report, lang):
+                _report_incomplete = False
+                _missing_sections = []
+            elif len(_still) < len(_missing_sections):
+                _missing_sections = _still
+        except Exception as _me:  # noqa: BLE001 — إعادةُ القياس تحسينٌ لا شرط
+            log.warning("incomplete flags not re-measured: %s", _me)
     out = {
         "market": result.get("market"),
         # Wave 2: اسم المنتج المدروس يصل عرض البحث كي يشتقّ منه المُصدِّرُ سطرَ

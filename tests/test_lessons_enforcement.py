@@ -251,6 +251,17 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٦١ — محدِّدُ العنوانِ الحرفيُّ لا يحجب تقريراً مدفوعاً على شكلِ سطر.
+    (261, "silk_ai_judge.py", ["def canonicalize_section_headings",
+                               "def _heading_sample",
+                               "writer_headings_unrecognized"]),
+    (261, "silk_render.py", ["canonicalize_section_headings"]),
+    (261, "tests/test_heading_canonicalization.py",
+     ["def test_every_blocked_heading_shape_becomes_canonical",
+      "def test_a_truly_missing_section_stays_missing",
+      "def test_the_prompt_still_mandates_the_shape_the_parsers_accept",
+      "def test_stored_report_with_hash_headings_passes_the_gate_through_build_view"]),
+    (261, "tools/audit_study_reports.py", ["def review"]),
     # ٢٥٤–٢٥٦ — الموجّهُ لا يخالف بوّابته، وحارسٌ يُطلِق فعلاً، وسنةُ كلّ رقم.
     (254, "tests/test_prose_blocker_prompt_parity.py",
      ["def test_capped_band_reaches_the_writer_prompt",

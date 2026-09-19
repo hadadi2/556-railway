@@ -719,12 +719,18 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 # يُوجَّه الاستئمالُ لإكمال الأقسام الباقية.
                 try:
                     import silk_ops_log
+                    from silk_render import _strip_internal_plumbing
                     _miss = "، ".join(report_out.get("missing_sections") or [])
                     silk_ops_log.record_error(
                         "writer_incomplete",
                         f"تقرير غير مكتمل سُلِّم موسوماً — أقسام غائبة: {_miss}",
                         context={"analysis_id": analysis_id, "trace_id": trace_id,
-                                 "missing": report_out.get("missing_sections")})
+                                 "missing": report_out.get("missing_sections"),
+                                 # الدرس ٢٦١: شكلُ أسطرِ العناوين الفعليّ —
+                                 # النقصُ البنيويُّ يُشخَّص بأثرٍ لا بحدس.
+                                 "heading_sample": _strip_internal_plumbing(
+                                     report_out.get("heading_sample") or ""),
+                                 "reasons": report_out.get("incomplete_reasons")})
                 except Exception as _ie:  # noqa: BLE001 — سجلّ المشغّل قناة جانبية
                     log.warning("ops log writer_incomplete skipped: %s", _ie)
 

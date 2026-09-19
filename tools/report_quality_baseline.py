@@ -57,6 +57,18 @@ def _normalise(text: str) -> str:
     return text.replace(datetime.date.today().isoformat(), RUN_DATE_TOKEN)
 
 
+def _sections_recognized(view: dict) -> str:
+    """«N/11» — الأقسامُ القانونيةُ التي يقرؤها المحدِّدُ في نصّ التقرير."""
+    import re
+    import silk_ai_judge as J
+    text = (((view.get("deep_research") or {}).get("report") or {})
+            .get("text") or "")
+    seen = set(t for _n, t in
+               re.findall(r"^##\s+(\d+)\.\s*(.+?)\s*$", text, re.M))
+    canon = J.report_sections()
+    return f"{len([s for s in canon if s in seen])}/{len(canon)}"
+
+
 def snapshot(key: str) -> dict:
     """لقطةُ حالةٍ واحدة: عرضٌ مهيكل + نصٌّ مُصدَّر + بصمةُ البوابة."""
     import silk_quality_gate as G
@@ -73,7 +85,14 @@ def snapshot(key: str) -> dict:
         "view_json": _normalise(json.dumps(
             view, ensure_ascii=False, indent=1, sort_keys=True, default=str)),
         "report_md": _normalise(md),
+        # الدرس ٢٦١: عددُ الأقسام **المتعرَّف عليها فعلاً** في نصّ العرض —
+        # مقياسٌ صريحٌ على كلّ مدوّنة، فانحدارُ محدِّدِ العنوان (الذي حجب
+        # تقريراً حيّاً كاملاً) يُلتقَط هنا قبل الدمج لا على شاشةِ مصنع.
         "gate": {
+            # الدرس ٢٦١: عددُ الأقسام **المتعرَّف عليها فعلاً** — داخل بصمةِ
+            # البوابة كي **يُقارَن** (مراجعة §58 #4: كان يُحسَب ولا يُقارَن،
+            # فمقياسٌ لا يُقارَن حارسٌ لا يُطلِق — الدرس ٩٨).
+            "sections_recognized": _sections_recognized(view),
             "verdict": gate["verdict"],
             # مُرتَّبةٌ لأن ترتيبَ الاستدعاء داخل البوابة ليس عقداً
             "findings": sorted(f["check"] for f in gate["findings"]),
