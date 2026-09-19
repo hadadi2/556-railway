@@ -14,6 +14,7 @@
    "style_repeated_key_figure"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -27,10 +28,10 @@
    "decision_numbers_present",
    "markdown_artifacts",
    "narrative_money_not_grounded",
-   "observed_value_declared_unavailable",
    "template_interpolation"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -41,6 +42,7 @@
    "markdown_artifacts"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -54,6 +56,7 @@
    "markdown_artifacts"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -64,10 +67,10 @@
    "curated_reference_not_consulted",
    "decision_number_format_drift",
    "markdown_artifacts",
-   "observed_value_declared_unavailable",
    "observed_value_declared_unavailable"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -82,6 +85,7 @@
    "narrative_money_not_grounded"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -95,6 +99,7 @@
    "style_inline_enumeration"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "FAIL"
  },
@@ -106,10 +111,10 @@
    "decision_number_format_drift",
    "markdown_artifacts",
    "observed_value_declared_unavailable",
-   "observed_value_declared_unavailable",
    "unclassified_product_attribute"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -127,6 +132,7 @@
    "price_comparability_gaps"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "FAIL"
  },
@@ -140,10 +146,10 @@
    "decision_number_format_drift",
    "lead_outside_activity_allowlist",
    "markdown_artifacts",
-   "observed_value_declared_unavailable",
    "target_region_missing_in_multi_authority"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -154,10 +160,10 @@
    "agent_empty",
    "curated_reference_not_consulted",
    "decision_number_format_drift",
-   "markdown_artifacts",
-   "observed_value_declared_unavailable"
+   "markdown_artifacts"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -176,6 +182,7 @@
    "vintage_expired_facts_present"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "FAIL"
  },
@@ -189,6 +196,7 @@
    "markdown_artifacts"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
@@ -204,12 +212,12 @@
    "narrative_money_not_grounded"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
  "qatar_peanut_butter": {
   "findings": [
-   "client_section_placeholder",
    "client_section_placeholder",
    "client_section_placeholder",
    "client_section_placeholder",
@@ -220,6 +228,7 @@
    "section_structure"
   ],
   "language_quality": [],
+  "sections_recognized": "4/11",
   "skipped_checks": [],
   "verdict": "FAIL"
  },
@@ -237,6 +246,7 @@
    "vintage_expired_facts_present"
   ],
   "language_quality": [],
+  "sections_recognized": "11/11",
   "skipped_checks": [],
   "verdict": "FAIL"
  }

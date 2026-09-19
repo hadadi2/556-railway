@@ -120,6 +120,7 @@
     "source": "سعر رف تجزئة لعبوة 1 كجم، دينار",
     "value_usd": null
    },
+   "cost_currency": "دينار",
    "decision_numbers": [
     {
      "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
@@ -159,19 +160,19 @@
      "confirm_time": "مع أول عرض سعر جاد",
      "method": "كلفة الدخول ÷ هامش الوحدة (أقصى سعر مصنع منافس − تكلفتك)",
      "months_at_capacity": {
-      "high": 3.6,
-      "low": 3.6
+      "high": 5.1,
+      "low": 5.1
      },
      "name": "نقطة التعادل",
      "range": {
-      "high": 32434.24,
-      "low": 32434.24
+      "high": 45599.27,
+      "low": 45599.27
      },
      "tag": "تقدير معلن بمدى",
      "tier": "estimated",
      "too_wide": false,
      "unit": "كجم",
-     "value": 32434.24,
+     "value": 45599.27,
      "width_pct": 0
     },
     {
@@ -200,9 +201,7 @@
    ],
    "displacement_measured": true,
    "displacement_required": false,
-   "gaps": [
-    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي"
-   ],
+   "gaps": [],
    "hhi": 1760.0,
    "market_unit": {
     "code": "kg",
@@ -226,10 +225,10 @@
     }
    },
    "pricing_contradiction": {
-    "max_exw_usd": 1.1659,
-    "note": "تحذير: أقصى سعر مصنع قابل للمنافسة (1.1659 دولار/كجم) أدنى بنسبة 43.1% من متوسط سعر الاستيراد المرصود (2.05 دولار/كجم) — المنافسة السعرية غير قائمة عملياً في هذه الفئة، ولا يصلح هذا الرقم أساساً للتفاوض",
+    "max_exw_usd": 1.0139,
+    "note": "تحذير: أقصى سعر مصنع قابل للمنافسة (1.0139 دولار/كجم) أدنى بنسبة 50.5% من متوسط سعر الاستيراد المرصود (2.05 دولار/كجم) — المنافسة السعرية غير قائمة عملياً في هذه الفئة، ولا يصلح هذا الرقم أساساً للتفاوض",
     "reference_import_price_usd_kg": 2.05,
-    "shortfall_pct": 43.1
+    "shortfall_pct": 50.5
    },
    "product_form": "معجون لزج في عبوة زجاجية",
    "reverse_solve": {
@@ -237,10 +236,9 @@
     "formula": "EXW_max = سعر الرف ÷ [(1+شحن)(1+تعرفة)(1+هامش الموزّع)(1+هامش التجزئة)(1+ضريبة)]",
     "fx_rate": 4.85,
     "headline_scenario": "متوسط",
-    "max_exw": 5.6548,
-    "max_exw_usd": 1.1659,
+    "max_exw": 4.9172,
+    "max_exw_usd": 1.0139,
     "parameters": [
-     "التعرفة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
      "الضريبة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
      "نسبة الشحن (معلمة معلنة قابلة للتعديل)",
      "هامش الموزّع (معلمة معلنة قابلة للتعديل)",
@@ -250,21 +248,21 @@
      {
       "distributor_pct": 10.0,
       "freight_pct": 5.0,
-      "max_exw": 7.1523,
+      "max_exw": 6.2194,
       "retailer_pct": 15.0,
       "scenario": "منخفض"
      },
      {
       "distributor_pct": 20.0,
       "freight_pct": 12.0,
-      "max_exw": 5.6548,
+      "max_exw": 4.9172,
       "retailer_pct": 25.0,
       "scenario": "متوسط"
      },
      {
       "distributor_pct": 30.0,
       "freight_pct": 25.0,
-      "max_exw": 4.1758,
+      "max_exw": 3.6312,
       "retailer_pct": 40.0,
       "scenario": "مرتفع"
      }
@@ -287,28 +285,28 @@
      "value": 0.372
     },
     {
-     "is_parameter": true,
-     "name": "التكلفة الواصلة (بعد تعرفة 0.0%)",
-     "note": "معلمة معلنة قابلة للتعديل — التعرفة غير متاحة — بلا جمارك",
-     "value": 3.472
+     "is_parameter": false,
+     "name": "التكلفة الواصلة (بعد تعرفة 15.0%)",
+     "note": "التعرفة مرصودة",
+     "value": 3.993
     },
     {
      "is_parameter": true,
      "name": "سعر الموزّع (+20%)",
      "note": "معلمة معلنة قابلة للتعديل — هامش الموزّع",
-     "value": 4.166
+     "value": 4.791
     },
     {
      "is_parameter": true,
      "name": "سعر التجزئة قبل الضريبة (+25%)",
      "note": "معلمة معلنة قابلة للتعديل — هامش التجزئة",
-     "value": 5.208
+     "value": 5.989
     },
     {
      "is_parameter": true,
      "name": "سعر الرف (+ضريبة 0.0%)",
      "note": "معلمة معلنة قابلة للتعديل — الضريبة غير متاحة — صفر معلن",
-     "value": 5.208
+     "value": 5.989
     }
    ]
   },
@@ -381,6 +379,13 @@
    "path": "scraper"
   },
   "judge_abstain_shadow": {},
+  "ledger_bind": {
+   "bound": 0,
+   "unknown": [],
+   "used": []
+  },
+  "ledger_stale": [],
+  "ledger_unresolved": [],
   "limits": [],
   "market": {
    "iso2": "LY",
@@ -616,6 +621,339 @@
  "hs_code": "200819",
  "hs_confidence": null,
  "hs_provenance": null,
+ "ledger": {
+  "entries": {
+   "blocking_condition": {
+    "confidence": 1.0,
+    "items": null,
+    "key": "blocking_condition",
+    "label_ar": "الشرط الحاجب",
+    "label_en": "blocking condition",
+    "mirrored": false,
+    "note": "لا شرط حاجب",
+    "origin": "decision",
+    "source": "محرك القرار",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "border_price_usd_kg": {
+    "confidence": null,
+    "items": null,
+    "key": "border_price_usd_kg",
+    "label_ar": "متوسط سعر الاستيراد الحدودي",
+    "label_en": "border unit value",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "USD/kg",
+    "value": null,
+    "year": null
+   },
+   "competitor_prices": {
+    "confidence": null,
+    "items": null,
+    "key": "competitor_prices",
+    "label_ar": "أسعار المنافسين",
+    "label_en": "competitor prices",
+    "mirrored": false,
+    "note": "لا منافس مسمّى ولا سعر مرصود",
+    "origin": "correlation",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "hhi": {
+    "confidence": 0.8,
+    "items": null,
+    "key": "hhi",
+    "label_ar": "مؤشر تركّز المورّدين",
+    "label_en": "supplier concentration (HHI)",
+    "mirrored": false,
+    "note": "مؤشر التركّز",
+    "origin": "competitors",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "",
+    "value": 1760.0,
+    "year": null
+   },
+   "import_cagr_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "import_cagr_pct",
+    "label_ar": "معدل النمو السنوي المركّب",
+    "label_en": "import CAGR",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "import_growth_pct": {
+    "confidence": 0.9,
+    "items": null,
+    "key": "import_growth_pct",
+    "label_ar": "نمو الواردات",
+    "label_en": "imports growth",
+    "mirrored": false,
+    "note": "يتطلب سنتين مرصودتين",
+    "origin": "trade_flow",
+    "source": "UN Comtrade",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "imports_latest_year": {
+    "confidence": 0.9,
+    "items": [
+     {
+      "confidence": 0.8,
+      "mirrored": false,
+      "source": "UN Comtrade",
+      "value": 6400000.0,
+      "year": 2024
+     }
+    ],
+    "key": "imports_latest_year",
+    "label_ar": "أحدث سنة بيانات للواردات",
+    "label_en": "latest imports data year",
+    "mirrored": false,
+    "note": "أحدث سنة مرصودة في سلسلة الواردات",
+    "origin": "trade_flow",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "",
+    "value": 2024,
+    "year": null
+   },
+   "market_imports_usd": {
+    "confidence": 0.8,
+    "items": null,
+    "key": "market_imports_usd",
+    "label_ar": "واردات السوق",
+    "label_en": "market imports",
+    "mirrored": false,
+    "note": "واردات مصرَّحة 2024",
+    "origin": "trade_flow",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "USD",
+    "value": 6400000.0,
+    "year": 2024
+   },
+   "open_conditions": {
+    "confidence": 1.0,
+    "items": null,
+    "key": "open_conditions",
+    "label_ar": "الشروط المفتوحة",
+    "label_en": "open conditions",
+    "mirrored": false,
+    "note": "قائمة محرك القرار الواحدة",
+    "origin": "decision",
+    "source": "محرك القرار",
+    "status": "observed",
+    "unit": "",
+    "value": 0,
+    "year": null
+   },
+   "per_capita_income_usd": {
+    "confidence": null,
+    "items": null,
+    "key": "per_capita_income_usd",
+    "label_ar": "دخل الفرد",
+    "label_en": "GDP per capita",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "demographics_economy",
+    "source": "",
+    "status": "missing",
+    "unit": "USD",
+    "value": null,
+    "year": null
+   },
+   "population": {
+    "confidence": null,
+    "items": null,
+    "key": "population",
+    "label_ar": "عدد السكان",
+    "label_en": "population",
+    "mirrored": false,
+    "note": "لا يُقرأ عدد السكان من البعثات",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "requirements_count": {
+    "confidence": null,
+    "items": null,
+    "key": "requirements_count",
+    "label_ar": "بنود الاشتراطات",
+    "label_en": "entry requirements",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "customs_requirements",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "saudi_share_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "saudi_share_pct",
+    "label_ar": "الحصة السعودية",
+    "label_en": "Saudi share",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "tariff_applied_pct": {
+    "confidence": 0.8,
+    "items": null,
+    "key": "tariff_applied_pct",
+    "label_ar": "الرسوم الجمركية المطبَّقة",
+    "label_en": "applied tariff",
+    "mirrored": false,
+    "note": "التعريفة المطبَّقة %",
+    "origin": "tariffs_agreements",
+    "source": "WITS",
+    "status": "observed",
+    "unit": "%",
+    "value": 15.0,
+    "year": null
+   },
+   "top_supplier_share_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "top_supplier_share_pct",
+    "label_ar": "حصة المورّد الأكبر",
+    "label_en": "top supplier share",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "competitors",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   }
+  },
+  "findings": [],
+  "gaps": [
+   {
+    "key": "import_growth_pct",
+    "label_ar": "نمو الواردات",
+    "label_en": "imports growth",
+    "note": "يتطلب سنتين مرصودتين",
+    "source": "UN Comtrade",
+    "status": "missing"
+   },
+   {
+    "key": "import_cagr_pct",
+    "label_ar": "معدل النمو السنوي المركّب",
+    "label_en": "import CAGR",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "saudi_share_pct",
+    "label_ar": "الحصة السعودية",
+    "label_en": "Saudi share",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "top_supplier_share_pct",
+    "label_ar": "حصة المورّد الأكبر",
+    "label_en": "top supplier share",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "border_price_usd_kg",
+    "label_ar": "متوسط سعر الاستيراد الحدودي",
+    "label_en": "border unit value",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "per_capita_income_usd",
+    "label_ar": "دخل الفرد",
+    "label_en": "GDP per capita",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "population",
+    "label_ar": "عدد السكان",
+    "label_en": "population",
+    "note": "لا يُقرأ عدد السكان من البعثات",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "requirements_count",
+    "label_ar": "بنود الاشتراطات",
+    "label_en": "entry requirements",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "competitor_prices",
+    "label_ar": "أسعار المنافسين",
+    "label_en": "competitor prices",
+    "note": "لا منافس مسمّى ولا سعر مرصود",
+    "source": "",
+    "status": "missing"
+   }
+  ],
+  "lang": "ar",
+  "order": [
+   "market_imports_usd",
+   "imports_latest_year",
+   "import_growth_pct",
+   "import_cagr_pct",
+   "saudi_share_pct",
+   "hhi",
+   "top_supplier_share_pct",
+   "border_price_usd_kg",
+   "tariff_applied_pct",
+   "per_capita_income_usd",
+   "population",
+   "open_conditions",
+   "requirements_count",
+   "competitor_prices",
+   "blocking_condition"
+  ],
+  "repairs": [],
+  "schema": "silk.ledger/v1",
+  "stale": []
+ },
  "limits": [
   "تعذّر التصنيف"
  ],

@@ -252,6 +252,21 @@ _TEST_ANCHORS = [
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
     # ٢٦١ — محدِّدُ العنوانِ الحرفيُّ لا يحجب تقريراً مدفوعاً على شكلِ سطر.
+    (262, "silk_fact_ledger.py", ["def build_ledger", "def bind",
+                                  "def draft_issues", "def check",
+                                  "def repair", "MANDATORY_TOKEN_KEYS"]),
+    (262, "silk_render.py", ["_ledger_safe", "ledger_stale"]),
+    (262, "silk_economics.py", ["def _tariff_from_ledger"]),
+    (262, "silk_deep_pillars.py", ["def _tariff_keywords"]),
+    (262, "silk_narrative.py", ["def count_sentence"]),
+    (262, "silk_quality_gate.py", ["def _ledger_findings",
+                                   "ledger_token_unbound"]),
+    (262, "silk_export_gate.py", ["def _ledger_repair_before_gate"]),
+    (262, "tools/consistency_audit.py", ["def audit"]),
+    (262, "tests/test_fact_ledger.py",
+     ["def test_tariff_written_as_applied_tariff_is_observed_not_missing",
+      "def test_no_false_alarm_on_any_frozen_codex",
+      "def test_enforcement_mode_blocks_the_same_text"]),
     (261, "silk_ai_judge.py", ["def canonicalize_section_headings",
                                "def _heading_sample",
                                "writer_headings_unrecognized"]),
@@ -323,11 +338,11 @@ _TEST_ANCHORS = [
     # ٢٤٤ — المرساةُ السلوكية: الحارسُ يُطلِق على المقروءِ غيرِ المقروء
     # حرفياً، والقيمُ المتغيّرةُ محسوبةٌ بمقدار التعريفة، والحكمُ لا يتغيّر.
     (244, "tests/test_report_quality_logic_layer.py",
-     ["def test_c12_guard_fires_exactly_on_readable_but_unread_inputs",
+     ["def test_c12_guard_is_silent_because_the_root_is_fixed_for_everyone",
       "def test_c12_the_repo_own_provider_wording_was_unreadable",
       "def test_c12_no_alternative_of_the_frozen_narrow_pattern_is_lost",
       "def test_c12_an_ambiguous_currency_name_never_gets_an_iso_code",
-      "def test_c12_flag_changes_only_the_three_measured_markets"]),
+      "def test_c12_the_tariff_correction_holds_with_the_flag_off"]),
     # ٢٤٣ — المرساةُ السلوكية: السقفُ يَرِث ناقصَه بالاسم، والشدةُ تتبع
     # الراية، والتفعيلُ إضافةُ إسنادٍ فقط، وصفرُ إطلاقةٍ على المدوّنات.
     (243, "tests/test_report_quality_logic_layer.py",

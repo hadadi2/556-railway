@@ -101,6 +101,30 @@ def prepare_fallback_prose(view: dict, *, ai_allowed: bool,
 
 # ── (٢) الحكم ─────────────────────────────────────────────────────────────
 
+def _ledger_repair_before_gate(view: dict) -> None:
+    """أصلح نصَّ التقرير من السجلّ قبل حكم البوّابة — **تحت الإنفاذ فقط**.
+
+    يكتب الإصلاحاتِ في `view["ledger"]["repairs"]` (يقرؤها المدقّق) ولا يمسّ
+    أيّ رقمٍ مخزَّن: الجملةُ وحدها تُعاد صياغتُها من السجلّ نفسِه.
+    """
+    try:
+        import silk_fact_ledger as _FL
+        if not _FL.enforce() or not isinstance(view, dict):
+            return
+        ledger = view.get("ledger") or {}
+        dr = view.get("deep_research") or {}
+        rep = dr.get("report") if isinstance(dr.get("report"), dict) else None
+        if not ledger or not rep or not rep.get("text"):
+            return
+        fixed, repairs = _FL.repair(rep["text"], ledger,
+                                    view.get("report_language") or "ar")
+        if repairs:
+            rep["text"] = fixed
+            ledger["repairs"] = list(ledger.get("repairs") or []) + repairs
+    except Exception as exc:  # noqa: BLE001 — الإصلاحُ تحسينٌ لا شرطُ حكم
+        log.warning("ledger repair skipped: %s", exc)
+
+
 def evaluate(view: dict) -> dict:
     """شغّل بوابة الجودة الحتمية على قالب العميل وأعد قرار التسليم.
 
@@ -112,6 +136,11 @@ def evaluate(view: dict) -> dict:
     """
     try:
         import silk_quality_gate
+        # الدرس ٢٦٢ (وضع الإنفاذ): **إصلاحٌ من السجلّ أوّلاً ثم الحجب** —
+        # جملةٌ تخالف السجلّ تُعاد صياغتُها كاملةً من السجلّ قبل أن تُحجَب،
+        # فلا تُهدَر تشغيلةٌ على ما يمكن تصحيحُه حتمياً. في وضع القياس
+        # (الافتراضي) لا إصلاحَ ولا حجب — تسجيلٌ فقط.
+        _ledger_repair_before_gate(view)
         gate_out = silk_quality_gate.run_quality_gate(view)
         verdict = gate_out.get("verdict", silk_quality_gate.FAIL)
     except Exception as e:  # noqa: BLE001 — عطل البوابة = FAIL، لا تخطٍّ
@@ -343,6 +372,52 @@ _CLIENT_REASONS: dict[str, dict[str, str]] = {
               "profitability — it needs your unit cost). Fix: supply the "
               "missing input listed under what must be closed, then "
               "re-evaluate; regenerating alone will not change it."},
+    # الدرس ٢٦٢ — فحوصُ سجلّ الحقائق: جملةٌ بلغة العميل تقول ما حدث وما
+    # يُغلقه، لا لغةَ نظامٍ ولا اسمَ مفتاح.
+    "ledger_value_mismatch": {
+        "ar": "رقمٌ في نصّ التقرير يخالف القيمة المرصودة لنفس المعطى. "
+              "يُغلقه: إعادة التوليد — النصُّ يُعاد بناؤه على القيمة "
+              "المرصودة نفسها.",
+        "en": "A figure in the report text contradicts the observed value "
+              "of the same fact. Fix: regenerate — the text is rebuilt on "
+              "the observed value."},
+    "ledger_status_mismatch": {
+        "ar": "التقريرُ يعلن معطىً «غير متاح» وهو مرصودٌ فعلاً في هذه "
+              "الدراسة. يُغلقه: إعادة التوليد.",
+        "en": "The report declares a fact unavailable although it was "
+              "actually observed in this study. Fix: regenerate."},
+    "ledger_count_mismatch": {
+        "ar": "عددُ الشروط المذكور في النصّ يخالف الشروطَ المسمّاة فعلاً. "
+              "يُغلقه: إعادة التوليد.",
+        "en": "The number of conditions stated in the text contradicts the "
+              "conditions actually named. Fix: regenerate."},
+    "ledger_series_year_mismatch": {
+        "ar": "سنةٌ في نصّ التقرير أحدثُ من أحدث سنةٍ مرصودةٍ في بيانات "
+              "الواردات. يُغلقه: إعادة التوليد.",
+        "en": "A year in the report text is later than the latest observed "
+              "year in the imports data. Fix: regenerate."},
+    "chart_year_mismatch": {
+        "ar": "سنةُ الرسم البياني تخالف سنةَ بياناته المرصودة. يُغلقه: "
+              "إعادة التوليد.",
+        "en": "The chart's labelled year differs from the year of its "
+              "observed data. Fix: regenerate."},
+    "blocking_condition_drift": {
+        "ar": "«الشرط الحاجب» مذكورٌ في موضعين بتعريفين مختلفين. يُغلقه: "
+              "إعادة التوليد.",
+        "en": "The blocking condition is stated twice with two different "
+              "definitions. Fix: regenerate."},
+    "ledger_stale": {
+        "ar": "تحدّثت بياناتُ أحد المعطيات منذ كتابة هذا التقرير، فبعضُ "
+              "أقسامه يصف حالةً أقدم. يُغلقه: إعادة التوليد — تُعاد الكتابة "
+              "على البيانات الحالية.",
+        "en": "One of the facts changed after this report was written, so "
+              "some sections describe an older state. Fix: regenerate — the "
+              "text is rewritten on the current data."},
+    "ledger_token_unbound": {
+        "ar": "تعذّر إكمالُ أحد أرقام التقرير من سجلّ بياناته. يُغلقه: "
+              "إعادة التوليد.",
+        "en": "One of the report's figures could not be filled from its "
+              "fact ledger. Fix: regenerate."},
     "metric_value_divergence": {
         "ar": "رقمٌ واحد ظهر بقيمتين مختلفتين في التقرير. يُغلقه: إعادة "
               "التوليد.",

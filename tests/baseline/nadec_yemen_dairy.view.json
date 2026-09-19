@@ -76,6 +76,7 @@
   "degraded_reason": "",
   "economics": {
    "anchor_price": null,
+   "cost_currency": null,
    "decision_numbers": [
     {
      "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
@@ -236,6 +237,13 @@
    "path": "gap"
   },
   "judge_abstain_shadow": {},
+  "ledger_bind": {
+   "bound": 0,
+   "unknown": [],
+   "used": []
+  },
+  "ledger_stale": [],
+  "ledger_unresolved": [],
   "limits": [
    "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040110 («حليب وقشدة، غير مركّزة وغير محلّاة، دسم ≤1% (طازج)») لا يشمل صفة المنتج المميّزة (طويل الأمد، كامل الدسم، UHT) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
    "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي).",
@@ -472,6 +480,345 @@
  "hs_code": "040110",
  "hs_confidence": null,
  "hs_provenance": null,
+ "ledger": {
+  "entries": {
+   "blocking_condition": {
+    "confidence": 1.0,
+    "items": null,
+    "key": "blocking_condition",
+    "label_ar": "الشرط الحاجب",
+    "label_en": "blocking condition",
+    "mirrored": false,
+    "note": "لا شرط حاجب",
+    "origin": "decision",
+    "source": "محرك القرار",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "border_price_usd_kg": {
+    "confidence": null,
+    "items": null,
+    "key": "border_price_usd_kg",
+    "label_ar": "متوسط سعر الاستيراد الحدودي",
+    "label_en": "border unit value",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "USD/kg",
+    "value": null,
+    "year": null
+   },
+   "competitor_prices": {
+    "confidence": null,
+    "items": null,
+    "key": "competitor_prices",
+    "label_ar": "أسعار المنافسين",
+    "label_en": "competitor prices",
+    "mirrored": false,
+    "note": "لا منافس مسمّى ولا سعر مرصود",
+    "origin": "correlation",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "hhi": {
+    "confidence": 0.8,
+    "items": null,
+    "key": "hhi",
+    "label_ar": "مؤشر تركّز المورّدين",
+    "label_en": "supplier concentration (HHI)",
+    "mirrored": false,
+    "note": "HHI محسوب من حصص المورّدين",
+    "origin": "competitors",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "",
+    "value": 7743.7,
+    "year": null
+   },
+   "import_cagr_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "import_cagr_pct",
+    "label_ar": "معدل النمو السنوي المركّب",
+    "label_en": "import CAGR",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "import_growth_pct": {
+    "confidence": 0.9,
+    "items": null,
+    "key": "import_growth_pct",
+    "label_ar": "نمو الواردات",
+    "label_en": "imports growth",
+    "mirrored": false,
+    "note": "نمو الواردات بين أول وآخر سنة مرصودة",
+    "origin": "trade_flow",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "%",
+    "value": 137.5,
+    "year": null
+   },
+   "imports_latest_year": {
+    "confidence": 0.9,
+    "items": [
+     {
+      "confidence": 0.8,
+      "mirrored": false,
+      "source": "UN Comtrade",
+      "value": 880000.0,
+      "year": 2018
+     },
+     {
+      "confidence": 0.8,
+      "mirrored": false,
+      "source": "UN Comtrade",
+      "value": 5590000.0,
+      "year": 2019
+     },
+     {
+      "confidence": 0.8,
+      "mirrored": false,
+      "source": "UN Comtrade",
+      "value": 2090000.0,
+      "year": 2023
+     }
+    ],
+    "key": "imports_latest_year",
+    "label_ar": "أحدث سنة بيانات للواردات",
+    "label_en": "latest imports data year",
+    "mirrored": false,
+    "note": "أحدث سنة مرصودة في سلسلة الواردات",
+    "origin": "trade_flow",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "",
+    "value": 2023,
+    "year": null
+   },
+   "market_imports_usd": {
+    "confidence": 0.8,
+    "items": null,
+    "key": "market_imports_usd",
+    "label_ar": "واردات السوق",
+    "label_en": "market imports",
+    "mirrored": false,
+    "note": "HS040110 إجمالي استيراد اليمن من العالم 2023, USD",
+    "origin": "trade_flow",
+    "source": "UN Comtrade",
+    "status": "observed",
+    "unit": "USD",
+    "value": 2090000.0,
+    "year": 2023
+   },
+   "open_conditions": {
+    "confidence": 1.0,
+    "items": null,
+    "key": "open_conditions",
+    "label_ar": "الشروط المفتوحة",
+    "label_en": "open conditions",
+    "mirrored": false,
+    "note": "قائمة محرك القرار الواحدة",
+    "origin": "decision",
+    "source": "محرك القرار",
+    "status": "observed",
+    "unit": "",
+    "value": 0,
+    "year": null
+   },
+   "per_capita_income_usd": {
+    "confidence": 0.8,
+    "items": null,
+    "key": "per_capita_income_usd",
+    "label_ar": "دخل الفرد",
+    "label_en": "GDP per capita",
+    "mirrored": false,
+    "note": "دخل الفرد لليمن (2018)",
+    "origin": "demographics_economy",
+    "source": "World Bank",
+    "status": "observed",
+    "unit": "USD",
+    "value": 1200.0,
+    "year": 2018
+   },
+   "population": {
+    "confidence": null,
+    "items": null,
+    "key": "population",
+    "label_ar": "عدد السكان",
+    "label_en": "population",
+    "mirrored": false,
+    "note": "لا يُقرأ عدد السكان من البعثات",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "requirements_count": {
+    "confidence": null,
+    "items": null,
+    "key": "requirements_count",
+    "label_ar": "بنود الاشتراطات",
+    "label_en": "entry requirements",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "customs_requirements",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "saudi_share_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "saudi_share_pct",
+    "label_ar": "الحصة السعودية",
+    "label_en": "Saudi share",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "tariff_applied_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "tariff_applied_pct",
+    "label_ar": "الرسوم الجمركية المطبَّقة",
+    "label_en": "applied tariff",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "tariffs_agreements",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "top_supplier_share_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "top_supplier_share_pct",
+    "label_ar": "حصة المورّد الأكبر",
+    "label_en": "top supplier share",
+    "mirrored": false,
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "origin": "competitors",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   }
+  },
+  "findings": [],
+  "gaps": [
+   {
+    "key": "import_cagr_pct",
+    "label_ar": "معدل النمو السنوي المركّب",
+    "label_en": "import CAGR",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "saudi_share_pct",
+    "label_ar": "الحصة السعودية",
+    "label_en": "Saudi share",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "top_supplier_share_pct",
+    "label_ar": "حصة المورّد الأكبر",
+    "label_en": "top supplier share",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "border_price_usd_kg",
+    "label_ar": "متوسط سعر الاستيراد الحدودي",
+    "label_en": "border unit value",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "tariff_applied_pct",
+    "label_ar": "الرسوم الجمركية المطبَّقة",
+    "label_en": "applied tariff",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "population",
+    "label_ar": "عدد السكان",
+    "label_en": "population",
+    "note": "لا يُقرأ عدد السكان من البعثات",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "requirements_count",
+    "label_ar": "بنود الاشتراطات",
+    "label_en": "entry requirements",
+    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "source": "",
+    "status": "missing"
+   },
+   {
+    "key": "competitor_prices",
+    "label_ar": "أسعار المنافسين",
+    "label_en": "competitor prices",
+    "note": "لا منافس مسمّى ولا سعر مرصود",
+    "source": "",
+    "status": "missing"
+   }
+  ],
+  "lang": "ar",
+  "order": [
+   "market_imports_usd",
+   "imports_latest_year",
+   "import_growth_pct",
+   "import_cagr_pct",
+   "saudi_share_pct",
+   "hhi",
+   "top_supplier_share_pct",
+   "border_price_usd_kg",
+   "tariff_applied_pct",
+   "per_capita_income_usd",
+   "population",
+   "open_conditions",
+   "requirements_count",
+   "competitor_prices",
+   "blocking_condition"
+  ],
+  "repairs": [],
+  "schema": "silk.ledger/v1",
+  "stale": []
+ },
  "limits": [
   "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 040110 («حليب وقشدة، غير مركّزة وغير محلّاة، دسم ≤1% (طازج)») لا يشمل صفة المنتج المميّزة (طويل الأمد، كامل الدسم، UHT) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
   "الموسمية (رمضان/الأعياد) غير متاحة من مؤشرات البحث — إغلاقها يتطلّب بحثاً ميدانياً أوّلياً (مقابلات موزّعين أو استبيان طلب موسمي).",
