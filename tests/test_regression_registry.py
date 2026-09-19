@@ -4597,6 +4597,18 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    263: lambda: (
+        _needles("silk_contact_quality.py", "def is_placeholder_site",
+                 "mysite.com")(),
+        _needles("silk_style_contract.py", "def lead_relevant_to_product",
+                 "def product_terms", "_ACTIVITY_CATEGORY_FREE")(),
+        _needles("silk_reports.py", "def _leads_empty_line")(),
+        _needles("silk_i18n.py", "leads_none_filtered")(),
+        _needles("tests/test_leads_relevance.py",
+                 "def test_the_auto_parts_shop_leaves_the_tahini_list",
+                 "def test_customs_prose_words_do_not_mark_an_unrelated_"
+                 "lead_relevant")(),
+        _needles("tests/test_lessons_enforcement.py", "(263, ")()),
     262: lambda: (
         _needles("silk_fact_ledger.py", "def build_ledger", "def bind",
                  "def draft_issues", "def check", "def repair",

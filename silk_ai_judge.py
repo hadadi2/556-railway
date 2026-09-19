@@ -3123,7 +3123,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     استثناء داخل `on_stage` لا يُسقط الكتابة (نفس مبدأ القناة الجانبية).
     """
     from silk_writer_handoff import writer_reports
-    mission_reports = writer_reports(mission_reports, importer_leads, product, lang, market_name)
+    mission_reports = writer_reports(mission_reports, importer_leads, product,
+                                     lang, market_name, hs_code=hs_code)
     def _decision_language(text: str) -> str:
         import re
         text = (text or "").replace(

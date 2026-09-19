@@ -98,7 +98,9 @@ def test_all_leads_filtered_out_shows_one_honest_gap_line():
             lead[k] = ""
     md = silk_reports.render_markdown(silk_render.build_view(blob))
     seg = md[md.find("قائمة مستوردين"):]
-    assert "القائمة غير متاحة" in seg   # D4: الصياغة القانونية
+    # الدرس ٢٦٣: «القائمة غير متاحة» تُقال حين لا يُرصَد أحد؛ وحين رُصدوا
+    # ثمّ استُبعدوا لعدم الصلة تُقال الجملةُ الثانية — الخلطُ يُخفي المِصفاة.
+    assert "لم نجد موزّعاً مرتبطاً بهذا المنتج" in seg
     assert "| الاسم |" not in seg   # لا جدول
 
 

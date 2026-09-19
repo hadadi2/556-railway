@@ -3537,8 +3537,16 @@ function potentialClientsHTML(dr) {
     ? dr.importer_leads.leads.filter((r) => r && r.name) : [];
   let html = '<section data-role="potential-clients"><h3>' +
     ar_en("العملاء المحتملون ووسائل التواصل", "Potential customers and contacts") + '</h3>';
-  if (!rows.length) return html + '<p class="hint">' +
-    ar_en("لم تتوفر جهات اتصال موثقة في هذه الدراسة.", "No documented contacts are available for this study.") + '</p></section>';
+  // الدرس ٢٦٣: نفسُ تفريق المستند — «لم نجد موزّعاً مرتبطاً» حين رُصدت جهاتٌ
+  // ثمّ استُبعدت لعدم الصلة بفئة المنتج، و«لم تتوفر» حين لم يُرصد أحد. كانت
+  // اللوحةُ تقول الثانيةَ دائماً فتخالف docx/md للدراسة نفسِها.
+  if (!rows.length) {
+    const filtered = dr && dr.importer_leads && dr.importer_leads.dropped_count;
+    return html + '<p class="hint">' + (filtered
+      ? ar_en("لم نجد موزّعاً مرتبطاً بهذا المنتج في هذا التشغيل — الجهاتُ التي ظهرت في البحث لا تتعامل بهذه الفئة.",
+              "No distributor related to this product was found in this study — the entities that surfaced do not deal in this category.")
+      : ar_en("لم تتوفر جهات اتصال موثقة في هذه الدراسة.", "No documented contacts are available for this study.")) + '</p></section>';
+  }
   const link = (value) => /^https?:\/\//i.test(String(value || ''))
     ? '<a href="' + esc(value) + '" target="_blank" rel="noopener noreferrer">' +
       ar_en("فتح الرابط", "Open link") + '</a>' : '—';

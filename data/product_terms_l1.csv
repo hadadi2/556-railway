@@ -1,0 +1,89 @@
+# مفردات فئة المنتج بلغات الأسواق — product-category terms per market language (L1).
+# الغرض: مِصفاةُ صلةِ الرابط بالمنتج (silk_style_contract.lead_relevant_to_product)
+#   تحتاج كلماتِ المنتج بلغة السوق لا بالعربية والإنجليزية وحدهما: «Pastificio
+#   Milano Srl» صانعُ معكرونة إيطاليّ حقيقيّ ولا تحمل تسميتُه كلمةً عربيةً ولا
+#   إنجليزيةً واحدة — فبلا هذا الجدول يُحذَف موزّعٌ صحيح.
+#
+# **جدولُ مطابقةٍ لا مصدرَ أرقام** (نفس إعلان data/market_locale.csv): لا يُشتقّ
+#   منه رقمٌ ولا سعرٌ ولا حكم. وأثرُه **إضافيٌّ فقط**: وجودُ الكلمة يُبقي رابطاً،
+#   وغيابُها لا يحذف شيئاً بذاته (الحذفُ يحتاج نشاطاً مُصنَّفاً لفئةٍ أخرى).
+#   فخطأُ ترجمةٍ هنا أقصى أثره أن يفوت إبقاءَ رابطٍ، لا أن يحذف رابطاً صحيحاً
+#   ولا أن يختلق معطى.
+#
+# التغطية: فئاتُ فصول HS السبع (silk_ai_judge._HS_CATEGORY) × لغاتِ أسواق سِلك
+#   الـ38 (data/market_locale.csv:lang_primary). صفٌّ غائب => محورُ اللغة
+#   **يُعلَن متخطّى** لذلك السوق، ولا يُخمَّن.
+#
+# category: اسم الفئة كما في silk_ai_judge._HS_CATEGORY حرفياً.
+# lang: رمز اللغة كما في market_locale.lang_primary.
+# terms: كلماتٌ تجاريةٌ شائعةٌ للفئة، مفصولة بفواصل، بأحرفٍ صغيرة حيث انطبق.
+# source: مصدرُ المفردة — lexical (مفردةُ لغةٍ عامة) أو trade-usage (عرفٌ تجاريّ).
+category,lang,terms,source,note
+منتج غذائي/زراعي,ar,"غذاء,أغذية,مواد غذائية,تموين,بقالة,محاصيل,زراعي,تمور,معكرونة,طحينة,عسل,زيت,حليب,ألبان,عصير,مكسرات",lexical,المفردة العربية العامة للفئة
+منتج غذائي/زراعي,en,"food,foods,foodstuff,grocery,groceries,produce,agri,agricultural,dates,pasta,tahini,honey,oil,dairy,milk,juice,nuts,confectionery",lexical,
+منتج غذائي/زراعي,fr,"alimentaire,alimentation,aliments,épicerie,agroalimentaire,pâtes,miel,huile,laitier,jus",lexical,
+منتج غذائي/زراعي,es,"alimentacion,alimentos,alimentario,comestibles,ultramarinos,pasta,miel,aceite,lacteos,zumo",lexical,
+منتج غذائي/زراعي,de,"lebensmittel,nahrungsmittel,feinkost,teigwaren,nudeln,honig,speiseöl,molkerei,saft",lexical,
+منتج غذائي/زراعي,it,"alimentari,alimentare,pastificio,pasta,generi alimentari,miele,olio,latteria,succo,dolciaria",trade-usage,«pastificio» تسميةُ صانع المعكرونة في العرف التجاري الإيطالي
+منتج غذائي/زراعي,nl,"levensmiddelen,voeding,voedingsmiddelen,kruidenier,pasta,honing,olie,zuivel,sap",lexical,
+منتج غذائي/زراعي,tr,"gıda,gida,besin,bakkaliye,makarna,bal,yağ,yag,süt,sut,meyve suyu",lexical,
+منتج غذائي/زراعي,id,"makanan,pangan,bahan makanan,sembako,pasta,madu,minyak,susu,jus",lexical,
+منتج غذائي/زراعي,ms,"makanan,bahan makanan,runcit,pasta,madu,minyak,susu,jus",lexical,
+منتج غذائي/زراعي,sw,"chakula,vyakula,mazao,asali,mafuta,maziwa,juisi",lexical,
+منتج غذائي/زراعي,am,"ምግብ,የምግብ,ማር,ዘይት,ወተት",lexical,
+منتج غذائي/زراعي,hi,"खाद्य,खाना,किराना,खाद्य पदार्थ,शहद,तेल,दूध",lexical,
+منتج غذائي/زراعي,bn,"খাদ্য,খাবার,মুদি,মধু,তেল,দুধ",lexical,
+منتج غذائي/زراعي,ur,"خوراک,غذائی,کریانہ,شہد,تیل,دودھ",lexical,
+منتج غذائي/زراعي,th,"อาหาร,ของชำ,น้ำผึ้ง,น้ำมัน,นม",lexical,
+منتج غذائي/زراعي,vi,"thực phẩm,thuc pham,tạp hóa,mật ong,dầu,sữa",lexical,
+منتج غذائي/زراعي,ja,"食品,食料品,製菓,はちみつ,食用油,乳業",lexical,
+منتج غذائي/زراعي,ko,"식품,식료품,꿀,식용유,유업",lexical,
+منتج غذائي/زراعي,zh-CN,"食品,食物,副食,杂货,蜂蜜,食用油,乳业",lexical,
+منتج كيميائي/بلاستيكي,ar,"كيماويات,كيميائية,بلاستيك,بوليمر,راتنج",lexical,
+منتج كيميائي/بلاستيكي,en,"chemical,chemicals,plastic,plastics,polymer,resin",lexical,
+منتج كيميائي/بلاستيكي,fr,"chimique,chimiques,plastique,polymère,résine",lexical,
+منتج كيميائي/بلاستيكي,es,"quimico,quimica,plastico,polimero,resina",lexical,
+منتج كيميائي/بلاستيكي,de,"chemie,chemikalien,kunststoff,polymer,harz",lexical,
+منتج كيميائي/بلاستيكي,it,"chimica,chimici,plastica,polimero,resina",lexical,
+منتج كيميائي/بلاستيكي,nl,"chemie,chemicaliën,kunststof,polymeer,hars",lexical,
+منتج كيميائي/بلاستيكي,tr,"kimya,kimyasal,plastik,polimer,reçine",lexical,
+منسوجات/ملابس/أحذية,ar,"منسوجات,أقمشة,ملابس,أحذية,خياطة,نسيج",lexical,
+منسوجات/ملابس/أحذية,en,"textile,textiles,fabric,garment,apparel,clothing,footwear,shoes",lexical,
+منسوجات/ملابس/أحذية,fr,"textile,tissu,vêtement,habillement,chaussure",lexical,
+منسوجات/ملابس/أحذية,es,"textil,tejido,ropa,confeccion,calzado",lexical,
+منسوجات/ملابس/أحذية,de,"textil,stoff,bekleidung,kleidung,schuhe",lexical,
+منسوجات/ملابس/أحذية,it,"tessile,tessuti,abbigliamento,calzature",lexical,
+منسوجات/ملابس/أحذية,nl,"textiel,stof,kleding,schoenen",lexical,
+منسوجات/ملابس/أحذية,tr,"tekstil,kumaş,giyim,ayakkabı",lexical,
+معادن/مصنوعات معدنية,ar,"معادن,حديد,صلب,ألمنيوم,نحاس,مصنوعات معدنية",lexical,
+معادن/مصنوعات معدنية,en,"metal,metals,steel,iron,aluminium,aluminum,copper,hardware",lexical,
+معادن/مصنوعات معدنية,fr,"métal,métaux,acier,fer,aluminium,cuivre,quincaillerie",lexical,
+معادن/مصنوعات معدنية,es,"metal,metales,acero,hierro,aluminio,cobre,ferreteria",lexical,
+معادن/مصنوعات معدنية,de,"metall,stahl,eisen,aluminium,kupfer,eisenwaren",lexical,
+معادن/مصنوعات معدنية,it,"metallo,metalli,acciaio,ferro,alluminio,rame,ferramenta",lexical,
+معادن/مصنوعات معدنية,nl,"metaal,staal,ijzer,aluminium,koper,ijzerwaren",lexical,
+معادن/مصنوعات معدنية,tr,"metal,çelik,demir,alüminyum,bakır,hırdavat",lexical,
+آلات/معدّات كهربائية,ar,"آلات,معدات,كهربائية,مضخات,مولدات",lexical,
+آلات/معدّات كهربائية,en,"machinery,machines,equipment,electrical,electronics,pumps,generators",lexical,
+آلات/معدّات كهربائية,fr,"machines,équipement,électrique,électronique,pompes",lexical,
+آلات/معدّات كهربائية,es,"maquinaria,equipos,electrico,electronica,bombas",lexical,
+آلات/معدّات كهربائية,de,"maschinen,geräte,elektro,elektronik,pumpen",lexical,
+آلات/معدّات كهربائية,it,"macchinari,macchine,attrezzature,elettrico,elettronica,pompe",lexical,
+آلات/معدّات كهربائية,nl,"machines,apparatuur,elektro,elektronica,pompen",lexical,
+آلات/معدّات كهربائية,tr,"makine,ekipman,elektrik,elektronik,pompa",lexical,
+مركبات/معدّات نقل,ar,"مركبات,سيارات,شاحنات,نقل,قطع غيار",lexical,
+مركبات/معدّات نقل,en,"vehicle,vehicles,automotive,truck,trucks,auto parts,spare parts",lexical,
+مركبات/معدّات نقل,fr,"véhicule,automobile,camion,pièces détachées",lexical,
+مركبات/معدّات نقل,es,"vehiculo,automotriz,camion,repuestos",lexical,
+مركبات/معدّات نقل,de,"fahrzeug,kraftfahrzeug,lkw,ersatzteile",lexical,
+مركبات/معدّات نقل,it,"veicoli,automobilistico,camion,ricambi",lexical,
+مركبات/معدّات نقل,nl,"voertuig,auto,vrachtwagen,onderdelen",lexical,
+مركبات/معدّات نقل,tr,"araç,otomotiv,kamyon,yedek parça",lexical,
+أجهزة/أدوات دقيقة,ar,"أجهزة دقيقة,أجهزة طبية,مختبرات,قياس",lexical,
+أجهزة/أدوات دقيقة,en,"instrument,instruments,medical devices,laboratory,measuring,optical",lexical,
+أجهزة/أدوات دقيقة,fr,"instruments,dispositifs médicaux,laboratoire,mesure,optique",lexical,
+أجهزة/أدوات دقيقة,es,"instrumentos,dispositivos medicos,laboratorio,medicion,optica",lexical,
+أجهزة/أدوات دقيقة,de,"instrumente,medizinprodukte,labor,messtechnik,optik",lexical,
+أجهزة/أدوات دقيقة,it,"strumenti,dispositivi medici,laboratorio,misura,ottica",lexical,
+أجهزة/أدوات دقيقة,nl,"instrumenten,medische hulpmiddelen,laboratorium,meting,optiek",lexical,
+أجهزة/أدوات دقيقة,tr,"cihaz,tıbbi cihaz,laboratuvar,ölçüm,optik",lexical,

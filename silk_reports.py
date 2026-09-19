@@ -2171,7 +2171,8 @@ def _docx_deep_research(doc, view: dict) -> None:
             i += 1
 
     _docx_glossary(doc, dr)  # B1: مسرد المصطلحات بعد السرد قبل ملحق الأدلة
-    _docx_leads(doc, dr)     # C5: قائمة المستوردين القابلين للتواصل
+    # المدقّق (`?internal=1`) يرى عددَ المستبعَدين؛ العميلُ لا يراه.
+    _docx_leads(doc, dr, internal=bool(view.get("internal")))
 
     doc.add_heading("ملحق — الأدلة الرقمية الداعمة للتقاطعات الخمسة", level=2)
     _stamp_degraded_banner(doc, view)
@@ -4384,7 +4385,8 @@ def render_client_docx(view: dict, path: str) -> str:
     # test_importer_leads_render_c5.py، test_wave2_first_pdf_cluster.py)
     # تُثبِت أنه قرار منتج متعمَّد سابق (C5). ما أُزيل فعلاً من بناء العميل
     # هو جدول مزيج الثقة (✓/◐/○) وسجلّ الأدلة القديم (استُبدل بـ«المراجع»).
-    _docx_leads(doc, dr, sanitize=_sanitize, lang=lang)
+    _docx_leads(doc, dr, sanitize=_sanitize, lang=lang,
+                internal=bool(view.get("internal")))
     # §14 (الموجة ٠): بيانات المستند — بأيّ لغةٍ وُلِّد، وبأيّ عقد.
     _stamp_report_metadata(doc, view, lang)
 
@@ -5699,18 +5701,31 @@ def _clean_leads(leads: list, dr: dict) -> list:
     # المسمّاةُ في المتن لا تُسقِطها مِصفاةٌ أبداً — لا تُختلَق جهةٌ ولا
     # يُختلَق اتصال، إنما تُمنَع مِصفاةٌ من إخفاء ما يوصي به التقريرُ نفسُه.
     _scoped = _leads_reason_on()
-    _body = ""
-    if _scoped:
-        from silk_style_contract import lead_activity_allowed
-        _body = (((dr.get("report") or {}).get("text") or "")
-                 if isinstance(dr.get("report"), dict) else "")
+    # الدرس ٢٦٣ (مراجعة §58): متنُ التقرير يُقرَأ **دائماً** لا خلف راية —
+    # مِصفاةُ الصلة بفئة المنتج تعمل بلا راية، فحصانةُ الجهةِ التي يوصي بها
+    # المتنُ نفسُه يجب أن تعمل بلا راية كذلك؛ وإلا حذفنا موزّعاً يرشّحه
+    # التقرير (وهو نصفُ العيب الأصليّ: «يغيب عنها موزّعٌ يوصي به المتن»).
+    from silk_style_contract import lead_activity_allowed
+    _body = (((dr.get("report") or {}).get("text") or "")
+             if isinstance(dr.get("report"), dict) else "")
+    # الدرس ٢٦٣: فئةُ المنتج ورمزُه يصلان المِصفاة — المحورُ الثاني الذي
+    # كان ناقصاً (نشاطٌ مُدرَجٌ يخدم فئةً أخرى). أسبابُ الإسقاط تُجمَع
+    # للمدقّق ولا تصل العميل.
+    from silk_style_contract import lead_relevant_to_product
+    _hs = dr.get("hs_code") or (dr.get("charter") or {}).get("hs_code") or ""
+    _product = str(dr.get("product") or "")
+    dropped: list = []
     out = []
     for lead in leads or []:
+        raw_name = (lead or {}).get("name") if isinstance(lead, dict) else ""
         lead = clean_contact(lead, iso3)
         if lead is None:
+            dropped.append({"name": raw_name, "why": "عنوانٌ في دولةٍ أخرى"})
             continue
         nm = (lead.get("name") or "").strip()
-        named = bool(_scoped and nm and len(nm) >= 4 and nm in _body)
+        # الدرس ٢٦٣ (مراجعة §58، الموضع الثاني): كانت الحصانةُ نفسُها
+        # مشروطةً بالراية أيضاً — فتُحذَف بلا راية جهةٌ يوصي بها المتن.
+        named = bool(nm and len(nm) >= 4 and nm in _body)
         if named:
             lead = dict(lead)
             lead["named_in_report"] = True
@@ -5721,17 +5736,34 @@ def _clean_leads(leads: list, dr: dict) -> list:
         # صحّةِ عنوانٍ ولا وجودِ اتصال.
         if _scoped and not named and not lead_activity_allowed(
                 lead.get("category")):
+            dropped.append({"name": raw_name or lead.get("name"),
+                            "why": "نشاطٌ خارج قائمة السماح"})
             continue
         if not nm or not looks_like_name(nm):          # البند ٥: نثر/بلا اسم
+            dropped.append({"name": raw_name, "why": "ليس اسمَ كِيان"})
             continue
         if _is_filler_lead(lead):                        # البند ٦: حشو
+            dropped.append({"name": nm, "why": "بلا أيّ وسيلة اتصال"})
             continue
         if _address_wrong_geo(lead.get("address"), iso3, tnames):  # البند ٤
+            dropped.append({"name": nm, "why": "عنوانٌ في دولةٍ أخرى"})
             continue
+        # الدرس ٢٦٣: صلةُ النشاط بفئة المنتج — الجهةُ التي يسمّيها المتنُ
+        # محصّنةٌ كما هي (دليلُ صلةٍ من التقرير نفسِه).
+        if not named:
+            _ok, _why = lead_relevant_to_product(lead, _hs, _product, iso3)
+            if not _ok:
+                dropped.append({"name": nm, "why": _why})
+                continue
         if lead.get("category"):
             lead = dict(lead)
             lead["category"] = activity_label_ar(lead["category"])
         out.append(lead)
+    if dropped:
+        # قناةُ مدقّقٍ بحتة: تُكتَب على **سياق النداء** لا على `deep_research`
+        # المخزَّن/المعروض (مراجعة §58 — أسماءُ جهاتٍ مرفوضةٍ وأسبابٌ عربيةٌ
+        # داخلية كانت ترحل في JSON عرضِ العميل وتُلتزَم في المدوّنات).
+        dr["leads_dropped"] = dropped
     return out
 
 
@@ -5739,6 +5771,23 @@ def _leads_data(dr: dict):
     il = dr.get("importer_leads") or {}
     leads = _clean_leads(il.get("leads") or [], dr)
     return leads, (il.get("note") or "")
+
+
+def _leads_empty_line(dr: dict, lang: str = "ar",
+                      internal: bool = False) -> str:
+    """جملةُ القائمة الفارغة — **تُفرِّق** بين لم‑نجد وبين نقّينا (الدرس ٢٦٣).
+
+    عددُ المستبعَدين للمدقّق وحدَه (`view["internal"]`)، لا للعميل.
+    """
+    il = dr.get("importer_leads") or {}
+    n = int(il.get("dropped_count") or len(dr.get("leads_dropped") or []) or 0)
+    if not n:
+        return _T("leads_none", lang)
+    line = _T("leads_none_filtered", lang)
+    if internal:
+        line += (f" (استُبعدت {n} جهة)" if lang != "en"
+                 else f" ({n} entities excluded)")
+    return line
 
 
 def _lead_cells(lead: dict, lang: str = "ar") -> list:
@@ -5770,15 +5819,16 @@ def _lead_reason(lead: dict, lang: str = "ar") -> str:
     return _T("lead_reason_unknown", lang)
 
 
-def _md_leads(dr: dict, L: list) -> None:
+def _md_leads(dr: dict, L: list, internal: bool = False) -> None:
     """C5: جدول «قائمة مستوردين وموزعين قابلين للتواصل» في Markdown."""
     from silk_gmaps import maps_disclaimer
     MAPS_DISCLAIMER = maps_disclaimer(dr.get("product"))   # Wave 2: بارامتري بالمنتج
     leads, note = _leads_data(dr)
     L += [f"## {_LEADS_TITLE}", ""]
     if not leads:
-        L += ["لا جهات اتصال قابلة للتواصل في هذا التشغيل — القائمة غير متاحة"
-              + (f" ({note})" if note else "") + ".", ""]
+        L += [_leads_empty_line(dr, "ar", internal)
+              + (f" ({note})" if note else "")
+              + ".", ""]
         return
     head = _leads_header("ar")
     L += ["| " + " | ".join(head) + " |",
@@ -5789,7 +5839,8 @@ def _md_leads(dr: dict, L: list) -> None:
     L += ["", MAPS_DISCLAIMER, ""]
 
 
-def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar") -> None:
+def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar",
+                internal: bool = False) -> None:
     """C5: جدول الروابط في Word (المدقّق والعميل) من بنية النموذج.
 
     الموجة ٠: العنوان ورؤوس الأعمدة وسطرُ الفراغ بلغة التقرير — أسماءُ
@@ -5800,7 +5851,7 @@ def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar") -> None:
     doc.add_heading(_T("leads_title", lang), level=2)
     if not leads:
         # الملاحظة `note` نصٌّ داخليّ عربيّ — لا تُلحَق بتقريرٍ إنجليزيّ.
-        msg = _T("leads_none", lang) + (
+        msg = _leads_empty_line(dr, lang, internal) + (
             f" ({note})" if (note and silk_i18n.normalize(lang) == "ar") else "")
         doc.add_paragraph(sanitize(msg) if sanitize else msg)
         return
@@ -5902,7 +5953,7 @@ def _md_deep_research(view: dict, prefix: list[str]) -> str:
                                      _view_lang(view)), ""]
         L += [str(report_text).rstrip(), ""]
         _md_glossary(dr, L)  # B1: مسرد المصطلحات المستعملة فعلاً
-        _md_leads(dr, L)     # C5: قائمة المستوردين القابلين للتواصل
+        _md_leads(dr, L, bool(view.get("internal")))  # C5: قائمة الروابط
     else:
         fr = (dr.get("report") or {}).get("failure_reason")
         L += ["## التقرير السردي الكامل", "",

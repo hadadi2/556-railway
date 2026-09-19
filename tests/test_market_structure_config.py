@@ -393,12 +393,13 @@ def test_the_guards_fire_only_where_the_defect_is_real_and_verbatim():
     وخمسَ عشرةَ مدوّنةً **صفرٌ**. والقاعدةُ التي تُطلِق على الصحيح لا
     تُشحَن (الصنف ١١)، والصمتُ وحدَه لا يُثبِت أنّ القاعدةَ حيّة."""
     import silk_quality_gate as G
+    # الدرس ٢٦٣: مِصفاةُ الصلة بفئة المنتج تُسقِط الجهةَ **في الوضعين**
+    # (قرارُ المالك: احذف غير المرتبط)، فيصمت حارسُها في الوضعين كذلك —
+    # صمتٌ سببُه زوالُ العيب لا خمودُ الحارس (يُقاس مباشرةً في
+    # `tests/test_leads_relevance.py` وفي الفحص المباشر أدناه).
     expected_off = {
         "libya_tahini": {"target_region_missing_in_multi_authority",
-                         "broad_hs_scope_undisclosed",
-                         "lead_outside_activity_allowlist"}}
-    # مفعّلةً: مِصفاةُ النشاط **تُسقِط** الجهةَ فعلاً، فيصمت حارسُها —
-    # صمتُه هنا هو الفكسُ يعمل، لا قاعدةٌ نائمة.
+                         "broad_hs_scope_undisclosed"}}
     expected_on = {
         "libya_tahini": {"target_region_missing_in_multi_authority",
                          "broad_hs_scope_undisclosed"}}
@@ -618,7 +619,10 @@ def test_the_lead_filter_removes_what_the_guard_warned_about():
                           or {}).get("leads") or [])]
             hit_on = [f["check"] for f in G.run_quality_gate(v_on)["findings"]
                       if f["check"] == "lead_outside_activity_allowlist"]
-    assert "مؤسسة النخبة لقطع الغيار" in names_off and hit_off
+    # الدرس ٢٦٣ (قرار المالك 2026-09-19: «احذف غير المرتبط بالمنتج»):
+    # الإسقاطُ صار **بلا راية** ومحورُه فئةُ المنتج لا قائمةُ سماحٍ عامّة —
+    # فالنشاطُ غيرُ المرتبط يغيب في الوضعين، والراية لم تعد تحكمه.
+    assert "مؤسسة النخبة لقطع الغيار" not in names_off
     assert "مؤسسة النخبة لقطع الغيار" not in names_on and not hit_on
     assert "شركة الساحل للتجارة" in names_on      # نشاطٌ ذو صلة يبقى
 
