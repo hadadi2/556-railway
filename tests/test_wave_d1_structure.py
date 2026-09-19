@@ -245,8 +245,9 @@ def test_redaction_uses_the_files_natural_replacements():
     assert "ناقص" not in out and "لم يُعرَف بعد" in out
     out = SR._client_redact_text("لا نعرفه بعد — الناقص: حجم العبوة", "ar")
     assert "الناقص" not in out and "يلزم: حجم العبوة" in out
-    out_en = SR._client_redact_text("| tariff | (missing) |", "en")
-    assert "missing" not in out_en and "not yet known" in out_en
+    # ما أصدرته سِلك فقط («not observed») — «(missing)» إنجليزيةٌ عاديةٌ لا تُمَسّ.
+    out_en = SR._client_redact_text("| tariff | (not observed) |", "en")
+    assert "not observed" not in out_en and "not yet known" in out_en
 
 
 def test_a_refuse_row_is_never_redacted_only_refused():
@@ -277,6 +278,77 @@ def test_every_codex_client_report_is_free_of_file_terms(key):
     txt = _client_text(_view(key))
     assert SR._client_forbidden_hits(txt, "ar") == []
     assert "{{" not in txt
+
+
+# ── ٥) حصادُ المراجعة الذاتية (§58) ───────────────────────────────────────
+
+@pytest.mark.parametrize("text", [
+    "| الطلب | ضعيف |",                       # كلمةُ تقييمٍ عادية لا تسميةُ حالة
+    "500 ألف دولار (تقدير)",                  # إنجليزيةٌ/عربيةٌ تجاريةٌ عادية
+    "الحصة السوقية (استنتاج) نحو 2%",
+    "المبلغ الناقص: 500 دولار",               # «الناقص:» بلا شرطةٍ نثرٌ عادي
+    "SuperAgent Logistics و NewAgent Ltd",      # أسماءُ شركات
+    "https://comtradeplus.un.org/data/tariff_line_data_2023",
+    "www.big_trading_company.com",
+])
+def test_legitimate_text_is_not_a_file_term(text):
+    hits = [h for h in SR._client_forbidden_hits(text, "ar")
+            if not h.startswith(("declared_gap", "status:"))]
+    assert hits == [], hits
+    assert SR._client_redact_text(text, "ar") == text
+
+
+@pytest.mark.parametrize("text", [
+    "USD 4.2/kg (estimate)", "| Tariff | 5% (observed) |", "sales (observed) rose",
+])
+def test_legitimate_english_annotations_survive(text):
+    assert not [h for h in SR._client_forbidden_hits(text, "en")
+                if h.startswith("ledger_status")]
+
+
+def test_a_label_at_paragraph_end_inside_a_joined_blob_is_caught():
+    blob = "الحالة: ناقص\nسطر آخر"
+    assert any(h.startswith("ledger_status_missing")
+               for h in SR._client_forbidden_hits(blob, "ar"))
+    assert SR._client_redact_text("الحالة: ناقص", "ar") == "الحالة: لم يُعرَف بعد"
+
+
+def test_an_estimate_written_as_a_single_bare_number_is_flagged():
+    """قيدُ المالك في النصّ لا في السجلّ وحده: التقديرُ رقماً واحداً بلا نطاق
+    يُلتقَط في المسوّدة وفي النصّ المُصيَّر؛ وبالنطاق يمرّ."""
+    e = _estimate()
+    ledger = {"entries": {"border_price_usd_kg": e}, "order": [e["key"]]}
+    view = {"ledger": ledger}
+    bare = "بلغ متوسط سعر الاستيراد الحدودي 9.9 دولار/كجم في 2023."
+    ranged = "نقدّر متوسط سعر الاستيراد الحدودي بين 3.6 و4.8 دولار/كجم."
+    assert L.check(view, bare) and not L.check(view, ranged)
+    assert L.draft_issues(bare, ledger) and not L.draft_issues(ranged, ledger)
+
+
+@pytest.mark.parametrize("kwargs", [
+    dict(range=(None, None), assumption="x"),
+    dict(range="ab", assumption="x"),
+    dict(range=(5, 3), assumption="x"),
+    dict(range=(3, 5), assumption="x", basis=("bogus_key",)),
+])
+def test_insight_entry_validation_is_structural(kwargs):
+    with pytest.raises(ValueError):
+        L.insight_entry("border_price_usd_kg", 4.0, grade=L.ESTIMATE, **kwargs)
+
+
+def test_an_estimated_tariff_never_feeds_the_money_path(monkeypatch):
+    import silk_economics as E
+    est = L.insight_entry("tariff_applied_pct", 5.0, grade=L.ESTIMATE,
+                          range=(3.0, 7.0), assumption="متوسط الفئة")
+    monkeypatch.setattr(L, "build_ledger",
+                        lambda *a, **k: {"entries": {"tariff_applied_pct": est}})
+    assert E._tariff_from_ledger({}) == (None, "")
+
+
+def test_an_inference_on_an_engine_key_still_names_its_basis():
+    e = L.insight_entry("blocking_condition", "أهلية المنشأة", grade=L.INFERENCE,
+                        basis=("requirements_count",))
+    assert "يشير" in L.render_sentence(e, "ar")
 
 
 def test_a_bad_regex_row_is_skipped_not_fatal(tmp_path, monkeypatch):

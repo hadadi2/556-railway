@@ -1096,7 +1096,9 @@ def _tariff_from_ledger(dr: dict) -> tuple:
              or {}).get("tariff_applied_pct") or {}
     except Exception:  # noqa: BLE001 — السجلُّ إضافةٌ لا شرطُ حساب
         return None, ""
-    if e.get("status") == _FL.MISSING:
+    # الموجة د-١: التقديرُ والاستنتاجُ لا يُحتسبان متحققاً منهما (قيدُ المالك) —
+    # مسارُ المال يقرأ المرصودَ وحدَه، وإلا صار تقديرٌ رسماً جمركياً فعلياً.
+    if e.get("status") == _FL.MISSING or e.get("status") in _FL._RANGED:
         return None, ""
     return _num_or_none(e.get("value")), str(e.get("note") or "")
 

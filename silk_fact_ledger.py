@@ -231,11 +231,19 @@ def insight_entry(key: str, value, *, grade: str, assumption: str = "",
     """
     if grade not in _RANGED:
         raise ValueError(f"insight grade must be estimate/inference, got {grade!r}")
-    rng = tuple(range) if range else None
-    if grade == ESTIMATE and (not str(assumption).strip() or not rng
-                              or len(rng) != 2):
-        raise ValueError("an estimate needs a declared assumption and a "
-                         "(low, high) range — لا تقدير بلا افتراض معلن ونطاق")
+    rng = tuple(range) if isinstance(range, (list, tuple)) else None
+    if grade == ESTIMATE:
+        lo = _num(rng[0]) if rng and len(rng) == 2 else None
+        hi = _num(rng[1]) if rng and len(rng) == 2 else None
+        if not str(assumption).strip() or lo is None or hi is None or lo > hi:
+            raise ValueError("an estimate needs a declared assumption and a "
+                             "numeric (low, high) range with low <= high — "
+                             "لا تقدير بلا افتراض معلن ونطاق")
+        rng = (lo, hi)
+    basis = tuple(basis or ())
+    unknown = [b for b in basis if b not in _KEY_ROWS]
+    if unknown:
+        raise ValueError(f"basis names unknown ledger keys: {unknown}")
     if grade == INFERENCE and not basis:
         raise ValueError("an inference must name the ledger keys it rests on")
     row = _KEY_ROWS[key]
@@ -245,7 +253,7 @@ def insight_entry(key: str, value, *, grade: str, assumption: str = "",
             "source": str(source or "حساب من السجلّ"), "confidence": None,
             "note": str(note or ""), "year": year, "mirrored": False,
             "origin": "insight", "assumption": str(assumption or ""),
-            "range": rng, "basis": tuple(basis), "flip_if": str(flip_if or ""),
+            "range": rng, "basis": basis, "flip_if": str(flip_if or ""),
             "how_to_close": str(how_to_close or "")}
 
 
@@ -608,6 +616,15 @@ def render_sentence(entry: dict, lang: str = "ar") -> str:
     key, st = entry["key"], entry["status"]
     label = entry["label_en"] if lang == "en" else entry["label_ar"]
     en = lang == "en"
+    if st == ESTIMATE:
+        return (f"We estimate {label} {render_value(entry, lang)}." if en
+                else f"نقدّر {label} {render_value(entry, lang)}.")
+    if st == INFERENCE:
+        body = (_value_text(entry, lang) if _num(entry.get("value")) is not None
+                else str(entry.get("value") or ""))
+        basis = _basis_labels(entry, lang)
+        return (f"{basis} point to {label}: {body}." if en
+                else f"يشير {basis} إلى أن {label}: {body}.")
     if key == "open_conditions":
         n = int(entry.get("value") or 0)
         if n == 0:
@@ -629,20 +646,12 @@ def render_sentence(entry: dict, lang: str = "ar") -> str:
         return f"The blocking condition: {v}." if en else f"الشرط الحاجب: {v}."
     if st == MISSING:
         return f"{label} is not available." if en else f"{label} غير متاح."
-    if st == ESTIMATE:
-        return (f"We estimate {label} {render_value(entry, lang)}." if en
-                else f"نقدّر {label} {render_value(entry, lang)}.")
-    if st == INFERENCE:
-        body = (_value_text(entry, lang) if _num(entry.get("value")) is not None
-                else str(entry.get("value") or ""))
-        basis = _basis_labels(entry, lang)
-        return (f"{basis} point to {label}: {body}." if en
-                else f"يشير {basis} إلى أن {label}: {body}.")
     return f"{label}: {render_value(entry, lang)}."
 
 
 def render_status(entry: dict, lang: str = "ar") -> str:
-    """حالة معطى — `{{status:key}}`: مرصود / مرصود بتوثيق ضعيف / غير متاح."""
+    """حالة معطى — `{{status:key}}` بلغة قارئ: متاح من مصدر موثّق / متاح من
+    مصادر غير رسمية فقط / غير متاح / مُقدَّر بافتراض معلن / مستنتَج."""
     en = lang == "en"
     # لغةُ قارئ لا أسماءُ حالات (بلاغ المالك، الموجة د): «مرصود» و«ناقص»
     # و«تقدير» تسمياتٌ داخلية لا تصل العميل ولو عبر `{{status:key}}`.
@@ -858,7 +867,14 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
     for key, e in entries.items():
         row = _KEY_ROWS[key]
         words = row.words
-        if not words or row.writer_hidden or e["status"] in _RANGED:
+        if not words or row.writer_hidden:
+            continue
+        if e["status"] in _RANGED:
+            bare = _ranged_bare_sentence(stripped, words, e)
+            if bare:
+                issues.append(f"«{e['label_ar']}» تقديرٌ بنطاقٍ في السجلّ "
+                              f"({render_value(e, lang)}) لكن الجملة تكتبه رقماً "
+                              f"واحداً بلا نطاق — أعد صياغتها بالنطاق والافتراض: «{bare}»")
             continue
         mandatory = row.mandatory
         for w in words:
@@ -905,6 +921,26 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
                                   f"صياغة الجملة بالقيمة الصحيحة: «{sent}»")
                     break
     return issues
+
+
+#: علاماتُ النطاق في الجملة — وجودُ إحداها قربَ التقدير يعني أنّه كُتب نطاقاً.
+_RANGE_MARK_RE = re.compile(r"بين|نقدّر|نقدر|تقريباً|نحو|between|estimate|"
+                            r"approximately|roughly|about", re.IGNORECASE)
+
+
+def _ranged_bare_sentence(text: str, words: tuple, entry: dict) -> str:
+    """الجملةُ التي تكتب تقديراً رقماً واحداً بلا نطاق — أو "" إن سلمت."""
+    for w in words:
+        for m in re.finditer(re.escape(w), text):
+            win = text[m.end():m.end() + _VALUE_WINDOW].split("\n")[0]
+            nm = _NUM_RE.search(win)
+            if not nm or _is_bare_year(nm, entry["key"]):
+                continue
+            sent = _sentence_at(text, m.start())
+            if _RANGE_MARK_RE.search(sent):
+                continue
+            return sent
+    return ""
 
 
 def _is_bare_year(match, key: str) -> bool:
@@ -1007,7 +1043,17 @@ def check(view: dict, text: str) -> list:
     for key, e in entries.items():
         row = _KEY_ROWS[key]
         words = row.words
-        if not words or not row.numeric_check or e["status"] in _RANGED:
+        if not words or not row.numeric_check:
+            continue
+        if e["status"] in _RANGED:
+            # التقديرُ لا يُقارَن بقيمةٍ واحدة — لكنّ رقماً واحداً بلا نطاقٍ
+            # قربَ تسميته هو عينُ «التقدير رقماً عارياً» (مراجعة §58).
+            bare = _ranged_bare_sentence(text, words, e)
+            if bare:
+                findings.append(_finding(
+                    "ledger_value_mismatch",
+                    f"«{e['label_ar']}» تقديرٌ بنطاقٍ ({render_value(e)}) بينما "
+                    f"النص يكتبه رقماً واحداً بلا نطاق قرب «…{bare[:60]}…»"))
             continue
         for w in words:
             for m in re.finditer(re.escape(w), text):
