@@ -577,6 +577,50 @@ def _activity_key_of(lead: object) -> str:
     return key
 
 
+_FORBIDDEN_TERMS_PATH = __import__("os").path.join(
+    __import__("os").path.dirname(__import__("os").path.abspath(__file__)),
+    "data", "client_forbidden_terms_l1.csv")
+
+
+@functools.lru_cache(maxsize=1)
+def client_forbidden_terms() -> tuple:
+    """قائمةُ الممنوعات القابلةُ للتحديث بلا كود (الموجة د-١) من
+    `data/client_forbidden_terms_l1.csv` — صفوفٌ `{label, langs, regex,
+    replacement_ar, replacement_en, refuse}`. صفٌّ بنمطٍ فاسد يُتخطّى بتحذيرٍ
+    ولا يكسر التصدير؛ الملفُّ الغائب = لا صفوف (الأنماطُ الحرفية القائمة تبقى)."""
+    import csv
+    import logging
+    import re as _re
+    rows: list = []
+    try:
+        with open(_FORBIDDEN_TERMS_PATH, encoding="utf-8") as fh:
+            for r in csv.DictReader(l for l in fh if not l.startswith("#")):
+                pat = (r.get("pattern") or "").strip()
+                label = (r.get("label") or "").strip()
+                if not pat or not label:
+                    continue
+                try:
+                    rx = _re.compile(pat)
+                except _re.error as e:
+                    logging.getLogger(__name__).warning(
+                        "client_forbidden_terms_l1: bad pattern for %s: %s",
+                        label, e)
+                    continue
+                lang = (r.get("lang") or "both").strip().lower()
+                rep_ar = r.get("replacement_ar") or ""
+                rep_en = r.get("replacement_en") or ""
+                rows.append({
+                    "label": label,
+                    "langs": frozenset({"ar", "en"}) if lang == "both"
+                    else frozenset({lang}),
+                    "regex": rx, "replacement_ar": rep_ar,
+                    "replacement_en": rep_en,
+                    "refuse": "<refuse>" in (rep_ar, rep_en)})
+    except OSError:
+        return ()
+    return tuple(rows)
+
+
 @functools.lru_cache(maxsize=256)
 def product_terms(category: str, lang: str) -> tuple:
     """كلماتُ فئةِ المنتج بلغةٍ بعينها من `data/product_terms_l1.csv`.
