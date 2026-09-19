@@ -30,6 +30,10 @@ import silk_reports as SR                                     # noqa: E402
 from gen_verdict_baseline import CANONICAL_BLOBS              # noqa: E402
 
 
+_STATUS_LABELS = {"ناقص", "مرصود بتوثيق ضعيف",
+                  "not observed", "observed, weakly documented"}
+
+
 def _keys():
     return sorted(CANONICAL_BLOBS)
 
@@ -76,7 +80,22 @@ def test_the_table_separates_missing_from_weakly_documented():
         {"label_ar": "دخل الفرد", "label_en": "GDP per capita",
          "status": L.MISSING, "note": "لم يُرصد"}]}}
     rows = L.gaps_table(view)
-    assert [r["status"] for r in rows] == ["مرصود بتوثيق ضعيف"]
+    # التسميةُ لغةُ قارئ لا اسمُ حالة (بلاغ المالك بعد ٢٦٤): الفرقُ يبقى.
+    assert [r["status"] for r in rows] == ["مرصود من مصادر غير رسمية فقط"]
+    assert [r["status_code"] for r in rows] == [L.WEAK]
+
+
+def test_gaps_table_never_emits_a_ledger_status_name_on_any_surface():
+    """المنشئُ الواحد لا يحمل «ناقص»/«مرصود بتوثيق ضعيف»/observed/weak/
+    missing في أيّ تسميةٍ معروضة — فلا سطحٌ حاضرٌ ولا قادمٌ يسرّبها."""
+    view = {"limits": ["دخل الفرد غير متاح"],
+            "ledger": {"gaps": [{"label_ar": "الحصة", "label_en": "share",
+                                 "status": L.WEAK, "note": ""}]}}
+    for lang in ("ar", "en"):
+        shown = {r["status"] for r in L.gaps_table(view, lang)}
+        assert not (shown & _STATUS_LABELS), shown
+        assert all(not re.fullmatch(r"(observed|weak|missing)", s)
+                   for s in shown)
 
 
 def test_a_consequence_is_not_dressed_up_as_a_closure_path():
@@ -176,10 +195,6 @@ def test_the_dashboard_reads_the_same_rows_the_document_prints(key):
     view = _view(key)
     assert (view["ledger"]["gaps_table"] ==
             L.gaps_table(view, view.get("report_language") or "ar"))
-
-
-_STATUS_LABELS = {"ناقص", "مرصود بتوثيق ضعيف", "الحالة",
-                  "not observed", "observed, weakly documented", "Status"}
 
 
 def _client_cells(view):
