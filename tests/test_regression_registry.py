@@ -4597,6 +4597,25 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    264: lambda: (
+        _needles("silk_fact_ledger.py", "def gaps_table", "def _split_gap",
+                 "def clip_clause", "_ACTIONABLE_RE")(),
+        _needles("silk_reports.py", "def _gaps_table_md",
+                 "def _docx_gaps_table", "def _gaps_detail_rows")(),
+        _needles("web/index.html", "gaps_table", "ما يلزم لإغلاقه")(),
+        # الصياغةُ تُقاس بالمخرَج لا بالمصدر: تعليقٌ يشرح ما استُبدِل يحمل
+        # العبارةَ القديمة بطبيعته (قفلُ المخرَج في test_human_writing.py).
+        _needles("silk_narrative.py", "ما يسند هذه القراءة: ",
+                 "ويبقى قبل الحسم النهائي: ")(),
+        _needles("silk_render.py", "لم يكتمل قسم «", "def _facts_needed")(),
+        _needles("silk_narrative.py", "def _all_sections_ok")(),
+        _needles("tests/test_human_writing.py",
+                 "def test_no_long_sentence_repeats_inside_one_report",
+                 "def test_the_limits_section_is_one_table_not_a_repeated_"
+                 "list",
+                 "def test_a_consequence_is_not_dressed_up_as_a_closure_"
+                 "path")(),
+        _needles("tests/test_lessons_enforcement.py", "(264, ")()),
     263: lambda: (
         _needles("silk_contact_quality.py", "def is_placeholder_site",
                  "mysite.com")(),

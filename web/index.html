@@ -1043,13 +1043,26 @@ function renderDeepResearch(v){
       return '<div class="bcard"><h3>'+CAT_AR[cat]+'</h3>'
         +(items.length?items.map(function(f){return '<p style="font-size:14px;margin-bottom:8px">• '+esc(String(f.value))+'<span style="display:block;font-size:11.5px;color:var(--muted)">'+esc(f.source||"")+' · '+esc(f.confidence_badge||"")+'</span></p>'}).join("")
           :'<div class="gap">دليل هذا التقاطع غير متاح — لم يُبنَ استنتاج</div>')+'</div>'}).join("")+'</div></details>';
-  // الحدود — مع صنف الفجوة G1–G4 حين يتوفر السجل المهيكل (الموجة ١)
+  // الحدود — جدولٌ واحدٌ يفرّق «ناقص» عن «مرصود بتوثيق ضعيف» (الدرس ٢٦٤).
+  // الصفوفُ من `view.ledger.gaps_table` — نفسُها التي يطبعها md وWord، فلا
+  // تتباعد الواجهةُ عن المستند المُصدَّر (قانونُ العرض الواحد).
+  var grows=((v.ledger||{}).gaps_table)||[];
+  if(grows.length){html+='<div class="bcard" style="margin:18px 0"><h3>حدود هذا البحث</h3>'
+    +'<table style="width:100%;font-size:12.5px"><thead><tr>'
+    +'<th style="text-align:start">المعطى</th>'
+    +'<th style="text-align:start">ما يلزم لإغلاقه</th>'
+    +'<th style="text-align:start">الحالة</th></tr></thead><tbody>'
+    +grows.slice(0,12).map(function(g){return '<tr><td>'+esc(g.what)+'</td><td>'
+      +esc(g.how)+'</td><td>'+esc(g.status)+'</td></tr>'}).join("")
+    +'</tbody></table></div>'}
+  else{
   var greg=dr.gap_register||[];
   if(greg.length){html+='<div class="bcard" style="margin:18px 0"><h3>حدود هذا البحث</h3>'
     +greg.slice(0,8).map(function(g){return '<p style="font-size:12.5px;color:var(--muted)">• '+esc(g.text)
       +' <span style="font-size:11px;opacity:.75">['+esc(g.gap_class)+' — '+esc(g.gap_class_label)+']</span></p>'}).join("")+'</div>'}
   else if((dr.limits||[]).length)html+='<div class="bcard" style="margin:18px 0"><h3>حدود هذا البحث</h3>'
     +dr.limits.slice(0,8).map(function(x){return '<p style="font-size:12.5px;color:var(--muted)">• '+esc(x)+'</p>'}).join("")+'</div>';
+  }
   var de=v.data_economics;
   if(de&&de.note){
     // التكلفة الفعلية النهائية — محسوبة أصلاً (estimate_cost_usd) ولم تكن

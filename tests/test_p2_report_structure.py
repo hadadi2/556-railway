@@ -70,7 +70,9 @@ def test_report_face_is_slogan_free_and_machine_free():
                    "لا بند مرصوداً", "CONDITIONAL-GO (ثقة"):
         assert banned not in joined, banned
     # شفافية 2B باقية في ملحق المحلّل — لا على وجه الأقسام.
-    if "بيانات غير كافية لقسم" in joined:
+    # الدرس ٢٦٤ أعاد صياغة الجملة؛ الإبرةُ القديمة صارت ميتةً فسقط الحارس
+    # صامتاً (مراجعةٌ ذاتية §58) — تُحدَّث للصياغة المشحونة.
+    if "لم يكتمل قسم" in joined:
         assert "أقسام دون عتبة الكفاية" in joined
     # سطر المصدر تحت الأرقام هو إشارة النزاهة — حاضر.
     assert "المصدر: " in joined or "المصدر:" in joined

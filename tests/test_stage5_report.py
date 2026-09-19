@@ -110,7 +110,7 @@ def test_render_markdown_full_report_every_number_sourced():
     assert "SWOT" in md or "سوات" in md
     assert "المورّدين" in md or "الموردين" in md
     assert "أثر المصادر" in md or "provenance" in md.lower()
-    assert "بيانات غير كافية" in md                 # بوابة 2B تعمل في MD أيضاً
+    assert "لم يكتمل قسم" in md    # بوابة 2B في MD أيضاً (الصياغة: الدرس ٢٦٤)
 
 
 def test_docx_includes_decision_and_tam_sections():

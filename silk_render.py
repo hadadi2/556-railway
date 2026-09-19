@@ -1162,12 +1162,51 @@ def _section_status(row: dict) -> dict:
     return out
 
 
+#: أعدادٌ مؤنّثةٌ للحقائق — «ثلاث حقائق» لا «ثلاثة حقائق» (المعدودُ مؤنّث).
+_FEM_ONES = {3: "ثلاث", 4: "أربع", 5: "خمس", 6: "ست", 7: "سبع", 8: "ثماني",
+             9: "تسع", 10: "عشر"}
+
+
+def _facts_needed(n: int) -> str:
+    """«حقيقة واحدة» / «حقيقتين» / «ثلاث حقائق» — مجرورٌ بعد «يحتاج»."""
+    n = int(n or 0)
+    if n <= 1:
+        return "حقيقة واحدة"
+    if n == 2:
+        return "حقيقتين"
+    if n <= 10:
+        return f"{_FEM_ONES[n]} حقائق"
+    return f"{n} حقيقةً"
+
+
+def _facts_found(n: int) -> str:
+    """«واحدة» / «اثنتان» / «ثلاث» — مرفوعٌ فاعلاً لـ«رُصدت»."""
+    n = int(n or 0)
+    if n == 1:
+        return "واحدة"
+    if n == 2:
+        return "اثنتان"
+    if n <= 10:
+        return _FEM_ONES.get(n, str(n))
+    return str(n)
+
+
 def insufficient_line(sec_ar: str, st: dict) -> str:
-    """جملة النقص الوحيدة المسموح بها (2B-ب) — the only allowed insufficiency text."""
-    srcs = "، ".join(st.get("sources_attempted") or []) or "لا مصادر مُحاوَلة"
-    return (f"بيانات غير كافية لقسم «{sec_ar}» "
-            f"({st['contributed']}/{st['threshold']} حقائق سوقية) — "
-            f"المصادر المُحاوَلة: {srcs}")
+    """جملة النقص الوحيدة المسموح بها (2B-ب) — the only allowed insufficiency text.
+
+    الدرس ٢٦٤: تقول للقارئ **ما ينقص وماذا جُرِّب** بدل حكمٍ آليّ على
+    البيانات؛ ونفسُ الأرقام ونفسُ المصادر حرفياً. والمراجعةُ الذاتية (§58)
+    ألزمت أمرين: مطابقةُ العدد والمعدود (المعدودُ **مؤنّث**، فلا «رُصدت 0
+    حقيقة» ولا «من 2 يحتاجها»)، وذيلُ مصادرَ لا يدّعي محاولةً لم تقع
+    («بعد محاولة هذه المصادر: لا مصادر مُحاوَلة» جملةٌ تناقض نفسَها).
+    """
+    got, need = int(st.get("contributed") or 0), int(st.get("threshold") or 0)
+    head = ("لم تُرصد أي حقيقة سوقية" if got <= 0
+            else f"رُصدت {_facts_found(got)} من الحقائق السوقية")
+    srcs = "، ".join(st.get("sources_attempted") or [])
+    tail = f"، بعد محاولة: {srcs}" if srcs else "، ولم تُحاوَل أي مصادر"
+    return (f"لم يكتمل قسم «{sec_ar}»: {head}، والقسم يحتاج "
+            f"{_facts_needed(need)}{tail}")
 
 
 # ── Stage 5: مشتقات حزمة البحث (§7) — SWOT قاعدي، شرائح، دليل مورّدين ─────────
@@ -4280,6 +4319,15 @@ def build_view(result: dict, lang: str = "ar") -> dict:
         # تمريرها في كل توقيع (نفس نمط رفع `degraded`). قيمةٌ عرضٍ لا تحليل.
         "report_language": lang,
     }
+    # صفوفُ جدول النواقص تُحسَب **بعد اكتمال العرض** (تقرأ الحدودَ وفجواتِ
+    # الاقتصاد) وتُرفَع في السجلّ: الواجهةُ والماركداون وWord يقرؤون الصفوفَ
+    # نفسَها — لا مسارَ عرضٍ موازياً يتباعد (الدرس ٢، وقانونُ العرض الواحد).
+    if isinstance(_ledger, dict):
+        try:
+            import silk_fact_ledger as _FL
+            _ledger["gaps_table"] = _FL.gaps_table(view, lang)
+        except Exception:                   # noqa: BLE001 — عرضٌ لا يُسقِط تقريراً
+            _ledger["gaps_table"] = []
     return view
 
 
@@ -4301,7 +4349,12 @@ def render_text(view: dict) -> str:
     st0 = (view.get("markets") or [{}])[0].get("section_status") or {}
     for sec, st in st0.items():
         if st.get("status") == "insufficient":
-            L.append("  " + insufficient_line(sec, st))
+            # مفتاحُ القسم الخام («market_size») كان يُطبَع بين قوسين
+            # اسماً للقسم — مفرداتُ كودٍ في نصّ منتَج (مراجعةٌ ذاتية §58).
+            # استيرادٌ كسول: `silk_reports` يستورد هذا الملف، فالاستيرادُ
+            # العلويّ يصنع دورة. (نمطُ الريبو القائم للاتجاه المعاكس.)
+            from silk_reports import _SEC_AR
+            L.append("  " + insufficient_line(_SEC_AR.get(sec, sec), st))
     cov0 = (view.get("markets") or [{}])[0].get("section_coverage") or {}
     if cov0:
         L.append("تغطية الأقسام: " + " | ".join(
