@@ -1168,6 +1168,15 @@ _HS_CATEGORY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "data", "hs_category_l1.csv")
 
 
+def _ratio_or_none(raw: object) -> "float | None":
+    """خليّةٌ فارغةٌ أو مشوَّهة = لا معلمة (None) — لا افتراضَ صامت."""
+    try:
+        v = float(str(raw or "").strip())
+    except (TypeError, ValueError):
+        return None
+    return v if v > 0 else None
+
+
 def _load_hs_category_rows(path: str = _HS_CATEGORY_PATH) -> list:
     """صفوفُ `data/hs_category_l1.csv` كما هي (فصلٌ من/إلى، فئة، صلةُ الدين،
     درجةُ التصنيع، تركيزُ الاشتراطات). الموجة د-١: الجدولُ ملفُّ بياناتٍ يُحدَّث
@@ -1185,6 +1194,8 @@ def _load_hs_category_rows(path: str = _HS_CATEGORY_PATH) -> list:
                         "category": (r.get("category") or "").strip(),
                         "religion_relevance": (r.get("religion_relevance") or "").strip(),
                         "processing_level": (r.get("processing_level") or "").strip(),
+                        "halal_demand_min_ratio": _ratio_or_none(
+                            r.get("halal_demand_min_ratio")),
                         "emphasis": (r.get("emphasis_ar") or "").strip(),
                         "source": (r.get("source") or "").strip(),
                         "note": (r.get("note") or "").strip()})
@@ -1229,7 +1240,8 @@ def product_profile(hs_code: object) -> "dict | None":
     for r in _HS_CATEGORY_ROWS:
         if r["lo"] <= chapter <= r["hi"]:
             return {k: r[k] for k in ("category", "religion_relevance",
-                                      "processing_level", "emphasis", "source")}
+                                      "processing_level", "emphasis", "source",
+                                      "halal_demand_min_ratio")}
     return None
 
 
@@ -1240,10 +1252,70 @@ def religion_relevance(hs_code: object) -> "str | None":
     return (prof or {}).get("religion_relevance") or None
 
 
+def halal_demand_min_ratio(hs_code: object) -> "float | None":
+    """معلمةُ الشرط الثالث لميزة الحلال — نسبةُ «حلال + المنتج» ÷ «المنتج»؛
+    None = لا شرطَ مقيسٌ لهذه الفئة (غيرُ `affects` أو فصلٌ غيرُ مصنَّف)."""
+    return (product_profile(hs_code) or {}).get("halal_demand_min_ratio")
+
+
 def processing_level(hs_code: object) -> "str | None":
     """raw / semi / processed — أو None لفصلٍ غيرِ مصنَّف."""
     prof = product_profile(hs_code)
     return (prof or {}).get("processing_level") or None
+
+
+# ── بوّابةُ الدين على الموجّهات · religion gating of prompts (الموجة د-٣) ───
+#
+# **العيبُ المرصود:** تسعةُ مواضعَ كانت تحقن الدينَ في موجّهات الكاتب والمحلل
+# والبعثات **بلا فرعِ فئة** — فتقريرُ البوليمرات الصناعيّ يُؤمَر بتحليل «البُعد
+# الديني» و«موسمية رمضان» و«القناة الحلال» كتقرير التمور. والموجّهُ نفسُه يحمل
+# قاعدةً مضادّة («السكان أو نسبة دينية لا تثبت حجم الطلب») — تعليمتان متعارضتان
+# في نداءٍ واحد، والنموذجُ يختار.
+#
+# **الفكس:** استبدالٌ حرفيٌّ واحد بحسب `religion_relevance` من ملفّ الفئات. فئةٌ
+# `affects`/`inherent` ⇒ الموجّهُ **بايتياً كما كان** (لا انحرافَ eval)؛ فئةٌ
+# `none` ⇒ الجُملُ الدينيةُ تُستبدَل بمكافئها التجاريّ المحايد.
+_RELIGION_SWAPS: tuple = (
+    # البعثات
+    ("حلّل: عادات استهلاك الفئة، البُعد الديني (الحلال — استخدم نسبة "
+     "المسلمين من lookup_reference جدول demographics)، المواسم "
+     "(رمضان/الأعياد)، ",
+     "حلّل: عادات استهلاك الفئة، مواسم الشراء المرصودة للفئة، "),
+    ("ونسبة المسلمين (lookup_reference جدول demographics). اربطها ",
+     "اربط ما سبق "),
+    ("('رمضان <المنتج>' أو مناسبة السوق المكافئة) بـ'today 12-m'، ",
+     "(ذروة موسم هذه الفئة في السوق) بـ'today 12-m'، "),
+    ("مزايا سعودية (قرب، اتفاقية، حلال)، ",
+     "مزايا سعودية (قرب، اتفاقية، مدخلات خام محلية)، "),
+    ("متجر إثني-حلال/سوق إلكتروني)", "متجر متخصص/سوق إلكتروني)"),
+    # الكاتب
+    ("الطلب الموسمي حول رمضان يفتح نافذة تسويقية محدّدة؛ ",
+     "الطلب في ذروة موسم الفئة يفتح نافذة تسويقية محدّدة؛ "),
+    ("(رمضان/الأعياد)، اتجاه خمس سنوات",
+     "(ذروات الموسم المرصودة)، اتجاه خمس سنوات"),
+    ("(حلال، عضوي، تجارة عادلة).**",
+     "(عضوي، تجارة عادلة، مواصفة مشترٍ خاصة).**"),
+    ("متخصص يخدم القناة الحلال بدل محاولة اختراق التجزئة العامة ",
+     "متخصص يخدم قناة هذه الفئة بدل محاولة اختراق التجزئة العامة "),
+    ("إن غابت بيانات موسمية/رمضانية من مؤشرات ",
+     "إن غابت بيانات موسمية من مؤشرات "),
+    # المحلل الشامل
+    ("الديموغرافيا والدين والثقافة والدخل",
+     "الديموغرافيا والثقافة والدخل"),
+)
+
+
+def gate_religion_text(text: str, hs_code: object) -> str:
+    """موجّهٌ بلا ذكرٍ دينيّ لفئةٍ لا صلةَ للدين بها — وإلا النصُّ حرفياً.
+
+    `religion_relevance is None` (فصلٌ غيرُ مصنَّف) ⇒ لا تغيير: لا يُكتَم ذكرٌ
+    بناءً على جهلٍ بالفئة.
+    """
+    if not text or religion_relevance(hs_code) != "none":
+        return text
+    for old, new in _RELIGION_SWAPS:
+        text = text.replace(old, new)
+    return text
 
 
 # الصنف ١٨: النصفُ الثاني من جذر الصنف ١٠. الجدولُ أعلاه يُلحِق بموجّه
@@ -2223,7 +2295,10 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     # الكاش عند نهاية البادئة يُمرَّر للمزوّد (silk_llm_provider يضع
     # cache_control على الكتلة الأولى؛ نداء المسوّدة يكتب الكاش ونداءا
     # التصعيد/التنقيح يقرآنه).
-    _stable_user = "\n\n".join(parts) + _user_steer("report_writer")
+    # الموجة د-٣: بوّابةُ الدين على الموجّه كاملاً — بايتياً كما كان لفئةٍ
+    # للدين صلةٌ بها، وبلا لفظٍ دينيّ لفئةٍ لا صلةَ له بها.
+    _stable_user = (gate_religion_text("\n\n".join(parts), hs_code)
+                    + _user_steer("report_writer"))
     _review_tail = ""
     if review_notes:
         _review_tail = ("\n\nملاحظات المراجع من دورة سابقة — عالجها في هذه "

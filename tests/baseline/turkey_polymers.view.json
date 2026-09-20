@@ -734,6 +734,21 @@
     "value": 14.0,
     "year": 2024
    },
+   "halal_positioning": {
+    "confidence": null,
+    "items": null,
+    "key": "halal_positioning",
+    "label_ar": "موضع الحلال",
+    "label_en": "halal positioning",
+    "mirrored": false,
+    "note": "لم تُحاوَل قراءة هذا المعطى",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
    "hhi": {
     "confidence": 0.9,
     "items": null,
@@ -1123,6 +1138,7 @@
     "what": "تعذّر التصنيف"
    }
   ],
+  "hs_code": "390210",
   "lang": "ar",
   "order": [
    "market_imports_usd",
@@ -1146,7 +1162,8 @@
    "direct_competitor_share_pct",
    "differentiation",
    "price_evidence_quality",
-   "mandatory_certifications"
+   "mandatory_certifications",
+   "halal_positioning"
   ],
   "repairs": [],
   "schema": "silk.ledger/v1",

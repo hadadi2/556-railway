@@ -142,6 +142,10 @@ KEYS: tuple = (
     _fact("mandatory_certifications", "الشهادات الإلزامية بمصدر رسمي",
           "mandatory certifications (official source)", "",
           numeric_check=False, gap_listed=False, hide_when_missing=True),
+    # الموجة د-٣: موضعُ الحلال — شرطُ دخولٍ أم ميزةٌ بثلاثة شروطٍ مرصودة.
+    _fact("halal_positioning", "موضع الحلال", "halal positioning", "",
+          kind="insight", numeric_check=False, gap_listed=False,
+          hide_when_missing=True),
 )
 _KEY_ROWS = {r.key: r for r in KEYS}
 
@@ -363,6 +367,10 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
             for e in ordered if e["status"] in (MISSING, WEAK)
             and _KEY_ROWS[e["key"]].gap_listed]
     return {"schema": "silk.ledger/v1", "lang": lang,
+            # الموجة د-٣: رمزُ الصنف يرافق السجلَّ كي يعرف حارسُ المسوّدة فئةَ
+            # المنتج (لا لفظَ دينيّ في فئةٍ لا صلةَ للدين بها) — بيانٌ مرافقٌ
+            # لا مفتاحُ حقيقةٍ يُعرَض.
+            "hs_code": str(result.get("hs_code") or "") or None,
             "entries": {e["key"]: e for e in ordered},
             "order": [k[0] for k in KEYS], "gaps": gaps,
             "repairs": [], "findings": [], "stale": []}
@@ -912,6 +920,10 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
             issues.append(f"رمز غير مسرود في السجلّ «{{{{{key}}}}}» — احذفه أو "
                           "استعمل رمزاً من [LEDGER]")
     stripped = TOKEN_RE.sub(" ", draft)
+    for sent in _religious_sentences_in_neutral_category(stripped, ledger):
+        issues.append("لفظٌ دينيّ في تقرير فئةٍ لا صلةَ للدين بها (تصنيف فصل "
+                      "HS) — احذفه أو استبدله بالمعطى التجاري المقصود: «"
+                      f"{sent[:160]}»")
     for sent in _unsourced_channel_claims(stripped):
         issues.append("ادّعاءٌ عن القناة (هامش/سهولة تعاقد) بلا مصدرٍ ولا افتراض — "
                       "اذكر مصدره، أو قدّمه تقديراً بافتراضه، أو احذفه: «"
@@ -1003,6 +1015,35 @@ def _unsourced_channel_claims(text: str) -> list:
                 and not _ESTIMATED_RE.search(sent):
             out.append(sent.strip())
     return out
+
+
+#: الموجة د-٣: ألفاظُ الدين في نصّ تقرير — تُمنَع في فئةٍ `religion_relevance
+#: == "none"` (صناعيٌّ/كيميائيٌّ/معدنيّ): لا الحلالُ اشتراطٌ فيها ولا التركيبةُ
+#: الدينية طلبٌ، فذكرُها حشوٌ يُضعِف الثقة (بلاغُ المالك، الموجة د).
+#: «المسلمة» (شحنةٌ مُسلَّمة) و«الإسلاميّ» (البنك الإسلامي للتنمية — جهةُ
+#: تمويلٍ تجاريّ) أُسقطتا بعد إعادة إنتاجهما إنذارَين كاذبَين يكلّفان دورةَ
+#: كاتبٍ مدفوعة (مراجعةٌ ذاتية §58).
+_RELIGIOUS_RE = re.compile(r"حلال|رمضان|العيدين|عيد الفطر|عيد الأضحى|"
+                           r"المسلمين|halal|ramadan|muslim",
+                           re.IGNORECASE)
+
+
+def _religious_sentences_in_neutral_category(text: str, ledger: dict) -> list:
+    """جملُ النصّ التي تذكر الدين بينما فئةُ المنتج لا صلةَ للدين بها.
+
+    فصلٌ غيرُ مصنَّف أو سجلٌّ بلا رمز ⇒ لا حكم (لا كتمَ ذكرٍ بناءً على جهل).
+    """
+    hs = (ledger or {}).get("hs_code")
+    if not hs:
+        return []
+    try:
+        from silk_ai_judge import religion_relevance
+    except Exception:  # noqa: BLE001
+        return []
+    if religion_relevance(hs) != "none":
+        return []
+    return [p.strip() for p in _SENT_SPLIT_RE.split(text or "")
+            if _RELIGIOUS_RE.search(p)]
 
 
 #: علاماتُ النطاق في الجملة — وجودُ إحداها قربَ التقدير يعني أنّه كُتب نطاقاً.

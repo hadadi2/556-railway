@@ -801,7 +801,9 @@ def test_c9_flag_on_only_appends_provenance_to_the_derived_row():
     # الموجة د-٢: `netherlands_honey` تكلفةٌ بالدولار وسعرُ رفٍّ باليورو ⇒ ٣؛
     # و`turkey_polymers` فئةٌ صناعية بلا وحدةِ سوقٍ مسجّلة ⇒ ٠ (كـ`fettuccine`).
     _three = ("india_honey", "morocco_juice", "kenya_honey", "netherlands_honey")
-    _zero = ("fettuccine", "turkey_polymers")
+    # الموجة د-٣: مدوّنتا التجميل فئةٌ بلا وحدةِ سوقٍ مسجّلة ⇒ لا بندَ محسوب.
+    _zero = ("fettuccine", "turkey_polymers", "malaysia_cosmetics",
+             "japan_cosmetics")
     expected = {k: 4 if k == "libya_tahini"
                 else 3 if k in _three
                 else 0 if k in _zero else 1
@@ -1133,7 +1135,9 @@ def test_c13_guard_marks_the_superseded_path_and_goes_silent_when_fixed():
                          for f in G.run_quality_gate(
                              _prod_view(k))["findings"])}
     # `turkey_polymers` (د-٢) بلا بندٍ محسوبٍ كـ`fettuccine` — فئةٌ بلا وحدةِ سوق.
-    assert off == set(_canonical_keys()) - {"fettuccine", "turkey_polymers"}, off
+    assert off == set(_canonical_keys()) - set(
+        ("fettuccine", "turkey_polymers", "malaysia_cosmetics",
+         "japan_cosmetics")), off
     assert on == set(), on
     assert "decision_number_format_drift" not in G.FAIL_TRIGGER_CHECKS
     with _env(SILK_DECISION_NUMBER_FORMAT="1"):

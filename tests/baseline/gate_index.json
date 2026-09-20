@@ -74,6 +74,20 @@
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
+ "japan_cosmetics": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "markdown_artifacts",
+   "unclassified_product_attribute"
+  ],
+  "language_quality": [],
+  "sections_recognized": "11/11",
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
  "japan_honey": {
   "findings": [
    "agent_empty",
@@ -146,6 +160,20 @@
    "decision_number_format_drift",
    "markdown_artifacts",
    "target_region_missing_in_multi_authority"
+  ],
+  "language_quality": [],
+  "sections_recognized": "11/11",
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
+ "malaysia_cosmetics": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "markdown_artifacts",
+   "unclassified_product_attribute"
   ],
   "language_quality": [],
   "sections_recognized": "11/11",

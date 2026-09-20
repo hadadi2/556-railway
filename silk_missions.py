@@ -604,6 +604,24 @@ def scope_instructions(mission: dict) -> dict:
     return out
 
 
+def gate_religion(mission: dict, hs_code: object) -> dict:
+    """تعليماتُ البعثة بلا ذكرٍ دينيّ لفئةٍ لا صلةَ للدين بها (الموجة د-٣) —
+    نفسُ نمط `scope_instructions`: استبدالٌ حرفيٌّ في نسخةٍ، لا تفريعَ منطق."""
+    if not isinstance(mission, dict):
+        return mission
+    ins = str(mission.get("instructions") or "")
+    try:
+        from silk_ai_judge import gate_religion_text
+    except Exception:  # noqa: BLE001 — بوّابةٌ تحسينٌ لا شرطُ تشغيل
+        return mission
+    gated = gate_religion_text(ins, hs_code)
+    if gated == ins:
+        return mission
+    out = dict(mission)
+    out["instructions"] = gated
+    return out
+
+
 def _augment_risk_news_fx(report: AgentReport, iso3: str) -> None:
     """ألحِق تقلّبَ سعر الصرف المحسوب ببعثة المخاطر (البند 3 من أمر إصلاح
     المحرّك — «استقرار العملة لم يُرصَد» في اللوحة بينما §9 يسرد ثبات

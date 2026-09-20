@@ -265,6 +265,15 @@ class ResearchAgent(BaseAgent):
     AGENT = ""                 # الاسم المخططي (market_size, competitor, …)
     EXPECTED: tuple[str, ...] = ()
 
+    def expected_for(self, task: dict) -> tuple:
+        """المعطياتُ المتوقَّعة **لهذه المهمة** — الافتراضُ `EXPECTED` كاملاً.
+
+        الموجة د-٣: وكيلٌ لا يُقاس أحدُ معطياته في فئةٍ بعينها (الحصةُ المسلمة
+        وموسميةُ رمضان في فئةٍ لا صلةَ للدين بها) يجب ألّا تُخصَم تغطيتُه
+        بسببه — وإلا صار «ناقصاً» ما لا يُسأل عنه أصلاً (مراجعةٌ ذاتية §58).
+        """
+        return tuple(self.EXPECTED)
+
     def __init__(self) -> None:
         super().__init__(self.__class__.__name__)
 
@@ -289,9 +298,10 @@ class ResearchAgent(BaseAgent):
             if f.value is None and not any(f.metric in g for g in gaps):
                 gaps.append(f"{f.metric}: {f.note or 'غير مرصود — unobserved'}")
         observed = {f.metric for f in findings if f.value is not None}
-        if self.EXPECTED:
-            coverage = round(len(observed & set(self.EXPECTED))
-                             / len(self.EXPECTED), 2)
+        expected = self.expected_for(task)
+        if expected:
+            coverage = round(len(observed & set(expected))
+                             / len(expected), 2)
         else:
             coverage = 1.0 if observed else 0.0
         status = ("failed" if not observed else
@@ -1096,6 +1106,18 @@ class ConsumerDemandAgent(ResearchAgent):
     PREF_KEY = "consumer"
     EXPECTED = ("gdp_per_capita_usd", "population", "percapita_supply_kg",
                 "search_interest", "muslim_share_pct", "ramadan_seasonality")
+    #: المعطيان الدينيان يُقاسان حين للدين صلةٌ بفئة المنتج فقط.
+    _RELIGION_METRICS = ("muslim_share_pct", "ramadan_seasonality")
+
+    def expected_for(self, task: dict) -> tuple:
+        try:
+            from silk_ai_judge import religion_relevance
+            neutral = religion_relevance(task.get("hs6")) == "none"
+        except Exception:  # noqa: BLE001
+            neutral = False
+        if not neutral:
+            return tuple(self.EXPECTED)
+        return tuple(m for m in self.EXPECTED if m not in self._RELIGION_METRICS)
 
     def _research(self, task):
         F: list[dict] = []
@@ -1142,8 +1164,19 @@ class ConsumerDemandAgent(ResearchAgent):
         else:
             why = trep.findings[0].note if trep.findings else trep.summary
             gaps.append(f"search_interest: {why}")
-        ms = muslim_share(iso3)
-        if ms:
+        # الموجة د-٣ (البند ٣): الحصةُ المسلمة والموسميةُ الدينية تُقاسان
+        # **فقط** حين يكون للدين صلةٌ بفئة المنتج (`hs_category_l1`) — الفئةُ
+        # الصناعية/الكيميائية لا يُذكر فيها الدين إطلاقاً. وهما **مدخلان**
+        # لقاعدة موضع الحلال لا شريحةَ طلبٍ (التركيبةُ الدينية ليست طلباً).
+        try:
+            from silk_ai_judge import religion_relevance as _rel
+            _religion = _rel(task.get("hs6")) != "none"
+        except Exception:  # noqa: BLE001
+            _religion = True
+        ms = muslim_share(iso3) if _religion else None
+        if not _religion:
+            pass                      # فئةٌ لا صلةَ للدين بها — لا فجوةَ ولا ذكر
+        elif ms:
             F.append(_f("muslim_share_pct", ms["pct"], [dict(_PEW_SRC)], unit="%",
                         note=f"لقطة ساكنة مقرّبة (إسقاطات {ms['ref_year']}) — "
                              f"{ms['note']}؛ للقراءة التجارية لا الإحصاء الرسمي"))
