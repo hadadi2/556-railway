@@ -142,6 +142,18 @@ KEYS: tuple = (
     _fact("mandatory_certifications", "الشهادات الإلزامية بمصدر رسمي",
           "mandatory certifications (official source)", "",
           numeric_check=False, gap_listed=False, hide_when_missing=True),
+    # الموجة د-٤ (البند ١١): تقديراتٌ بنطاقٍ وافتراضٍ معلنَين — تُحسَب بعد
+    # اكتمال العرض من قسم الاقتصاد، ولا تدخل `build_pillar_inputs` فلا تحرّك
+    # حكماً (قيدُ المالك: التقديراتُ لا تُحتسب «متحققاً منها»).
+    _fact("border_to_shelf_multiple", "مضاعف الحدود إلى الرف",
+          "border-to-shelf multiple", "×", kind="insight", numeric_check=False,
+          gap_listed=False, hide_when_missing=True),
+    _fact("max_exw_estimate", "أقصى سعر مصنع قابل للمنافسة",
+          "maximum competitive ex-works price", "", kind="insight",
+          numeric_check=False, gap_listed=False, hide_when_missing=True),
+    _fact("trial_shipment_units", "حجم الشحنة التجريبية",
+          "trial shipment size", "", kind="insight", numeric_check=False,
+          gap_listed=False, hide_when_missing=True),
     # الموجة د-٣: موضعُ الحلال — شرطُ دخولٍ أم ميزةٌ بثلاثة شروطٍ مرصودة.
     _fact("halal_positioning", "موضع الحلال", "halal positioning", "",
           kind="insight", numeric_check=False, gap_listed=False,
@@ -295,7 +307,13 @@ def insight_entry(key: str, value, *, grade: str, assumption: str = "",
             "source": str(source or "حساب من السجلّ"), "confidence": None,
             "note": str(note or ""), "year": year, "mirrored": False,
             "origin": "insight", "assumption": str(assumption or ""),
-            "range": rng, "basis": basis, "flip_if": str(flip_if or ""),
+            # **قوائمُ لا صِفافٌ** عمداً: السجلُّ يُخزَّن ويُعاد عبر JSON
+            # (`GET /analyses/{id}`)، والصفُّ يعود قائمةً بعد الجولة فيصير
+            # الكائنُ المُعاد ≠ المخزَّن حرفياً (قِيس في
+            # `test_without_economics_flag_full_blob_still_returned_unchanged`).
+            # التطبيعُ في المُنشئ الواحد فلا يتسرّب صفٌّ من أيّ مُعبِّئ.
+            "range": list(rng) if rng else None, "basis": list(basis),
+            "flip_if": str(flip_if or ""),
             "how_to_close": str(how_to_close or "")}
 
 
@@ -647,9 +665,20 @@ def render_value(entry: dict, lang: str = "ar") -> str:
 
 
 def _estimate_text(entry: dict, lang: str) -> str:
+    """«بين X وY [وحدة]، إذا افترضنا …» — النطاقُ والوحدةُ والافتراضُ معاً.
+
+    الوحدةُ تُلحَق هنا لا في `_value_text`: ذاك يخدم كلَّ المفاتيح القائمة
+    وخطوطَ أساسها المؤرشَفة، وهو يعرف `%`/`USD`/`USD/kg` وحدَها — فكانت
+    التقديراتُ الجديدة تخرج نطاقاً **عارياً بلا وحدة** («بين 0.02 و0.03»
+    لسعرٍ بالدولار/كجم، «بين 27,745 و30,630» للترات؛ قِيس على المدوّنات
+    §58). الإلحاقُ مقصورٌ على التقدير فلا يتغيّر مُصيَّرٌ قائم.
+    """
     from silk_narrative import fmt_number
     lo, hi = entry.get("range") or (None, None)
     hi_txt = _value_text({**entry, "value": hi}, lang)
+    unit = str(entry.get("unit") or "").strip()
+    if unit and unit not in hi_txt and unit not in ("%", "USD", "USD/kg"):
+        hi_txt = f"{hi_txt} {unit}"
     a = entry.get("assumption") or ""
     return (f"between {fmt_number(lo)} and {hi_txt}, assuming {a}" if lang == "en"
             else f"بين {fmt_number(lo)} و{hi_txt}، إذا افترضنا {a}")
@@ -747,6 +776,66 @@ def facts_block(ledger: dict, lang: str = "ar") -> str:
             val = render_value(e, lang) if e["status"] != MISSING else st
             lines.append(f"- {label}: {val} — {{{{status:{key}}}}} لحالته")
     return "\n".join(lines)
+
+
+def insights_block(ledger: dict, lang: str = "ar") -> str:
+    """كتلةُ `[INSIGHTS]` — استنتاجاتُ الطبقة التجارية وتقديراتُها بالرمز.
+
+    الموجة د-٤ (البند ١٢): الكاتبُ يكتب **الرمزَ** لا القيمة (نفسُ عقد الرموز
+    الإلزامية)، فتُملأ عند العرض بصيغتها الطبيعية بنطاقها وافتراضها — ولا
+    يعيد النموذجُ صياغةَ تقديرٍ فيُسقِط نطاقَه أو يقلبه حقيقةً مرصودة.
+    سطرٌ لكلّ مفتاحِ استنتاجٍ **محسوبٍ فعلاً**؛ الغائبُ لا يُذكر أصلاً.
+
+    **حدٌّ بنيويٌّ معلَن (§58).** السجلُّ الذي يصل الكاتبَ يُبنى **قبلَه**
+    (`silk_research_pipeline.py:664`) من البعثات والقرار والاشتراطات — بلا
+    قسم الاقتصاد، لأنّ الاقتصادَ يُبنى في `build_view` بعد الكاتب. فمفاتيحُ
+    `fill_estimates` الثلاثة (مضاعفُ الحدود→الرف، أقصى سعرِ مصنع، حجمُ
+    الشحنة التجريبية) **لا تصل هذه الكتلةَ أبداً**، وتصل القارئَ من قسم
+    «أسئلتك الحاسمة» المحسوبِ بالكود — وهو التصميمُ المقصود (البند ١٠:
+    «الكاتبُ لا يكتبه»). ما يصل الكاتبَ هنا استنتاجاتُ د-٢/د-٣ (ميزةُ
+    التكلفة، طبيعةُ المورّدين، حصةُ المنافسين، التمايز، موضعُ الحلال).
+    """
+    lines = []
+    for key in ledger.get("order") or []:
+        row = _KEY_ROWS.get(key)
+        e = (ledger.get("entries") or {}).get(key)
+        if not row or not e or row.kind != "insight":
+            continue
+        if e.get("status") in (MISSING, None) or e.get("value") is None:
+            continue
+        label = e["label_en"] if lang == "en" else e["label_ar"]
+        en = lang == "en"
+        tail = ""
+        if e.get("status") == ESTIMATE:
+            tail = (" — an estimate with a declared range and assumption"
+                    if en else " — تقديرٌ بنطاقٍ وافتراضٍ معلنَين")
+        elif e.get("status") == INFERENCE:
+            tail = (" — inferred from observed figures" if en
+                    else " — استنتاجٌ من أرقامٍ مرصودة")
+        # الذيلُ والأمرُ بالعربية في موجّهٍ إنجليزيّ يخالطان
+        # `INSIGHT_WRITING_RULE_EN` — لغةُ الكتلة لغةُ الموجّه (§58).
+        order = ("write the token, not the value" if en
+                 else "اكتب الرمز لا القيمة")
+        lines.append(f"- {{{{{key}}}}} = {label}{tail} — {order}")
+    return "\n".join(lines)
+
+
+#: قاعدةُ الكتابة التحليلية (البند ١٢): الرقمُ وحدَه ليس تحليلاً.
+INSIGHT_WRITING_RULE = (
+    "**الكتابة التحليلية (إلزامية):** رتّب كلّ فقرةٍ **الخلاصة ← ما يعنيه "
+    "الرقم للمصدّر ← الدليل بمصدره** — لا سرداً للأرقام ثمّ صمتاً عن معناها. "
+    "وكلُّ رقمٍ مهمٍّ يتبعه أثرُه العملي في جملةٍ واحدة (ماذا يعني لقراره: "
+    "يدخل؟ بأيّ سعر؟ ما الذي يجب أن يتحقّق أوّلاً؟). "
+    "واستنتاجاتُ [INSIGHTS] تُكتب برموزها حيث تخدم السرد — النظامُ يملؤها "
+    "بنطاقها وافتراضها؛ لا تعد صياغتَها ولا تحوّل تقديراً إلى حقيقةٍ مرصودة، "
+    "ولا تخترع استنتاجاً ليس فيها.")
+INSIGHT_WRITING_RULE_EN = (
+    "**Analytical writing (mandatory):** order every paragraph **conclusion → "
+    "what the number means for the exporter → the evidence with its source**. "
+    "Every material number is followed by one sentence on what it changes for "
+    "the decision. Write [INSIGHTS] items by their token — the system fills "
+    "the range and the stated assumption; never restate an estimate as an "
+    "observed fact, and never invent an insight that is not listed.")
 
 
 LEDGER_TOKEN_RULE = (
@@ -1500,3 +1589,259 @@ def gaps_table(view: dict, lang: str = "ar") -> list:
         what, how = _split_gap(line)
         add(what, lbl_missing, how)
     return rows
+
+
+# ── الموجة د-٤: تقديراتٌ بعد اكتمال العرض · post-view estimates ─────────────
+#
+# **لماذا هنا لا في `build_ledger`:** قسمُ الاقتصاد (`economics_view`) يُبنى
+# داخل العرض، والسجلُّ يُبنى قبله — فالتقديراتُ المشتقّة منه تُكتب في الخطوة
+# نفسِها التي تُبنى فيها صفوفُ النواقص (`silk_render.build_view`، بعد اكتمال
+# العرض). لا شبكةَ ولا نموذج: حسابٌ من أرقامٍ مرصودةٍ بسيناريوهاتٍ معلنة.
+def fill_estimates(view: dict, lang: str = "ar") -> None:
+    """اكتب تقديراتِ البند ١١ في سجلّ العرض — بنطاقها وافتراضها، أو لا شيء.
+
+    قاعدةُ المالك: **لا تقديرَ بلا افتراضٍ معلن ونطاق**؛ ومدخلٌ ناقصٌ = لا
+    تقدير (يبقى المفتاح غائباً ومخفياً، لا رقمٌ مخترَع).
+
+    `lang` يحكم **نصَّ الافتراض والوحدة** لا الرقم: الافتراضُ يُطبَع مع كلّ
+    تقديرٍ في كلّ سطح (`_estimate_text`)، فافتراضٌ عربيٌّ في تقريرٍ إنجليزيّ
+    نصٌّ لا يقرؤه صاحبُه — والرقمُ بلا افتراضٍ مقروءٍ تقديرٌ بلا افتراض.
+    """
+    if not isinstance(view, dict):
+        return
+    en = str(lang or "").lower() == "en"
+
+    def _t(ar: str, en_txt: str) -> str:
+        return en_txt if en else ar
+    ledger = view.get("ledger")
+    if not isinstance(ledger, dict) or not isinstance(ledger.get("entries"), dict):
+        return
+    entries = ledger["entries"]
+    eco = ((view.get("deep_research") or {}).get("economics") or {})
+
+    def _put(entry: dict) -> None:
+        entries[entry["key"]] = entry
+        if entry["key"] not in (ledger.get("order") or []):
+            ledger.setdefault("order", []).append(entry["key"])
+
+    # (أ) مضاعفُ الحدود إلى الرف — سعرُ الرف المرصود ÷ قيمةِ الوحدة الحدودية.
+    anchor = (eco.get("anchor_price") or {})
+    # **الأساسُ قبل العملة.** الطرفُ الآخر `border_price_usd_kg` سعرُ
+    # **كيلوغرام**؛ فـ`anchor["value_usd"]` لا يصلح له: هو `per_unit / fx`
+    # (`silk_economics.py:292`) أي سعرُ **عبوة** — قسمتُه على سعر كيلوغرام
+    # تُخرج مضاعفاً مخترَعاً من مقامَين مختلفَين (§58). فالمقياسُ الوحيد
+    # المقبول `per_kg` بالدولار، وإلا **لا تقدير** — لا احتياطَ بـ`raw_value`
+    # (سعرُ عبوةٍ مجهولةِ الحجم).
+    cur = str(anchor.get("currency") or "")
+    shelf = _num(anchor.get("per_kg")) if cur in ("$", "USD", "دولار") else None
+    border = _num((entries.get("border_price_usd_kg") or {}).get("value"))
+    if shelf and border and border > 0:
+        mult = round(shelf / border, 2)
+        _put(insight_entry(
+            "border_to_shelf_multiple", mult, grade=ESTIMATE,
+            range=(round(mult * 0.8, 2), round(mult * 1.2, 2)),
+            assumption=_t("سعرَ الرف المرصود قابلاً للمقارنة بقيمة الوحدة "
+                          "الحدودية للصنف نفسِه، والنطاقُ ±20% لاختلاف "
+                          "العبوة والقناة بين رصدةٍ وأخرى",
+                          "the observed shelf price is comparable to the "
+                          "border unit value of the same code, with a ±20% "
+                          "range for pack and channel differences"),
+            basis=("border_price_usd_kg", "competitor_prices"),
+            source="حساب من السجلّ", unit="×",
+            note=_t("كم يتضاعف السعرُ بين الحدود والرف في هذه الفئة",
+                    "how much the price multiplies between border and "
+                    "shelf in this category")))
+
+    # (ب) أقصى سعرِ مصنعٍ منافس — بالنطاق من السيناريوهات الثلاثة المعلنة.
+    rev = (eco.get("reverse_solve") or {})
+    scen = [_num(r.get("max_exw")) for r in (rev.get("scenarios") or [])]
+    scen = [v for v in scen if v is not None]
+    mid = _num(rev.get("max_exw"))
+    # تناقضُ التسعير المُعلَن (`pricing_contradiction`) يعني أنّ المحرّك نفسَه
+    # يحذّر أنّ السقفَ لا يصلح أساساً للتفاوض (تركيا: نقصٌ 97.9%، ليبيا 50.5%)
+    # — تقديمُه جواباً لسؤال «بكم أبيع للمصنع؟» رقمٌ مضلّلٌ في مسار المال،
+    # وهو عينُ حادثة تقرير #11. فلا تقديرَ هنا، ويبقى التحذيرُ في قسم
+    # الاقتصاد حيث يُشرَح (§58).
+    if eco.get("pricing_contradiction"):
+        mid = None
+    if mid is not None and len(scen) >= 2:
+        unit = f"{rev.get('currency') or ''}/{rev.get('unit') or ''}".strip("/")
+        _put(insight_entry(
+            "max_exw_estimate", mid, grade=ESTIMATE,
+            range=(min(scen), max(scen)),
+            assumption=_t("الشحنَ والهوامشَ عند سيناريو المتوسط المعلن، "
+                          "والنطاقُ من السيناريوهين المنخفض والمرتفع",
+                          "the range comes from the three declared freight "
+                          "and margin scenarios (low/mid/high); the figure "
+                          "shown is the mid scenario"),
+            basis=("competitor_prices", "tariff_applied_pct"),
+            source="حساب من السجلّ", unit=unit or None,
+            note=_t("سقفُ سعر المصنع الذي يسمح بمجاراة سعر الرف المرصود",
+                    "the ex-works ceiling that still matches the observed "
+                    "shelf price"),
+            how_to_close=_t("يضيق النطاقُ بعرضِ شحنٍ فعليٍّ وهامشِ موزّعٍ "
+                            "مُتفاوَضٍ بدل السيناريوهات",
+                            "the range narrows with an actual freight quote "
+                            "and a negotiated distributor margin instead of "
+                            "the scenarios")))
+
+    # (ج) حجمُ الشحنة التجريبية — من بندِ القرار المحسوب حتمياً.
+    for row in (eco.get("decision_numbers") or []):
+        if not isinstance(row, dict) or "تجريبية" not in str(row.get("name") or ""):
+            continue
+        val = _num(row.get("value"))
+        if val is None:
+            break
+        rng = row.get("range") or {}
+        lo, hi = _num(rng.get("low")), _num(rng.get("high"))
+        # نطاقُ البند المحسوب قد يكون نقطةً واحدة (حمولةٌ كاملة) — فيُوسَّع
+        # صراحةً إلى «نصفُ حمولةٍ إلى حمولة»: أوّلُ شحنةٍ تُشحَن جزئيةً عادةً.
+        # **والذيلُ يتبع ما وقع فعلاً**: إلحاقُه بنطاقٍ جاء من البند نفسِه
+        # (مصر: ±4.9% من كثافة الصنف) افتراضٌ **يناقض نطاقَه** المطبوع
+        # بجانبه — أسوأُ من غيابه لأنه يُطمئن (§58).
+        widened = lo is None or hi is None or lo >= hi
+        if widened:
+            lo, hi = round(val * 0.5, 2), val
+        _method = str(row.get("method")
+                      or _t("حاويةٌ واحدةٌ بسعتها المنشورة",
+                            "one container at its published capacity"))
+        _put(insight_entry(
+            "trial_shipment_units", val, grade=ESTIMATE, range=(lo, hi),
+            assumption=(_method + (
+                _t("؛ والنطاقُ من نصف حمولةٍ إلى حمولةٍ كاملة",
+                   "; the range spans half a load to a full load")
+                if widened else
+                _t("؛ والنطاقُ كما حسبه بندُ القرار",
+                   "; the range is the one the decision item computed"))),
+            basis=("market_imports_usd",),
+            source=str(row.get("source") or "حساب من السجلّ"),
+            # بندُ القرار قد يصل بلا وحدة؛ و«وحدة» وصفُ ما عدَّه المحرّك
+            # فعلاً (الحمولة ÷ وزن الوحدة) لا وحدةٌ مُختلَقة — رقمٌ عارٍ
+            # يُقرأ كيلوغرامات أو دولارات سهواً.
+            unit=str(row.get("unit") or "") or _t("وحدة", "units"),
+            how_to_close=str(row.get("confirm") or ""),
+            note=_t("حجمُ أوّل شحنةٍ معقولة بالوحدات",
+                    "a reasonable first-shipment size in units")))
+        break
+
+
+# ── الموجة د-٤ (البند ١٠): أسئلةُ المصدّر الحاسمة ───────────────────────────
+_QUESTIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "data", "critical_questions_l1.csv")
+
+
+def _question_rows() -> list:
+    """صفوفُ `data/critical_questions_l1.csv` — تعذُّرُ القراءة = لا قسم."""
+    import csv
+    try:
+        with open(_QUESTIONS_PATH, encoding="utf-8") as fh:
+            rows = [r for r in csv.DictReader(
+                l for l in fh if not l.startswith("#"))]
+    except OSError as e:  # noqa: BLE001 — غيابُ الملف يُعلَن ولا يكسر العرض
+        import logging
+        logging.getLogger(__name__).error(
+            "critical_questions_l1.csv unreadable: %s", e)
+        return []
+    out = []
+    for r in rows:
+        try:
+            out.append({k: (r.get(k) or "").strip()
+                        for k in ("category", "q_key", "question_ar",
+                                  "question_en", "answer_keys",
+                                  "how_to_learn_ar", "how_to_learn_en")}
+                       | {"order": int(r.get("order") or 99)})
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _answer_cell(entry: dict, lang: str) -> str:
+    """جوابُ الخليّة = `render_value` نفسُها — **مُصيِّرٌ واحدٌ لا ثانٍ**.
+
+    كانت الخليّةُ تختصر: التقديرُ نطاقَه بلا افتراضِه، والاستنتاجُ قيمتَه بلا
+    أساسِه. وهذا خرقٌ لقيد المالك («لا تقديرَ بلا افتراضٍ معلنٍ ونطاق»)
+    ولمبدأ «لكلّ رقمٍ سطرُ مصدره» حين يكون هذا القسمُ الموضعَ الوحيدَ الذي
+    يرى فيه القارئُ الرقم (قِيس على `samples/research_report_latest.md`:
+    «بين 13,365 و26,730 (تقدير)» — نطاقٌ بلا افتراضٍ ولا وحدة). ودافعُ
+    الاختصارِ الأصليُّ — عرضُ خليّةِ Word — زال ببناءِ القسم فقراتٍ في
+    `silk_reports._docx_questions`. ولا قصَّ بـ«…» أبداً: بوّابةُ نصّ العميل
+    ترفض سطراً ينتهي بنقاط حذف (قِيس على مدوّنة هولندا).
+    """
+    return " ".join(render_value(entry, lang).split())
+
+
+def critical_questions(view: dict, lang: str = "ar") -> list:
+    """صفوفُ «أسئلة المصدّر الحاسمة»: (السؤال، الجواب، الحالة، كيف تعرفه).
+
+    الجوابُ **من السجلّ حصراً** بصيغته الطبيعية (مرصودٌ أو تقديرٌ بنطاقه)،
+    وإلا «لم نعرفه بعد» وسبيلُ الإغلاق من الملفّ. الكاتبُ لا يكتب هذا القسم —
+    فلا يختلق جواباً ولا يُسقِط سؤالاً (قرارُ المالك، البند ١٠).
+    """
+    if not isinstance(view, dict):
+        return []
+    ledger = view.get("ledger") or {}
+    entries = ledger.get("entries") or {}
+    if not entries:
+        return []
+    try:
+        from silk_ai_judge import product_profile
+        category = (product_profile(ledger.get("hs_code")
+                                    or view.get("hs_code")) or {}).get("category")
+    except Exception:  # noqa: BLE001
+        category = None
+    en = lang == "en"
+    rows = [r for r in _question_rows()
+            if r["category"] == "all" or r["category"] == category]
+    rows.sort(key=lambda r: (r["order"], r["q_key"]))
+    out: list = []
+    said: set = set()
+    for r in rows:
+        answer = status = ""
+        duplicate = False
+        for key in [k.strip() for k in r["answer_keys"].split(";") if k.strip()]:
+            e = entries.get(key)
+            if not e or e.get("status") == MISSING or e.get("value") is None:
+                continue
+            txt = _answer_cell(e, lang)
+            # **قُل الشيءَ مرّةً (الدرس ٢٦٤) — بالنصّ لا بالمفتاح.** المنعُ
+            # بالمفتاح كان يُجوِّع سؤالاً لاحقاً يشترك في مفتاحه: تركيا
+            # طبعت الشهادةَ الإلزامية جواباً لسؤال الحاجز، ثمّ «لم نعرفه
+            # بعد» لسؤال المواصفة — **فجوةٌ كاذبةٌ عن معلومٍ**، وهي أسوأُ من
+            # التكرار (§58). فإن تكرّر النصُّ نفسُه يُنزَل إلى المفتاح
+            # التالي، وإن لم يبقَ غيرُه **يُحذَف السؤالُ كلُّه** — سؤالٌ
+            # جوابُه مطبوعٌ أعلاه لا يضيف سطراً ولا يُنكِر معلوماً.
+            if txt in said:
+                duplicate = True
+                dup_status = render_status(e, lang)
+                continue
+            duplicate = False
+            said.add(txt)
+            answer = txt
+            status = render_status(e, lang)
+            break
+        answered = bool(answer)
+        if not answered:
+            if duplicate:
+                # السؤالُ **مُجابٌ** ونصُّه مطبوعٌ أعلاه: لا يُحذَف (تسقط
+                # مسألةُ الفئة التي سمّته) ولا يُعاد النصُّ (الدرس ٢٦٤) ولا
+                # يُقال «لم نعرفه بعد» (فجوةٌ كاذبةٌ عن معلوم) — يُحال.
+                answer = ("answered above" if en else "مذكورٌ في جوابٍ أعلاه")
+                status = dup_status
+                answered = True
+            else:
+                answer = "not yet known" if en else "لم نعرفه بعد"
+                status = "not available" if en else "غير متاح"
+        out.append({"q_key": r["q_key"],
+                    "question": r["question_en"] if en and r["question_en"]
+                    else r["question_ar"],
+                    "answer": answer, "status": status,
+                    # سبيلُ الإغلاق يُطبَع للسؤال غير المُجاب وحدَه — وللمُجاب
+                    # يبقى في الصفّ للمدقّق بلا عرض (لا حشوَ في نصّ العميل).
+                    # سبيلُ الإغلاق بلغة التقرير: مُطهِّرُ نصّ العميل
+                    # الإنجليزيّ يُسقِط النصَّ العربيّ، فكان القارئُ يرى
+                    # «not yet known» بلا سبيلٍ إليه (§58).
+                    "how": ((r.get("how_to_learn_en")
+                             or r["how_to_learn_ar"]) if en
+                            else r["how_to_learn_ar"]),
+                    "answered": answered})
+    return out

@@ -278,7 +278,7 @@ def test_an_attribute_a_rival_owns_is_not_declared_a_differentiator():
     assert d["status"] == L.INFERENCE
     assert "عسل سدر" in d["value"] and "premium" in d["value"]
     assert "organic" not in d["value"] and "organic" in d["note"]
-    assert d["basis"] == ("competitor_prices",)
+    assert d["basis"] == ["competitor_prices"]
 
 
 def test_without_card_attributes_differentiation_is_a_declared_gap():
@@ -488,7 +488,7 @@ def test_cost_advantage_never_speaks_of_rivals_without_their_signal():
     ca = log["cost_advantage"]
     assert ca["value"] == "محايد" and "لم تُقيَّم بعد" in ca["note"]
     assert "مورّدي السوق ليسوا" not in ca["note"]
-    assert ca["basis"] == ("saudi_raw_input_balance",)
+    assert ca["basis"] == ["saudi_raw_input_balance"]
 
 
 def test_a_declared_gap_is_idempotent_on_resume(monkeypatch):

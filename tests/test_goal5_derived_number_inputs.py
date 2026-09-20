@@ -27,7 +27,7 @@ def test_pack_size_unobserved_suspends_reverse_and_names_the_missing_input():
     eco = E.economics_view(_dr_prices((4.50, "سعر رف في متجر — 4.50 دينار")))
     assert eco["anchor_price"] is not None
     assert eco["reverse_solve"] is None
-    gap = [g for g in eco["gaps"] if "غير محسوب" in g and "الناقص" in g]
+    gap = [g for g in eco["gaps"] if "غير محسوب" in g and "يلزم:" in g]
     assert gap and "حجم العبوة" in gap[0]
 
 
@@ -35,7 +35,7 @@ def test_currency_unobserved_suspends_reverse_and_names_it():
     eco = E.economics_view(
         _dr_prices((7.49, "سعر رف عبوة 1 كجم في متجر محلي")))
     assert eco["reverse_solve"] is None
-    gap = [g for g in eco["gaps"] if "الناقص" in g]
+    gap = [g for g in eco["gaps"] if "يلزم:" in g]
     assert gap and "عملة" in gap[0]
 
 
@@ -68,7 +68,7 @@ def test_gate_fails_a_numeric_exw_while_reverse_is_suspended():
     view = {"deep_research": {
         "missions": {},
         "economics": {"reverse_solve": None,
-                      "gaps": ["أقصى سعر مصنع (EXW) غير محسوب — الناقص: "
+                      "gaps": ["أقصى سعر مصنع (EXW) غير محسوب — يلزم: "
                                "حجم العبوة"]},
         "report": {"text": ("## 6. المشهد التنافسي\n"
                             "يبلغ أقصى سعر مصنع قابل للمنافسة 0.3274 "

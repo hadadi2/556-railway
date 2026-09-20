@@ -2295,6 +2295,20 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     # الكاش عند نهاية البادئة يُمرَّر للمزوّد (silk_llm_provider يضع
     # cache_control على الكتلة الأولى؛ نداء المسوّدة يكتب الكاش ونداءا
     # التصعيد/التنقيح يقرآنه).
+    # الموجة د-٤ (البند ١٢): استنتاجاتُ الطبقة التجارية وتقديراتُها تصل
+    # الكاتبَ **برموزها** مع قاعدة «الخلاصة ← المعنى ← الدليل». الكتلةُ
+    # تُضاف قبل `_stable_user` (بادئةُ الكاش) كسائر الكتل، وتُحذف كلّياً حين
+    # لا استنتاجَ محسوباً — فلا عنوانٌ فارغٌ في الموجّه.
+    try:
+        import silk_fact_ledger as _FLW
+        _ins = _FLW.insights_block(ledger or {}, lang)
+        if _ins:
+            parts.append("[INSIGHTS]\n" + _ins + "\n\n"
+                         + (_FLW.INSIGHT_WRITING_RULE_EN if lang == "en"
+                            else _FLW.INSIGHT_WRITING_RULE))
+    except Exception as _e:  # noqa: BLE001 — كتلةٌ تحسينٌ لا شرطُ تشغيل
+        log.warning("insights block skipped: %s", _e)
+
     # الموجة د-٣: بوّابةُ الدين على الموجّه كاملاً — بايتياً كما كان لفئةٍ
     # للدين صلةٌ بها، وبلا لفظٍ دينيّ لفئةٍ لا صلةَ له بها.
     _stable_user = (gate_religion_text("\n\n".join(parts), hs_code)

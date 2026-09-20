@@ -265,7 +265,7 @@ def test_the_halal_position_enters_the_ledger_with_its_grade_and_flip():
     e = _view("netherlands_honey")["ledger"]["entries"]["halal_positioning"]
     assert e["status"] == L.INFERENCE and "شرط دخول" in e["value"]
     assert e["assumption"] and e["flip_if"]
-    assert e["basis"] == ("top_supplier_share_pct",)
+    assert e["basis"] == ["top_supplier_share_pct"]
     e2 = _view("turkey_polymers")["ledger"]["entries"]["halal_positioning"]
     assert e2["status"] == L.MISSING and e2["value"] is None
 

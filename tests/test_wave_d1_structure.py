@@ -60,7 +60,7 @@ def test_an_estimate_carries_its_range_and_assumption_in_every_rendering():
     """قيدُ المالك: «لا تقدير بلا افتراض معلن ونطاق» — حتى داخل خليّة جدول
     (`bind` يستدعي `render_value` مباشرةً هناك)."""
     e = _estimate()
-    assert e["status"] == L.ESTIMATE and e["range"] == (3.6, 4.8)
+    assert e["status"] == L.ESTIMATE and e["range"] == [3.6, 4.8]
     val = L.render_value(e, "ar")
     assert "بين" in val and "3.6" in val and "4.8" in val
     assert "إذا افترضنا" in val and "هامش تجزئة" in val

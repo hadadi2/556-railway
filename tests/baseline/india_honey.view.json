@@ -188,7 +188,7 @@
    "displacement_measured": true,
    "displacement_required": false,
    "gaps": [
-    "أقصى سعر مصنع (EXW) غير محسوب — الناقص: عملة السعر المرصود"
+    "أقصى سعر مصنع (EXW) غير محسوب — يلزم: عملة السعر المرصود"
    ],
    "hhi": 1490.0,
    "market_unit": {
@@ -526,6 +526,72 @@
  "hs_confidence": null,
  "hs_provenance": null,
  "ledger": {
+  "critical_questions": [
+   {
+    "answer": "41.3 مليون دولار (UN Comtrade 2024)",
+    "answered": true,
+    "how": "اطلب من مستوردٍ محلّي أرقامَ فئته السنوية أو اشترِ تقريرَ سوقٍ منشوراً",
+    "q_key": "market_size",
+    "question": "ما حجمُ هذا السوق فعلاً وهل ينمو؟",
+    "status": "متاح من مصدر موثّق"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "اطلب شهادةَ منشأٍ لثلاث شحناتٍ منافسةٍ من المستورد أو من بيانات جمركية مدفوعة",
+    "q_key": "who_competes",
+    "question": "من ينافسني فعلاً — منتجون أم وسطاء يعيدون التصدير؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "قارن سعرَ مدخلك الخام الفعلي بعرضٍ من مورّدٍ في بلد المنافس",
+    "q_key": "cost_edge",
+    "question": "هل لي ميزةُ تكلفةٍ حقيقية أم أنافس على السعر بلا سند؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "اطلب عرضَ سعرٍ من موزّعٍ محلّي واحدٍ يشمل هامشَه وهامشَ التجزئة",
+    "q_key": "max_price",
+    "question": "بكم أبيع للمصنع كي أنافس على الرف؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "راجع قائمةَ الاشتراطات مع وكيلٍ جمركيٍّ في السوق قبل الشحن",
+    "q_key": "entry_blocker",
+    "question": "ما الذي يمنع أوّلَ شحنةٍ من الدخول؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "بين 13,365 و26,730 كجم، إذا افترضنا حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)؛ والنطاقُ من نصف حمولةٍ إلى حمولةٍ كاملة",
+    "answered": true,
+    "how": "احسبها من عرض الشحن الفعلي وسعة الحاوية التي يقبلها المستورد",
+    "q_key": "first_order",
+    "question": "ما حجمُ أوّل شحنةٍ معقولة؟",
+    "status": "مُقدَّر بافتراض معلن"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "ارصد سعرَ الرف لثلاثة منتجاتٍ منافسةٍ واقسمه على سعر الاستيراد المعلن",
+    "q_key": "shelf_gap",
+    "question": "كم يتضاعف سعري من الحدود إلى الرف؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "صوّر رفَّ الفئة في ثلاثة متاجر واقرأ بطاقاتِ المنافسين",
+    "q_key": "differentiation_food",
+    "question": "بمَ أتمايز عن المعروض على الرف اليوم؟",
+    "status": "غير متاح"
+   }
+  ],
   "entries": {
    "blocking_condition": {
     "confidence": 1.0,
@@ -554,6 +620,21 @@
     "source": "",
     "status": "missing",
     "unit": "USD/kg",
+    "value": null,
+    "year": null
+   },
+   "border_to_shelf_multiple": {
+    "confidence": null,
+    "items": null,
+    "key": "border_to_shelf_multiple",
+    "label_ar": "مضاعف الحدود إلى الرف",
+    "label_en": "border-to-shelf multiple",
+    "mirrored": false,
+    "note": "لم تُحاوَل قراءة هذا المعطى",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "×",
     "value": null,
     "year": null
    },
@@ -730,6 +811,21 @@
     "value": 41300000.0,
     "year": 2024
    },
+   "max_exw_estimate": {
+    "confidence": null,
+    "items": null,
+    "key": "max_exw_estimate",
+    "label_ar": "أقصى سعر مصنع قابل للمنافسة",
+    "label_en": "maximum competitive ex-works price",
+    "mirrored": false,
+    "note": "لم تُحاوَل قراءة هذا المعطى",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
    "open_conditions": {
     "confidence": 1.0,
     "items": null,
@@ -879,6 +975,31 @@
     "unit": "%",
     "value": null,
     "year": null
+   },
+   "trial_shipment_units": {
+    "assumption": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)؛ والنطاقُ من نصف حمولةٍ إلى حمولةٍ كاملة",
+    "basis": [
+     "market_imports_usd"
+    ],
+    "confidence": null,
+    "flip_if": "",
+    "how_to_close": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+    "items": null,
+    "key": "trial_shipment_units",
+    "label_ar": "حجم الشحنة التجريبية",
+    "label_en": "trial shipment size",
+    "mirrored": false,
+    "note": "حجمُ أوّل شحنةٍ معقولة بالوحدات",
+    "origin": "insight",
+    "range": [
+     13365.0,
+     26730.0
+    ],
+    "source": "icontainers.com — ISO max gross 30,480 kg",
+    "status": "estimate",
+    "unit": "كجم",
+    "value": 26730.0,
+    "year": null
    }
   },
   "findings": [],
@@ -956,16 +1077,7 @@
     "status": "missing"
    }
   ],
-  "gaps_table": [
-   {
-    "clipped": false,
-    "full": "تعذّر التصنيف",
-    "how": "—",
-    "status": "لم يُعرَف بعد",
-    "status_code": "missing",
-    "what": "تعذّر التصنيف"
-   }
-  ],
+  "gaps_table": [],
   "hs_code": "040900",
   "lang": "ar",
   "order": [
@@ -991,15 +1103,16 @@
    "differentiation",
    "price_evidence_quality",
    "mandatory_certifications",
+   "border_to_shelf_multiple",
+   "max_exw_estimate",
+   "trial_shipment_units",
    "halal_positioning"
   ],
   "repairs": [],
   "schema": "silk.ledger/v1",
   "stale": []
  },
- "limits": [
-  "تعذّر التصنيف"
- ],
+ "limits": [],
  "markets": [],
  "note": null,
  "preliminary": true,

@@ -2225,6 +2225,10 @@ def _docx_deep_research(doc, view: dict) -> None:
     # مرصود** لا حين تمتلئ قائمةُ `limits` وحدَها: فجواتُ قسم الاقتصاد كانت
     # تُطبَع في قسمها فقط ولا تبلغ هذا القسم أبداً (قِياسٌ كشفه).
     import silk_fact_ledger as _FL
+    # الموجة د-٤: أسئلةُ المصدّر الحاسمة — قبل الحدود على مسار البحث العميق
+    # أيضاً (لا إصلاحَ على سطحٍ واحد: الدرسان ٣٥/٣٧).
+    _docx_questions(doc, view, "ar", level=2,
+                    sanitize=lambda x: _clean_report_text(x, max_len=600))
     if dr.get("limits") or _FL.gaps_table(view, "ar"):
         doc.add_heading("حدود قسم البحث العميق", level=2)
         _docx_gaps_table(doc, view, "ar",
@@ -2324,7 +2328,7 @@ def _economics_md_lines(dr: dict) -> list[str]:
                 dn_lines.append(f"| {e['name']} | {val} | {_mth} | "
                                 f"{e['confirm']} — {e['confirm_time']} |")
             else:
-                dn_lines.append(f"| {e['name']} | لا نعرفه بعد — الناقص: "
+                dn_lines.append(f"| {e['name']} | لا نعرفه بعد — يلزم: "
                                 f"{e['missing']} | أثره: {e['impact']} | "
                                 f"سبيل الإغلاق: {e['closure']} |")
     if not rs:
@@ -3906,6 +3910,14 @@ def _client_gaps_section(doc, dr: dict, lang: str = "ar",
         except Exception:  # noqa: BLE001
             _caveats = []
 
+    # **الأسئلةُ قسمٌ مستقلٌّ لا ذيلُ الفجوات.** كانت داخل فرع `gap_lines`،
+    # فمدوّنةٌ بلا فجوةِ قرارٍ حرجة (`nadec_yemen_dairy`) تُسقِط القسمَ كلَّه
+    # وتطبع «لا فجوة جوهرية تمنع اتخاذ القرار» فوقَ ستّة أسئلةٍ بلا جواب —
+    # نفيٌ يناقض ما كان سيُعرَض (§58). فصارت تُطبَع أوّلاً وبشرطها هي.
+    _docx_questions(doc, {"deep_research": dr, "ledger": ledger or {}},
+                    lang, level=2,
+                    sanitize=lambda x: _lang_safe(
+                        _client_sanitize(x, lang), lang))
     if gap_lines:
         doc.add_paragraph(_T("gaps_intro", lang))
         for line in gap_lines:
@@ -5514,12 +5526,15 @@ def render_docx(view: dict, path: str) -> str:
     else:
         doc.add_paragraph("بيانات الاتجاه غير كافية لهذه السنوات.")
 
+    # ═══ الموجة د-٤: أسئلةُ المصدّر الحاسمة — قبل الحدود ═══
+    _docx_questions(doc, view, "ar")
+
     # ═══ حدود هذا التقرير — قبل التوصيات (§10.3) ═══
     doc.add_heading("حدود هذا التقرير", level=1)
     # الدرس ٢٦٤: الجدولُ الواحد نفسُه الذي يُصيَّر في md — بعمودِ حالةٍ
     # يفرّق «لم يُعرَف بعد» عن «مرصود من مصادر غير رسمية»، بلا سردٍ مكرّر.
-    _docx_gaps_table(doc, view, "ar",
-                     empty="لا حدود مسجّلة لهذا التحليل.")
+    # «لا حدود مسجّلة» نفيٌ لا يُقال فوق أسئلةٍ بلا جواب — نفسُ حارس md.
+    _docx_gaps_table(doc, view, "ar", empty=_no_gaps_line(view, "ar"))
 
     # ═══ ١٤) التوصيات الاستراتيجية ═══ (قرار الدخول انتقل قرب الخلاصة
     # التنفيذية أعلاه — راجع القسم ٣)
@@ -6013,6 +6028,119 @@ def _docx_gaps_detail(doc, rows: list, lang: str, clean) -> None:
         doc.add_paragraph(clean(str(r["full"])), style="List Bullet")
 
 
+# ── الموجة د-٤ (البند ١٠): «أسئلة المصدّر الحاسمة» على كلّ سطح ─────────────
+#
+# القسمُ **محسوبٌ بالكود** (`silk_fact_ledger.critical_questions`) لا يكتبه
+# النموذج: صفوفٌ واحدةٌ يقرؤها الماركداون وWord وتقريرُ العميل واللوحة — فلا
+# يختلق الكاتبُ جواباً ولا يُسقِط سؤالاً، ولا يتباعد سطحان (قانونُ العرض الواحد).
+QUESTIONS_TITLE = {"ar": "أسئلتك الحاسمة قبل القرار",
+                   "en": "Your decisive questions before deciding"}
+
+
+def _questions_rows(view: dict, lang: str = "ar") -> list:
+    """صفوفُ الأسئلة **بلغة التقرير** — تُعاد حوسبتُها كما يفعل جدولُ النواقص.
+
+    الصفوفُ المخزَّنة في `view["ledger"]` مُصيَّرةٌ بلغةِ بناءِ العرض؛ وتقريرُ
+    العميل الإنجليزيّ يُصيَّر من عرضٍ قد يكون بُني بالعربية، فكان `_lang_safe`
+    يُسقِط القسمَ كلَّه بلا أثر (§58). فيُعاد الحساب من السجلّ نفسِه بـ`lang`،
+    والمخزَّنُ احتياطٌ حين يتعذّر (عرضٌ بلا مدخلات).
+    """
+    ledger = view.get("ledger") or {}
+    rows = []
+    if ledger.get("entries"):
+        try:
+            import silk_fact_ledger as _FL
+            rows = _FL.critical_questions(view, lang)
+        except Exception:  # noqa: BLE001 — إضافةٌ لا شرطُ عرض
+            rows = []
+    if not rows:
+        rows = ledger.get("critical_questions") or []
+    return [r for r in rows if isinstance(r, dict) and r.get("question")]
+
+
+def _questions_md(view: dict, lang: str = "ar") -> list:
+    """الأسئلةُ بصيغة Markdown — أو [] حين لا سجلَّ (لا عنوانَ فارغ)."""
+    rows = _questions_rows(view, lang)
+    if not rows:
+        return []
+    head = (["Question", "Answer", "How to find out"] if lang == "en"
+            else ["السؤال", "الجواب", "كيف تعرفه"])
+    out = [f"## {QUESTIONS_TITLE.get(lang, QUESTIONS_TITLE['ar'])}", "",
+           "| " + " | ".join(head) + " |", "|" + "|".join(["---"] * 3) + "|"]
+    for r in rows:
+        how = "—" if r.get("answered") else str(r.get("how") or "—")
+        out.append("| " + " | ".join(
+            str(c).replace("|", "／") for c in
+            (r["question"], r.get("answer") or "", how)) + " |")
+    out.append("")
+    return out
+
+
+#: صدرُ سبيل المعرفة في فقرة Word — لغةُ قارئ لا رأسُ عمود.
+_HOW_LEAD = {"ar": "كيف تعرفه: ", "en": "How to find out: "}
+
+
+def _docx_questions(doc, view: dict, lang: str = "ar", *, sanitize=None,
+                    level: int = 1) -> None:
+    """الأسئلةُ في Word — نفسُ صفوف `md`، **فقراتٍ لا جدولاً**.
+
+    هندسةٌ لا ذوق (نفسُ درسِ جدول النواقص أعلاه، وقِيس على الـPDF المُصيَّر):
+    في جدولٍ عربيّ يتدفّق يميناً يصير العمودُ الثالث أقصى اليسار، والتفافُ
+    نصٍّ فيه يبدأ من هامش اليسار فيطابق **إمضاءَ انقلاب jc**
+    (`tools/rtl_calibration.classify`). جدولُ النواقص حلَّها بوضع مفرداتٍ
+    قصيرةٍ (الحالة) في ذلك العمود؛ وهنا العمودُ الثالث «كيف تعرفه» جملةٌ
+    طويلةٌ بطبعها لا تُقصّ بلا إتلافِ الفعلِ المطلوب — فتُطبَع الأسئلةُ
+    فقراتٍ بعرض الصفحة: يميناً كاملاً، بلا قصٍّ ولا التفافِ خليّة.
+    (المقياس: سطران عربيّان يساريّان في `test_pdf_rtl_geometry_and_arabic_font`
+    قبل التحويل، صفرٌ بعده.) الماركداونُ واللوحةُ يبقيان جدولاً — لا هندسةَ
+    صفحةٍ فيهما.
+    """
+    rows = _questions_rows(view, lang)
+    if not rows:
+        return
+    clean = sanitize or (lambda x: x)
+    lead = _HOW_LEAD.get(lang, _HOW_LEAD["ar"])
+    body = []
+    for r in rows:
+        q = clean(str(r["question"])).strip()
+        ans = clean(str(r.get("answer") or "")).strip()
+        if not q or not ans:
+            continue
+        line = q + " " + ans
+        how = "" if r.get("answered") else clean(str(r.get("how") or "")).strip()
+        if how and how != "—":
+            line += " — " + lead + how
+        body.append(line)
+    if not body:
+        return
+    doc.add_heading(clean(QUESTIONS_TITLE.get(lang, QUESTIONS_TITLE["ar"])),
+                    level=level)
+    for line in body:
+        doc.add_paragraph(line, style="List Bullet")
+
+
+#: سطرُ «لا فجوات» حين لا صفَّ في الجدول — أو إحالةٌ صادقةٌ إلى الأسئلة.
+_NO_GAPS = {"ar": "لا فجوات مرصودة", "en": "No gaps observed"}
+_GAPS_IN_QUESTIONS = {
+    "ar": "ما لم نعرفه بعد مسرودٌ في «أسئلتك الحاسمة قبل القرار» أعلاه",
+    "en": "What is not yet known is listed under the decisive questions above"}
+
+
+def _no_gaps_line(view: dict, lang: str = "ar") -> str:
+    """«لا فجوات مرصودة» **فقط حين لا فجوة فعلاً**.
+
+    الدفعُ المقيس (الموجة د-٤): إسقاطُ حدِّ «تعذّر التصنيف» الكاذب أفرغ جدولَ
+    النواقص على ثلاث مدوّنات، فصار التقريرُ يقول «لا فجوات مرصودة» وفوقَه
+    مباشرةً خمسةُ أسئلةٍ جوابُها «لم نعرفه بعد» — قسمٌ ينفي ما يعرضه قسمٌ
+    آخر، وهو بعينه البلاغُ الأصليُّ الذي وُجدت له هذه الموجة. فحين يكون
+    للقسم الأعلى سؤالٌ بلا جواب، يُحال إليه بدل نفيِ الفجوات.
+    """
+    rows = _questions_rows(view, lang)
+    if any(not r.get("answered") for r in rows):
+        return _GAPS_IN_QUESTIONS.get(lang, _GAPS_IN_QUESTIONS["ar"])
+    return _NO_GAPS.get(lang, _NO_GAPS["ar"])
+
+
 def _gaps_table_md(view: dict, lang: str = "ar", *,
                    seen: str = "") -> list:
     """جدولُ النواقص الواحد بصيغة Markdown — أو سطرُ «لا فجوات» الصادق.
@@ -6026,14 +6154,14 @@ def _gaps_table_md(view: dict, lang: str = "ar", *,
     limits = [str(x) for x in (view.get("limits") or []) if str(x).strip()]
     if not rows:
         return ([f"- {x}" for x in _gap_list_ar(limits[:12])] if limits
-                else ["- لا فجوات مرصودة"])
+                else ["- " + _no_gaps_line(view, lang)])
     head = (["Fact", "How it closes", "Status"] if lang == "en"
             else ["المعطى", "ما يلزم لإغلاقه", "الحالة"])
     out = ["| " + " | ".join(head) + " |", "|" + "|".join(["---"] * 3) + "|"]
     pairs = _gap_cells(rows[:12], lang)
     if not pairs:
         return ([f"- {x}" for x in _gap_list_ar(limits[:12])] if limits
-                else ["- لا فجوات مرصودة"])
+                else ["- " + _no_gaps_line(view, lang)])
     for _r, cells in pairs:
         out.append("| " + " | ".join(str(c).replace("|", "／")
                                      for c in cells) + " |")
@@ -6195,6 +6323,9 @@ def _md_deep_research(view: dict, prefix: list[str]) -> str:
     # الدرس ٢٦٤ (بلاغ المالك: «ادمج النواقص المتشابهة في جدول واحد»):
     # جدولٌ واحدٌ بثلاثة أعمدة يحلّ محلّ سردٍ متكرّرٍ بالصياغة نفسها،
     # **ويُظهِر الفرقَ الذي لم يكن يظهر**: ناقصٌ مقابل مرصودٍ ضعيفِ التوثيق.
+    # الموجة د-٤: الأسئلةُ الحاسمة **قبل** الحدود — القارئُ يرى جوابَ سؤاله
+    # أوّلاً ثمّ ما لم يُعرَف بعد، لا العكس.
+    L += _questions_md(view, "ar")
     L += ["## حدود هذا التقرير", ""]
     L += _gaps_table_md(view, seen="\n".join(L))
     L.append("")
@@ -6618,6 +6749,9 @@ def render_markdown(view: dict) -> str:
     # — الآن نفس المعالجة المطبَّقة في docx (اتساق المشتقّين، لا مسارين).
     # والدرس ٢٦٤: مسارُ `/analyze` كان قد بقي سرداً بينما تحوّل docx جدولاً،
     # فافترق المشتقّان في التقرير نفسِه (مراجعةٌ ذاتية §58). الجدولُ للاثنين.
+    # الموجة د-٤: الأسئلةُ الحاسمة **قبل** الحدود — القارئُ يرى جوابَ سؤاله
+    # أوّلاً ثمّ ما لم يُعرَف بعد، لا العكس.
+    L += _questions_md(view, "ar")
     L += ["## حدود هذا التقرير", ""]
     L += _gaps_table_md(view, seen="\n".join(L))
     L.append("")
