@@ -1,0 +1,46 @@
+# الشهاداتُ والضرائبُ لدخول السوق — market-entry certifications and taxes (L1).
+# الغرض: البندان ٣ و٦ من الموجة د: شهاداتُ المطابقة الفنية الإلزامية في السوق
+#   المستهدف كشرطِ دخول، والضرائب/الإعفاءات — **بمصدرٍ رسمي**. القاعدة: صفٌّ
+#   `basis=official` **يشترط** `source_url` رسمياً وإلا يُتخطّى عند التحميل؛ ما لا
+#   صفَّ رسمياً له يُكتب «مطلوبة تجارياً» (شهادة) أو «تحتاج تحققاً» (ضريبة) — لا
+#   يُكتب «إلزامية» ولا يُعتمد رقمٌ ضريبيٌّ من نثر.
+# الملفُّ مرجعُ **تصنيفٍ وربط** يُحدَّث بلا كود؛ لا يُشتقّ منه حكمٌ. الأسواقُ
+#   الكتليّة (EU/GCC) تُفكّ عبر silk_blocs كما في requirements_l1.
+# الأعمدة: market (ISO3 أو EU/GCC)، category (food/all/…)، kind
+#   (certification/vat/exemption)، scheme (اسم النظام أو الضريبة)، rate_pct
+#   (للضرائب)، basis (official/commercial)، authority، source_url، applies_when
+#   (نفس صيغ requirements_l1: hs_chapter:… / category:… / processing:raw,semi,processed)،
+#   note.
+# قاعدةُ الضرائب (الموجة د-٢): صفُّ `category=all` هو **المعدّلُ القياسي** ويُطبَّق
+#   على الأصناف غير الغذائية فقط؛ الصنفُ الغذائي يحتاج صفّاً بفئة `food`
+#   (معدّلٌ مخفّض/إعفاء) وإلا كُتب «تحتاج تحققاً» — لأنّ الأغذية تخضع لمعدّلات
+#   مخفّضة وإعفاءاتٍ تختلف بالبند. صفٌّ بلا `rate_pct` لا يُطبَّق أبداً.
+market,category,kind,scheme,rate_pct,basis,authority,source_url,applies_when,note
+GCC,all,certification,GSO Conformity (Gulf Conformity Mark / G-Mark),,official,هيئة التقييس لدول مجلس التعاون GSO,https://www.gso.org.sa/,category:all,للفئات غير الغذائية الخاضعة للوائح الفنية الخليجية — الغذاءُ في requirements_l1
+SAU,all,certification,SABER / Saudi Product Safety Program,,official,الهيئة السعودية للمواصفات والمقاييس والجودة SASO,https://saber.sa/,category:all,منتجات غير غذائية خاضعة قبل الفسح — الغذاءُ عبر SFDA في requirements_l1
+SAU,all,vat,ضريبة القيمة المضافة,15,official,هيئة الزكاة والضريبة والجمارك ZATCA,https://zatca.gov.sa/,,15% منذ 2020-07
+ARE,all,vat,ضريبة القيمة المضافة,5,official,الهيئة الاتحادية للضرائب FTA,https://tax.gov.ae/,,
+KWT,all,vat,ضريبة القيمة المضافة,0,official,وزارة المالية الكويتية,https://www.mof.gov.kw/,,لم تُطبَّق حتى تاريخ الصف — تحقّق قبل الاعتماد
+QAT,all,vat,ضريبة القيمة المضافة,0,official,الهيئة العامة للضرائب,https://www.gta.gov.qa/,,لم تُطبَّق حتى تاريخ الصف
+EU,food,certification,EU Food Hygiene Regulation (EC) 852/2004 — منشأة معتمدة,,official,المفوضية الأوروبية EUR-Lex,https://eur-lex.europa.eu/eli/reg/2004/852/oj,,
+EU,animal,certification,EU listed establishment (EU) 2017/625,,official,المفوضية الأوروبية,https://eur-lex.europa.eu/eli/reg/2017/625/oj,"hs_chapter:01,02,03,04,05,16",الأهلية أولاً
+NLD,all,vat,BTW (VAT),21,official,Belastingdienst,https://www.belastingdienst.nl/,,
+NLD,food,vat,BTW على الأغذية (المعدّل المخفّض),9,official,Belastingdienst,https://www.belastingdienst.nl/,category:food,
+DEU,all,vat,Umsatzsteuer (VAT),19,official,Bundesministerium der Finanzen,https://www.bundesfinanzministerium.de/,,
+DEU,food,vat,Umsatzsteuer على الأغذية (المعدّل المخفّض),7,official,Bundesministerium der Finanzen,https://www.bundesfinanzministerium.de/,category:food,
+ITA,all,vat,IVA,22,official,Agenzia delle Entrate,https://www.agenziaentrate.gov.it/,,
+ITA,food,vat,IVA على المعكرونة والخبز والدقيق (معدّل 4%),4,official,Agenzia delle Entrate,https://www.agenziaentrate.gov.it/,"category:food;hs_chapter:10,11,19",بقيةُ الأغذية 5/10% بالبند — لا صفَّ لها فتُكتب «تحتاج تحققاً»
+TUR,all,vat,KDV (VAT),20,official,Gelir İdaresi Başkanlığı,https://www.gib.gov.tr/,,
+TUR,all,certification,TSE / CE-equivalent conformity (Ürün Güvenliği),,official,Türk Standardları Enstitüsü TSE,https://www.tse.org.tr/,category:all,للفئات الصناعية الخاضعة
+IND,all,vat,GST,,official,Goods and Services Tax Council,https://www.gst.gov.in/,,يختلف بالبند (5/12/18/28%) — لا معدّلَ واحد فلا يُطبَّق رقم
+IND,all,certification,BIS Certification (ISI mark),,official,Bureau of Indian Standards,https://www.bis.gov.in/,category:all,للمنتجات الخاضعة للتسجيل الإلزامي
+JPN,all,vat,Consumption tax,10,official,National Tax Agency,https://www.nta.go.jp/,,
+JPN,food,vat,Consumption tax على الأغذية (المعدّل المخفّض),8,official,National Tax Agency,https://www.nta.go.jp/,category:food,
+EGY,all,vat,ضريبة القيمة المضافة,14,official,مصلحة الضرائب المصرية,https://www.eta.gov.eg/,,
+MAR,all,vat,TVA,20,official,Direction Générale des Impôts,https://www.tax.gov.ma/,,
+JOR,all,vat,ضريبة المبيعات العامة,16,official,دائرة ضريبة الدخل والمبيعات,https://istd.gov.jo/,,
+KEN,all,vat,VAT,16,official,Kenya Revenue Authority,https://www.kra.go.ke/,,
+NGA,all,vat,VAT,7.5,official,Federal Inland Revenue Service,https://www.firs.gov.ng/,,
+NGA,all,certification,SONCAP,,official,Standards Organisation of Nigeria,https://son.gov.ng/,category:all,للمنتجات الخاضعة
+DZA,all,vat,TVA,19,official,Direction Générale des Impôts,https://www.mfdgi.gov.dz/,,
+YEM,all,vat,ضريبة المبيعات العامة,5,commercial,مصلحة الضرائب اليمنية,,,لا مصدر رسمي متاح على الشبكة — تُكتب «تحتاج تحققاً»

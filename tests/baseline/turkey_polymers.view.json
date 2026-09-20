@@ -2,9 +2,8 @@
  "ai_report": null,
  "ai_report_note": null,
  "brief": [
-  "التوصية: مراقبة السوق — سوق ليبيا (بحث عميق شامل)",
-  "الطلب الفعلي المقدَّر: 6400000",
-  "أفضل باب دخول: موزّع جملة"
+  "التوصية: دخول مشروط — سوق تركيا (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 2100000000"
  ],
  "classified": false,
  "competitive_position": {
@@ -27,8 +26,8 @@
  },
  "culture": [],
  "data_economics": {
-  "llm_calls": 32,
-  "note": "32 نداء كلود"
+  "llm_calls": 31,
+  "note": "31 نداء كلود"
  },
  "data_year": null,
  "decision": {
@@ -45,55 +44,37 @@
       "confidence_badge": "✓ موثّق",
       "data_year": 2024,
       "note": "واردات 2024",
-      "retrieved_at": "2026-09-10",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 6400000
+      "value": 2100000000
      }
     ],
     "entry_cost": [
      {
       "confidence": 0.8,
       "confidence_badge": "✓ موثّق",
-      "note": "التعريفة المطبَّقة",
-      "retrieved_at": "2026-09-10",
+      "data_year": null,
+      "note": "تعريفة مطبَّقة",
+      "retrieved_at": "2026-09-01",
       "source": "WITS",
-      "value": 15.0
-     }
-    ],
-    "entry_door": [
-     {
-      "confidence": 0.8,
-      "confidence_badge": "✓ موثّق",
-      "note": "باب الدخول",
-      "retrieved_at": "2026-09-10",
-      "source": "بحث ويب",
-      "value": "موزّع جملة"
+      "value": 6.5
      }
     ],
     "price_competitiveness": [
      {
-      "confidence": 0.7,
+      "confidence": 0.6,
       "confidence_badge": "◐ ثانوي",
-      "note": "سعر رف منافس دينار/كجم",
-      "retrieved_at": "2026-09-10",
+      "data_year": null,
+      "note": "سعر مصنع محلي دولار/كجم",
+      "retrieved_at": "2026-09-01",
       "source": "بحث ويب",
-      "value": 9.5
-     }
-    ],
-    "swot": [
-     {
-      "confidence": 0.8,
-      "confidence_badge": "✓ موثّق",
-      "note": "خطر تشغيلي",
-      "retrieved_at": "2026-09-10",
-      "source": "UN Comtrade",
-      "value": "تعدد الجهات الرقابية"
+      "value": 1.35
      }
     ]
    },
    "diagnostics": {},
    "missing_categories": [],
-   "summary": "ليبيا مراقبة — البوابة غير محسومة."
+   "summary": "تركيا دخول مشروط — مدخل خام محلي ومنافسة معتدلة."
   },
   "caveat_box": "",
   "charter": {},
@@ -104,76 +85,44 @@
   "economics": {
    "anchor_price": {
     "basis": "retail",
-    "category": "طحينة",
-    "currency": "دينار",
+    "category": "بولي بروبيلين",
+    "currency": "دولار",
     "fx_date": "",
     "fx_rate": null,
     "gaps": [
-     "التحويل kg→litre يتطلب الكثافة لفئة «طحينة» — غير مسجّل في سجل الثوابت؛ أضفه بمصدره أو صرّح بالخاصية المفقودة",
+     "التحويل kg→litre يتطلب الكثافة لفئة «بولي بروبيلين» — غير مسجّل في سجل الثوابت؛ أضفه بمصدره أو صرّح بالخاصية المفقودة",
      "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
     ],
     "note": "أدنى سعر رف منافس مرصود",
-    "per_kg": 9.5,
+    "per_kg": 0.054,
     "per_litre": null,
-    "per_unit": 9.5,
-    "raw_value": 9.5,
-    "source": "سعر رف تجزئة لعبوة 1 كجم، دينار",
+    "per_unit": 1.35,
+    "raw_value": 1.35,
+    "source": "سعر رف صناعي محلي عبوة 25 kg بسعر 1.35 دولار للكيلوغرام (مصنع تغليف في بورصة، بلا تاريخ نشر)",
     "value_usd": null
    },
-   "cost_currency": "دينار",
+   "cost_currency": "USD",
    "decision_numbers": [
     {
-     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
-     "confirm_time": "3–5 أيام عمل",
-     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "closure": "أدخل وزن العبوة أو سجّل ثابت الفئة — دقيقة واحدة",
+     "impact": "لا يُعرف حجم أول شحنة فتبقى كلفة الدخول كلها غير قابلة للحساب",
+     "missing": "وزن وحدة الواحد (أو ثابت كثافة الفئة)",
      "name": "حجم الشحنة التجريبية",
-     "range": {
-      "high": 26730,
-      "low": 26730
-     },
-     "source": "icontainers.com — ISO max gross 30,480 kg",
-     "tag": "تقدير معلن بمدى",
-     "tier": "estimated",
-     "too_wide": false,
-     "unit": "كجم",
-     "value": 26730,
-     "width_pct": 0
+     "tier": "gap"
     },
     {
-     "confirm": "عرض شحن رسمي + جدول رسوم الجهة التنظيمية للسوق",
-     "confirm_time": "أسبوع عمل",
-     "method": "بضاعة الشحنة التجريبية (تكلفتك × وحدات الحاوية) (الشحن بلا سعر ممر متحقق — مداه أوسع من ±50% فيُستبعد من المجموع ويُغلق بعرض أسعار) (رسوم التسجيل غير متحققة — خارج المجموع ومعلنة)",
+     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
+     "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
+     "missing": "تكلفة إنتاج وحدة الواحد لديك",
      "name": "كلفة الدخول الكلية حتى أول شحنة",
-     "range": {
-      "high": 82863,
-      "low": 82863
-     },
-     "tag": "تقدير معلن بمدى",
-     "tier": "estimated",
-     "too_wide": false,
-     "unit": "دينار",
-     "value": 82863,
-     "width_pct": 0
+     "tier": "gap"
     },
     {
-     "confirm": "تثبيت سعر بيع فعلي من أول مفاوضة مستورد",
-     "confirm_time": "مع أول عرض سعر جاد",
-     "method": "كلفة الدخول ÷ هامش الوحدة (أقصى سعر مصنع منافس − تكلفتك)",
-     "months_at_capacity": {
-      "high": 5.1,
-      "low": 5.1
-     },
+     "closure": "أدخل تكلفتك بعملة السعر المرجعي نفسها (أو صرّح بعملتها) — دقيقة واحدة",
+     "impact": "هامش الوحدة طرحٌ بين رقمين — لا يصح إلا بوحدة وعملة واحدتين",
+     "missing": "سعر السوق المرجعي مرصود لكل كجم وتكلفتك لكل وحدة — لا ثابت تحويل مسجّل",
      "name": "نقطة التعادل",
-     "range": {
-      "high": 45599.27,
-      "low": 45599.27
-     },
-     "tag": "تقدير معلن بمدى",
-     "tier": "estimated",
-     "too_wide": false,
-     "unit": "كجم",
-     "value": 45599.27,
-     "width_pct": 0
+     "tier": "gap"
     },
     {
      "closure": "جدول المدد المنشور لدى الجهة التنظيمية + سؤال وكيل تخليص واحد — يوم عمل",
@@ -183,29 +132,20 @@
      "tier": "gap"
     },
     {
-     "confirm": "شرط إعادة/تصريف في أول عقد يقلّص السقف فعلياً",
-     "confirm_time": "بند تفاوضي في أول عقد",
-     "method": "كلفة الدخول كلها عرضة للفقد في أسوأ حالة (بضاعة + شحن غير مستردّين)",
+     "closure": "يكتمل تلقائياً بإدخال تكلفتك",
+     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
+     "missing": "كلفة الدخول (أعلاه)",
      "name": "أقصى خسارة إن فشل الدخول",
-     "range": {
-      "high": 82863,
-      "low": 82863
-     },
-     "tag": "تقدير معلن بمدى",
-     "tier": "estimated",
-     "too_wide": false,
-     "unit": "دينار",
-     "value": 82863,
-     "width_pct": 0
+     "tier": "gap"
     }
    ],
    "displacement_measured": true,
    "displacement_required": false,
    "gaps": [],
-   "hhi": 1760.0,
+   "hhi": 2024.0,
    "market_unit": {
-    "code": "kg",
-    "label_ar": "كجم"
+    "code": "unit",
+    "label_ar": "وحدة"
    },
    "parameter_scenarios": {
     "distributor_margin_pct": {
@@ -225,21 +165,18 @@
     }
    },
    "pricing_contradiction": {
-    "max_exw_usd": 1.0139,
-    "note": "تحذير: أقصى سعر مصنع قابل للمنافسة (1.0139 دولار/كجم) أدنى بنسبة 50.5% من متوسط سعر الاستيراد المرصود (2.05 دولار/كجم) — المنافسة السعرية غير قائمة عملياً في هذه الفئة، ولا يصلح هذا الرقم أساساً للتفاوض",
-    "reference_import_price_usd_kg": 2.05,
-    "shortfall_pct": 50.5
+    "max_exw_usd": 0.0252,
+    "note": "تحذير: أقصى سعر مصنع قابل للمنافسة (0.0252 دولار/كجم) أدنى بنسبة 97.9% من متوسط سعر الاستيراد المرصود (1.18 دولار/كجم) — المنافسة السعرية غير قائمة عملياً في هذه الفئة، ولا يصلح هذا الرقم أساساً للتفاوض",
+    "reference_import_price_usd_kg": 1.18,
+    "shortfall_pct": 97.9
    },
-   "product_form": "معجون لزج في عبوة زجاجية",
+   "product_form": null,
    "reverse_solve": {
-    "currency": "دينار",
+    "currency": "دولار",
     "formula": "EXW_max = سعر الرف ÷ [(1+شحن)(1+تعرفة)(1+هامش الموزّع)(1+هامش التجزئة)(1+ضريبة)]",
-    "fx_rate": 4.85,
     "headline_scenario": "متوسط",
-    "max_exw": 4.9172,
-    "max_exw_usd": 1.0139,
+    "max_exw": 0.0252,
     "parameters": [
-     "الضريبة (اعتُمد 0% — تحتاج تحققاً)",
      "نسبة الشحن (معلمة معلنة قابلة للتعديل)",
      "هامش الموزّع (معلمة معلنة قابلة للتعديل)",
      "هامش التجزئة (معلمة معلنة قابلة للتعديل)"
@@ -248,26 +185,26 @@
      {
       "distributor_pct": 10.0,
       "freight_pct": 5.0,
-      "max_exw": 6.2194,
+      "max_exw": 0.0318,
       "retailer_pct": 15.0,
       "scenario": "منخفض"
      },
      {
       "distributor_pct": 20.0,
       "freight_pct": 12.0,
-      "max_exw": 4.9172,
+      "max_exw": 0.0252,
       "retailer_pct": 25.0,
       "scenario": "متوسط"
      },
      {
       "distributor_pct": 30.0,
       "freight_pct": 25.0,
-      "max_exw": 3.6312,
+      "max_exw": 0.0186,
       "retailer_pct": 40.0,
       "scenario": "مرتفع"
      }
     ],
-    "shelf_price": 9.5,
+    "shelf_price": 0.054,
     "unit": "كجم"
    },
    "unlock_note": null,
@@ -276,37 +213,37 @@
      "is_parameter": false,
      "name": "سعر المصنع (EXW)",
      "note": "USD",
-     "value": 3.1
+     "value": 0.95
     },
     {
      "is_parameter": true,
      "name": "الشحن (12% من EXW)",
      "note": "معلمة معلنة قابلة للتعديل — من سيناريو الشحن",
-     "value": 0.372
+     "value": 0.114
     },
     {
      "is_parameter": false,
-     "name": "التكلفة الواصلة (بعد تعرفة 15.0%)",
+     "name": "التكلفة الواصلة (بعد تعرفة 6.5%)",
      "note": "التعرفة مرصودة",
-     "value": 3.993
+     "value": 1.133
     },
     {
      "is_parameter": true,
      "name": "سعر الموزّع (+20%)",
      "note": "معلمة معلنة قابلة للتعديل — هامش الموزّع",
-     "value": 4.791
+     "value": 1.36
     },
     {
      "is_parameter": true,
      "name": "سعر التجزئة قبل الضريبة (+25%)",
      "note": "معلمة معلنة قابلة للتعديل — هامش التجزئة",
-     "value": 5.989
+     "value": 1.7
     },
     {
-     "is_parameter": true,
-     "name": "سعر الرف (+ضريبة 0.0%)",
-     "note": "معلمة معلنة قابلة للتعديل — الضريبة تحتاج تحققاً — صفر معلن",
-     "value": 5.989
+     "is_parameter": false,
+     "name": "سعر الرف (+ضريبة 20.0%)",
+     "note": "الضريبة مرصودة",
+     "value": 2.04
     }
    ]
   },
@@ -314,57 +251,33 @@
   "flip_conditions": [
    {
     "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
-    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في ليبيا",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في تركيا",
     "met": false
    }
   ],
   "gap_register": [],
   "glossary": [],
   "hs_confirmation": {
-   "code_desc": "طحينة",
+   "code_desc": "بولي بروبيلين بأشكاله الأولية",
    "confirmed": true,
-   "hs_code": "200819",
-   "missing_terms": [],
-   "overlap": 1.0,
-   "product_terms": [
-    "طحينه"
-   ],
-   "reason": "وصف الرمز يشمل صفات المنتج المميّزة",
-   "shared_terms": [
-    "طحينه"
-   ]
+   "hs_code": "390210",
+   "reason": ""
   },
   "hs_derivation": {
    "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
-   "chapter": "20",
-   "confirmed": null,
-   "heading": "2008",
-   "hs6": "200819",
-   "official_description": "Nuts and other seeds; whether or not containing added sugar, other sweetening matter or spirit (excluding ground-nuts except in mixtures)",
-   "subheading": "200819"
+   "chapter": "39",
+   "confirmed": true,
+   "heading": "3902",
+   "hs6": "390210",
+   "official_description": "Propylene, other olefin polymers; polypropylene in primary forms",
+   "subheading": "390210"
   },
   "hs_flagged": false,
   "hs_provenance": null,
   "hypotheses": [],
   "importer_leads": {
-   "dropped_count": 1,
-   "leads": [
-    {
-     "address": "طرابلس، ليبيا",
-     "category": "تاجر جملة",
-     "doc_level": "◐ مرصود عبر خرائط قوقل",
-     "email": "",
-     "maps_link": "",
-     "name": "شركة الساحل للتجارة",
-     "phone": "+218 21 000000",
-     "rating": "4.2",
-     "review_count": "31",
-     "source": "google_maps_scraper",
-     "website": ""
-    }
-   ],
-   "note": "",
-   "path": "scraper"
+   "leads": [],
+   "path": "gap"
   },
   "judge_abstain_shadow": {},
   "ledger_bind": {
@@ -376,34 +289,122 @@
   "ledger_unresolved": [],
   "limits": [],
   "market": {
-   "iso2": "LY",
-   "iso3": "LBY",
-   "m49": 434,
-   "name_ar": "ليبيا",
-   "name_en": "Libya"
+   "iso2": "TR",
+   "iso3": "TUR",
+   "m49": 792,
+   "name_ar": "تركيا",
+   "name_en": "Türkiye"
   },
   "missions": {
    "competitors": {
     "failed": false,
     "findings": [
      {
-      "confidence": 0.8,
-      "note": "مؤشر التركّز",
-      "retrieved_at": "2026-09-10",
+      "confidence": 0.9,
+      "data_year": 2024,
+      "note": "HS390210 مورّدو Türkiye 2024: 41 دولة مرصودة، مؤشر تركّز HHI=1560",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 1760
+      "value": {
+       "hhi": 1560,
+       "supplier_count": 41,
+       "top_suppliers": [
+        {
+         "partner": "Saudi Arabia",
+         "share": 31.0
+        },
+        {
+         "partner": "Rep. of Korea",
+         "share": 14.0
+        },
+        {
+         "partner": "Belgium",
+         "share": 9.0
+        },
+        {
+         "partner": "Greece",
+         "share": 6.0
+        }
+       ],
+       "year": 2024
+      }
      },
      {
       "confidence": 0.8,
-      "note": "حصة تركيا %",
-      "retrieved_at": "2026-09-10",
+      "data_year": 2024,
+      "note": "حصة أكبر مورد % 2024",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 34.0
+      "value": 31.0
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "[commercial] طبيعة المورّدين الأكبر لسنة 2024: 3 مُقيَّم من 3، منهم 2 معيد تصدير مرجَّح — القاعدة: ليس من أعلى 5 مصدّراً عالمياً ووارداته ≥ صادراته",
+      "retrieved_at": "2026-09-01",
+      "source": "UN Comtrade",
+      "value": {
+       "calls_used": 0,
+       "kind": "supplier_nature",
+       "partial": false,
+       "rows": [
+        {
+         "actual_source": null,
+         "exports_usd": 5100000000.0,
+         "imports_usd": 380000000.0,
+         "iso3": "KOR",
+         "partner": "Rep. of Korea",
+         "reexporter_likely": false,
+         "share": 14.0,
+         "status": "X:stored M:stored",
+         "world_top_exporter": true
+        },
+        {
+         "actual_source": {
+          "iso3": "DEU",
+          "partner": "Germany",
+          "share": 34.0
+         },
+         "exports_usd": 210000000.0,
+         "imports_usd": 260000000.0,
+         "iso3": "BEL",
+         "partner": "Belgium",
+         "reexporter_likely": true,
+         "share": 9.0,
+         "status": "X:stored M:stored",
+         "world_top_exporter": false
+        },
+        {
+         "actual_source": {
+          "iso3": "ITA",
+          "partner": "Italy",
+          "share": 29.0
+         },
+         "exports_usd": 40000000.0,
+         "imports_usd": 95000000.0,
+         "iso3": "GRC",
+         "partner": "Greece",
+         "reexporter_likely": true,
+         "share": 6.0,
+         "status": "X:stored M:stored",
+         "world_top_exporter": false
+        }
+       ],
+       "topn": 5,
+       "world_top_exporters": [
+        "SAU",
+        "KOR",
+        "USA",
+        "DEU",
+        "SGP"
+       ],
+       "year": 2024
+      }
      }
     ],
     "label": "تحليل المنافسين",
     "name": "LLMMissionAgent",
-    "summary": "مؤشر تركّز 1760",
+    "summary": "مؤشر تركّز 1560 — السعودية أكبر مورّد",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -416,42 +417,7 @@
     "findings": [],
     "label": "الاشتراطات الجمركية",
     "name": "LLMMissionAgent",
-    "summary": "تسجيل المستورد لدى الجهة الرقابية",
-    "trace": {
-     "dropped": 0,
-     "gaps": 0,
-     "status": "succeeded",
-     "tool_calls": 0
-    }
-   },
-   "demographics_economy": {
-    "failed": false,
-    "findings": [
-     {
-      "confidence": 0.8,
-      "data_year": 2024,
-      "note": "عدد السكان 2024",
-      "retrieved_at": "2026-09-10",
-      "source": "World Bank",
-      "value": 6900000
-     }
-    ],
-    "label": "الديموغرافيا والاقتصاد الكلي",
-    "name": "LLMMissionAgent",
-    "summary": "سكان 6.9 مليون نسمة",
-    "trace": {
-     "dropped": 0,
-     "gaps": 0,
-     "status": "succeeded",
-     "tool_calls": 0
-    }
-   },
-   "logistics": {
-    "failed": false,
-    "findings": [],
-    "label": "اللوجستيات",
-    "name": "LLMMissionAgent",
-    "summary": "بوّابتان بحريتان بإجراءات مستقلة",
+    "summary": "مطابقة TSE للفئات الخاضعة",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -463,16 +429,17 @@
     "failed": false,
     "findings": [
      {
-      "confidence": 0.7,
-      "note": "سعر رف تجزئة لعبوة 1 كجم، دينار",
-      "retrieved_at": "2026-09-10",
+      "confidence": 0.6,
+      "data_year": null,
+      "note": "سعر رف صناعي محلي عبوة 25 kg بسعر 1.35 دولار للكيلوغرام (مصنع تغليف في بورصة، بلا تاريخ نشر)",
+      "retrieved_at": "2026-09-01",
       "source": "بحث ويب",
-      "value": 9.5
+      "value": 1.35
      }
     ],
     "label": "تحليل الأسعار",
     "name": "LLMMissionAgent",
-    "summary": "سعر رف تجزئة مرصود 9.5 دينار/كجم (12/12)",
+    "summary": "سعر مصنع محلي 1.35 دولار/كجم (8/8)",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -482,19 +449,10 @@
    },
    "risk_news": {
     "failed": false,
-    "findings": [
-     {
-      "confidence": 0.7,
-      "data_year": 2024,
-      "note": "سعر الصرف الرسمي مقابل الدولار 2024",
-      "retrieved_at": "2026-09-10",
-      "source": "World Bank",
-      "value": 4.85
-     }
-    ],
+    "findings": [],
     "label": "تقييم المخاطر والمستجدات",
     "name": "LLMMissionAgent",
-    "summary": "سعر الصرف الرسمي 4.85 دينار للدولار",
+    "summary": "تقلّب الليرة",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -507,15 +465,24 @@
     "findings": [
      {
       "confidence": 0.8,
-      "note": "التعريفة المطبَّقة %",
-      "retrieved_at": "2026-09-10",
+      "data_year": null,
+      "note": "تعريفة مطبَّقة %",
+      "retrieved_at": "2026-09-01",
       "source": "WITS",
-      "value": 15.0
+      "value": 6.5
+     },
+     {
+      "confidence": 0.9,
+      "data_year": null,
+      "note": "ضريبة القيمة المضافة %",
+      "retrieved_at": "2026-09-01",
+      "source": "Gelir İdaresi Başkanlığı",
+      "value": 20.0
      }
     ],
     "label": "التعريفات الجمركية والاتفاقيات التجارية",
     "name": "LLMMissionAgent",
-    "summary": "تعريفة مطبَّقة 15%",
+    "summary": "تعريفة مطبَّقة 6.5% وضريبة 20%",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -530,22 +497,72 @@
       "confidence": 0.8,
       "data_year": 2024,
       "note": "واردات مصرَّحة 2024",
-      "retrieved_at": "2026-09-10",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 6400000
+      "value": 2100000000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "نمو تراكمي سنوي % على ثلاث سنوات",
+      "retrieved_at": "2026-09-01",
+      "source": "UN Comtrade",
+      "value": 3.2
      },
      {
       "confidence": 0.8,
       "data_year": 2024,
       "note": "متوسط سعر استيراد دولار/كجم 2024",
-      "retrieved_at": "2026-09-10",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 2.05
+      "value": 1.18
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "[commercial] صافي تجارة السعودية في المدخلات الخام (هيدروكربونات وغازات نفطية) سنة 2024: صادرات > واردات على 3 من 3 رموز",
+      "retrieved_at": "2026-09-01",
+      "source": "UN Comtrade",
+      "value": {
+       "calls_used": 0,
+       "codes": [
+        "2901",
+        "2711",
+        "2902"
+       ],
+       "exports_usd": 16300000000.0,
+       "imports_usd": 670000000.0,
+       "kind": "raw_input_trade",
+       "label": "هيدروكربونات وغازات نفطية",
+       "net_usd": 15630000000.0,
+       "observed_codes": 3,
+       "rows": [
+        {
+         "code": "2901",
+         "exports_usd": 3900000000.0,
+         "imports_usd": 120000000.0,
+         "status": "X:stored M:stored"
+        },
+        {
+         "code": "2711",
+         "exports_usd": 9800000000.0,
+         "imports_usd": 210000000.0,
+         "status": "X:stored M:stored"
+        },
+        {
+         "code": "2902",
+         "exports_usd": 2600000000.0,
+         "imports_usd": 340000000.0,
+         "status": "X:stored M:stored"
+        }
+       ],
+       "year": 2024
+      }
      }
     ],
     "label": "تدفقات التجارة",
     "name": "LLMMissionAgent",
-    "summary": "واردات 6.4 مليون وسعر حدود 2.05 دولار/كجم (68/68)",
+    "summary": "واردات 2.1 مليار وسعر حدود 1.18 دولار/كجم (70/70)",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -562,13 +579,13 @@
   "next_step": null,
   "price_rows": [
    {
-    "note": "سعر رف تجزئة لعبوة 1 كجم، دينار",
+    "note": "سعر رف صناعي محلي عبوة 25 kg بسعر 1.35 دولار للكيلوغرام (مصنع تغليف في بورصة، بلا تاريخ نشر)",
     "reason": "",
-    "value": 9.5
+    "value": 1.35
    }
   ],
   "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
-  "product": "طحينة",
+  "product": "بولي بروبيلين",
   "reconciliation": {
    "conflicts": []
   },
@@ -577,23 +594,23 @@
    "failure_reason": "",
    "incomplete": false,
    "missing_sections": [],
-   "review_cycles": 2,
-   "text": "## 1. الخلاصة التنفيذية\nالتوصية: مراقبة السوق. قاعدة الحكم قبل الأرقام: نوصي بالدخول حين يكتمل جانبا\nالطلب والربحية ويكون منفذ الدخول محسوماً؛ وهنا الطلب مرصود والربحية موجبة،\nلكن منفذ الدخول غير محسوم. واردات ليبيا المصرَّحة من الطحينة 6.4 مليون دولار\nلعام 2024.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. أدخل المصدّر تكلفة إنتاج\nالكيلوغرام، ورُصد سعر رف منافس واحد موثّق.\n\n## 3. نظرة عامة على السوق وحجمه\nالواردات المصرَّحة 6.4 مليون دولار (2024). متوسط سعر الاستيراد الحدودي\n2.05 دولار للكيلوغرام.\n\n## 4. ديناميكيات السوق\nعدد السكان 6.9 مليون نسمة. الطحينة سلعة يومية في السلة الغذائية.\n\n## 5. تحليل المستهلك والطلب\nسعر الرف المنافس المرصود 9.5 دينار للكيلوغرام في متجر تجزئة حضري.\n\n## 6. المشهد التنافسي\nالمورّدون: تركيا 34%، مصر 21%، السعودية 7%. مؤشر التركّز 1760.\n\n## 7. التنظيم والوصول للسوق\nتشترط الهيئة الغربية للرقابة على الأغذية تسجيل المستورد قبل الإفراج، بينما\nتطبّق الهيئة الشرقية للمواصفات إجراءات فحص مختلفة على الشحنات الواردة إليها.\nالرسوم الجمركية المطبَّقة 15% وفق WITS. الوسم بالعربية إلزامي.\n\n## 8. اللوجستيات وسلسلة الإمداد\nالشحن البحري يدخل عبر ميناء طرابلس أو ميناء بنغازي، ولكل منهما إجراءات\nتخليص مستقلة. زمن العبور غير متاح من مصدر منسَّق.\n\n## 9. تقييم المخاطر\nتعدد الجهات الرقابية هو الخطر الأول: قائمة اشتراطات من جهة لا تُغني عن\nاشتراطات الأخرى، والتكلفة تختلف بحسب البوابة. وحين تُحسب سلسلة التكلفة\nكاملةً بالرسوم المطبَّقة، يقع أقصى سعر مصنع قابل للمنافسة دون متوسط سعر\nالاستيراد المرصود — ولا يصلح هذا الرقم أساساً للتفاوض.\n\n## 10. التوصيات الاستراتيجية\nأقوى حجة ضد هذا الحكم: الطلب مرصود والهامش موجب، ومن يرى البوابة تفصيلاً\nتشغيلياً قد يوصي بالدخول الآن. نردّ بأن البوابة ليست تفصيلاً: الرسوم\nوالإجراءات والوكيل كلها تتبعها، وكلفة الخطأ فيها شحنة كاملة.\n### أرقام القرار\nتفصيل البنود الخمسة في جدول أرقام القرار: الشحنة التجريبية، وكلفة الدخول\nحتى أول شحنة، ونقطة التعادل، والزمن إلى أول فاتورة، وسقف الخسارة.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. حسم البوابة والجهة الرقابية التابعة لها. 2. تسجيل المستورد. 3. عرض شحن\nرسمي للممر المختار.\n\n## 11. الملاحق\nUN Comtrade، البنك الدولي، WITS، بحث ويب.",
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nالتوصية: دخول مشروط. قاعدة الحكم قبل الأرقام: نوصي بالدخول حين تكتمل ثلاثة\nجوانب من خمسة ويكون الهامش موجباً. واردات تركيا المصرَّحة من البولي بروبيلين\n2.1 مليار دولار لعام 2024، والمنافسة على مستوى الدول مفتوحة.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير. رُصد سعر مصنع محلي واحد\nبلا تاريخ نشر، فبقي توثيق الأسعار أدنى من المطلوب.\n\n## 3. نظرة عامة على السوق وحجمه\nالواردات المصرَّحة 2.1 مليار دولار (2024)، بنمو تراكمي 3.2% سنوياً على ثلاث\nسنوات. متوسط سعر الاستيراد الحدودي 1.18 دولار للكيلوغرام.\n\n## 4. ديناميكيات السوق\nالطلب مدفوع بصناعات التغليف والسيارات والمنسوجات غير المنسوجة، ويتبع دورة\nالبناء والتصدير الصناعي التركي.\n\n## 5. تحليل المستهلك والطلب\nالمشتري صناعي لا مستهلك نهائي: مصانع التغليف والخيوط تشتري بعقود ربع سنوية\nوتطلب شهادة تحليل لكل دفعة.\n\n## 6. المشهد التنافسي\nالمورّدون: السعودية 31%، كوريا الجنوبية 14%، بلجيكا 9%، اليونان 6%. مؤشر\nالتركّز 1560 على مستوى الدول — تنافسي معتدل.\n\n## 7. التنظيم والوصول للسوق\nتشترط تركيا مطابقة سلامة المنتج عبر معهد المواصفات التركي للفئات الخاضعة،\nوتُطبَّق ضريبة القيمة المضافة 20% على الاستيراد. الرسوم الجمركية المطبَّقة\n6.5% وفق WITS.\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري من الجبيل إلى ميناء مرسين أو أمبارلي. زمن العبور غير متاح من مصدر\nمنسَّق.\n\n## 9. تقييم المخاطر\nسعر الصرف الخطر الأول: الليرة تفقد قيمتها فتُسعَّر العقود بالدولار. والثاني\nتقلّب سعر البروبيلين العالمي الذي ينتقل إلى سعر الحبيبات مباشرة. وحين تُحسب\nسلسلة التكلفة كاملةً بالرسوم والضريبة، يقع أقصى سعر مصنع قابل للمنافسة دون\nمتوسط سعر الاستيراد المرصود — ولا يصلح هذا الرقم أساساً للتفاوض.\n\n## 10. التوصيات الاستراتيجية\nأقوى حجة ضد هذا الحكم: المورّد السعودي حاضر أصلاً بحصة كبيرة، فالدخول لمصدّر\nجديد يزاحم مواطنه لا المنافس الأجنبي. نردّ بأن الحصة على مستوى الدولة لا\nتقول شيئاً عن الدرجات (grades) الفارغة في السوق.\n### أرقام القرار\nتفصيل البنود الخمسة في جدول أرقام القرار.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. عرض شحن رسمي لممر الجبيل–مرسين. 2. عيّنات مع شهادة تحليل لثلاثة مصانع\nتغليف. 3. عقد ربع سنوي بالدولار.\n\n## 11. الملاحق\nUN Comtrade، البنك الدولي، WITS، بحث ويب.",
    "unresolved_notes": []
   },
   "report_style": "",
-  "trace_id": "lby-shape",
+  "trace_id": "tur-shape",
   "verdict": {
    "ai": {
-    "reasoning": "البوابة والجهة الرقابية غير محسومتين.",
-    "verdict": "WATCH"
+    "reasoning": "المدخل الخام محلي والمنافسة معتدلة، والشرط عقد بالدولار.",
+    "verdict": "CONDITIONAL-GO"
    },
-   "confidence": 0.49,
-   "verdict": "WATCH"
+   "confidence": 0.62,
+   "verdict": "CONDITIONAL-GO"
   },
   "verdict_consistency": {},
-  "verdict_label": "مراقبة السوق",
-  "verdict_tone": "watch"
+  "verdict_label": "دخول مشروط",
+  "verdict_tone": "conditional"
  },
  "degraded": false,
  "degraded_reason": "",
@@ -601,12 +618,12 @@
  "header": {
   "coverage_pct": 0.0,
   "date": "<RUN_DATE>",
-  "hs_code": "200819",
+  "hs_code": "390210",
   "origin": "SAU",
-  "product": "طحينة",
-  "target_market": "ليبيا"
+  "product": "بولي بروبيلين",
+  "target_market": "تركيا"
  },
- "hs_code": "200819",
+ "hs_code": "390210",
  "hs_confidence": null,
  "hs_provenance": null,
  "ledger": {
@@ -657,18 +674,26 @@
     "year": null
    },
    "cost_advantage": {
+    "assumption": "صافي التجارة مؤشّرٌ للإنتاج لا قياسٌ له",
+    "basis": [
+     "saudi_raw_input_balance",
+     "top_supplier_share_pct"
+    ],
     "confidence": null,
+    "flip_if": "لو ثبت أن السعودية تستورد المدخلَ الخام صافياً تنقلب الميزة",
+    "how_to_close": "",
     "items": null,
     "key": "cost_advantage",
     "label_ar": "ميزة التكلفة",
     "label_en": "cost advantage",
     "mirrored": false,
-    "note": "لا يُستنتَج بلا صافي تجارة المدخلات الخام — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
-    "origin": "trade_flow",
-    "source": "",
-    "status": "missing",
+    "note": "السعودية مصدّرٌ صافٍ للمدخل الخام بينما كبارُ مورّدي السوق ليسوا من كبار منتجيه",
+    "origin": "insight",
+    "range": null,
+    "source": "حساب من السجلّ",
+    "status": "inference",
     "unit": "",
-    "value": null,
+    "value": "ميزة",
     "year": null
    },
    "differentiation": {
@@ -687,34 +712,42 @@
     "year": null
    },
    "direct_competitor_share_pct": {
+    "assumption": "معيدُ التصدير لا يُعدّ منافساً مباشراً؛ حصصُ الباقين تُجمَع",
+    "basis": [
+     "top_supplier_share_pct",
+     "hhi"
+    ],
     "confidence": null,
+    "flip_if": "",
+    "how_to_close": "",
     "items": null,
     "key": "direct_competitor_share_pct",
     "label_ar": "حصة المنافسين المباشرين",
     "label_en": "direct competitors' share",
     "mirrored": false,
-    "note": "لا يُستنتَج بلا طبيعة المورّدين — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
-    "origin": "competitors",
-    "source": "",
-    "status": "missing",
+    "note": "مؤشّرُ التركّز على مستوى الدول لا يُقدَّم وحده مقياساً لشدّة المنافسة",
+    "origin": "insight",
+    "range": null,
+    "source": "UN Comtrade",
+    "status": "inference",
     "unit": "%",
-    "value": null,
-    "year": null
+    "value": 14.0,
+    "year": 2024
    },
    "hhi": {
-    "confidence": 0.8,
+    "confidence": 0.9,
     "items": null,
     "key": "hhi",
     "label_ar": "مؤشر تركّز المورّدين",
     "label_en": "supplier concentration (HHI)",
     "mirrored": false,
-    "note": "مؤشر التركّز",
+    "note": "HS390210 مورّدو Türkiye 2024: 41 دولة مرصودة، مؤشر تركّز HHI=1560",
     "origin": "competitors",
     "source": "UN Comtrade",
     "status": "observed",
     "unit": "",
-    "value": 1760.0,
-    "year": null
+    "value": 1560.0,
+    "year": 2024
    },
    "import_cagr_pct": {
     "confidence": null,
@@ -753,7 +786,7 @@
       "confidence": 0.8,
       "mirrored": false,
       "source": "UN Comtrade",
-      "value": 6400000.0,
+      "value": 2100000000.0,
       "year": 2024
      }
     ],
@@ -770,18 +803,24 @@
     "year": null
    },
    "mandatory_certifications": {
-    "confidence": null,
-    "items": null,
+    "confidence": 0.9,
+    "items": [
+     {
+      "authority": "Türk Standardları Enstitüsü TSE",
+      "scheme": "TSE / CE-equivalent conformity (Ürün Güvenliği)",
+      "source_url": "https://www.tse.org.tr/"
+     }
+    ],
     "key": "mandatory_certifications",
     "label_ar": "الشهادات الإلزامية بمصدر رسمي",
     "label_en": "mandatory certifications (official source)",
     "mirrored": false,
-    "note": "لا صفَّ رسمياً لهذا السوق والفئة في data/certifications_l1.csv — تُكتب الشهاداتُ «مطلوبة تجارياً» لا «إلزامية»",
+    "note": "شهاداتُ مطابقةٍ بمصدرٍ رسمي لهذا السوق والفئة",
     "origin": "customs_requirements",
-    "source": "",
-    "status": "missing",
+    "source": "Türk Standardları Enstitüsü TSE",
+    "status": "observed",
     "unit": "",
-    "value": null,
+    "value": "TSE / CE-equivalent conformity (Ürün Güvenliği)",
     "year": null
    },
    "market_imports_usd": {
@@ -796,7 +835,7 @@
     "source": "UN Comtrade",
     "status": "observed",
     "unit": "USD",
-    "value": 6400000.0,
+    "value": 2100000000.0,
     "year": 2024
    },
    "open_conditions": {
@@ -875,19 +914,19 @@
     "year": null
    },
    "saudi_raw_input_balance": {
-    "confidence": null,
+    "confidence": 0.8,
     "items": null,
     "key": "saudi_raw_input_balance",
     "label_ar": "صافي تجارة السعودية في المدخلات الخام",
     "label_en": "Saudi net trade in raw inputs",
     "mirrored": false,
-    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "note": "صادرات السعودية − وارداتها من المدخلات الخام (هيدروكربونات وغازات نفطية) سنة 2024 على 3 رموز",
     "origin": "trade_flow",
-    "source": "",
-    "status": "missing",
+    "source": "UN Comtrade",
+    "status": "observed",
     "unit": "USD",
-    "value": null,
-    "year": null
+    "value": 15630000000.0,
+    "year": 2024
    },
    "saudi_share_pct": {
     "confidence": null,
@@ -896,28 +935,77 @@
     "label_ar": "الحصة السعودية",
     "label_en": "Saudi share",
     "mirrored": false,
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "note": "قرأه المحرّك من نتائج البعثة",
     "origin": "trade_flow",
     "source": "",
-    "status": "missing",
+    "status": "weak",
     "unit": "%",
-    "value": null,
+    "value": 31.0,
     "year": null
    },
    "supplier_nature": {
+    "assumption": "مورّدٌ ليس من أعلى 5 مصدّراً عالمياً ووارداتُه من الصنف ≥ صادراتِه ⇒ معيدُ تصديرٍ مرجَّح",
+    "basis": [
+     "top_supplier_share_pct"
+    ],
     "confidence": null,
-    "items": null,
+    "flip_if": "لو تبيّن إنتاجٌ محليٌّ لدى مورّدٍ عُدّ معيدَ تصدير",
+    "how_to_close": "",
+    "items": [
+     {
+      "actual_source": null,
+      "exports_usd": 5100000000.0,
+      "imports_usd": 380000000.0,
+      "iso3": "KOR",
+      "partner": "Rep. of Korea",
+      "reexporter_likely": false,
+      "share": 14.0,
+      "status": "X:stored M:stored",
+      "world_top_exporter": true
+     },
+     {
+      "actual_source": {
+       "iso3": "DEU",
+       "partner": "Germany",
+       "share": 34.0
+      },
+      "exports_usd": 210000000.0,
+      "imports_usd": 260000000.0,
+      "iso3": "BEL",
+      "partner": "Belgium",
+      "reexporter_likely": true,
+      "share": 9.0,
+      "status": "X:stored M:stored",
+      "world_top_exporter": false
+     },
+     {
+      "actual_source": {
+       "iso3": "ITA",
+       "partner": "Italy",
+       "share": 29.0
+      },
+      "exports_usd": 40000000.0,
+      "imports_usd": 95000000.0,
+      "iso3": "GRC",
+      "partner": "Greece",
+      "reexporter_likely": true,
+      "share": 6.0,
+      "status": "X:stored M:stored",
+      "world_top_exporter": false
+     }
+    ],
     "key": "supplier_nature",
     "label_ar": "طبيعة المورّدين الأكبر",
     "label_en": "nature of top suppliers",
     "mirrored": false,
-    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
-    "origin": "competitors",
-    "source": "",
-    "status": "missing",
+    "note": "",
+    "origin": "insight",
+    "range": null,
+    "source": "UN Comtrade",
+    "status": "inference",
     "unit": "",
-    "value": null,
-    "year": null
+    "value": "1 منتج و2 معيد تصدير مرجَّح",
+    "year": 2024
    },
    "tariff_applied_pct": {
     "confidence": 0.8,
@@ -926,28 +1014,28 @@
     "label_ar": "الرسوم الجمركية المطبَّقة",
     "label_en": "applied tariff",
     "mirrored": false,
-    "note": "التعريفة المطبَّقة %",
+    "note": "تعريفة مطبَّقة %",
     "origin": "tariffs_agreements",
     "source": "WITS",
     "status": "observed",
     "unit": "%",
-    "value": 15.0,
+    "value": 6.5,
     "year": null
    },
    "top_supplier_share_pct": {
-    "confidence": null,
+    "confidence": 0.8,
     "items": null,
     "key": "top_supplier_share_pct",
     "label_ar": "حصة المورّد الأكبر",
     "label_en": "top supplier share",
     "mirrored": false,
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "note": "حصة أكبر مورد % 2024",
     "origin": "competitors",
-    "source": "",
-    "status": "missing",
+    "source": "UN Comtrade",
+    "status": "observed",
     "unit": "%",
-    "value": null,
-    "year": null
+    "value": 31.0,
+    "year": 2024
    }
   },
   "findings": [],
@@ -972,17 +1060,9 @@
     "key": "saudi_share_pct",
     "label_ar": "الحصة السعودية",
     "label_en": "Saudi share",
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "note": "قرأه المحرّك من نتائج البعثة",
     "source": "",
-    "status": "missing"
-   },
-   {
-    "key": "top_supplier_share_pct",
-    "label_ar": "حصة المورّد الأكبر",
-    "label_en": "top supplier share",
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
-    "source": "",
-    "status": "missing"
+    "status": "weak"
    },
    {
     "key": "border_price_usd_kg",
@@ -1028,6 +1108,14 @@
   "gaps_table": [
    {
     "clipped": false,
+    "full": "الحصة السعودية",
+    "how": "—",
+    "status": "مرصود من مصادر غير رسمية فقط",
+    "status_code": "weak",
+    "what": "الحصة السعودية"
+   },
+   {
+    "clipped": false,
     "full": "تعذّر التصنيف",
     "how": "—",
     "status": "لم يُعرَف بعد",
@@ -1070,36 +1158,26 @@
  "markets": [],
  "note": null,
  "preliminary": true,
- "product": "طحينة",
+ "product": "بولي بروبيلين",
  "provenance": [
   {
-   "attempted": 6,
-   "confidence_max": 0.8,
+   "attempted": 8,
+   "confidence_max": 0.9,
    "confidence_min": 0.8,
-   "contributed": 6,
+   "contributed": 8,
    "failures": [],
    "source": "UN Comtrade",
-   "tail": " — ثقة المرصود 80%",
-   "url": ""
-  },
-  {
-   "attempted": 3,
-   "confidence_max": 0.8,
-   "confidence_min": 0.7,
-   "contributed": 3,
-   "failures": [],
-   "source": "بحث ويب",
-   "tail": " — ثقة المرصود 70–80%",
+   "tail": " — ثقة المرصود 80–90%",
    "url": ""
   },
   {
    "attempted": 2,
-   "confidence_max": 0.8,
-   "confidence_min": 0.7,
+   "confidence_max": 0.6,
+   "confidence_min": 0.6,
    "contributed": 2,
    "failures": [],
-   "source": "World Bank",
-   "tail": " — ثقة المرصود 70–80%",
+   "source": "بحث ويب",
+   "tail": " — ثقة المرصود 60%",
    "url": ""
   },
   {
@@ -1110,6 +1188,16 @@
    "failures": [],
    "source": "WITS",
    "tail": " — ثقة المرصود 80%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.9,
+   "confidence_min": 0.9,
+   "contributed": 1,
+   "failures": [],
+   "source": "Gelir İdaresi Başkanlığı",
+   "tail": " — ثقة المرصود 90%",
    "url": ""
   }
  ],

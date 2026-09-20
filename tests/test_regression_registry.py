@@ -4597,6 +4597,20 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    266: lambda: (
+        _needles("silk_commercial_analysis.py", "def fill_insights",
+                 "def augment_supplier_nature", "def official_vat",
+                 "comtrade_budget_left", "fetch_failed", "no_record")(),
+        _needles("silk_fact_ledger.py", "def graded_entry", "hide_when_missing",
+                 "def _unsourced_channel_claims")(),
+        _absent("silk_economics.py", "الضريبة غير متاحة — صفر معلن",
+                "الضريبة (اعتُمد 0% — قيمتها الفعلية غير متاحة)")(),
+        _needles("silk_economics.py", "official_vat")(),
+        _needles("data/certifications_l1.csv", "source_url", "basis")(),
+        _needles("tests/test_wave_d2_analysis.py",
+                 "def test_a_missing_vat_says_needs_verification_never_a_silent_zero",
+                 "def test_no_false_alarm_and_no_file_term_on_any_codex")(),
+        _needles("tests/test_lessons_enforcement.py", "(266, ")()),
     265: lambda: (
         _needles("silk_fact_ledger.py", "def insight_entry", "KeyRow = namedtuple",
                  "ESTIMATE, INFERENCE")(),

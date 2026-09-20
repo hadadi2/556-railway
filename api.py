@@ -720,6 +720,9 @@ def create_app():
         monthly_capacity: float | None = None
         shipping_per_unit: float | None = None  # افتراض شحن معلَن قابل للتعديل
         certifications: list[str] | None = None  # مثال: HALAL, ISO22000, SFDA
+        # الموجة د-٢: هويةُ المنشأ/الصنف المحلي — سمةُ تمايزٍ تُقارَن بما
+        # يملكه المنافسون (البند ٤). الوصفُ التجاري لمصطلحات البحث يأتي في د-٣.
+        origin_claim: str | None = None
 
     class AnalyzeRequest(BaseModel):
         """طلب تحليل منتج (المسار العادي) — analyze request body.

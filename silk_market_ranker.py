@@ -142,7 +142,7 @@ def top_import_markets(hs_code: str, year: int, n: int = 38) -> list[dict]:
 # التصدير (`flow="X"`, partner=0) — نظيرُ نداء الاستيراد تمامًا، صفر نداء كلود/
 # سقفٍ مدفوع (كومتريد فقط، مقيسٌ بميزانيته). صفر رمز دولة/HS مكتوب صلبًا هنا.
 
-def world_export_totals(hs_code: str, year: int) -> list[dict]:
+def world_export_totals(hs_code: str, year: int, *, on_fetch_failure=()) -> "list | None":
     """كل مصدّري هذا الرمز عالميًا بقيمهم — every world EXPORTER of this HS, ONE call.
 
     نظيرُ `world_import_totals` بتدفّق التصدير (`flow="X"`, كل الدول المبلّغة،
@@ -155,7 +155,12 @@ def world_export_totals(hs_code: str, year: int) -> list[dict]:
     ranking by reporter for a given HS. Returns [{iso3, m49, total_usd}] desc.
     """
     from silk_data_layer import M49_TO_ISO3, comtrade_trade, primary_value
-    recs = comtrade_trade(hs_code, None, year, flow="X", partner=0) or []
+    recs = comtrade_trade(hs_code, None, year, flow="X", partner=0)
+    if recs is None and on_fetch_failure != ():
+        # الموجة د-٢: مستهلكٌ يفرّق تعذُّرَ الجلب (None) عن «لا مصدّرين» يمرّر
+        # قيمتَه؛ المستهلكون القائمون يبقون على `[]` (فشلٌ آمنٌ مفتوح).
+        return on_fetch_failure
+    recs = recs or []
     rows: list[tuple[float, str, str]] = []
     for rec in recs or []:
         m49 = str(rec.get("reporterCode") or "").strip()

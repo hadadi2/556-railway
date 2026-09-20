@@ -159,6 +159,7 @@ def applies_to(row: dict, hs_code: str | None, category: str) -> bool | None:
       `hs_chapter:02,04,16`   فصولُ HS المنطبقة
       `category:food`         فئةُ المرجع
       `needs_evidence`        لا يُعرَف من المدخلات — يُعاد `None`
+      `processing:raw,semi`   درجةُ تصنيع الصنف (الموجة د-٢)
     """
     spec = (row.get("applies_when") or "").strip()
     if not spec:
@@ -177,6 +178,18 @@ def applies_to(row: dict, hs_code: str | None, category: str) -> bool | None:
                 return False
         elif key == "category":
             if (category or "").lower() not in vals:
+                return False
+        elif key == "processing":
+            # الموجة د-٢ (البند ٦): الاشتراطُ يُربَط بدرجة تصنيع الصنف الفعلي
+            # (raw/semi/processed من data/hs_category_l1.csv) لا بالفصل العامّ.
+            try:
+                from silk_ai_judge import processing_level
+                lvl = processing_level(hs_code)
+            except Exception:  # noqa: BLE001
+                lvl = None
+            if lvl is None:
+                return None          # فصلٌ غيرُ مصنَّف ⇒ لا يُخمَّن
+            if lvl not in vals:
                 return False
         else:                        # محدِّدٌ غيرُ معروف ⇒ لا يُخمَّن
             return None
