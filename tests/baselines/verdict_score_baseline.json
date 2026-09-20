@@ -220,6 +220,23 @@
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },
+  "netherlands_honey": {
+    "computed_pillars": null,
+    "engine_confidence": 0.6,
+    "engine_score": 0.725,
+    "engine_verdict": "CONDITIONAL-GO",
+    "insufficient_pillars": null,
+    "pillar_values": {
+      "competition": 0.252,
+      "market": 0.887,
+      "profit": null,
+      "regulatory": 0.423,
+      "risk": null
+    },
+    "view_confidence": 0.55,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
   "nigeria_dates": {
     "computed_pillars": 2,
     "engine_confidence": null,
@@ -251,6 +268,23 @@
       "risk": null
     },
     "view_confidence": null,
+    "view_verdict": "CONDITIONAL-GO",
+    "view_verdict_label": "دخول مشروط"
+  },
+  "turkey_polymers": {
+    "computed_pillars": null,
+    "engine_confidence": 0.6,
+    "engine_score": 0.842,
+    "engine_verdict": "CONDITIONAL-GO",
+    "insufficient_pillars": null,
+    "pillar_values": {
+      "competition": 0.311,
+      "market": 1.0,
+      "profit": null,
+      "regulatory": 0.783,
+      "risk": null
+    },
+    "view_confidence": 0.62,
     "view_verdict": "CONDITIONAL-GO",
     "view_verdict_label": "دخول مشروط"
   },

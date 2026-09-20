@@ -250,7 +250,7 @@
     {
      "is_parameter": true,
      "name": "سعر الرف (+ضريبة 0.0%)",
-     "note": "معلمة معلنة قابلة للتعديل — الضريبة غير متاحة — صفر معلن",
+     "note": "معلمة معلنة قابلة للتعديل — الضريبة تحتاج تحققاً — صفر معلن",
      "value": 441.0
     }
    ]
@@ -577,6 +577,51 @@
     "value": null,
     "year": null
    },
+   "cost_advantage": {
+    "confidence": null,
+    "items": null,
+    "key": "cost_advantage",
+    "label_ar": "ميزة التكلفة",
+    "label_en": "cost advantage",
+    "mirrored": false,
+    "note": "لا يُستنتَج بلا صافي تجارة المدخلات الخام — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "differentiation": {
+    "confidence": null,
+    "items": null,
+    "key": "differentiation",
+    "label_ar": "مصدر التمايز",
+    "label_en": "differentiation",
+    "mirrored": false,
+    "note": "لم تُدخَل سماتُ المنتج (الشهادات، هويةُ المنشأ، الشريحة) في بطاقة المنتج — يُعرَف بإدخالها",
+    "origin": "pricing_scout",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "direct_competitor_share_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "direct_competitor_share_pct",
+    "label_ar": "حصة المنافسين المباشرين",
+    "label_en": "direct competitors' share",
+    "mirrored": false,
+    "note": "لا يُستنتَج بلا طبيعة المورّدين — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "competitors",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
    "hhi": {
     "confidence": 0.8,
     "items": null,
@@ -645,6 +690,21 @@
     "value": 2024,
     "year": null
    },
+   "mandatory_certifications": {
+    "confidence": null,
+    "items": null,
+    "key": "mandatory_certifications",
+    "label_ar": "الشهادات الإلزامية بمصدر رسمي",
+    "label_en": "mandatory certifications (official source)",
+    "mirrored": false,
+    "note": "لا صفَّ رسمياً لهذا السوق والفئة في data/certifications_l1.csv — تُكتب الشهاداتُ «مطلوبة تجارياً» لا «إلزامية»",
+    "origin": "customs_requirements",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
    "market_imports_usd": {
     "confidence": 0.8,
     "items": null,
@@ -705,6 +765,21 @@
     "value": null,
     "year": null
    },
+   "price_evidence_quality": {
+    "confidence": 0.9,
+    "items": null,
+    "key": "price_evidence_quality",
+    "label_ar": "توثيق أسعار المنافسين",
+    "label_en": "competitor price evidence",
+    "mirrored": false,
+    "note": "0 سطر سعر مكتمل (متجر/موقع محدّد + تاريخ + عبوة + عملة) من 1 — أقلّ من 3 = ضعيف التوثيق",
+    "origin": "pricing_scout",
+    "source": "بعثة الأسعار",
+    "status": "weak",
+    "unit": "",
+    "value": "0 من 1",
+    "year": null
+   },
    "requirements_count": {
     "confidence": null,
     "items": null,
@@ -720,6 +795,21 @@
     "value": null,
     "year": null
    },
+   "saudi_raw_input_balance": {
+    "confidence": null,
+    "items": null,
+    "key": "saudi_raw_input_balance",
+    "label_ar": "صافي تجارة السعودية في المدخلات الخام",
+    "label_en": "Saudi net trade in raw inputs",
+    "mirrored": false,
+    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "USD",
+    "value": null,
+    "year": null
+   },
    "saudi_share_pct": {
     "confidence": null,
     "items": null,
@@ -732,6 +822,21 @@
     "source": "",
     "status": "missing",
     "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "supplier_nature": {
+    "confidence": null,
+    "items": null,
+    "key": "supplier_nature",
+    "label_ar": "طبيعة المورّدين الأكبر",
+    "label_en": "nature of top suppliers",
+    "mirrored": false,
+    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "competitors",
+    "source": "",
+    "status": "missing",
+    "unit": "",
     "value": null,
     "year": null
    },
@@ -867,7 +972,14 @@
    "open_conditions",
    "requirements_count",
    "competitor_prices",
-   "blocking_condition"
+   "blocking_condition",
+   "saudi_raw_input_balance",
+   "cost_advantage",
+   "supplier_nature",
+   "direct_competitor_share_pct",
+   "differentiation",
+   "price_evidence_quality",
+   "mandatory_certifications"
   ],
   "repairs": [],
   "schema": "silk.ledger/v1",

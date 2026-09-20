@@ -4005,7 +4005,9 @@ def _economics_view_safe(dr: dict, result: dict) -> dict | None:
     try:
         from silk_economics import economics_view
         eco = economics_view(dr, product_card=result.get("product_card"),
-                             category=str(result.get("product") or ""))
+                             category=str(result.get("product") or ""),
+                             market_iso3=str((result.get("market") or {}).get("iso3") or ""),
+                             hs_code=result.get("hs_code"))
         # تطهير نصوص المرساة قبل أي سطح عرض (عائلة LESSONS 11/57): ملاحظة
         # البعثة الخام تصل حقل source — تمرّ بالمُطهِّر كسائر الملاحظات.
         anchor = (eco or {}).get("anchor_price")

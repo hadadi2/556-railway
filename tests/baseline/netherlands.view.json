@@ -170,33 +170,33 @@
     "currency": "€",
     "formula": "EXW_max = سعر الرف ÷ [(1+شحن)(1+تعرفة)(1+هامش الموزّع)(1+هامش التجزئة)(1+ضريبة)]",
     "headline_scenario": "متوسط",
-    "max_exw": 4.4583,
+    "max_exw": 4.0902,
     "parameters": [
      "التعرفة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
-     "الضريبة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
      "نسبة الشحن (معلمة معلنة قابلة للتعديل)",
      "هامش الموزّع (معلمة معلنة قابلة للتعديل)",
-     "هامش التجزئة (معلمة معلنة قابلة للتعديل)"
+     "هامش التجزئة (معلمة معلنة قابلة للتعديل)",
+     "الضريبة 9% من مصدر رسمي: Belastingdienst (https://www.belastingdienst.nl/)"
     ],
     "scenarios": [
      {
       "distributor_pct": 10.0,
       "freight_pct": 5.0,
-      "max_exw": 5.639,
+      "max_exw": 5.1734,
       "retailer_pct": 15.0,
       "scenario": "منخفض"
      },
      {
       "distributor_pct": 20.0,
       "freight_pct": 12.0,
-      "max_exw": 4.4583,
+      "max_exw": 4.0902,
       "retailer_pct": 25.0,
       "scenario": "متوسط"
      },
      {
       "distributor_pct": 30.0,
       "freight_pct": 25.0,
-      "max_exw": 3.2923,
+      "max_exw": 3.0205,
       "retailer_pct": 40.0,
       "scenario": "مرتفع"
      }
@@ -448,6 +448,51 @@
     "value": null,
     "year": null
    },
+   "cost_advantage": {
+    "confidence": null,
+    "items": null,
+    "key": "cost_advantage",
+    "label_ar": "ميزة التكلفة",
+    "label_en": "cost advantage",
+    "mirrored": false,
+    "note": "لا يُستنتَج بلا صافي تجارة المدخلات الخام — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "differentiation": {
+    "confidence": null,
+    "items": null,
+    "key": "differentiation",
+    "label_ar": "مصدر التمايز",
+    "label_en": "differentiation",
+    "mirrored": false,
+    "note": "لم تُدخَل سماتُ المنتج (الشهادات، هويةُ المنشأ، الشريحة) في بطاقة المنتج — يُعرَف بإدخالها",
+    "origin": "pricing_scout",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
+   },
+   "direct_competitor_share_pct": {
+    "confidence": null,
+    "items": null,
+    "key": "direct_competitor_share_pct",
+    "label_ar": "حصة المنافسين المباشرين",
+    "label_en": "direct competitors' share",
+    "mirrored": false,
+    "note": "لا يُستنتَج بلا طبيعة المورّدين — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "competitors",
+    "source": "",
+    "status": "missing",
+    "unit": "%",
+    "value": null,
+    "year": null
+   },
    "hhi": {
     "confidence": 0.8,
     "items": null,
@@ -516,6 +561,27 @@
     "value": 2023,
     "year": null
    },
+   "mandatory_certifications": {
+    "confidence": 0.9,
+    "items": [
+     {
+      "authority": "المفوضية الأوروبية EUR-Lex",
+      "scheme": "EU Food Hygiene Regulation (EC) 852/2004 — منشأة معتمدة",
+      "source_url": "https://eur-lex.europa.eu/eli/reg/2004/852/oj"
+     }
+    ],
+    "key": "mandatory_certifications",
+    "label_ar": "الشهادات الإلزامية بمصدر رسمي",
+    "label_en": "mandatory certifications (official source)",
+    "mirrored": false,
+    "note": "شهاداتُ مطابقةٍ بمصدرٍ رسمي لهذا السوق والفئة",
+    "origin": "customs_requirements",
+    "source": "المفوضية الأوروبية EUR-Lex",
+    "status": "observed",
+    "unit": "",
+    "value": "EU Food Hygiene Regulation (EC) 852/2004 — منشأة معتمدة",
+    "year": null
+   },
    "market_imports_usd": {
     "confidence": 0.8,
     "items": null,
@@ -576,6 +642,21 @@
     "value": null,
     "year": null
    },
+   "price_evidence_quality": {
+    "confidence": 0.9,
+    "items": null,
+    "key": "price_evidence_quality",
+    "label_ar": "توثيق أسعار المنافسين",
+    "label_en": "competitor price evidence",
+    "mirrored": false,
+    "note": "0 سطر سعر مكتمل (متجر/موقع محدّد + تاريخ + عبوة + عملة) من 1 — أقلّ من 3 = ضعيف التوثيق",
+    "origin": "pricing_scout",
+    "source": "بعثة الأسعار",
+    "status": "weak",
+    "unit": "",
+    "value": "0 من 1",
+    "year": null
+   },
    "requirements_count": {
     "confidence": null,
     "items": null,
@@ -591,6 +672,21 @@
     "value": null,
     "year": null
    },
+   "saudi_raw_input_balance": {
+    "confidence": null,
+    "items": null,
+    "key": "saudi_raw_input_balance",
+    "label_ar": "صافي تجارة السعودية في المدخلات الخام",
+    "label_en": "Saudi net trade in raw inputs",
+    "mirrored": false,
+    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "trade_flow",
+    "source": "",
+    "status": "missing",
+    "unit": "USD",
+    "value": null,
+    "year": null
+   },
    "saudi_share_pct": {
     "confidence": null,
     "items": null,
@@ -603,6 +699,21 @@
     "source": "",
     "status": "missing",
     "unit": "%",
+    "value": null,
+    "year": null
+   },
+   "supplier_nature": {
+    "confidence": null,
+    "items": null,
+    "key": "supplier_nature",
+    "label_ar": "طبيعة المورّدين الأكبر",
+    "label_en": "nature of top suppliers",
+    "mirrored": false,
+    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
+    "origin": "competitors",
+    "source": "",
+    "status": "missing",
+    "unit": "",
     "value": null,
     "year": null
    },
@@ -746,7 +857,14 @@
    "open_conditions",
    "requirements_count",
    "competitor_prices",
-   "blocking_condition"
+   "blocking_condition",
+   "saudi_raw_input_balance",
+   "cost_advantage",
+   "supplier_nature",
+   "direct_competitor_share_pct",
+   "differentiation",
+   "price_evidence_quality",
+   "mandatory_certifications"
   ],
   "repairs": [],
   "schema": "silk.ledger/v1",

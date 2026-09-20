@@ -692,6 +692,31 @@ def _augment_risk_news_fx(report: AgentReport, iso3: str) -> None:
         data_year=max(y for y, _ in series)))
 
 
+def _augment_supplier_nature(report: AgentReport, hs_code: str, market,
+                             spent: int = 0) -> None:
+    """غلافٌ رقيق — الجسمُ في `silk_commercial_analysis` (الموجة د-٢)."""
+    import silk_commercial_analysis as _CA
+    _CA.augment_supplier_nature(report, hs_code, market, spent=spent)
+
+
+def _commercial_calls_used(report: "AgentReport | None") -> int:
+    """نداءاتُ كومتريد التي أنفقتها إشارةُ الطبقة التجارية المخزَّنة في تقريرٍ."""
+    for dp in getattr(report, "findings", None) or []:
+        v = getattr(dp, "value", None)
+        if isinstance(v, dict) and v.get("kind") in ("raw_input_trade", "supplier_nature"):
+            try:
+                return int(v.get("calls_used") or 0)
+            except (TypeError, ValueError):
+                return 0
+    return 0
+
+
+def _augment_raw_input_trade(report: AgentReport, hs_code: str) -> None:
+    """غلافٌ رقيق — الجسمُ في `silk_commercial_analysis` (الموجة د-٢)."""
+    import silk_commercial_analysis as _CA
+    _CA.augment_raw_input_trade(report, hs_code)
+
+
 def _augment_competitors_structured(report: AgentReport, hs_code: str,
                                     market) -> None:
     """ألحِق ملخّصَ المنافسين المُهيكل بنتائج البعثة إن غاب (البند 1).
@@ -865,10 +890,24 @@ def run_all_missions(market: MarketRef, product: str = "",
     # بنمط D3/WGI: النداء خلف كاش الطلبات الدافئ من تشغيل البعثة نفسها —
     # تكلفة عملياً صفر؛ فشلُه لا يمسّ التشغيلة (فجوة معلنة كما كانت).
     from silk_request_identity import fingerprint
-    before_augment = {key: fingerprint(reports[key]) for key in ("competitors", "risk_news") if key in reports}
+    before_augment = {key: fingerprint(reports[key])
+                      for key in ("competitors", "risk_news", "trade_flow") if key in reports}
     if hs_code and "competitors" in reports:
         _bounded_augment("competitors_structured", reports["competitors"],
                          _augment_competitors_structured, reports["competitors"], hs_code, market)
+    # الموجة د-٢: إشارتان مُهيكَلتان تُخزَّنان اكتشافاتٍ فيقرؤها السجلُّ بلا
+    # شبكة. ميزانيةُ التشغيلة واحدة (`SILK_COMMERCIAL_MAX_CALLS` ≤ ١٥): المدخلاتُ
+    # الخام أوّلاً (≤ ٦ نداءات، حتمية) ثمّ المورّدون بما بقي؛ واليوميةُ تُستشار
+    # قبل كلّ نداء، والمخزنُ يخدم ما بعد أوّل تشغيل.
+    if hs_code and "trade_flow" in reports:
+        # البند ١: صافي تجارة السعودية في المدخلات الخام لفصل المنتج.
+        _bounded_augment("commercial_raw_inputs", reports["trade_flow"],
+                         _augment_raw_input_trade, reports["trade_flow"], hs_code)
+    if hs_code and "competitors" in reports:
+        # البند ٢: طبيعةُ المورّدين الأكبر — منتجٌ أم معيدُ تصدير.
+        _bounded_augment("commercial_supplier_nature", reports["competitors"],
+                         _augment_supplier_nature, reports["competitors"], hs_code, market,
+                         _commercial_calls_used(reports.get("trade_flow")))
     if "risk_news" in reports:
         _bounded_augment("risk_news_wgi", reports["risk_news"],
                          _augment_risk_news_wgi, reports["risk_news"], getattr(market, "iso3", ""))

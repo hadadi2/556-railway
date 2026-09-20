@@ -137,7 +137,10 @@ def test_derived_skip_sets_match_the_behaviour_that_was_hand_listed():
     hidden = {r.key for r in L.KEYS if r.writer_hidden}
     assert hidden == {"competitor_prices"}
     unlisted = {r.key for r in L.KEYS if not r.gap_listed}
-    assert unlisted == {"blocking_condition", "imports_latest_year"}
+    # الموجة د-٢: مفاتيحُ التحليل التجاري تُقال في «أسئلة المصدّر» لا في
+    # قائمة الفجوات (hide_when_missing) — فلا تدخلها.
+    d2 = {r.key for r in L.KEYS if r.hide_when_missing}
+    assert unlisted == {"blocking_condition", "imports_latest_year"} | d2
 
 
 def test_an_insight_key_ships_with_no_recognition_words():

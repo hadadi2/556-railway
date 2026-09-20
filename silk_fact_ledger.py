@@ -66,7 +66,8 @@ KeyRow = namedtuple("KeyRow", (
     "engine_computed",   # يحسبه المحرّك حتمياً — لا درجةَ مصدرٍ له
     "writer_hidden",     # لا يُعرَض على الكاتب في [LEDGER]
     "gap_listed",        # يدخل قائمةَ الفجوات حين يغيب
-), defaults=("fact", False, False, True, False, False, True))
+    "hide_when_missing", # لا يُعرَض على الكاتب حين يغيب (مفاتيحُ التحليل التجاري)
+), defaults=("fact", False, False, True, False, False, True, False))
 
 
 def _fact(key, label_ar, label_en, unit, words=(), **flags):
@@ -117,6 +118,30 @@ KEYS: tuple = (
           ("الشرط الحاجب", "blocking condition"), mandatory=True,
           self_describing=True, numeric_check=False, engine_computed=True,
           gap_listed=False),
+    # ── الموجة د-٢: مفاتيحُ التحليل التجاري (`silk_commercial_analysis`) —
+    #    بلا كلماتِ تعرّفٍ (لا مسحَ للنثر)، ولا تدخل قائمةَ الفجوات، وتُخفى عن
+    #    الكاتب حين تغيب (تُقال في «أسئلة المصدّر» في د-٤).
+    _fact("saudi_raw_input_balance", "صافي تجارة السعودية في المدخلات الخام",
+          "Saudi net trade in raw inputs", "USD", numeric_check=False,
+          gap_listed=False, hide_when_missing=True),
+    _fact("cost_advantage", "ميزة التكلفة", "cost advantage", "",
+          kind="insight", numeric_check=False, gap_listed=False,
+          hide_when_missing=True),
+    _fact("supplier_nature", "طبيعة المورّدين الأكبر", "nature of top suppliers",
+          "", kind="insight", numeric_check=False, gap_listed=False,
+          hide_when_missing=True),
+    _fact("direct_competitor_share_pct", "حصة المنافسين المباشرين",
+          "direct competitors' share", "%", kind="insight",
+          numeric_check=False, gap_listed=False, hide_when_missing=True),
+    _fact("differentiation", "مصدر التمايز", "differentiation", "",
+          kind="insight", numeric_check=False, gap_listed=False,
+          hide_when_missing=True),
+    _fact("price_evidence_quality", "توثيق أسعار المنافسين",
+          "competitor price evidence", "", numeric_check=False,
+          gap_listed=False, hide_when_missing=True),
+    _fact("mandatory_certifications", "الشهادات الإلزامية بمصدر رسمي",
+          "mandatory certifications (official source)", "",
+          numeric_check=False, gap_listed=False, hide_when_missing=True),
 )
 _KEY_ROWS = {r.key: r for r in KEYS}
 
@@ -221,10 +246,23 @@ def _entry(key: str, value=None, *, source: str = "", confidence=None,
             "origin": origin}
 
 
+def graded_entry(key: str, value, status: str, *, source: str = "",
+                 note: str = "", year=None, origin: str = "",
+                 items=None) -> dict:
+    """بندُ حقيقةٍ درجتُها **محسوبةٌ بقاعدةٍ معلنة** لا من درجة المصدر (مثل
+    توثيق الأسعار: أقلّ من ٣ سطور مكتملة = ضعيف). لا يقبل إلا مرصود/ضعيف."""
+    if status not in (OBSERVED, WEAK):
+        raise ValueError("graded_entry accepts observed/weak only")
+    e = _entry(key, value, source=source, note=note, year=year, origin=origin,
+               items=items, confidence=0.9)
+    e["status"] = status
+    return e
+
+
 def insight_entry(key: str, value, *, grade: str, assumption: str = "",
                   range=None, basis=(), flip_if: str = "", source: str = "",
                   note: str = "", unit: str | None = None, year=None,
-                  how_to_close: str = "") -> dict:
+                  how_to_close: str = "", items=None) -> dict:
     """بندُ استنتاجٍ (الموجة د): تقديرٌ أو استنتاجٌ **يُصرِّح** بدرجته — عكسُ
     `_entry` التي تحسب الدرجةَ من المصدر. قيدُ المالك بنيويّ: لا تقديرَ بلا
     افتراضٍ معلنٍ ونطاق، ولا استنتاجَ بلا ما يستند إليه (يرفع ValueError).
@@ -249,7 +287,7 @@ def insight_entry(key: str, value, *, grade: str, assumption: str = "",
     row = _KEY_ROWS[key]
     return {"key": key, "label_ar": row.label_ar, "label_en": row.label_en,
             "unit": unit if unit is not None else row.unit,
-            "status": grade, "value": value, "items": None,
+            "status": grade, "value": value, "items": items,
             "source": str(source or "حساب من السجلّ"), "confidence": None,
             "note": str(note or ""), "year": year, "mirrored": False,
             "origin": "insight", "assumption": str(assumption or ""),
@@ -308,7 +346,7 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
 
     try:
         if dr:
-            _fill_from_research(dr, put)
+            _fill_from_research(dr, put, result)
         else:
             _fill_from_analyze(row, put)
     except Exception:  # noqa: BLE001 — عطل استخراج = فجوات معلنة لا كسر
@@ -330,7 +368,7 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
             "repairs": [], "findings": [], "stale": []}
 
 
-def _fill_from_research(dr: dict, put) -> None:
+def _fill_from_research(dr: dict, put, result: dict | None = None) -> None:
     """المسار العميق — **قارئٌ واحد**: قيمُ المفاتيح من `build_pillar_inputs`
     نفسِه الذي يقرؤه محرّكُ القرار، لا من مستخلِصٍ ثانٍ.
 
@@ -371,6 +409,15 @@ def _fill_from_research(dr: dict, put) -> None:
                    **_attribution(missions, mission, metric, value)))
     _fill_series(missions, put)
     put(_entry("population", None, note="لا يُقرأ عدد السكان من البعثات"))
+    # الموجة د-٢: استنتاجاتُ التحليل التجاري من الاكتشافات المخزَّنة (نقيّة).
+    try:
+        import silk_commercial_analysis as _CA
+        ctx = result or {}
+        _CA.fill_insights(dr, put, hs_code=ctx.get("hs_code"),
+                          market_iso3=str((ctx.get("market") or {}).get("iso3") or ""),
+                          product_card=ctx.get("product_card"))
+    except Exception as e:  # noqa: BLE001 — استنتاجٌ متعذّر = فجوةٌ معلنة
+        put(_entry("cost_advantage", None, note=f"تعذّر التحليل التجاري: {e}"))
 
 
 def _attribution(missions: dict, mission: str, metric: str,
@@ -685,7 +732,8 @@ def facts_block(ledger: dict, lang: str = "ar") -> str:
         st = render_status(e, lang)
         if key in MANDATORY_TOKEN_KEYS:
             lines.append(f"- {{{{{key}}}}} = {label} ({st}) — اكتب الرمز لا القيمة")
-        elif _KEY_ROWS[key].writer_hidden:
+        elif _KEY_ROWS[key].writer_hidden or (
+                _KEY_ROWS[key].hide_when_missing and e["status"] == MISSING):
             continue
         else:
             val = render_value(e, lang) if e["status"] != MISSING else st
@@ -864,6 +912,10 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
             issues.append(f"رمز غير مسرود في السجلّ «{{{{{key}}}}}» — احذفه أو "
                           "استعمل رمزاً من [LEDGER]")
     stripped = TOKEN_RE.sub(" ", draft)
+    for sent in _unsourced_channel_claims(stripped):
+        issues.append("ادّعاءٌ عن القناة (هامش/سهولة تعاقد) بلا مصدرٍ ولا افتراض — "
+                      "اذكر مصدره، أو قدّمه تقديراً بافتراضه، أو احذفه: «"
+                      f"{sent[:160]}»")
     for key, e in entries.items():
         row = _KEY_ROWS[key]
         words = row.words
@@ -921,6 +973,36 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
                                   f"صياغة الجملة بالقيمة الصحيحة: «{sent}»")
                     break
     return issues
+
+
+#: البند ٧ (الموجة د-٢): ادّعاءٌ عن هامش قناةٍ أو سهولةِ تعاقدٍ يحتاج مصدراً أو
+#: يُقدَّم تقديراً بافتراضه، وإلا يُعاد للكاتب ثمّ يُحذَف عند نفاد الميزانية.
+#: مفرداتُ المالك حرفياً («هامش القناة»، «سهولة التعاقد»، «الموزّعون يقبلون») —
+#: **لا** «هامش الموزّع/التجزئة» لأنّهما معلمتا المحرّك المعلنتان اللتان يُؤمَر
+#: الكاتبُ بذكرهما (مراجعةٌ ذاتية §58: كانتا تُحذَفان من جملة الافتراض نفسِها).
+_CHANNEL_CLAIM_RE = re.compile(
+    r"هامش(?:ات|ه|ها)?\s+(?:ال)?(?:قناة|قنوات|وسطاء)|سهولة\s+التعاقد|"
+    r"يقبل(?:ون)?\s+الموزّع|الموزّعون\s+يقبلون|عقود\s+(?:ال)?موزّعين\s+سهلة|"
+    r"channel margins?|easy to contract|distributors readily accept", re.IGNORECASE)
+#: الجملةُ هنا تنتهي بنقطةٍ لا بفاصلةٍ منقوطة — «بافتراض شحن 12%؛ هامش…» جملةٌ
+#: واحدةٌ افتراضُها في صدرها.
+_CLAIM_SENT_RE = re.compile(r"(?<=[.!؟\n])")
+_SOURCED_RE = re.compile(r"وفق|بحسب|حسب\s|المصدر|استناداً|كما ورد|according to|"
+                         r"\bper\b|source|reported by", re.IGNORECASE)
+_ESTIMATED_RE = re.compile(r"نقدّر|نقدر|بافتراض|إذا افترضنا|تقديرياً|على فرض|"
+                           r"estimate|assuming|roughly", re.IGNORECASE)
+
+
+def _unsourced_channel_claims(text: str) -> list:
+    """الجملُ التي تدّعي عن القناة بلا مصدرٍ ولا افتراض."""
+    out = []
+    for sent in _CLAIM_SENT_RE.split(text or ""):
+        if sent.lstrip().startswith("|"):
+            continue                      # صفوفُ الجداول عناوينُ لا ادّعاءات
+        if _CHANNEL_CLAIM_RE.search(sent) and not _SOURCED_RE.search(sent) \
+                and not _ESTIMATED_RE.search(sent):
+            out.append(sent.strip())
+    return out
 
 
 #: علاماتُ النطاق في الجملة — وجودُ إحداها قربَ التقدير يعني أنّه كُتب نطاقاً.
@@ -1159,9 +1241,16 @@ def repair(text: str, ledger: dict, lang: str = "ar") -> tuple:
     oc = entries.get("open_conditions") or {}
     actual = int(oc.get("value") or 0)
     out: list = []
+    claims = set(_unsourced_channel_claims(text))
     for part in _SENT_SPLIT_RE.split(text):
         tail = "\n" if part.endswith("\n") else ""
         fixed = part
+        if claims and part.strip() in claims:
+            # البند ٧: بلا مصدرٍ ولا افتراض ⇒ تُحذَف الجملةُ لا تُعدَّل.
+            repairs.append({"kind": "channel_claim", "before": part.strip(),
+                            "after": ""})
+            out.append(tail)
+            continue
         if oc and _sentence_states_wrong_count(part, actual):
             new = render_sentence(oc, lang)
             repairs.append({"kind": "open_conditions_count",

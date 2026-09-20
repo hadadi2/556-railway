@@ -318,7 +318,7 @@ def _item(name: str, value, is_parameter: bool, note: str) -> dict:
 
 def margin_waterfall(exw: float, *, freight, tariff_pct, vat_pct,
                      distributor_margin_pct, retailer_margin_pct,
-                     currency: str = "USD") -> list[dict]:
+                     currency: str = "USD", vat_note: str = "") -> list[dict]:
     """شلال الهوامش: من سعر المصنع حتى سعر الرف — كل مرحلة سطر بقيمته
     وملاحظته؛ المدخل None = يُحسب بالسيناريو المتوسط ويُوسم معلمة."""
     def p(val, key):
@@ -348,8 +348,8 @@ def margin_waterfall(exw: float, *, freight, tariff_pct, vat_pct,
         _item(f"سعر التجزئة قبل الضريبة (+{ret:.0f}%)", round(retail_net, 3),
               ret_param, "هامش التجزئة"),
         _item(f"سعر الرف (+ضريبة {v:.1f}%)", round(shelf, 3),
-              vat_pct is None, "الضريبة غير متاحة — صفر معلن"
-              if vat_pct is None else "الضريبة مرصودة"),
+              vat_pct is None, "الضريبة تحتاج تحققاً — صفر معلن"
+              if vat_pct is None else (vat_note or "الضريبة مرصودة")),
     ]
     return rows
 
@@ -370,7 +370,7 @@ def reverse_solve_max_exw(shelf_price: float, *, tariff_pct, vat_pct,
     if tariff_pct is None:
         params.append("التعرفة (اعتُمد 0% — قيمتها الفعلية غير متاحة)")
     if vat_pct is None:
-        params.append("الضريبة (اعتُمد 0% — قيمتها الفعلية غير متاحة)")
+        params.append("الضريبة (اعتُمد 0% — تحتاج تحققاً)")
 
     def solve(fr_pct: float, dist_pct: float, ret_pct: float) -> float:
         denom = ((1 + fr_pct / 100.0) * (1 + t) * (1 + dist_pct / 100.0)
@@ -1111,7 +1111,8 @@ def _num_or_none(v):
 
 
 def economics_view(dr: dict, product_card: dict | None = None,
-                   category: str = "") -> dict:
+                   category: str = "", market_iso3: str = "",
+                   hs_code: object = None) -> dict:
     """قسم الاقتصاد الكامل (§5.4) من نتائج البعثات + بطاقة المنتج إن وُجدت.
     حتمي، صفر شبكة؛ كل ناقص معلمة معلنة أو فجوة مسماة — لا «تعذّر التسعير»."""
     missions = dr.get("missions") or {}
@@ -1185,6 +1186,19 @@ def economics_view(dr: dict, product_card: dict | None = None,
     if tariff is None:
         gaps.append("التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي")
     vat, _ = _mission_numeric(dr, "tariffs_agreements", _VAT_WORDS, 0.0, 50.0)
+    vat_note = ""
+    if vat is None:
+        # الموجة د-٢ (البند ٦): الضريبةُ من صفٍّ **رسمي** في
+        # data/certifications_l1.csv للصنف في السوق — وإلا «تحتاج تحققاً».
+        # مصدرُ الصفّ يرافق الرقمَ حيثما طُبع (لا رقمَ بلا سطر مصدر).
+        try:
+            import silk_commercial_analysis as _CA
+            vat, _vrow = _CA.official_vat(market_iso3, hs_code)
+            if vat is not None and _vrow:
+                vat_note = (f"الضريبة {vat:g}% من مصدر رسمي: "
+                            f"{_vrow.get('authority') or ''} ({_vrow.get('source_url') or ''})")
+        except Exception:  # noqa: BLE001
+            vat = None
 
     # البند 5 (أمر إصلاح المحرّك): لا رقمَ مشتقاً من مدخلاتٍ غير مرصودة.
     # أساسُ الكتلة (كجم/لتر) والعملةُ **مدخلا حقيقة** لا معلمتا افتراض —
@@ -1219,6 +1233,8 @@ def economics_view(dr: dict, product_card: dict | None = None,
                                             tariff_pct=tariff, vat_pct=vat)
             reverse["unit"] = basis_unit
             reverse["currency"] = _cur
+            if vat_note:
+                reverse["parameters"].append(vat_note)
         else:
             gaps.append("أقصى سعر مصنع (EXW) غير محسوب — الناقص: "
                         + "؛ ".join(_missing))
@@ -1287,7 +1303,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
     if exw:
         waterfall = margin_waterfall(exw, freight=None, tariff_pct=tariff,
                                      vat_pct=vat, distributor_margin_pct=None,
-                                     retailer_margin_pct=None)
+                                     retailer_margin_pct=None, vat_note=vat_note)
     else:
         # لا إحالة إلى «الحل العكسي أعلاه» حين يكون معلَّقاً — إحالةٌ معلّقة
         # من عائلة `dangling_cross_reference` نفسها (مراجعة §58، البند 5).

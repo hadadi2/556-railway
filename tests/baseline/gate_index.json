@@ -199,6 +199,20 @@
   "skipped_checks": [],
   "verdict": "PASS-WITH-WARNINGS"
  },
+ "netherlands_honey": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "decision_number_format_drift",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "sections_recognized": "11/11",
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
+ },
  "nigeria_dates": {
   "findings": [
    "agent_empty",
@@ -230,6 +244,19 @@
   "sections_recognized": "4/11",
   "skipped_checks": [],
   "verdict": "FAIL"
+ },
+ "turkey_polymers": {
+  "findings": [
+   "access_timeline_missing",
+   "agent_empty",
+   "agent_empty",
+   "curated_reference_not_consulted",
+   "markdown_artifacts"
+  ],
+  "language_quality": [],
+  "sections_recognized": "11/11",
+  "skipped_checks": [],
+  "verdict": "PASS-WITH-WARNINGS"
  },
  "yemen": {
   "findings": [

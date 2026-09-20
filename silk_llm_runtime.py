@@ -286,7 +286,9 @@ def competition_summary_findings(hs: str, market, year: "int | None" = None,
     summary = DataPoint(
         {"year": y, "hhi": hhi, "supplier_count": len(comps),
          "top_suppliers": [{"partner": c.value["partner"],
-                            "share": c.value["share"]} for c in top]},
+                            "share": c.value["share"],
+                            # الموجة د-٢: رمزُ الشريك لطبقة التحليل التجاري
+                            "code": c.value.get("code")} for c in top]},
         "UN Comtrade (مرآة)" if mirrored else "UN Comtrade",
         0.6 if mirrored else 0.9,
         f"HS{hs} مورّدو {market.name_en} {y}: {len(comps)} دولة مرصودة، "

@@ -68,6 +68,12 @@ CANONICAL_BLOBS = {
     "qatar_peanut_butter": ("canonical_qatar_peanut_butter",
                             "qatar_research_blob"),
     "yemen": ("canonical_yemen", "yemen_research_blob"),
+    # الموجة د-٢: فئةٌ صناعية (صفرُ ذكرٍ ديني، ميزةُ تكلفةٍ من المدخلات)
+    # وسوقٌ أكبرُ مورّديه معيدُ تصدير — بالاكتشافات المخزَّنة (لا شبكة).
+    "turkey_polymers": ("canonical_turkey_polymers",
+                        "turkey_polymers_research_blob"),
+    "netherlands_honey": ("canonical_netherlands_honey",
+                          "netherlands_honey_research_blob"),
 }
 
 
