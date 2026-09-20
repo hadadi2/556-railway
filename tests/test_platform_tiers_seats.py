@@ -73,7 +73,7 @@ def test_entitlements_endpoint_reports_limits_and_usage(monkeypatch):
     tok = login(cl, f["email"], f["password"])
     body = cl.get("/platform/entitlements", headers=hdr(tok)).json()
     assert body["tier"] == "gold"
-    assert body["studies_limit"] == 6 and body["studies_period"] == "month"
+    assert body["studies_limit"] == 10 and body["studies_period"] == "month"
     assert body["dashboard"] == "full"
     assert body["export"] is True and body["api_access"] is True
 
@@ -204,7 +204,7 @@ def test_tier_change_does_not_reset_usage_counters(monkeypatch):
             headers=hdr(admin), json={"tier": "gold"})
     owner = login(cl, f["email"], f["password"])
     body = cl.get("/platform/entitlements", headers=hdr(owner)).json()
-    assert body["studies_limit"] == 6 and body["studies_used"] == 2
+    assert body["studies_limit"] == 10 and body["studies_used"] == 2
 
 
 def test_admin_accounts_listing_shows_tier_and_quota(monkeypatch):

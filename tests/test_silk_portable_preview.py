@@ -55,7 +55,10 @@ def test_export_contains_readable_cards_without_js_and_does_not_rewrite_sources(
             assert f'>{tier["price"]:,}<' in static_markup
             assert f'{tier["price_annual"]:,}' in static_markup
     assert 'دراستان شهرياً' in static_markup
-    assert '6 دراسات شهرياً' in static_markup
+    # الذهبية ٦ ← ١٠ (قرار المالك 2026-09-20). القاعدةُ العربية في
+    # `web/marketing.js:99`: ٣–١٠ ⇒ «دراسات»، فـ١٠ تبقى بصيغة الجمع.
+    assert '10 دراسات شهرياً' in static_markup
+    assert '6 دراسات شهرياً' not in static_markup
     assert '15 دراسة شهرياً' not in static_markup
     assert '2 دراسات' not in static_markup
     assert all(src.startswith('data:image/png;base64,') for src in document.images)

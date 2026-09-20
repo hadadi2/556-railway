@@ -281,7 +281,10 @@ async function main() {
     if (!before) fail("plans_table_rows", "صفّ الباقة الذهبية غائب");
     if (before[5] !== "الملف")
       fail("plans_source_before", `مصدر الصفّ قبل التعديل: ${before[5]}`);
-    if (before[3] !== "6")
+    // الثابتُ قبل أيّ تجاوز: ٦ ← ١٠ (قرار المالك 2026-09-20،
+    // `silk_platform/models.py`). و٩ أدناه رقمُ تجاوزٍ اختباريّ لا علاقة له
+    // بالثابت — الغرضُ إثباتُ أنّ صفَّ `tier_settings` يفوز ويُوسَم «معدَّل».
+    if (before[3] !== "10")
       fail("plans_quota_before", `حصّة الذهبية قبل التعديل: ${before[3]}`);
     await page.click('#tiersBody tr:nth-child(3) button[data-act="plan"]');
     await page.waitForSelector(".veil .dlg", { timeout: 5000 });

@@ -70,7 +70,14 @@ TIER_LIMITS: dict[Tier, TierLimits] = {
         white_label=False, export=False, price_cents_per_year=100_000,   # $1,000
         storage_bytes=1024 * 1024 * 1024),                               #   1 GB
     Tier.GOLD: TierLimits(
-        monthly_studies=6, lifetime_studies=0,
+        # ٦ ← ١٠ (قرار المالك 2026-09-20). الحصّةُ خاصيّةُ **باقة** لا حساب:
+        # لا مفتاحَ في الشيفرة يرفع سقفَ حسابٍ واحد، و`per_user_monthly_studies`
+        # يُضيِّق ولا يرفع (`quota.py`) — فالرفعُ يسري على كلّ حسابٍ ذهبيّ معاً.
+        # وهذا الثابتُ **لا يحكم وحدَه**: `tier_config.effective_limits` يفضّل
+        # صفَّ `tier_settings` عليه، والجدولُ مفتاحُه **الباقة** فصفٌّ واحد
+        # يجمّد كلَّ الحسابات الذهبية. لذلك يرافق الرفعَ ترحيلُ
+        # `024_gold_monthly_studies_10.sql` (§58: وإلا نُشر بلا أثر).
+        monthly_studies=10, lifetime_studies=0,
         dashboard="full", api_access=True,
         white_label=True, export=True, price_cents_per_year=500_000,    # $5,000
         storage_bytes=5 * 1024 * 1024 * 1024),                           #   5 GB
