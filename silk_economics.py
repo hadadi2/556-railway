@@ -1195,8 +1195,10 @@ def economics_view(dr: dict, product_card: dict | None = None,
             import silk_commercial_analysis as _CA
             vat, _vrow = _CA.official_vat(market_iso3, hs_code)
             if vat is not None and _vrow:
+                # بلا قوسين حول الرابط: قوسٌ لاتينيٌّ داخل سطرٍ عربيّ ينقلب
+                # هندسياً في الـPDF (`_pdf_bracket_check` أفشل e2e-live-shape).
                 vat_note = (f"الضريبة {vat:g}% من مصدر رسمي: "
-                            f"{_vrow.get('authority') or ''} ({_vrow.get('source_url') or ''})")
+                            f"{_vrow.get('authority') or ''} — {_vrow.get('source_url') or ''}")
         except Exception:  # noqa: BLE001
             vat = None
 
