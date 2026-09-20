@@ -1,0 +1,29 @@
+# أسئلةُ المصدّر الحاسمة — the exporter's decisive questions per category (L1).
+# الغرض: البند ١٠ من أمر المالك (الموجة د): «كل دراسة تنتهي بقسمٍ ثابت: ٣–٥
+#   أسئلة يسألها المصدّر فعلاً، وجوابُها من السجلّ — أو تقديرٌ بنطاقه، أو
+#   لم نعرفه بعد وكيف تعرفه». القسمُ **يُحسَب بالكود** لا يكتبه النموذج.
+# القاعدةُ عامّةٌ بالفئة (من data/hs_category_l1.csv) — لا سؤالَ لمنتجٍ أو سوقٍ
+#   بعينه. الفئةُ `all` تسري على كلّ فئةٍ ما لم تُغطِّها صفوفُها الخاصّة.
+# الأعمدة:
+#   category      اسمُ الفئة كما في hs_category_l1، أو `all` للأسئلة العامّة.
+#   q_key         معرّفُ السؤال (داخليّ — لا يظهر للقارئ).
+#   question_ar   السؤالُ بصيغة المصدّر (عربية القارئ لا لغةُ النظام).
+#   question_en   مرآتُه الإنجليزية.
+#   answer_keys   مفاتيحُ السجلّ التي تجيبه، مفصولةً بـ`;` وبالأولوية —
+#                 أوّلُ مفتاحٍ له قيمةٌ يجيب، ودرجتُه هي درجةُ الجواب.
+#   how_to_learn_ar  سبيلُ الإغلاق حين لا يُعرَف — فعلٌ محدّدٌ لا «ابحث أكثر».
+#   how_to_learn_en  مرآتُه الإنجليزية — تقريرُ العميل الإنجليزيّ كان يطبع «not yet
+#                    known» بلا سبيلِ إغلاقٍ لأنّ المُطهِّرَ يُسقِط النصَّ العربيّ (§58).
+#   order         ترتيبُ العرض داخل الفئة.
+category,q_key,question_ar,question_en,answer_keys,how_to_learn_ar,how_to_learn_en,order
+all,market_size,ما حجمُ هذا السوق فعلاً وهل ينمو؟,How big is this market and is it growing?,market_imports_usd;import_cagr_pct;import_growth_pct,اطلب من مستوردٍ محلّي أرقامَ فئته السنوية أو اشترِ تقريرَ سوقٍ منشوراً,"Ask a local importer for its annual category figures, or buy a published market report",1
+all,who_competes,من ينافسني فعلاً — منتجون أم وسطاء يعيدون التصدير؟,Who actually competes — producers or re-exporters?,supplier_nature;direct_competitor_share_pct;top_supplier_share_pct,اطلب شهادةَ منشأٍ لثلاث شحناتٍ منافسةٍ من المستورد أو من بيانات جمركية مدفوعة,"Request certificates of origin for three competing shipments from the importer, or from a paid customs-data service",2
+all,cost_edge,هل لي ميزةُ تكلفةٍ حقيقية أم أنافس على السعر بلا سند؟,Do I have a real cost advantage?,cost_advantage;saudi_raw_input_balance,قارن سعرَ مدخلك الخام الفعلي بعرضٍ من مورّدٍ في بلد المنافس,Compare your actual raw-input price against a quote from a supplier in the competitor's country,3
+all,max_price,بكم أبيع للمصنع كي أنافس على الرف؟,What is my maximum competitive ex-works price?,max_exw_estimate,اطلب عرضَ سعرٍ من موزّعٍ محلّي واحدٍ يشمل هامشَه وهامشَ التجزئة,Request one quote from a local distributor that states its own margin and the retail margin,4
+all,entry_blocker,ما الذي يمنع أوّلَ شحنةٍ من الدخول؟,What blocks the first shipment?,blocking_condition;mandatory_certifications;requirements_count,راجع قائمةَ الاشتراطات مع وكيلٍ جمركيٍّ في السوق قبل الشحن,Review the requirements list with a customs broker in the market before shipping,5
+all,first_order,ما حجمُ أوّل شحنةٍ معقولة؟,How large should the first shipment be?,trial_shipment_units,احسبها من عرض الشحن الفعلي وسعة الحاوية التي يقبلها المستورد,Compute it from an actual freight quote and the container capacity the importer accepts,6
+منتج غذائي/زراعي,shelf_gap,كم يتضاعف سعري من الحدود إلى الرف؟,How much does my price multiply from border to shelf?,border_to_shelf_multiple,ارصد سعرَ الرف لثلاثة منتجاتٍ منافسةٍ واقسمه على سعر الاستيراد المعلن,Observe the shelf price of three competing products and divide it by the declared import price,7
+منتج غذائي/زراعي,differentiation_food,بمَ أتمايز عن المعروض على الرف اليوم؟,What differentiates me from what is on the shelf today?,differentiation,صوّر رفَّ الفئة في ثلاثة متاجر واقرأ بطاقاتِ المنافسين,Photograph the category shelf in three stores and read the competitors' labels,8
+منتج كيميائي/بلاستيكي,spec_match,أيُّ مواصفةٍ فنيةٍ يطلبها المشتري الصناعي؟,Which technical spec does the industrial buyer require?,mandatory_certifications;requirements_count,اطلب من مصنعين اثنين ورقةَ المواصفة التي يشترونها بها فعلاً,Ask two manufacturers for the specification sheet they actually buy against,7
+معادن/مصنوعات معدنية,spec_match_metal,أيُّ مواصفةٍ ومعيارِ مطابقةٍ يشترطهما السوق؟,Which standard and conformity scheme does the market require?,mandatory_certifications;requirements_count,اطلب من مستوردٍ نسخةَ شهادة المطابقة لآخر شحنةٍ دخلت,Ask an importer for a copy of the conformity certificate for its most recent shipment,7
+آلات/معدّات كهربائية,ce_gate,هل منتجي مؤهَّلٌ لعلامة المطابقة قبل الشحن؟,Is my product eligible for the market's conformity mark?,mandatory_certifications;blocking_condition,اعرض ملفَّ المنتج على جهةِ تقييم مطابقةٍ معتمدةٍ في السوق,Submit the product file to an accredited conformity-assessment body in the market,7

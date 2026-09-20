@@ -4597,6 +4597,18 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    268: lambda: (
+        _needles("silk_fact_ledger.py", "def critical_questions",
+                 "def fill_estimates", "def insights_block")(),
+        _needles("silk_reports.py", "def _docx_questions")(),
+        _needles("silk_render.py", "_FL.fill_estimates(view, lang)")(),
+        _absent("silk_reports.py", "لا نعرفه بعد — الناقص:")(),
+        _absent("silk_ai_judge.py", "critical_questions")(),
+        _needles("data/critical_questions_l1.csv", "answer_keys")(),
+        _needles("tests/test_wave_d4_questions.py",
+                 "def test_estimates_never_move_the_verdict",
+                 "def test_a_known_hs_code_never_claims_the_product_could_not_be_classified")(),
+        _needles("tests/test_lessons_enforcement.py", "(268, ")()),
     267: lambda: (
         _needles("silk_ai_judge.py", "def gate_religion_text",
                  "_RELIGION_SWAPS", "def halal_demand_min_ratio")(),

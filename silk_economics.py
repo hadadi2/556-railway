@@ -1238,7 +1238,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
             if vat_note:
                 reverse["parameters"].append(vat_note)
         else:
-            gaps.append("أقصى سعر مصنع (EXW) غير محسوب — الناقص: "
+            gaps.append("أقصى سعر مصنع (EXW) غير محسوب — يلزم: "
                         + "؛ ".join(_missing))
 
     # البند 6 (أمر إصلاح المحرّك): تناقضُ التسعير لا يمرّ بلا تعليق — أقصى

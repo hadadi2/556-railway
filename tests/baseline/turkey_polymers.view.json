@@ -627,6 +627,64 @@
  "hs_confidence": null,
  "hs_provenance": null,
  "ledger": {
+  "critical_questions": [
+   {
+    "answer": "2.1 مليار دولار (UN Comtrade 2024)",
+    "answered": true,
+    "how": "اطلب من مستوردٍ محلّي أرقامَ فئته السنوية أو اشترِ تقريرَ سوقٍ منشوراً",
+    "q_key": "market_size",
+    "question": "ما حجمُ هذا السوق فعلاً وهل ينمو؟",
+    "status": "متاح من مصدر موثّق"
+   },
+   {
+    "answer": "1 منتج و2 معيد تصدير مرجَّح (يشير إليه حصة المورّد الأكبر)",
+    "answered": true,
+    "how": "اطلب شهادةَ منشأٍ لثلاث شحناتٍ منافسةٍ من المستورد أو من بيانات جمركية مدفوعة",
+    "q_key": "who_competes",
+    "question": "من ينافسني فعلاً — منتجون أم وسطاء يعيدون التصدير؟",
+    "status": "مستنتَج من أرقام مرصودة"
+   },
+   {
+    "answer": "ميزة (يشير إليه صافي تجارة السعودية في المدخلات الخام وحصة المورّد الأكبر)",
+    "answered": true,
+    "how": "قارن سعرَ مدخلك الخام الفعلي بعرضٍ من مورّدٍ في بلد المنافس",
+    "q_key": "cost_edge",
+    "question": "هل لي ميزةُ تكلفةٍ حقيقية أم أنافس على السعر بلا سند؟",
+    "status": "مستنتَج من أرقام مرصودة"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "اطلب عرضَ سعرٍ من موزّعٍ محلّي واحدٍ يشمل هامشَه وهامشَ التجزئة",
+    "q_key": "max_price",
+    "question": "بكم أبيع للمصنع كي أنافس على الرف؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "TSE / CE-equivalent conformity (Ürün Güvenliği) (Türk Standardları Enstitüsü TSE)",
+    "answered": true,
+    "how": "راجع قائمةَ الاشتراطات مع وكيلٍ جمركيٍّ في السوق قبل الشحن",
+    "q_key": "entry_blocker",
+    "question": "ما الذي يمنع أوّلَ شحنةٍ من الدخول؟",
+    "status": "متاح من مصدر موثّق"
+   },
+   {
+    "answer": "لم نعرفه بعد",
+    "answered": false,
+    "how": "احسبها من عرض الشحن الفعلي وسعة الحاوية التي يقبلها المستورد",
+    "q_key": "first_order",
+    "question": "ما حجمُ أوّل شحنةٍ معقولة؟",
+    "status": "غير متاح"
+   },
+   {
+    "answer": "مذكورٌ في جوابٍ أعلاه",
+    "answered": true,
+    "how": "اطلب من مصنعين اثنين ورقةَ المواصفة التي يشترونها بها فعلاً",
+    "q_key": "spec_match",
+    "question": "أيُّ مواصفةٍ فنيةٍ يطلبها المشتري الصناعي؟",
+    "status": "متاح من مصدر موثّق"
+   }
+  ],
   "entries": {
    "blocking_condition": {
     "confidence": 1.0,
@@ -655,6 +713,21 @@
     "source": "",
     "status": "missing",
     "unit": "USD/kg",
+    "value": null,
+    "year": null
+   },
+   "border_to_shelf_multiple": {
+    "confidence": null,
+    "items": null,
+    "key": "border_to_shelf_multiple",
+    "label_ar": "مضاعف الحدود إلى الرف",
+    "label_en": "border-to-shelf multiple",
+    "mirrored": false,
+    "note": "لم تُحاوَل قراءة هذا المعطى",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "×",
     "value": null,
     "year": null
    },
@@ -852,6 +925,21 @@
     "unit": "USD",
     "value": 2100000000.0,
     "year": 2024
+   },
+   "max_exw_estimate": {
+    "confidence": null,
+    "items": null,
+    "key": "max_exw_estimate",
+    "label_ar": "أقصى سعر مصنع قابل للمنافسة",
+    "label_en": "maximum competitive ex-works price",
+    "mirrored": false,
+    "note": "لم تُحاوَل قراءة هذا المعطى",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
    },
    "open_conditions": {
     "confidence": 1.0,
@@ -1051,6 +1139,21 @@
     "unit": "%",
     "value": 31.0,
     "year": 2024
+   },
+   "trial_shipment_units": {
+    "confidence": null,
+    "items": null,
+    "key": "trial_shipment_units",
+    "label_ar": "حجم الشحنة التجريبية",
+    "label_en": "trial shipment size",
+    "mirrored": false,
+    "note": "لم تُحاوَل قراءة هذا المعطى",
+    "origin": "",
+    "source": "",
+    "status": "missing",
+    "unit": "",
+    "value": null,
+    "year": null
    }
   },
   "findings": [],
@@ -1128,14 +1231,6 @@
     "status": "مرصود من مصادر غير رسمية فقط",
     "status_code": "weak",
     "what": "الحصة السعودية"
-   },
-   {
-    "clipped": false,
-    "full": "تعذّر التصنيف",
-    "how": "—",
-    "status": "لم يُعرَف بعد",
-    "status_code": "missing",
-    "what": "تعذّر التصنيف"
    }
   ],
   "hs_code": "390210",
@@ -1163,15 +1258,16 @@
    "differentiation",
    "price_evidence_quality",
    "mandatory_certifications",
+   "border_to_shelf_multiple",
+   "max_exw_estimate",
+   "trial_shipment_units",
    "halal_positioning"
   ],
   "repairs": [],
   "schema": "silk.ledger/v1",
   "stale": []
  },
- "limits": [
-  "تعذّر التصنيف"
- ],
+ "limits": [],
  "markets": [],
  "note": null,
  "preliminary": true,

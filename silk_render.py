@@ -4207,10 +4207,21 @@ def build_view(result: dict, lang: str = "ar") -> dict:
     hs_prov = _hs_provenance(result)
     limits = [f"{m['country']}: {_humanize_gap_note(f)}" for m in markets[:5]
               for f in (m.get("quality_flags") or [])]
-    if not result.get("classified"):
+    # الموجة د-٤: حدٌّ **كاذبٌ** كان يظهر في ١٦/١٦ تقرير — «تعذّر التصنيف»
+    # بينما التقريرُ نفسُه يعرض الرمزَ ووصفَه المؤكَّد: `classified` رايةُ
+    # مسارِ `/analyze` وحدَه، وتقاريرُ `/research` تصل برمزٍ مُمرَّرٍ أو
+    # مؤكَّد فلا تحملها. هو عينُ عائلة البلاغ الأصلي (قسمٌ يقول ناقص وقسمٌ
+    # يعرض القيمة)، فصار الحدُّ يُعلَن **فقط** حين لا رمزَ معروفاً أصلاً.
+    _hs_known = bool(str(result.get("hs_code") or "").strip()) or bool(
+        (result.get("hs_confirmation") or {}).get("confirmed"))
+    if not result.get("classified") and not _hs_known:
         limits.insert(0, _humanize_gap_note(result.get("hs_note"))
                      if result.get("hs_note")
                      else silk_i18n.t("limit_unclassified", lang))
+    elif not result.get("classified") and result.get("hs_note"):
+        # رمزٌ معروفٌ بملاحظةِ حلٍّ حقيقية (تطابقٌ ضعيف، بديلٌ مقترَح) تبقى
+        # معلنةً — المحذوفُ هو الادّعاءُ الفارغ وحدَه لا الملاحظةُ المرصودة.
+        limits.insert(0, _humanize_gap_note(result.get("hs_note")))
     # قسم البحث العميق (الموجة ٤، V5) — إضافي بحت؛ None لتحليل /analyze عادي.
     dr_view = _deep_research_view(result, lang, _ledger)
     if dr_view:
@@ -4325,9 +4336,28 @@ def build_view(result: dict, lang: str = "ar") -> dict:
     if isinstance(_ledger, dict):
         try:
             import silk_fact_ledger as _FL
+            # الموجة د-٤: التقديراتُ (البند ١١) تُحسَب هنا لأنّ مدخلاتِها في
+            # قسم الاقتصاد الذي يُبنى بعد السجلّ — ثمّ أسئلةُ المصدّر (البند
+            # ١٠) تقرؤها، ثمّ جدولُ النواقص كما كان. ترتيبٌ واحدٌ لا سطحَ
+            # عرضٍ موازٍ: الثلاثةُ صفوفٌ في السجلّ يقرؤها كلُّ مُصدِّر.
+            # ثلاثُ خطواتٍ مستقلّة بثلاثة حُرّاس: عطلُ التقديرات كان يقفز
+            # فوق الجدولين فيمسح `gaps_table` إلى `[]` — **فجواتٌ حقيقيةٌ
+            # تختفي** بسبب عطلٍ في إضافةٍ اختيارية، وفوقها يُطبَع «لا فجوات
+            # مرصودة» (§58). لا يُسقِط فشلُ واحدةٍ الأُخريَين.
+            try:
+                _FL.fill_estimates(view, lang)
+            except Exception as _exc:       # noqa: BLE001 — إضافةٌ لا شرطُ عرض
+                log.warning("fill_estimates skipped: %s", _exc)
+            try:
+                _ledger["critical_questions"] = _FL.critical_questions(
+                    view, lang)
+            except Exception as _exc:       # noqa: BLE001
+                log.warning("critical_questions skipped: %s", _exc)
+                _ledger.setdefault("critical_questions", [])
             _ledger["gaps_table"] = _FL.gaps_table(view, lang)
         except Exception:                   # noqa: BLE001 — عرضٌ لا يُسقِط تقريراً
-            _ledger["gaps_table"] = []
+            _ledger.setdefault("critical_questions", [])
+            _ledger.setdefault("gaps_table", [])
     return view
 
 
