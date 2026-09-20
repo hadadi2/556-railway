@@ -285,3 +285,53 @@ def test_basic_tier_keeps_its_lifetime_rule(monkeypatch):
         sid2 = make_product_study(acc["account_id"], acc["user_id"], "عسل")
         assert cl.post(f"/platform/studies/{sid2}/launch",
                        headers=hdr(tok)).status_code == 403
+
+
+# ═══ رفعُ ثابتِ باقةٍ لا يكفي وحدَه (حصادُ §58، قرار المالك 2026-09-20) ═══════
+
+def test_the_gold_constant_is_ten_and_reaches_display_and_gate_alike():
+    """الثابتُ الجديد يصل العرضَ والمنعَ من النداء نفسِه — لا رقمَين."""
+    from silk_platform.models import Tier, tier_limits
+    assert tier_limits(Tier.GOLD).monthly_studies == 10
+
+
+def test_a_stale_tier_settings_row_would_have_shipped_the_bump_as_a_no_op():
+    """**لماذا يرافق الرفعَ ترحيلٌ.**
+
+    `effective_limits` يفضّل صفَّ `tier_settings` على الثابت، ونافذةُ «تعديل»
+    تكتب الأعمدة الثلاثة معاً — فتعديلٌ سعريٌّ سابقٌ على الذهبية يثبّت حصّتها
+    عند ٦، ويُنشَر رفعُ الثابت **بلا أثر**. هذا القفلُ يصف ذلك السلوك صراحةً
+    كي لا يُحذَف الترحيلُ لاحقاً ظنّاً أنه زائد.
+    """
+    import sqlite3
+    from silk_platform import tier_config
+    from silk_platform.models import Tier
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.execute("CREATE TABLE tier_settings (tier TEXT PRIMARY KEY, "
+                 "price INTEGER, price_annual INTEGER, "
+                 "monthly_studies INTEGER, updated_at TEXT)")
+    conn.execute("INSERT INTO tier_settings VALUES ('gold', 1799, 17990, 6, '')")
+    assert tier_config.effective_limits(conn, Tier.GOLD).monthly_studies == 6
+    # ما يفعله `024_gold_monthly_studies_10.sql` بالضبط — المشروطُ `= 6` وحدَه.
+    conn.execute("UPDATE tier_settings SET monthly_studies = 10 "
+                 "WHERE tier = 'gold' AND monthly_studies = 6")
+    assert tier_config.effective_limits(conn, Tier.GOLD).monthly_studies == 10
+    # وصفٌّ ضُبط على رقمٍ آخر قصداً لا يمسّه الترحيل.
+    conn.execute("UPDATE tier_settings SET monthly_studies = 3 WHERE tier = 'gold'")
+    conn.execute("UPDATE tier_settings SET monthly_studies = 10 "
+                 "WHERE tier = 'gold' AND monthly_studies = 6")
+    assert tier_config.effective_limits(conn, Tier.GOLD).monthly_studies == 3
+    conn.close()
+
+
+def test_the_migration_ships_with_the_bump():
+    """الترحيلُ موجودٌ ومشروطٌ ولا يمسّ السعر — لا رفعَ ثابتٍ بلا مرافقه."""
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(root, "migrations", "platform",
+                        "024_gold_monthly_studies_10.sql")
+    sql = open(path, encoding="utf-8").read()
+    assert "monthly_studies = 10" in sql
+    assert "tier = 'gold' AND monthly_studies = 6" in sql
+    assert "price" not in sql.split("UPDATE")[1]     # السعرُ لا يُمَسّ
