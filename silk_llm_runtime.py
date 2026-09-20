@@ -352,6 +352,9 @@ def _tool_trends_interest(args: dict, ctx: dict) -> list[DataPoint]:
     term = str(args.get("term") or ctx.get("product") or "").strip()
     if not term:
         return [DataPoint(None, "Google Trends", 0.0, "لا كلمة بحث", _today())]
+    _reject = _customs_description_query(term, ctx)
+    if _reject:
+        return [DataPoint(None, "Google Trends", 0.0, _reject, _today())]
     market = ctx["market"]
     timeframe = str(args.get("timeframe") or "today 12-m")
     return [trends_interest_resilient(term, geo=(market.iso2 or None),
@@ -365,6 +368,9 @@ def _tool_trends_context(args: dict, ctx: dict) -> list[DataPoint]:
     term = str(args.get("term") or ctx.get("product") or "").strip()
     if not term:
         return [DataPoint(None, "Google Trends", 0.0, "لا كلمة بحث", _today())]
+    _reject = _customs_description_query(term, ctx)
+    if _reject:
+        return [DataPoint(None, "Google Trends", 0.0, _reject, _today())]
     market = ctx["market"]
     geo = market.iso2 or None
     timeframe = str(args.get("timeframe") or "today 12-m")
@@ -425,11 +431,36 @@ def _tool_product_pages(args: dict, ctx: dict) -> list[DataPoint]:
     return read_product_pages(args.get('urls') or [], ctx.get('product', ''))
 
 
+def _customs_description_query(query: str, ctx: dict) -> "str | None":
+    """الاستعلامُ هو **وصفُ البند الجمركيّ حرفياً**؟ — سطرُ الرفض، أو None.
+
+    البند ٨ (الموجة د-٣): وصفُ البند لغةُ تصنيفٍ لا لغةُ سوق («Horses; live,
+    pure-bred breeding animals»)؛ البحثُ به يعيد جداولَ تعريفةٍ لا منتجاتٍ
+    معروضة. الرفضُ يسمّي البديلَ المُعدّ سلفاً فيُعاد الاستعلامُ صحيحاً.
+    """
+    terms = ctx.get("search_terms") or {}
+    # **لا يُرفض ما نوصي به**: `terms["en"]` هو اسمُ البند القصير الذي تعرضه
+    # كتلةُ المصطلحات — رفضُه كان يضمن حلقةَ إعادةٍ عقيمة (مراجعةٌ ذاتية §58).
+    # المرفوضُ هو الوصفُ الجمركيُّ الطويل وحدَه («Horses; live, pure-bred…»).
+    bad = [str(t).strip().lower()
+           for t in (terms.get("customs_descriptions") or []) if str(t).strip()]
+    q = " ".join(str(query or "").lower().split())
+    if not q or q not in bad:
+        return None
+    from silk_style_contract import search_terms_block
+    return ("الاستعلامُ هو وصفُ البند الجمركيّ حرفياً — لغةُ تصنيفٍ لا لغةُ "
+            "سوق. أعِد البحثَ بمصطلحٍ يسمّيه المشتري.\n"
+            + (search_terms_block(terms) or ""))
+
+
 def _tool_web_search(args: dict, ctx: dict) -> list[DataPoint]:
     from silk_websearch_agent import web_search, web_search_prioritized
     query = str(args.get("query") or "").strip()
     if not query:
         return [DataPoint(None, "Web Search", 0.0, "استعلام فارغ", _today())]
+    _reject = _customs_description_query(query, ctx)
+    if _reject:
+        return [DataPoint(None, "Web Search", 0.0, _reject, _today())]
     num = int(args.get("num") or 5)
     # R1: نطاق الدولة/لغة الواجهة — من وسيط كلود إن مرّره، وإلا من مرجع locale
     # للسوق (gl/hl مشتقّان من السوق لا مُخمَّنان). فارغ => بحث عام كالسابق.
@@ -1534,14 +1565,33 @@ def run_llm_agent(mission: dict, market: MarketRef, product: str = "",
     ctx = {"market": market, "product": product, "hs_code": hs_code,
           "extra_findings": extra_findings or [], "extra_context": extra_context,
           "mission_key": mission.get("key", "")}
+    # الموجة د-٣ (البند ٨): مصطلحاتُ بحثٍ **حتمية** تُبنى من مراجعَ قائمة
+    # وتصل السياق والأدوات — لا يبحث النموذجُ بترجمةٍ حرفيةٍ لوصف البند.
+    try:
+        from silk_style_contract import build_search_terms
+        ctx["search_terms"] = build_search_terms(product, hs_code, market)
+    except Exception as _e:  # noqa: BLE001 — مرجعٌ مساعد لا شرطُ تشغيل
+        log.warning("search terms skipped: %s", _e)
     # الصنف ١٠: تعليمةُ أنظمة المطابقة مقيَّدةٌ بسوق الهدف حين تُفعَّل
     # رايتُها، والنصُّ السابق حرفياً بدونها (`silk_missions.scope_instructions`).
     try:
         import silk_missions as _MS_MISSIONS
         mission = _MS_MISSIONS.scope_instructions(mission)
+        # الموجة د-٣: ولا لفظَ دينيّاً في فئةٍ لا صلةَ للدين بها.
+        mission = _MS_MISSIONS.gate_religion(mission, hs_code)
     except Exception as _e:  # noqa: BLE001 — تعليمةٌ تحسينٌ لا شرطُ تشغيل
         log.warning("mission scope_instructions skipped: %s", _e)
     eff_mission = dict(mission)
+    if any(t in (mission.get("allowed_tools") or [])
+           for t in ("web_search", "trends_interest", "read_product_pages")):
+        try:
+            from silk_style_contract import search_terms_block
+            _terms = search_terms_block(ctx.get("search_terms") or {})
+        except Exception:  # noqa: BLE001
+            _terms = ""
+        if _terms:
+            eff_mission["instructions"] = (
+                f"{eff_mission.get('instructions', '')}\n{_terms}")
     if instruction:
         eff_mission["instructions"] = (
             f"{eff_mission.get('instructions', '')}\n"

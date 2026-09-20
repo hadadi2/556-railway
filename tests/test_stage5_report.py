@@ -78,8 +78,14 @@ def test_view_carries_research_decision_and_rule_derived_sections():
                for c in s_cells)
     # سوق مفتّت (HHI 0.38 ليس <0.15) => لا خلية فرص للتفتت — القاعدة لا تُجامل.
     assert not any("مفتّت" in c["text"] for c in m["swot"]["O"])
-    assert m["segments"] and any("الحلال" in s["segment"] or "رمضان" in
-                                 s["segment"] for s in m["segments"])
+    # الموجة د-٣ (قاعدةُ المالك): التركيبةُ الدينية **ليست شريحةَ طلب** — كانت
+    # «شريحة الحلال/رمضان: X% من السكان» تُعرَض طلباً لكلّ منتجٍ وكلّ سوق.
+    # الشرائحُ تبقى (دخلٌ واهتمامُ بحث)، والحلالُ يُقاس موضعاً في السجلّ.
+    # وهذه المدوّنةُ بلا دخلِ فردٍ ولا اهتمامِ بحثٍ مرصودين، فقائمتُها تفرغ
+    # بصدق — لا شريحةَ تُختلَق من حصةٍ سكانية لتملأ الفراغ.
+    assert m["segments"] == []
+    assert not any("الحلال" in s["segment"] or "رمضان" in s["segment"]
+                   for s in m["segments"])
     assert m["supplier_directory"]["note"]
 
 

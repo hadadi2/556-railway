@@ -2,8 +2,8 @@
  "ai_report": null,
  "ai_report_note": null,
  "brief": [
-  "التوصية: مراقبة السوق — سوق هولندا (بحث عميق شامل)",
-  "الطلب الفعلي المقدَّر: 42000000"
+  "التوصية: مراقبة السوق — سوق ماليزيا (بحث عميق شامل)",
+  "الطلب الفعلي المقدَّر: 410000000"
  ],
  "classified": false,
  "competitive_position": {
@@ -26,8 +26,8 @@
  },
  "culture": [],
  "data_economics": {
-  "llm_calls": 30,
-  "note": "30 نداء كلود"
+  "llm_calls": 29,
+  "note": "29 نداء كلود"
  },
  "data_year": null,
  "decision": {
@@ -42,75 +42,67 @@
      {
       "confidence": 0.8,
       "confidence_badge": "✓ موثّق",
-      "note": "واردات تنمو 8%",
-      "retrieved_at": "2026-07-15",
+      "data_year": 2024,
+      "note": "واردات 2024",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 42000000
+      "value": 410000000
      }
     ],
     "price_competitiveness": [
      {
-      "confidence": 0.8,
-      "confidence_badge": "✓ موثّق",
-      "note": "سعر رفّ",
-      "retrieved_at": "2026-07-15",
-      "source": "Google Maps",
-      "value": 7.49
+      "confidence": 0.7,
+      "confidence_badge": "◐ ثانوي",
+      "data_year": null,
+      "note": "سعر رف رينغيت",
+      "retrieved_at": "2026-09-01",
+      "source": "بحث ويب",
+      "value": 39.0
      }
     ]
    },
    "diagnostics": {},
    "missing_categories": [],
-   "summary": "هولندا مراقبة السوق — سوق مفتّت بأسعار رفّ جيدة."
+   "summary": "ماليزيا مراقبة — الحلال حدّ أدنى لا تمايز"
   },
-  "caveat_box": "",
+  "caveat_box": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: أرقام الاستيراد والتركّز والحصص في هذا التقرير مجموعةٌ تحت رمز HS 330499، ووصفه الرسمي لا يشمل صفة المنتج المميّزة — الأرقام الموسومة بنجمة (*) تُقرأ في سياق هذا التنبيه حتى تأكيد الرمز الصحيح.",
   "charter": {},
   "client_fallback_prose": {},
-  "concentration_context_only": false,
+  "concentration_context_only": true,
   "degraded": false,
   "degraded_reason": "",
   "economics": {
    "anchor_price": {
     "basis": "retail",
-    "category": "تمور",
-    "currency": "€",
+    "category": "مستحضرات عناية بالبشرة",
+    "currency": "",
     "fx_date": "",
     "fx_rate": null,
     "gaps": [
-     "التحويل kg→litre يتطلب الكثافة لفئة «تمور» — غير مسجّل في سجل الثوابت؛ أضفه بمصدره أو صرّح بالخاصية المفقودة",
+     "التحويل litre→kg يتطلب الكثافة لفئة «مستحضرات عناية بالبشرة» — غير مسجّل في سجل الثوابت؛ أضفه بمصدره أو صرّح بالخاصية المفقودة",
      "سعر الصرف غير متاح — القيمة بالدولار غير محسوبة"
     ],
     "note": "أدنى سعر رف منافس مرصود",
-    "per_kg": 7.49,
-    "per_litre": null,
-    "per_unit": 7.49,
-    "raw_value": 7.49,
-    "source": "Albert Heijn سعر رف عبوة 1 كجم بسعر €7.49",
+    "per_kg": null,
+    "per_litre": 195.0,
+    "per_unit": 39.0,
+    "raw_value": 39.0,
+    "source": "Watsons سعر رف عبوة 200 ml علامة Nurish 2026-08-11 بسعر 39 رينغيت",
     "value_usd": null
    },
    "cost_currency": null,
    "decision_numbers": [
     {
-     "confirm": "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
-     "confirm_time": "3–5 أيام عمل",
-     "method": "حمولة حاوية 40 قدماً المنشورة ÷ وزن كجم الواحد (1 كجم)",
+     "closure": "أدخل وزن العبوة أو سجّل ثابت الفئة — دقيقة واحدة",
+     "impact": "لا يُعرف حجم أول شحنة فتبقى كلفة الدخول كلها غير قابلة للحساب",
+     "missing": "وزن وحدة الواحد (أو ثابت كثافة الفئة)",
      "name": "حجم الشحنة التجريبية",
-     "range": {
-      "high": 26730,
-      "low": 26730
-     },
-     "source": "icontainers.com — ISO max gross 30,480 kg",
-     "tag": "تقدير معلن بمدى",
-     "tier": "estimated",
-     "too_wide": false,
-     "unit": "كجم",
-     "value": 26730,
-     "width_pct": 0
+     "tier": "gap"
     },
     {
      "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، رقمك أنت لا يُبحث عنه",
      "impact": "بلا تكلفتك لا تُحسب كلفة الدخول ولا التعادل ولا أقصى الخسارة",
-     "missing": "تكلفة إنتاج كجم الواحد لديك",
+     "missing": "تكلفة إنتاج وحدة الواحد لديك",
      "name": "كلفة الدخول الكلية حتى أول شحنة",
      "tier": "gap"
     },
@@ -139,13 +131,13 @@
    "displacement_measured": true,
    "displacement_required": false,
    "gaps": [
-    "التعرفة غير متاحة — اعتُمدت 0% معلنةً في الحل العكسي",
-    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع للكيلوغرام لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف؛ الحل العكسي أعلاه يعطيك أقصى تكلفة قابلة للمنافسة"
+    "أقصى سعر مصنع (EXW) غير محسوب — الناقص: عملة السعر المرصود",
+    "تكلفة المصنع (EXW) غير مدخلة — أدخل سعر المصنع لوحدة المنتج مع تحديدها لاستكمال أحد مدخلات سلسلة التكلفة حتى الرف"
    ],
-   "hhi": 940.0,
+   "hhi": 2024.0,
    "market_unit": {
-    "code": "kg",
-    "label_ar": "كجم"
+    "code": "unit",
+    "label_ar": "وحدة"
    },
    "parameter_scenarios": {
     "distributor_margin_pct": {
@@ -166,86 +158,59 @@
    },
    "pricing_contradiction": null,
    "product_form": null,
-   "reverse_solve": {
-    "currency": "€",
-    "formula": "EXW_max = سعر الرف ÷ [(1+شحن)(1+تعرفة)(1+هامش الموزّع)(1+هامش التجزئة)(1+ضريبة)]",
-    "headline_scenario": "متوسط",
-    "max_exw": 4.0902,
-    "parameters": [
-     "التعرفة (اعتُمد 0% — قيمتها الفعلية غير متاحة)",
-     "نسبة الشحن (معلمة معلنة قابلة للتعديل)",
-     "هامش الموزّع (معلمة معلنة قابلة للتعديل)",
-     "هامش التجزئة (معلمة معلنة قابلة للتعديل)",
-     "الضريبة 9% من مصدر رسمي: Belastingdienst — https://www.belastingdienst.nl/"
-    ],
-    "scenarios": [
-     {
-      "distributor_pct": 10.0,
-      "freight_pct": 5.0,
-      "max_exw": 5.1734,
-      "retailer_pct": 15.0,
-      "scenario": "منخفض"
-     },
-     {
-      "distributor_pct": 20.0,
-      "freight_pct": 12.0,
-      "max_exw": 4.0902,
-      "retailer_pct": 25.0,
-      "scenario": "متوسط"
-     },
-     {
-      "distributor_pct": 30.0,
-      "freight_pct": 25.0,
-      "max_exw": 3.0205,
-      "retailer_pct": 40.0,
-      "scenario": "مرتفع"
-     }
-    ],
-    "shelf_price": 7.49,
-    "unit": "كجم"
-   },
-   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج الكيلوغرام، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
+   "reverse_solve": null,
+   "unlock_note": "حساب هامش الربح ونقطة التعادل والخسارة المحتملة يحتاج تكلفة إنتاج وحدة المنتج المحددة، وسعر البيع المتوقع، والشحن والرسوم والتكاليف الثابتة. تبقى النتائج غير محسوبة إلى أن تتوفر المدخلات اللازمة بوحدات متطابقة",
    "waterfall": null
   },
   "fact_records": {},
   "flip_conditions": [
    {
+    "closes_via": "إعادة تصنيف الرمز ثم سحب واردات كومتريد تحته",
+    "condition": "توفّر بيانات استيراد موثوقة تحت رمز HS الصحيح",
+    "met": false
+   },
+   {
     "closes_via": "التحقق من نشاط الجهة واهتمامها بالمنتج، ثم الاتفاق على شروط التوزيع وتوثيق العقد",
-    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في هولندا",
+    "condition": "التعاقد مع موزّع محلي مؤكَّد بالاسم في ماليزيا",
     "met": false
    }
   ],
-  "gap_register": [],
-  "glossary": [
+  "gap_register": [
    {
-    "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع",
-    "term": "HHI"
+    "gap_class": "G1",
+    "gap_class_label": "غير مجموع في أي مصدر معروف — يتطلب بحثاً أولياً",
+    "text": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 330499 («Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)») لا يشمل صفة المنتج المميّزة (مستحضرات، عنايه، بالبشره) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح."
    }
   ],
+  "glossary": [],
   "hs_confirmation": {
-   "code_desc": "تمور طازجة أو مجففة",
-   "confirmed": true,
-   "hs_code": "080410",
-   "missing_terms": [],
-   "overlap": 1.0,
-   "product_terms": [
-    "تمور"
+   "code_desc": "Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)",
+   "confirmed": false,
+   "hs_code": "330499",
+   "missing_terms": [
+    "مستحضرات",
+    "عنايه",
+    "بالبشره"
    ],
-   "reason": "وصف الرمز يشمل صفات المنتج المميّزة",
-   "shared_terms": [
-    "تمور"
-   ]
+   "overlap": 0.0,
+   "product_terms": [
+    "مستحضرات",
+    "عنايه",
+    "بالبشره"
+   ],
+   "reason": "وصف الرمز «Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)» لا يشمل الصفة/الصفات المميّزة: مستحضرات، عنايه، بالبشره",
+   "shared_terms": []
   },
   "hs_derivation": {
    "basis": "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — راجع منهجية التقرير",
-   "chapter": "08",
+   "chapter": "33",
    "confirmed": null,
-   "heading": "0804",
-   "hs6": "080410",
-   "official_description": "Fruit, edible; dates, fresh or dried",
-   "subheading": "080410"
+   "heading": "3304",
+   "hs6": "330499",
+   "official_description": "Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)",
+   "subheading": "330499"
   },
-  "hs_flagged": false,
+  "hs_flagged": true,
   "hs_provenance": null,
   "hypotheses": [],
   "importer_leads": {
@@ -260,29 +225,128 @@
   },
   "ledger_stale": [],
   "ledger_unresolved": [],
-  "limits": [],
+  "limits": [
+   "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 330499 («Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)») لا يشمل صفة المنتج المميّزة (مستحضرات، عنايه، بالبشره) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح."
+  ],
   "market": {
-   "iso2": "NL",
-   "iso3": "NLD",
-   "m49": 528,
-   "name_ar": "هولندا",
-   "name_en": "Netherlands"
+   "iso2": "MY",
+   "iso3": "MYS",
+   "m49": 458,
+   "name_ar": "ماليزيا",
+   "name_en": "Malaysia"
   },
   "missions": {
    "competitors": {
     "failed": false,
     "findings": [
      {
-      "confidence": 0.8,
-      "note": "HHI تركّز",
-      "retrieved_at": "2026-07-15",
+      "confidence": 0.9,
+      "data_year": 2024,
+      "note": "HS330499 مورّدو Malaysia 2024: 34 دولة مرصودة، مؤشر تركّز HHI=1180 (<1500 مجزَّأ)",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 940
+      "value": {
+       "hhi": 1180,
+       "supplier_count": 34,
+       "top_suppliers": [
+        {
+         "partner": "Rep. of Korea",
+         "share": 26.0
+        },
+        {
+         "partner": "France",
+         "share": 14.0
+        },
+        {
+         "partner": "Thailand",
+         "share": 11.0
+        }
+       ],
+       "year": 2024
+      }
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "حصة أكبر مورد % 2024",
+      "retrieved_at": "2026-09-01",
+      "source": "UN Comtrade",
+      "value": 26.0
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "note": "[commercial] طبيعة المورّدين الأكبر لسنة 2024: 3 مُقيَّم من 3، منهم 0 معيد تصدير مرجَّح — القاعدة: ليس من أعلى 5 مصدّراً عالمياً ووارداته ≥ صادراته",
+      "retrieved_at": "2026-09-01",
+      "source": "UN Comtrade",
+      "value": {
+       "calls_used": 0,
+       "kind": "supplier_nature",
+       "partial": false,
+       "rows": [
+        {
+         "actual_source": null,
+         "exports_usd": 4100000000.0,
+         "imports_usd": 300000000.0,
+         "iso3": "KOR",
+         "partner": "Rep. of Korea",
+         "reexporter_likely": false,
+         "share": 26.0,
+         "status": "X:stored M:stored",
+         "world_top_exporter": true
+        },
+        {
+         "actual_source": null,
+         "exports_usd": 6200000000.0,
+         "imports_usd": 900000000.0,
+         "iso3": "FRA",
+         "partner": "France",
+         "reexporter_likely": false,
+         "share": 14.0,
+         "status": "X:stored M:stored",
+         "world_top_exporter": true
+        },
+        {
+         "actual_source": null,
+         "exports_usd": 800000000.0,
+         "imports_usd": 400000000.0,
+         "iso3": "THA",
+         "partner": "Thailand",
+         "reexporter_likely": false,
+         "share": 11.0,
+         "status": "X:stored M:stored",
+         "world_top_exporter": false
+        }
+       ],
+       "topn": 5,
+       "world_top_exporters": [
+        "KOR",
+        "FRA",
+        "USA",
+        "DEU",
+        "CHN"
+       ],
+       "year": 2024
+      }
      }
     ],
     "label": "تحليل المنافسين",
     "name": "LLMMissionAgent",
-    "summary": "HHI 940 — سوق مفتّت",
+    "summary": "مؤشر تركّز 1180",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
+   "customs_requirements": {
+    "failed": false,
+    "findings": [],
+    "label": "الاشتراطات الجمركية",
+    "name": "LLMMissionAgent",
+    "summary": "تسجيل المنتج قبل الطرح",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -294,16 +358,17 @@
     "failed": false,
     "findings": [
      {
-      "confidence": 0.8,
-      "note": "Albert Heijn سعر رف عبوة 1 كجم بسعر €7.49",
-      "retrieved_at": "2026-07-15",
-      "source": "Google Maps",
-      "value": 7.49
+      "confidence": 0.7,
+      "data_year": null,
+      "note": "Watsons سعر رف عبوة 200 ml علامة Nurish 2026-08-11 بسعر 39 رينغيت",
+      "retrieved_at": "2026-09-01",
+      "source": "بحث ويب",
+      "value": 39.0
      }
     ],
     "label": "تحليل الأسعار",
     "name": "LLMMissionAgent",
-    "summary": "أسعار رفّ 6.20–9.80€ (60/60)",
+    "summary": "سعر رف مرصود 39 رينغيت (9/9)",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -324,20 +389,53 @@
      "tool_calls": 0
     }
    },
+   "tariffs_agreements": {
+    "failed": false,
+    "findings": [
+     {
+      "confidence": 0.8,
+      "data_year": null,
+      "note": "تعريفة مطبَّقة %",
+      "retrieved_at": "2026-09-01",
+      "source": "WITS",
+      "value": 5.0
+     }
+    ],
+    "label": "التعريفات الجمركية والاتفاقيات التجارية",
+    "name": "LLMMissionAgent",
+    "summary": "تعريفة مطبَّقة 5%",
+    "trace": {
+     "dropped": 0,
+     "gaps": 0,
+     "status": "succeeded",
+     "tool_calls": 0
+    }
+   },
    "trade_flow": {
     "failed": false,
     "findings": [
      {
       "confidence": 0.8,
-      "note": "واردات 2023",
-      "retrieved_at": "2026-07-15",
+      "data_year": 2024,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "واردات مصرَّحة 2024",
+      "retrieved_at": "2026-09-01",
       "source": "UN Comtrade",
-      "value": 42000000
+      "value": 410000000
+     },
+     {
+      "confidence": 0.8,
+      "data_year": 2024,
+      "evidence_tag": "مؤشر سياقي — رمز غير مؤكَّد",
+      "note": "نمو تراكمي سنوي % على ثلاث سنوات",
+      "retrieved_at": "2026-09-01",
+      "source": "UN Comtrade",
+      "value": 5.1
      }
     ],
     "label": "تدفقات التجارة",
     "name": "LLMMissionAgent",
-    "summary": "واردات تنمو 8% (76/76 بند)",
+    "summary": "واردات 410 مليون (66/66)",
     "trace": {
      "dropped": 0,
      "gaps": 0,
@@ -354,13 +452,13 @@
   "next_step": null,
   "price_rows": [
    {
-    "note": "Albert Heijn سعر رف عبوة 1 كجم بسعر €7.49",
+    "note": "Watsons سعر رف عبوة 200 ml علامة Nurish 2026-08-11 بسعر 39 رينغيت",
     "reason": "",
-    "value": 7.49
+    "value": 39.0
    }
   ],
   "price_unlock": "تتطلب المقارنة السعرية سعر المصنع وسعر المنافس بعملة ووحدة متطابقتين، مع توثيق حجم العبوة وأي تحويل مستخدم.",
-  "product": "تمور",
+  "product": "مستحضرات عناية بالبشرة",
   "reconciliation": {
    "conflicts": []
   },
@@ -369,18 +467,18 @@
    "failure_reason": "",
    "incomplete": false,
    "missing_sections": [],
-   "review_cycles": 2,
-   "text": "## 1. الخلاصة التنفيذية\nالحكم مراقبة السوق بدرجة ثقة متوسطة (60%) (درجة الثقة). واردات هولندا من التمور تنمو 8% سنوياً،\nوالمشهد تنافسي مفتّت (HHI (مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع) 940). أسعار الرفّ 6.20–9.80 يورو/كغم.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، جميعها ناجحة، ثم محلّل شامل فكاتب التقرير بدورتَي مراجعة.\n\n## 3. نظرة عامة على السوق وحجمه\nواردات 2023 نحو 42 مليون دولار.\n\n## 4. ديناميكيات السوق\nنمو مطّرد مدفوع بالطلب على المنتجات الصحية.\n\n## 5. تحليل المستهلك والطلب\nشريحتان: تجزئة راقية وجاليات.\n\n## 6. المشهد التنافسي\nمورّدون: تونس، الجزائر، إيران. مؤشر التركّز HHI = 940 (سوق مفتّت).\n\n## 7. التنظيم والوصول للسوق\nEU 2017/625 (منشأة معتمدة إلزامية)، EU 1169/2011 (وسم المستهلك).\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري عبر ميناء روتردام.\n\n## 9. تقييم المخاطر\nتقلّب أسعار المنافسين؛ لا مخاطر تنظيمية حادة.\n\n## 10. التوصيات الاستراتيجية\nابدأ باختبار السوق قبل الالتزام الكامل.\n### خارطة طريق الدخول\n1. تحقّق من المستوردين. 2. سجّل المنشأة لدى الجهة المختصة.\n\n## 11. الملاحق\nUN Comtrade, World Bank, Google Maps.",
+   "review_cycles": 1,
+   "text": "## 1. الخلاصة التنفيذية\nالتوصية: مراقبة السوق. واردات ماليزيا المصرَّحة من مستحضرات العناية 410 مليون\nدولار لعام 2024، والمنافسة مفتوحة على مستوى الدول.\n\n## 2. منهجية البحث ونطاقه\nاثنتا عشرة بعثة بحث، ثم محلّل شامل فكاتب التقرير.\n\n## 3. نظرة عامة على السوق وحجمه\nالواردات المصرَّحة 410 مليون دولار (2024) بنمو تراكمي 5.1% سنوياً.\n\n## 4. ديناميكيات السوق\nنمو قنوات التجزئة الحديثة والتجارة الإلكترونية يقود الطلب على العناية اليومية.\n\n## 5. تحليل المستهلك والطلب\nالمشتري الأساسي حضري بين 20 و40 سنة، ويقرأ قائمة المكوّنات قبل الشراء.\n\n## 6. المشهد التنافسي\nالمورّدون: كوريا الجنوبية 26%، فرنسا 14%، تايلاند 11%. مؤشر التركّز 1180.\n\n## 7. التنظيم والوصول للسوق\nتسجيل المنتج لدى هيئة الرقابة الوطنية قبل الطرح، وشهادة المطابقة للمكوّنات\nالمقيَّدة. وشهادة الحلال شرط دخول تجاري في هذا السوق لا عامل تمايز.\n\n## 8. اللوجستيات وسلسلة الإمداد\nشحن بحري إلى ميناء كلانغ. زمن العبور غير متاح من مصدر منسَّق.\n\n## 9. تقييم المخاطر\nتقلّب تكلفة المكوّنات الفعّالة هو الخطر الأول، والتسجيل التنظيمي الثاني.\n\n## 10. التوصيات الاستراتيجية\nأقوى حجة ضد هذا الحكم: حجم السوق كبير والنمو مستقر. نردّ بأن الشهادة التي\nيعدّها المصدّر ميزة هي هنا الحد الأدنى للدخول، فالتمايز يجب أن يأتي من غيرها.\n### أرقام القرار\nتفصيل البنود الخمسة في جدول أرقام القرار.\n### خارطة طريق الدخول (٩٠ يوماً)\n1. التسجيل التنظيمي. 2. عيّنات لموزّعين اثنين. 3. تسعير الرف لا الحدود.\n\n## 11. الملاحق\nUN Comtrade، البنك الدولي، WITS، بحث ويب.",
    "unresolved_notes": []
   },
   "report_style": "",
-  "trace_id": "nld-real",
+  "trace_id": "mys-cosm",
   "verdict": {
    "ai": {
-    "reasoning": "سوق واعد لكن يحتاج تحقّق المستوردين.",
+    "reasoning": "الحلال حدّ أدنى.",
     "verdict": "WATCH"
    },
-   "confidence": 0.6,
+   "confidence": 0.5,
    "verdict": "WATCH"
   },
   "verdict_consistency": {},
@@ -393,12 +491,12 @@
  "header": {
   "coverage_pct": 0.0,
   "date": "<RUN_DATE>",
-  "hs_code": "080410",
+  "hs_code": "330499",
   "origin": "SAU",
-  "product": "تمور",
-  "target_market": "هولندا"
+  "product": "مستحضرات عناية بالبشرة",
+  "target_market": "ماليزيا"
  },
- "hs_code": "080410",
+ "hs_code": "330499",
  "hs_confidence": null,
  "hs_provenance": null,
  "ledger": {
@@ -479,49 +577,64 @@
     "year": null
    },
    "direct_competitor_share_pct": {
+    "assumption": "معيدُ التصدير لا يُعدّ منافساً مباشراً؛ حصصُ الباقين تُجمَع",
+    "basis": [
+     "top_supplier_share_pct",
+     "hhi"
+    ],
     "confidence": null,
+    "flip_if": "",
+    "how_to_close": "",
     "items": null,
     "key": "direct_competitor_share_pct",
     "label_ar": "حصة المنافسين المباشرين",
     "label_en": "direct competitors' share",
     "mirrored": false,
-    "note": "لا يُستنتَج بلا طبيعة المورّدين — لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
-    "origin": "competitors",
-    "source": "",
-    "status": "missing",
+    "note": "مؤشّرُ التركّز على مستوى الدول لا يُقدَّم وحده مقياساً لشدّة المنافسة",
+    "origin": "insight",
+    "range": null,
+    "source": "UN Comtrade",
+    "status": "inference",
     "unit": "%",
-    "value": null,
-    "year": null
+    "value": 51.0,
+    "year": 2024
    },
    "halal_positioning": {
-    "confidence": 0.9,
+    "assumption": "الحلالُ ميزةٌ فقط إذا اجتمعت ثلاثةٌ: مورّدون من دولٍ لا يشيع فيها الحلال، ولا قناةَ حلالٍ محلية، ودليلُ طلبٍ خارجيٌّ مُستشهَدٌ به",
+    "basis": [
+     "top_supplier_share_pct"
+    ],
+    "confidence": null,
+    "flip_if": "لو رُصدت قناةُ حلالٍ محليةٌ أو مورّدٌ حلالُ المنشأ يسقط التمايز",
+    "how_to_close": "",
     "items": null,
     "key": "halal_positioning",
     "label_ar": "موضع الحلال",
     "label_en": "halal positioning",
     "mirrored": false,
-    "note": "الصنفُ حلالٌ بطبيعته — شهادةُ الحلال شرطُ دخولٍ تجاريّ حيث طُلبت، لا ميزةَ تنافسية",
-    "origin": "customs_requirements",
-    "source": "تصنيف الفصل (SMIIC 1:2019 / GSO 2055-1)",
-    "status": "observed",
+    "note": "3 من 3 من كبار المورّدين من دولٍ حصتُها المسلمة أقلّ من 25% (مرجع Pew الساكن)؛ الحلالُ سائدٌ في السوق نفسِه (حصةٌ مسلمة 64%) — فهو المعيارُ لا التمايز",
+    "origin": "insight",
+    "range": null,
+    "source": "تصنيف الفصل + مرجع Pew + مرجع السوق",
+    "status": "inference",
     "unit": "",
     "value": "شرط دخول تجاري لا ميزة",
     "year": null
    },
    "hhi": {
-    "confidence": 0.8,
+    "confidence": 0.9,
     "items": null,
     "key": "hhi",
     "label_ar": "مؤشر تركّز المورّدين",
     "label_en": "supplier concentration (HHI)",
     "mirrored": false,
-    "note": "HHI تركّز",
+    "note": "HS330499 مورّدو Malaysia 2024: 34 دولة مرصودة، مؤشر تركّز HHI=1180 (<1500 مجزَّأ)",
     "origin": "competitors",
     "source": "UN Comtrade",
     "status": "observed",
     "unit": "",
-    "value": 940.0,
-    "year": null
+    "value": 1180.0,
+    "year": 2024
    },
    "import_cagr_pct": {
     "confidence": null,
@@ -560,8 +673,8 @@
       "confidence": 0.8,
       "mirrored": false,
       "source": "UN Comtrade",
-      "value": 42000000.0,
-      "year": 2023
+      "value": 410000000.0,
+      "year": 2024
      }
     ],
     "key": "imports_latest_year",
@@ -573,28 +686,22 @@
     "source": "UN Comtrade",
     "status": "observed",
     "unit": "",
-    "value": 2023,
+    "value": 2024,
     "year": null
    },
    "mandatory_certifications": {
-    "confidence": 0.9,
-    "items": [
-     {
-      "authority": "المفوضية الأوروبية EUR-Lex",
-      "scheme": "EU Food Hygiene Regulation (EC) 852/2004 — منشأة معتمدة",
-      "source_url": "https://eur-lex.europa.eu/eli/reg/2004/852/oj"
-     }
-    ],
+    "confidence": null,
+    "items": null,
     "key": "mandatory_certifications",
     "label_ar": "الشهادات الإلزامية بمصدر رسمي",
     "label_en": "mandatory certifications (official source)",
     "mirrored": false,
-    "note": "شهاداتُ مطابقةٍ بمصدرٍ رسمي لهذا السوق والفئة",
+    "note": "لا صفَّ رسمياً لهذا السوق والفئة في data/certifications_l1.csv — تُكتب الشهاداتُ «مطلوبة تجارياً» لا «إلزامية»",
     "origin": "customs_requirements",
-    "source": "المفوضية الأوروبية EUR-Lex",
-    "status": "observed",
+    "source": "",
+    "status": "missing",
     "unit": "",
-    "value": "EU Food Hygiene Regulation (EC) 852/2004 — منشأة معتمدة",
+    "value": null,
     "year": null
    },
    "market_imports_usd": {
@@ -604,13 +711,13 @@
     "label_ar": "واردات السوق",
     "label_en": "market imports",
     "mirrored": false,
-    "note": "واردات 2023",
+    "note": "واردات مصرَّحة 2024",
     "origin": "trade_flow",
     "source": "UN Comtrade",
     "status": "observed",
     "unit": "USD",
-    "value": 42000000.0,
-    "year": null
+    "value": 410000000.0,
+    "year": 2024
    },
    "open_conditions": {
     "confidence": 1.0,
@@ -718,49 +825,90 @@
     "year": null
    },
    "supplier_nature": {
+    "assumption": "مورّدٌ ليس من أعلى 5 مصدّراً عالمياً ووارداتُه من الصنف ≥ صادراتِه ⇒ معيدُ تصديرٍ مرجَّح",
+    "basis": [
+     "top_supplier_share_pct"
+    ],
     "confidence": null,
-    "items": null,
+    "flip_if": "لو تبيّن إنتاجٌ محليٌّ لدى مورّدٍ عُدّ معيدَ تصدير",
+    "how_to_close": "",
+    "items": [
+     {
+      "actual_source": null,
+      "exports_usd": 4100000000.0,
+      "imports_usd": 300000000.0,
+      "iso3": "KOR",
+      "partner": "Rep. of Korea",
+      "reexporter_likely": false,
+      "share": 26.0,
+      "status": "X:stored M:stored",
+      "world_top_exporter": true
+     },
+     {
+      "actual_source": null,
+      "exports_usd": 6200000000.0,
+      "imports_usd": 900000000.0,
+      "iso3": "FRA",
+      "partner": "France",
+      "reexporter_likely": false,
+      "share": 14.0,
+      "status": "X:stored M:stored",
+      "world_top_exporter": true
+     },
+     {
+      "actual_source": null,
+      "exports_usd": 800000000.0,
+      "imports_usd": 400000000.0,
+      "iso3": "THA",
+      "partner": "Thailand",
+      "reexporter_likely": false,
+      "share": 11.0,
+      "status": "X:stored M:stored",
+      "world_top_exporter": false
+     }
+    ],
     "key": "supplier_nature",
     "label_ar": "طبيعة المورّدين الأكبر",
     "label_en": "nature of top suppliers",
     "mirrored": false,
-    "note": "لم تُشغَّل إشارات التحليل التجاري لهذه التشغيلة",
-    "origin": "competitors",
-    "source": "",
-    "status": "missing",
+    "note": "",
+    "origin": "insight",
+    "range": null,
+    "source": "UN Comtrade",
+    "status": "inference",
     "unit": "",
-    "value": null,
-    "year": null
+    "value": "3 منتج و0 معيد تصدير مرجَّح",
+    "year": 2024
    },
    "tariff_applied_pct": {
-    "confidence": null,
+    "confidence": 0.8,
     "items": null,
     "key": "tariff_applied_pct",
     "label_ar": "الرسوم الجمركية المطبَّقة",
     "label_en": "applied tariff",
     "mirrored": false,
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "note": "تعريفة مطبَّقة %",
     "origin": "tariffs_agreements",
-    "source": "",
-    "status": "missing",
+    "source": "WITS",
+    "status": "observed",
     "unit": "%",
-    "value": null,
+    "value": 5.0,
     "year": null
    },
    "top_supplier_share_pct": {
-    "confidence": null,
+    "confidence": 0.8,
     "items": null,
     "key": "top_supplier_share_pct",
     "label_ar": "حصة المورّد الأكبر",
     "label_en": "top supplier share",
     "mirrored": false,
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
+    "note": "حصة أكبر مورد % 2024",
     "origin": "competitors",
-    "source": "",
-    "status": "missing",
+    "source": "UN Comtrade",
+    "status": "observed",
     "unit": "%",
-    "value": null,
-    "year": null
+    "value": 26.0,
+    "year": 2024
    }
   },
   "findings": [],
@@ -790,25 +938,9 @@
     "status": "missing"
    },
    {
-    "key": "top_supplier_share_pct",
-    "label_ar": "حصة المورّد الأكبر",
-    "label_en": "top supplier share",
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
-    "source": "",
-    "status": "missing"
-   },
-   {
     "key": "border_price_usd_kg",
     "label_ar": "متوسط سعر الاستيراد الحدودي",
     "label_en": "border unit value",
-    "note": "لم يرصده المحرّك في نتائج هذه البعثة",
-    "source": "",
-    "status": "missing"
-   },
-   {
-    "key": "tariff_applied_pct",
-    "label_ar": "الرسوم الجمركية المطبَّقة",
-    "label_en": "applied tariff",
     "note": "لم يرصده المحرّك في نتائج هذه البعثة",
     "source": "",
     "status": "missing"
@@ -848,6 +980,14 @@
   ],
   "gaps_table": [
    {
+    "clipped": true,
+    "full": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 330499 («Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)») لا يشمل صفة المنتج المميّزة (مستحضرات، عنايه، بالبشره) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح",
+    "how": "—",
+    "status": "لم يُعرَف بعد",
+    "status_code": "missing",
+    "what": "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 330499 («Cosmetic and toilet preparations; n.e.c. in heading no…"
+   },
+   {
     "clipped": false,
     "full": "تعذّر التصنيف",
     "how": "—",
@@ -856,7 +996,7 @@
     "what": "تعذّر التصنيف"
    }
   ],
-  "hs_code": "080410",
+  "hs_code": "330499",
   "lang": "ar",
   "order": [
    "market_imports_usd",
@@ -888,30 +1028,41 @@
   "stale": []
  },
  "limits": [
+  "بيانات فئة مجاورة — مؤشر سياقي لا مقياس فعلي: رمز HS 330499 («Cosmetic and toilet preparations; n.e.c. in heading no. 3304, for the care of the skin (excluding medicaments, including sunscreen or sun tan preparations)») لا يشمل صفة المنتج المميّزة (مستحضرات، عنايه، بالبشره) — تُقرأ أرقام الاستيراد والتركّز والحصص كمؤشر سياقي حتى تأكيد الرمز الصحيح.",
   "تعذّر التصنيف"
  ],
  "markets": [],
  "note": null,
  "preliminary": true,
- "product": "تمور",
+ "product": "مستحضرات عناية بالبشرة",
  "provenance": [
   {
-   "attempted": 3,
-   "confidence_max": 0.8,
+   "attempted": 6,
+   "confidence_max": 0.9,
    "confidence_min": 0.8,
-   "contributed": 3,
+   "contributed": 6,
    "failures": [],
    "source": "UN Comtrade",
-   "tail": " — ثقة المرصود 80%",
+   "tail": " — ثقة المرصود 80–90%",
    "url": ""
   },
   {
    "attempted": 2,
-   "confidence_max": 0.8,
-   "confidence_min": 0.8,
+   "confidence_max": 0.7,
+   "confidence_min": 0.7,
    "contributed": 2,
    "failures": [],
-   "source": "Google Maps",
+   "source": "بحث ويب",
+   "tail": " — ثقة المرصود 70%",
+   "url": ""
+  },
+  {
+   "attempted": 1,
+   "confidence_max": 0.8,
+   "confidence_min": 0.8,
+   "contributed": 1,
+   "failures": [],
+   "source": "WITS",
    "tail": " — ثقة المرصود 80%",
    "url": ""
   }

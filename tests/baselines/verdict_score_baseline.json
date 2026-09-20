@@ -84,6 +84,23 @@
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },
+  "japan_cosmetics": {
+    "computed_pillars": null,
+    "engine_confidence": 0.6,
+    "engine_score": 0.901,
+    "engine_verdict": "CONDITIONAL-GO",
+    "insufficient_pillars": null,
+    "pillar_values": {
+      "competition": 0.297,
+      "market": 1.0,
+      "profit": null,
+      "regulatory": 1.0,
+      "risk": null
+    },
+    "view_confidence": 0.48,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
   "japan_honey": {
     "computed_pillars": 2,
     "engine_confidence": null,
@@ -166,6 +183,23 @@
       "risk": null
     },
     "view_confidence": 0.49,
+    "view_verdict": "WATCH",
+    "view_verdict_label": "مراقبة السوق"
+  },
+  "malaysia_cosmetics": {
+    "computed_pillars": null,
+    "engine_confidence": 0.6,
+    "engine_score": 0.858,
+    "engine_verdict": "CONDITIONAL-GO",
+    "insufficient_pillars": null,
+    "pillar_values": {
+      "competition": 0.248,
+      "market": 0.957,
+      "profit": null,
+      "regulatory": 0.833,
+      "risk": null
+    },
+    "view_confidence": 0.5,
     "view_verdict": "WATCH",
     "view_verdict_label": "مراقبة السوق"
   },

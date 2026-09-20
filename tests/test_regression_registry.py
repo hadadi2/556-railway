@@ -4597,6 +4597,22 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    267: lambda: (
+        _needles("silk_ai_judge.py", "def gate_religion_text",
+                 "_RELIGION_SWAPS", "def halal_demand_min_ratio")(),
+        _needles("silk_commercial_analysis.py", "def halal_positioning",
+                 "def _cited_halal_demand", "def _trends_halal_ratio")(),
+        _absent("silk_render.py", "شريحة الحلال/رمضان",
+                "موسمية رمضان/العيدين فرصة ذروة طلب")(),
+        _absent("silk_market_analyst.py",
+                "نسبة السكان المسلمين × واردات المنتج")(),
+        _needles("silk_market_analyst.py",
+                 "نسبة دينية لا يثبتان وجود مشترين")(),
+        _needles("silk_style_contract.py", "def build_search_terms")(),
+        _needles("tests/test_wave_d3_religion_search.py",
+                 "def test_a_food_category_prompt_is_byte_identical",
+                 "def test_the_owner_matrix_holds_in_all_three_directions")(),
+        _needles("tests/test_lessons_enforcement.py", "(267, ")()),
     266: lambda: (
         _needles("silk_commercial_analysis.py", "def fill_insights",
                  "def augment_supplier_nature", "def official_vat",

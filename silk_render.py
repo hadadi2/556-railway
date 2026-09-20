@@ -1261,10 +1261,9 @@ def _swot(research: dict | None) -> dict:
     if hhi is not None and hhi < 1500:
         O.append({"text": f"سوق مفتّت (HHI {hhi}) — لا مورّد مهيمناً",
                   "evidence": f"UN Comtrade — {internal_ar('hhi')}"})
-    rr = _rmetric(research, "consumer_demand", "ramadan_seasonality")
-    if rr and "مرجّحة" in str(rr):
-        O.append({"text": "موسمية رمضان/العيدين فرصة ذروة طلب",
-                  "evidence": "قاعدة معلنة فوق مرجع Pew"})
+    # الموجة د-٣: «موسمية رمضان فرصة» كانت مشتقّةً من **حصةٍ سكانية** لا من
+    # طلبٍ مرصود — فرصةٌ بلا دليل. تُحذَف من الفرص؛ الموسميةُ تبقى حقيقةً
+    # مرصودةً في بعثة الاتجاهات حيث تُقاس فعلاً.
     top = _rmetric(research, "competitor", "top_supplier_share_pct")
     if top is not None and top > 50:
         T.append({"text": f"مورّد مهيمن بحصة {top}% — حرب أسعار محتملة",
@@ -1297,10 +1296,9 @@ def _segments(research: dict | None) -> list[dict]:
         out.append({"segment": f"شريحة الدخل: {tier}",
                     "basis": f"نصيب الفرد {round(gdp):,}$ (World Bank) — "
                              "عتبات معلنة 8k/25k"})
-    ms = _rmetric(research, "consumer_demand", "muslim_share_pct")
-    if ms is not None:
-        out.append({"segment": f"شريحة الحلال/رمضان: {ms}% من السكان",
-                    "basis": "مرجع Pew الساكن — muslim_share_pct"})
+    # الموجة د-٣ (قاعدةُ المالك): **التركيبةُ الدينية ليست طلباً** — لا تُعرَض
+    # شريحةَ طلبٍ في أيّ فئة. موضعُ الحلال (شرطُ دخولٍ أم ميزةٌ بثلاثة شروط)
+    # يُحسَب في `silk_commercial_analysis.halal_positioning` ويدخل السجلّ.
     si = _rmetric(research, "consumer_demand", "search_interest")
     if si is not None:
         out.append({"segment": f"اهتمام البحث بالمنتج: {si}/100",

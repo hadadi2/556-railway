@@ -636,7 +636,8 @@ def product_terms(category: str, lang: str) -> tuple:
             rows = csv.DictReader(l for l in fh if not l.startswith("#"))
             for row in rows:
                 if (row.get("category") or "").strip() == category and \
-                        (row.get("lang") or "").strip() == lang:
+                        (row.get("lang") or "").strip().lower() == \
+                        str(lang or "").strip().lower():
                     return tuple(t.strip().lower()
                                  for t in (row.get("terms") or "").split(",")
                                  if t.strip())
@@ -1365,3 +1366,109 @@ EVIDENCE_LANGUAGE_FIREWALL_EN = (
     "If a fact is unclear to you, declare the gap in English rather than "
     "reproducing the Arabic or guessing at its meaning."
 )
+
+# ── مصطلحاتُ البحث · deterministic search terms (الموجة د-٣، البند ٨) ───────
+#
+# **العيبُ المرصود:** استعلاماتُ البعثات كان يكتبها النموذجُ حرّاً من اسم
+# المنتج، فيبحث كثيراً بترجمةٍ حرفيةٍ لوصف البند الجمركيّ («Horses; live,
+# pure-bred breeding animals») لا بما يسمّيه السوقُ فعلاً — ولا توليدَ حتميّاً
+# ولا ترجمة. **الفكس:** ثلاثةُ حقولٍ تُبنى بالكود من مراجعَ قائمة وتُمرَّر
+# للنموذج: العربيةُ (اسمُ المنتج + مفردات `hs_codes.csv`)، والإنجليزيةُ (اسمُ
+# البند الرسميّ)، ولغةُ السوق (**مفرداتُ فئةٍ** من `product_terms_l1.csv` —
+# يُقال ذلك صراحةً: ليست ترجمةَ اسم المنتج).
+def _hs_row(hs_code: object) -> dict:
+    import csv
+    import os
+    d = "".join(ch for ch in str(hs_code or "") if ch.isdigit())[:6]
+    if len(d) < 6:
+        return {}
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "hs_codes.csv")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(l for l in fh if not l.startswith("#")):
+                if (row.get("hs_code") or "").strip() == d:
+                    return row
+    except OSError:
+        return {}
+    return {}
+
+
+def _customs_descriptions(hs_code: object) -> list:
+    """أوصافُ البند الجمركيّ (البند/البند الرئيس/الفصل) من `hscodes_full.csv`."""
+    import csv
+    import os
+    d = "".join(ch for ch in str(hs_code or "") if ch.isdigit())[:6]
+    if len(d) < 6:
+        return []
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "hscodes_full.csv")
+    out: list = []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(l for l in fh if not l.startswith("#")):
+                if (row.get("hs_code") or "").strip() != d:
+                    continue
+                for col in ("description_en", "heading_desc_en",
+                            "chapter_desc_en"):
+                    v = (row.get(col) or "").strip()
+                    if v and v not in out:
+                        out.append(v)
+                break
+    except OSError:
+        return []
+    return out
+
+
+def build_search_terms(product: str, hs_code: object, market) -> dict:
+    """{ar, en, local:{lang, terms, note}} — حتميّ، بلا شبكة ولا نموذج.
+
+    حقلٌ فارغٌ = **فجوةٌ معلنة** (لا صفَّ في المرجع)، لا ترجمةَ مخمَّنة.
+    """
+    row = _hs_row(hs_code)
+    ar = [t for t in [str(product or "").strip()] if t]
+    for kw in (row.get("keywords") or "").split(","):
+        kw = kw.strip()
+        if kw and any("\u0600" <= ch <= "\u06ff" for ch in kw) and kw not in ar:
+            ar.append(kw)
+    en = [t for t in [(row.get("name_en") or "").strip()] if t]
+    lang = ""
+    try:
+        from silk_llm_runtime import _locale_hl
+        lang = str(_locale_hl({"market": market}) or "").strip()
+    except Exception:  # noqa: BLE001
+        lang = ""
+    terms: tuple = ()
+    try:
+        from silk_ai_judge import product_profile
+        cat = (product_profile(hs_code) or {}).get("category") or ""
+        if cat and lang:
+            terms = product_terms(cat, lang)
+    except Exception:  # noqa: BLE001
+        terms = ()
+    note = ("مفرداتُ **فئة** المنتج بلغة السوق (مرجع product_terms_l1) — ليست "
+            "ترجمةَ اسم المنتج؛ اسمُه بلغة السوق يبقى على بطاقة المنتج أو "
+            "على بحثك" if terms else
+            "لا صفَّ لفئة هذا المنتج بلغة السوق في المرجع — فجوةٌ معلنة")
+    return {"ar": ar[:6], "en": en,
+            # وصفُ البند الجمركيّ الطويل — يُعرَض للحارس ليرفضه استعلاماً، ولا
+            # يُعرَض للنموذج مصطلحاً (لغةُ تصنيفٍ لا لغةُ سوق).
+            "customs_descriptions": _customs_descriptions(hs_code),
+            "local": {"lang": lang or None, "terms": list(terms)[:6],
+                      "note": note}}
+
+
+def search_terms_block(terms: dict) -> str:
+    """كتلةُ الموجّه من الحقول الثلاثة — فارغةٌ حين لا مصطلحَ أصلاً."""
+    if not terms:
+        return ""
+    ar = "، ".join(terms.get("ar") or []) or "—"
+    en = ", ".join(terms.get("en") or []) or "—"
+    loc = terms.get("local") or {}
+    local = "، ".join(loc.get("terms") or []) or "—"
+    if ar == "—" and en == "—" and local == "—":
+        return ""
+    return ("مصطلحاتُ البحث المُعدّة لك (استعملها، ولا تبحث بترجمةٍ حرفيةٍ "
+            f"لوصف البند الجمركيّ):\n- بالعربية: {ar}\n- بالإنجليزية: {en}\n"
+            f"- بلغة السوق ({loc.get('lang') or 'غير محدّدة'}): {local} — "
+            f"{loc.get('note') or ''}")

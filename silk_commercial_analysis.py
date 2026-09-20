@@ -662,6 +662,39 @@ def fill_insights(dr: dict, put, *, hs_code=None, market_iso3: str = "",
             note=f"{complete} سطر سعر مكتمل (متجر/موقع محدّد + تاريخ + عبوة + "
                  f"عملة) من {total} — أقلّ من 3 = ضعيف التوثيق"))
 
+    # ٣) موضعُ الحلال — بفئة الفصل وثلاثةِ شروطٍ مرصودة (الموجة د-٣).
+    hp = halal_positioning(hs_code, market_iso3, missions,
+                           (sn or {}).get("rows") or ())
+    if hp and hp["status"] != "not_applicable":
+        label = {"advantage": "ميزة تنافسية",
+                 "entry_condition": "شرط دخول تجاري لا ميزة",
+                 "no_demand_evidence": "لم نرصد طلباً على الحلال بعد"}[hp["status"]]
+        note = "؛ ".join(hp["evidence"]) or "قاعدةُ الفئة من جدول تصنيف الفصول"
+        if hp["conditions"].get("rivals_not_halal_origin") is not None:
+            put(L.insight_entry(
+                "halal_positioning", label, grade=L.INFERENCE,
+                basis=("top_supplier_share_pct",),
+                assumption=("الحلالُ ميزةٌ فقط إذا اجتمعت ثلاثةٌ: مورّدون من "
+                            "دولٍ لا يشيع فيها الحلال، ولا قناةَ حلالٍ محلية، "
+                            "ودليلُ طلبٍ خارجيٌّ مُستشهَدٌ به"),
+                flip_if="لو رُصدت قناةُ حلالٍ محليةٌ أو مورّدٌ حلالُ المنشأ يسقط التمايز",
+                how_to_close=hp["how_to_close"], note=note,
+                source="تصنيف الفصل + مرجع Pew + مرجع السوق"))
+        else:
+            # `inherent`/`none` تصنيفٌ حتميٌّ بمعيارٍ مُستشهَد ⇒ مرصود. أمّا
+            # `affects` بلا مناشئِ مورّدين مرصودة فحكمٌ **على جهلٍ بشرطه
+            # الأوّل** — يُكتب ضعيفاً بسببه لا مرصوداً (مراجعةٌ ذاتية §58).
+            unknown_rivals = (hp["relevance"] == "affects"
+                              and hp["conditions"].get(
+                                  "rivals_not_halal_origin") is None)
+            put(L.graded_entry(
+                "halal_positioning", label,
+                L.WEAK if unknown_rivals else L.OBSERVED,
+                source="تصنيف الفصل (SMIIC 1:2019 / GSO 2055-1)",
+                origin="customs_requirements",
+                note=(note + "؛ مناشئُ كبار المورّدين لم تُرصد بعد، فالشرطُ "
+                      "الأوّل غيرُ مقيس") if unknown_rivals else note))
+
     # ٣/٦) الشهاداتُ الإلزامية بمصدرٍ رسمي.
     certs = certifications_for(market_iso3, hs_code, kind="certification")
     if certs:
@@ -677,3 +710,198 @@ def fill_insights(dr: dict, put, *, hs_code=None, market_iso3: str = "",
         put(L._entry("mandatory_certifications", None, origin="customs_requirements",
                      note="لا صفَّ رسمياً لهذا السوق والفئة في data/certifications_l1.csv "
                           "— تُكتب الشهاداتُ «مطلوبة تجارياً» لا «إلزامية»"))
+
+# ── الدينُ بفئة المنتج · religion gating by HS category (الموجة د-٣) ────────
+#
+# قاعدةُ المالك: الدينُ **ليس طلباً**. التركيبةُ الدينية للسكان لا تُعدّ شريحةَ
+# طلبٍ في أيّ فئة، والحلالُ لا يُقدَّم «ميزةً» إلا إذا تحقّقت **ثلاثةُ** شروطٍ
+# من بياناتٍ مرصودة (تعديلُ المالك 2026-09-19، الصيغة الثانية):
+#   ١) كبارُ مورّدي السوق من دولٍ لا يشيع فيها الحلال (حصةٌ مسلمة < العتبة).
+#   ٢) لا قناةَ حلالٍ محليةٌ مرصودة — ولا السوقُ نفسُه يشيع فيه الحلال
+#      (وإلا فالحلالُ هو المعيارُ السائد لا التمايز).
+#   ٣) **دليلُ طلبٍ فعليٍّ من مصدرٍ خارجيٍّ مُستشهَدٍ به**: صفحةٌ/تقريرٌ
+#      بعنوانٍ http، أو نسبةُ اهتمامِ بحثٍ «حلال + المنتج» ÷ «المنتج» وحدَه
+#      ≥ المعلمة المعلنة في `hs_category_l1`. **لا من نثر بعثة**: موجّهاتُ
+#      البعثات تدفعها إلى ذكر الحلال، فالاستشهادُ بنثرها دائريّ.
+#: عتبةُ «يشيع فيه الحلال» — حصةٌ مسلمة ≥ هذه النسبة (نفسُ عتبة `silk_research`).
+HALAL_PREVALENT_PCT = 25.0
+#: إبرُ الحلال في نصّ خارجيّ — عربيةٌ وإنجليزيةٌ ولغاتُ أسواقٍ شائعة.
+_HALAL_RE = re.compile(r"حلال|halal|ḥalāl|helal|halaal", re.IGNORECASE)
+_HTTP_RE = re.compile(r"https?://")
+
+
+def _muslim_pct(iso3: str) -> "float | None":
+    """حصةٌ مسلمةٌ من المرجع الساكن المُستشهَد — None = خارج المرجع (لا تخمين)."""
+    try:
+        from silk_research import muslim_share
+        row = muslim_share(str(iso3 or "").upper())
+    except Exception:  # noqa: BLE001
+        return None
+    try:
+        return float((row or {}).get("pct"))
+    except (TypeError, ValueError):
+        return None
+
+
+@functools.lru_cache(maxsize=1)
+def _locale_rows() -> dict:
+    path = os.path.join(_HERE, "data", "market_locale.csv")
+    return {(r.get("iso3") or "").strip().upper(): r for r in _rows(path)
+            if (r.get("iso3") or "").strip()}
+
+
+def local_halal_channel(market_iso3: str) -> "str | None":
+    """قناةُ الحلال المحلية المرصودة في `market_locale.ethnic_retail` — أو None.
+    العمودُ موجودٌ منذ R1 ولم يقرأه كودٌ قبل هذه الموجة."""
+    row = _locale_rows().get(str(market_iso3 or "").upper()) or {}
+    val = str(row.get("ethnic_retail") or "").strip()
+    return val or None
+
+
+#: بعثاتُ **السوق** وحدَها تصلح مصدراً لدليل الطلب — لا `customs_requirements`
+#: (صفوفُ الاشتراطات تذكر شهادةَ الحلال بروابطها الرسمية في **كلّ** سوق، بل
+#: وفي اشتراطات الخروج السعودية نفسِها، فتحوّل الشرطَ الثالث إلى لا شيء —
+#: مراجعةٌ ذاتية §58، أُعيد إنتاجُها على `halal_positioning("020712","JPN")`).
+_DEMAND_MISSIONS = ("consumer_culture", "channels_importers", "pricing_scout",
+                    "demand_trends", "opportunity_gaps", "competitors")
+#: وأدواتُ السوق وحدَها: بحثُ ويبٍ أو صفحةُ منتجٍ مقروءة — لا مرجعٌ داخليّ.
+_DEMAND_SOURCE_RE = re.compile(r"web search|serper|tavily|exa|product page|"
+                               r"بحث ويب|صفحة منتج", re.IGNORECASE)
+
+
+def _cited_halal_demand(missions: dict) -> "str | None":
+    """دليلُ طلبٍ خارجيٌّ مُستشهَدٌ به: اكتشافُ **أداةِ سوقٍ** في **بعثةٍ
+    سوقية**، يحمل رابطاً http ونصَّه يذكر الحلال — لا نثرَ بعثةٍ ولا صفَّ
+    اشتراطٍ رسميّ."""
+    missions = {k: v for k, v in (missions or {}).items()
+                if k in _DEMAND_MISSIONS}
+    for rep in (missions or {}).values():
+        findings = (rep.get("findings") if isinstance(rep, dict)
+                    else getattr(rep, "findings", None)) or []
+        for dp in findings:
+            get = dp.get if isinstance(dp, dict) else (lambda k, d=None: getattr(dp, k, d))
+            blob = " ".join(str(get(k) or "") for k in ("note", "source", "url"))
+            val = get("value")
+            if isinstance(val, dict):
+                blob += " " + " ".join(str(v) for v in val.values())
+            elif isinstance(val, str):
+                blob += " " + val
+            source = str(get("source") or "")
+            if (_HALAL_RE.search(blob) and _HTTP_RE.search(blob)
+                    and _DEMAND_SOURCE_RE.search(source)):
+                return " ".join(blob.split())[:200]
+    return None
+
+
+def _trends_halal_ratio(missions: dict) -> "tuple":
+    """(النسبة، سطرُ الدليل): «حلال + المنتج» ÷ «المنتج» وحدَه من الحمولة
+    نفسِها — مقياسٌ **نسبيٌّ** لا عتبةُ «> 0» (تعديلُ المالك)."""
+    base = halal = None
+    for key in ("demand_trends", "consumer_culture"):
+        rep = (missions or {}).get(key) or {}
+        findings = (rep.get("findings") if isinstance(rep, dict)
+                    else getattr(rep, "findings", None)) or []
+        for dp in findings:
+            get = dp.get if isinstance(dp, dict) else (lambda k, d=None: getattr(dp, k, d))
+            try:
+                v = float(get("value"))
+            except (TypeError, ValueError):
+                continue
+            note = str(get("note") or "")
+            if "trends" not in note.lower() and "اهتمام" not in note and "بحث" not in note:
+                continue
+            if _HALAL_RE.search(note):
+                halal = v if halal is None else max(halal, v)
+            else:
+                base = v if base is None else max(base, v)
+    if base is None or halal is None or base <= 0:
+        return None, ""
+    ratio = round(halal / base, 3)
+    return ratio, (f"اهتمام البحث بـ«حلال + المنتج» {halal} مقابل "
+                   f"{base} للمنتج وحدَه (نسبة {ratio})")
+
+
+def halal_positioning(hs_code, market_iso3: str, missions: dict,
+                      supplier_rows=()) -> "dict | None":
+    """موضعُ الحلال لهذا الصنف في هذا السوق — نقيّة، بلا شبكة.
+
+    `None` = فصلٌ غيرُ مصنَّف: لا يُقال شيء. وإلا:
+    `not_applicable` (فئةٌ لا صلةَ للدين بها — **لا لفظَ دينيّاً إطلاقاً**)،
+    `entry_condition` (شرطُ دخولٍ تجاريّ لا ميزة)، `no_demand_evidence`
+    (الشرطان الأوّلان متحقّقان والثالثُ غائب)، `advantage` (الثلاثة).
+    """
+    try:
+        from silk_ai_judge import halal_demand_min_ratio, religion_relevance
+    except Exception:  # noqa: BLE001
+        return None
+    rel = religion_relevance(hs_code)
+    if rel is None:
+        return None
+    out = {"relevance": rel, "status": "not_applicable", "conditions": {},
+           "evidence": [], "how_to_close": ""}
+    if rel == "none":
+        return out
+    if rel == "inherent":
+        out["status"] = "entry_condition"
+        out["evidence"].append("الصنفُ حلالٌ بطبيعته — شهادةُ الحلال شرطُ "
+                               "دخولٍ تجاريّ حيث طُلبت، لا ميزةَ تنافسية")
+        return out
+
+    # ─ فئةُ `affects`: الشروطُ الثلاثة من بياناتٍ مرصودة ─
+    assessed = [r for r in (supplier_rows or []) if (r or {}).get("iso3")]
+    shares = [(r["iso3"], _muslim_pct(r["iso3"])) for r in assessed]
+    known = [(iso, pct) for iso, pct in shares if pct is not None]
+    non_halal = [iso for iso, pct in known if pct < HALAL_PREVALENT_PCT]
+    cond1 = (len(non_halal) / len(known) >= 0.5) if known else None
+    market_pct = _muslim_pct(market_iso3)
+    channel = local_halal_channel(market_iso3)
+    known_market = (market_iso3 or "").upper() in _locale_rows()
+    market_prevalent = (market_pct is not None and market_pct >= HALAL_PREVALENT_PCT)
+    # سوقٌ خارج المرجعين = **مجهول** لا «بلا قناة» (مراجعةٌ ذاتية §58): خليّةٌ
+    # فارغةٌ في مرجعٍ منسَّقٍ تقول «لم تُدرَج قناة»، وغيابُ الصفّ كلِّه لا يقول
+    # شيئاً — والمجهولُ لا يُبنى عليه تمايز.
+    cond2 = (None if (not known_market or market_pct is None)
+             else (channel is None and not market_prevalent))
+    cited = _cited_halal_demand(missions)
+    ratio, ratio_line = _trends_halal_ratio(missions)
+    min_ratio = halal_demand_min_ratio(hs_code)
+    ratio_ok = (ratio is not None and min_ratio is not None and ratio >= min_ratio)
+    cond3 = bool(cited) or ratio_ok
+    out["conditions"] = {"rivals_not_halal_origin": cond1,
+                         "no_local_halal_channel": cond2,
+                         "demand_evidence": cond3}
+    if known:
+        out["evidence"].append(
+            f"{len(non_halal)} من {len(known)} من كبار المورّدين من دولٍ "
+            f"حصتُها المسلمة أقلّ من {HALAL_PREVALENT_PCT:g}% (مرجع Pew الساكن)")
+    if channel:
+        out["evidence"].append(f"قناةُ حلالٍ محليةٌ مرصودة: {channel}")
+    elif cond2 is None:
+        out["evidence"].append("السوقُ خارج مرجع اللغة/المتاجر أو مرجع Pew — "
+                               "وجودُ قناةِ حلالٍ محليةٍ لم يُقَس")
+    elif market_prevalent:
+        out["evidence"].append(
+            f"الحلالُ سائدٌ في السوق نفسِه (حصةٌ مسلمة {market_pct:g}%) — "
+            "فهو المعيارُ لا التمايز")
+    if cited:
+        out["evidence"].append(f"دليلُ طلبٍ خارجيٌّ مُستشهَدٌ به: {cited}")
+    if ratio_line:
+        out["evidence"].append(
+            ratio_line + (f" — بلغت المعلمةَ المعلنة {min_ratio:g}" if ratio_ok
+                          else f" — دون المعلمة المعلنة {min_ratio:g}"
+                          if min_ratio is not None else ""))
+    if cond2 and not channel and not market_prevalent:
+        out["evidence"].append(
+            f"لا قناةَ حلالٍ مدرجةً لهذا السوق في مرجع المتاجر، وحصتُه المسلمة "
+            f"{market_pct:g}% — والمرجعُ قائمةٌ منسّقةٌ لا مسحٌ شامل")
+    if cond1 and cond2 and cond3:
+        out["status"] = "advantage"
+    elif cond1 and cond2:
+        out["status"] = "no_demand_evidence"
+        out["how_to_close"] = (
+            "لم نرصد طلباً على الحلال في هذا السوق بعد؛ يُعرَف برصد صفحات "
+            "منتجاتٍ حلالٍ معروضةٍ في متاجره، أو تقريرِ سوقٍ منشورٍ يقيس "
+            "الشريحة، أو باهتمام بحثٍ لـ«حلال + المنتج» يبلغ المعلمة المعلنة")
+    else:
+        out["status"] = "entry_condition"
+    return out

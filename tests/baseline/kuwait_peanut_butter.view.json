@@ -564,6 +564,21 @@
     "value": null,
     "year": null
    },
+   "halal_positioning": {
+    "confidence": 0.9,
+    "items": null,
+    "key": "halal_positioning",
+    "label_ar": "موضع الحلال",
+    "label_en": "halal positioning",
+    "mirrored": false,
+    "note": "الحلالُ سائدٌ في السوق نفسِه (حصةٌ مسلمة 74%) — فهو المعيارُ لا التمايز؛ مناشئُ كبار المورّدين لم تُرصد بعد، فالشرطُ الأوّل غيرُ مقيس",
+    "origin": "customs_requirements",
+    "source": "تصنيف الفصل (SMIIC 1:2019 / GSO 2055-1)",
+    "status": "weak",
+    "unit": "",
+    "value": "شرط دخول تجاري لا ميزة",
+    "year": null
+   },
    "hhi": {
     "confidence": 0.8,
     "items": null,
@@ -922,6 +937,7 @@
     "what": "تعذّر التصنيف"
    }
   ],
+  "hs_code": "040510",
   "lang": "ar",
   "order": [
    "market_imports_usd",
@@ -945,7 +961,8 @@
    "direct_competitor_share_pct",
    "differentiation",
    "price_evidence_quality",
-   "mandatory_certifications"
+   "mandatory_certifications",
+   "halal_positioning"
   ],
   "repairs": [],
   "schema": "silk.ledger/v1",

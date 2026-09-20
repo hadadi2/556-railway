@@ -74,6 +74,13 @@ CANONICAL_BLOBS = {
                         "turkey_polymers_research_blob"),
     "netherlands_honey": ("canonical_netherlands_honey",
                           "netherlands_honey_research_blob"),
+    # الموجة د-٣ (مصفوفةُ الحلال): فئةٌ يؤثّر فيها الحلال × سوقٍ يشيع فيه
+    # (ماليزيا ⇒ شرطُ دخول)، وسوقٍ لا قناةَ حلالٍ فيه بلا دليل طلب (اليابان ⇒
+    # «لم نرصد طلباً بعد»؛ ومع دليلٍ مُستشهَدٍ به ⇒ ميزة — الوسيطُ في الدالة).
+    "malaysia_cosmetics": ("canonical_cosmetics_halal",
+                           "malaysia_cosmetics_research_blob"),
+    "japan_cosmetics": ("canonical_cosmetics_halal",
+                        "japan_cosmetics_research_blob"),
 }
 
 
