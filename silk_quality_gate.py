@@ -1175,19 +1175,82 @@ def _mission_label(key: str) -> str:
     return key.replace("_", " ")
 
 
+#: البعثاتُ التي **تقرؤها طبقةُ الأعمدة فعلاً** — فشلُ إحداها يحجب التسليم.
+#:
+#: **مقيسةٌ من `silk_deep_pillars` لا مُقدَّرة** (تصحيحُ مراجعةٍ ذاتية §58):
+#: أوّلُ تعدادٍ كُتب «من أعمدة القرار الخمسة» بالحدس فأخطأ في الاتجاهين —
+#: أدرج `pricing_scout` وهي لا تُقرأ في `build_pillar_inputs` إطلاقاً، وأسقط
+#: `tariffs_agreements`/`demographics_economy`/`logistics` وهي تُقرأ. القائمةُ
+#: أدناه هي **بالضبط** ما يناديه `_metric_findings`/`_findings` هناك
+#: (`build_pillar_inputs` و`_COMPONENT_SOURCES`)، ويقفلها اختبارٌ يقارنها
+#: بالمصدر فلا تتباعد صامتةً.
+#: ما عداها **إثرائيٌّ**: يُثري التقريرَ ولا يُقيم عموداً، ففشلُه يُعلَن
+#: ولا يمنع القرار.
+_CORE_EVIDENCE_MISSIONS = frozenset({
+    "trade_flow", "competitors", "demographics_economy",
+    "tariffs_agreements", "risk_news", "logistics", "customs_requirements"})
+
+#: مجموعةُ الإثرائيات المعرَّفة — مقامُ عتبة النصف. **ثابتةٌ لا محسوبةٌ من
+#: الحمولة**: حمولةٌ جزئية (بعثاتٌ قليلة في اختبارٍ أو جسرٍ محاكى) كانت
+#: تُصغِّر المقامَ فيعود الحجبُ على فشلٍ إثرائيٍّ واحد (§58).
+def _optional_missions() -> frozenset:
+    from silk_missions import MISSION_ORDER
+    return frozenset(MISSION_ORDER) - _CORE_EVIDENCE_MISSIONS
+
+
 def _check_agent_health(dr: dict) -> list[dict]:
     """بعثات بلا أي نتيجة مستشهَد بها — تُسرَد صراحة، لا تُخفى داخل ملخّص.
 
     بعثة **فشلت فعلياً** (`failed=True`) أشد من بعثة نجحت لكن لم تجد
     جديداً (مثل `opportunity_gaps` حين تكون كل الفرص مغطّاة أصلاً في
-    البعثات الأخرى) — الأولى بند `agent_failed` (تُفشِل الحكم)، الثانية
-    `agent_empty` (ملاحظة منهجية فقط، لا تُفشِل الحكم وحدها)."""
+    البعثات الأخرى) — الأولى بند `agent_failed`، الثانية `agent_empty`
+    (ملاحظة منهجية فقط، لا تُفشِل الحكم وحدها).
+
+    **والتناسبُ بين الفشلين (بلاغ المالك، حادثةٌ مقيسة):** كان أيُّ فشلٍ
+    يُصدِر `agent_failed` الحاجب، فبعثةٌ إثرائيةٌ صفريةٌ واحدة من اثنتي
+    عشرة تُعامَل كتقريرٍ بلا أدلةٍ أصلاً. دراسةٌ حقيقية (عشرُ بعثاتٍ
+    بأدلةٍ مستشهَدة، جدولُ قرارٍ كامل، أسعارٌ بعلامةٍ ومتجر) رُفض تسليمُها
+    لأنّ «اتجاهات الطلب» و«الفرص» لم تُنتجا استشهاداً — وكلتاهما لا تقيم
+    عموداً. فصار الحجبُ **للجوهريّ** (`_CORE_EVIDENCE_MISSIONS`)، والإثرائيُّ
+    `agent_failed_optional`: ملاحظةٌ شديدةٌ تصل «حدود المنهجية» ولا تحجب.
+
+    **وحدُّ الكمّ يبقى**: فشلُ نصف الإثرائيات فأكثر يعود `agent_failed` —
+    تقريرٌ نصفُ إثرائه فارغٌ ليس تقريرَ قرارٍ ولو نجا جوهرُه. (وهذا نفسُ
+    مبدأ العتبة في `_style_grade` أعلاه؛ كان هذا الفحصُ وحدَه بلا واحدة.)
+    """
     findings = []
-    for key, m in (dr.get("missions") or {}).items():
+    missions = dr.get("missions") or {}
+
+    def _void(m: dict) -> bool:
+        """بعثةٌ **بلا أدلةٍ فعلاً** — لا رايةٌ مجمّدةٌ وحدَها.
+
+        `failed = not findings` تُجمَّد في `run_llm_agent` **قبل** أن تُلحِق
+        خطواتُ D3 (`_augment_risk_news_wgi`/`_fx`, `_augment_competitors_
+        structured`) أدلّتَها الحتمية. فبعثةٌ رُفعت رايتُها ثمّ امتلأت
+        بأدلةٍ مُهيكَلة كانت تُحجَب وتُوصَف «بلا نتائج مستشهَد بها» بينما
+        طبقةُ الأعمدة تحسب منها درجةً (§58). القياسُ على ما وصل فعلاً.
+        """
+        return bool(m.get("failed")) and not (m.get("findings") or [])
+
+    opt_defined = _optional_missions()
+    optional_failed = [k for k, m in missions.items()
+                       if _void(m) and k in opt_defined]
+    # المقامُ من المجموعة المعرَّفة لا من الحاضرة (انظر `_optional_missions`).
+    optional_blocks = len(optional_failed) * 2 >= len(opt_defined)
+    for key, m in missions.items():
         label = _mission_label(key)
-        if m.get("failed"):
+        if _void(m):
+            if key in _CORE_EVIDENCE_MISSIONS:
+                check = "agent_failed"
+            elif optional_blocks:
+                # سببُ الحجب هنا **عتبةُ العدد** لا عمودٌ بلا سند — فاسمٌ
+                # ونصٌّ يقولان ذلك، وإلا أُرسِل القارئُ خلف سببٍ لم يقع
+                # (نفسُ عائلة الدرسين ٢٥٥ و٢٦٩).
+                check = "agent_failed_many_optional"
+            else:
+                check = "agent_failed_optional"
             findings.append({
-                "check": "agent_failed", "repairable": False,
+                "check": check, "repairable": False,
                 "note": f"بعثة '{label}' فشلت بلا نتائج مستشهَد بها — "
                        f"{m.get('summary') or 'بلا ملخّص'}"})
         elif not (m.get("findings") or []):
@@ -2483,7 +2546,8 @@ def _check_narrative_money_grounded(dr: dict) -> list[dict]:
 
 
 FAIL_TRIGGER_CHECKS = frozenset({
-    "section_structure", "agent_failed", "analyst_layer_failed",
+    "section_structure", "agent_failed", "agent_failed_many_optional",
+    "analyst_layer_failed",
     "evidence_body_numeric_contradiction", "source_coverage_below_threshold",
     # §B (حزمة الفكس v2.1): بتر/إحالة معلَّقة/قسم عميل بلا محتوى فعلي.
     "orphan_short_token", "dangling_cross_reference",
