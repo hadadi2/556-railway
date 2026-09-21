@@ -301,13 +301,43 @@ _CLIENT_REASONS: dict[str, dict[str, str]] = {
         "en": "The report narrative does not match the measurements used "
               "in the decision summary. Fix: regenerate the report; if this "
               "recurs, send the study ID to support for a data review."},
+    # النصُّ يسمّي **البعثة** لا «أحد المصادر» (بلاغ المالك، الدرس ٢٥٥):
+    # العبارةُ العامّة القديمة قرأها المالكُ مع سطرِ حدودٍ يذكر فشلَ مؤشرٍ
+    # خارجيّ، فطارد مصدراً **لم يكن السبب** — وفشلُ ذلك المؤشر لا يستطيع
+    # بنيوياً رفعَ هذه الراية أصلاً. البعثةُ المسمّاةُ في ملاحظة الفحص
+    # (`_check_agent_health` تكتبها بالعربية) هي ما يُغلَق بإعادة التشغيل.
+    # **لا إحالةَ إلى قسمٍ في تقريرٍ لم يُسلَّم** (§58): الصيغةُ الأولى قالت
+    # «اسمُها في حدود المنهجية أدناه»، وعلى الحجب لا تقريرَ أصلاً (409).
     "agent_failed": {
-        "ar": "أحدُ مصادر البحث تعذّر تشغيله في هذه التشغيلة، فبقيت جوانبُ "
-              "من الدراسة بلا سند. يُغلقه: التحقق من توفر المصدر ثم إعادة "
-              "تشغيل البحث؛ إعادة تنزيل الملف وحدها لا تكمل البيانات.",
-        "en": "One of the research sources failed to run, leaving parts of "
-              "the study unsupported. Fix: check source availability and "
-              "rerun the research; downloading again cannot fill missing data."},
+        "ar": "بعثةُ بحثٍ يقوم عليها أحدُ أعمدة القرار لم تُنتج أيَّ "
+              "معلومةٍ بمصدر في هذه التشغيلة، فبقي ذلك العمودُ بلا سند. "
+              "يُغلقه: إعادةُ تشغيل الدراسة — تُعاد البعثاتُ الفاشلة "
+              "وحدَها؛ وإعادةُ تنزيل الملف لا تكمل البيانات.",
+        "en": "A research mission that underpins one of the decision "
+              "pillars returned no sourced finding in this run, leaving "
+              "that pillar unsupported. Fix: rerun the study — only the "
+              "failed missions are repeated; downloading again cannot fill "
+              "missing data."},
+    # سببُ هذا الحجب **عتبةُ العدد** لا عمودٌ بعينه — فالنصُّ يقوله.
+    "agent_failed_many_optional": {
+        "ar": "نصفُ بعثات البحث الإثرائية أو أكثر لم تُنتج معلومةً بمصدر "
+              "في هذه التشغيلة. أعمدةُ القرار قائمةٌ، لكنّ ما يسندها من "
+              "تفصيلٍ ناقصٌ إلى حدٍّ لا يصلح معه التقريرُ للقرار. يُغلقه: "
+              "إعادةُ تشغيل الدراسة.",
+        "en": "Half or more of the enrichment research missions returned no "
+              "sourced finding in this run. The decision pillars stand, but "
+              "too much of the supporting detail is missing for the report "
+              "to carry a decision. Fix: rerun the study."},
+    # غيرُ حاجب: الواجهةُ تعرضه تحت «ملاحظات لا تحجب التسليم»، فالنصُّ
+    # **لا يعلن التسليم بنفسه** (كان يقول «فالتقريرُ يُسلَّم» فيقرؤه المالك
+    # تحت «لم نُسلِّمه» حين يحجب فحصٌ آخر — تناقضٌ على الشاشة نفسِها، §58).
+    "agent_failed_optional": {
+        "ar": "بعثةُ بحثٍ إثرائيةٌ لم تُنتج معلومةً بمصدر في هذه التشغيلة، "
+              "فبقي ذلك الجانبُ بلا تفصيل — وأعمدةُ القرار غيرُ متأثّرة. "
+              "يُغلقه: إعادةُ تشغيل الدراسة إن احتجتَ ذلك الجانب.",
+        "en": "An enrichment research mission returned no sourced finding "
+              "in this run, so that aspect stays undetailed — the decision "
+              "pillars are unaffected. Fix: rerun the study if you need it."},
     "analyst_layer_failed": {
         "ar": "طبقةُ التحليل الشامل لم تكتمل، فالتقريرُ بلا الربط الذي يحوّل "
               "الأرقام إلى قرار. يُغلقه: إعادة التوليد.",

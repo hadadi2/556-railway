@@ -4597,6 +4597,15 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    269: lambda: (
+        _needles("silk_quality_gate.py", "_CORE_EVIDENCE_MISSIONS",
+                 "agent_failed_optional", "optional_blocks")(),
+        _needles("silk_export_gate.py", "agent_failed_optional")(),
+        _absent("silk_export_gate.py", "أحدُ مصادر البحث تعذّر تشغيله")(),
+        _needles("tests/test_gate_proportionality.py",
+                 "def test_one_failed_enrichment_mission_does_not_block_delivery",
+                 "def test_a_failed_core_evidence_mission_still_blocks")(),
+        _needles("tests/test_lessons_enforcement.py", "(269, ")()),
     268: lambda: (
         _needles("silk_fact_ledger.py", "def critical_questions",
                  "def fill_estimates", "def insights_block")(),

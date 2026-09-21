@@ -251,6 +251,12 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٦٩ — تناسبُ الحجب: الجوهريُّ يحجب، والإثرائيُّ يُعلَن ويُسلَّم.
+    (269, "silk_quality_gate.py",
+     ["_CORE_EVIDENCE_MISSIONS", "agent_failed_optional"]),
+    (269, "silk_export_gate.py", ["agent_failed_optional"]),
+    (269, "tests/test_gate_proportionality.py",
+     ["def test_one_failed_enrichment_mission_does_not_block_delivery"]),
     # ٢٦٨ — الموجة د-٤: قسمُ الأسئلة الحتميّ، والتقديراتُ بنطاق، والكتابة.
     (268, "silk_fact_ledger.py",
      ["def critical_questions", "def fill_estimates",
