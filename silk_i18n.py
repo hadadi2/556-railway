@@ -357,6 +357,7 @@ TERMS: dict[str, dict[str, str]] = {
               "the table, not the chart"},
     "imports_mirrored": {"ar": "(من بيانات الشركاء)",
                          "en": "(from partner data)"},
+    "price_observed_at": {"ar": "رُصد {date}", "en": "observed {date}"},
     "req_verified_at": {"ar": "آخر تحقق: {date}", "en": "Last checked: {date}"},
     "req_note": {"ar": "النوعُ من المرجع المنسّق لكلّ بند؛ يُتحقَّق من انطباقه "
                        "على منتجك وقناتك قبل الشحن، والبندُ الذي لا يحمل "

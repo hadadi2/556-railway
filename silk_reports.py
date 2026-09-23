@@ -3976,7 +3976,9 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
 # التقرير يُسقَط معلَناً (`_lang_safe` — سياسة الفصل الصلب لا الترجمة).
 _PRICE_REASON_EN = {"الوزن غير متاح": "weight not available",
                     "العملة غير متاحة": "currency not available",
-                    "وحدة غامضة": "unit unclear"}
+                    "وحدة غامضة": "unit unclear",
+                    "منتج غير مكافئ": "not an equivalent product",
+                    "نتيجة بحث تحتاج تحققاً": "search result, needs checking"}
 
 
 _BADGE_MARKS_RE = re.compile(r"[✓◐○]\s*")
@@ -4004,8 +4006,13 @@ def _client_price_observations(doc, dr: dict, lang: str = "ar") -> None:
             continue
         reason = str(r.get("reason") or "").strip()
         if reason:
-            body += " — " + (reason if lang != "en"
-                             else _PRICE_REASON_EN.get(reason, reason))
+            body += " — " + (reason if lang != "en" else "; ".join(
+                _PRICE_REASON_EN.get(p_, p_) for p_ in reason.split("؛ ")))
+        # الدرس ٢٨١: تاريخُ الرصد يرافق السعر حين يُعرف — لا يُقدَّم رصدٌ
+        # قديم كأنه سعرُ اليوم.
+        if r.get("observed_at"):
+            body += " — " + _T("price_observed_at", lang,
+                               date=r["observed_at"])
         # المفتاحُ من النصّ الكامل قبل الاقتطاع — رصدان يختلفان بعد ١٦٠ حرفاً
         # (متجرٌ أو عبوةٌ أخرى) ليسا مكرّرين (مراجعة §58).
         key = (" ".join(raw.split()).casefold(), reason)

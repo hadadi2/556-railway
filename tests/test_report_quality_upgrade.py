@@ -420,7 +420,8 @@ def test_w3_1_yemen_price_rows_carry_per_row_reason_and_single_unlock():
     dr = R.build_view(yemen_research_blob())["deep_research"]
     rows = dr["price_rows"]
     reasons = {r["reason"] for r in rows}
-    assert "الوزن غير متاح" in reasons         # «علبة 5 دولار»
+    # الدرس ٢٨١ (معلن): النقصُ يبقى مذكوراً ولو اقترن بضعف الدليل.
+    assert any(x.startswith("الوزن غير متاح") for x in reasons)  # «علبة 5 دولار»
     assert "" in reasons                        # «6.5 دولار/كجم» قابل للحساب
     # سطر الفتح الوحيد مذكور مرة واحدة كبنية.
     assert "سعر المصنع" in dr["price_unlock"] and "وحدة متطابقتين" in dr["price_unlock"]  # قفل محدَّث معلن (الدرس 170)
