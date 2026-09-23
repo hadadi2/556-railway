@@ -72,8 +72,11 @@ def _charts(monkeypatch, **flags):
 def test_charts_are_pure_data_with_source_year_and_note(monkeypatch):
     charts = _charts(monkeypatch, SILK_IMPORTS_SPOTLIGHT="1",
                      SILK_REPORT_CHARTS="1")
-    assert [c["id"] for c in charts] == ["imports_trend", "supplier_shares"]
-    trend, shares = charts
+    # قفلٌ محدَّث معلن (الدرس ٢٧٠): الملخّصُ المهيكل وحدَه صار يُكوِّن HHI في
+    # العرض الاقتصادي (حقيقةٌ واحدة مع المحرّك) — فيظهر مقياسُ التركّز أيضاً.
+    assert [c["id"] for c in charts] == ["imports_trend", "supplier_shares",
+                                         "supplier_concentration"]
+    trend, shares = charts[0], charts[1]
     assert trend["unit"] == "USD" and shares["unit"] == "%", "رسمٌ لكلّ وحدة"
     assert trend["source"] == "UN Comtrade" and trend["year"] == "2021–2024"
     assert "2023" in trend["note"], "السنةُ الناقصة تُقال على الرسم"
@@ -88,8 +91,8 @@ def test_charts_are_pure_data_with_source_year_and_note(monkeypatch):
 
 
 def test_saudi_row_is_highlighted_and_out_of_range_share_is_dropped(monkeypatch):
-    _, shares = _charts(monkeypatch, SILK_IMPORTS_SPOTLIGHT="1",
-                        SILK_REPORT_CHARTS="1")
+    shares = _charts(monkeypatch, SILK_IMPORTS_SPOTLIGHT="1",
+                     SILK_REPORT_CHARTS="1")[1]
     labels = [r["label"] for r in shares["series"]]
     assert labels == ["Brazil", "السعودية", "Vietnam"]
     assert all("value_usd" not in r for r in shares["series"]), "حقلٌ ميّت"
@@ -196,7 +199,7 @@ def test_every_chart_declares_a_known_section_and_kind(monkeypatch):
     for c in charts:
         assert c["section"] in R.CHART_SECTIONS, c
         assert c["kind"] in R.CHART_KINDS, c
-    assert {c["section"] for c in charts} == {"market"}
+    assert {c["section"] for c in charts} == {"market", "competition"}
 
 
 # ── (٤) اهتمامُ البحث النسبي — صفّان فأكثر، ومصدرُه Google Trends ──────────

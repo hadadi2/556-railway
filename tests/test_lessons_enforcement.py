@@ -251,6 +251,21 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧١ — تقرير ٧: العملاتُ من القاموس الواحد، وصفُّ السعر سعرٌ فعلاً.
+    (271, "silk_narrative.py", ['"MYR": "رينجيت ماليزي"']),
+    (271, "silk_economics.py", ["def _price_res"]),
+    (271, "silk_render.py", ["def _is_price_row"]),
+    (271, "tests/test_report7_p0.py",
+     ["def test_myr_prices_are_read_in_arabic_and_english",
+      "def test_non_price_notes_never_become_shelf_price_rows"]),
+    # ٢٧٠ — تقرير ٧: حقيقةُ HHI واحدة، والبوابةُ تفحص هويةَ المقياس.
+    (270, "silk_economics.py", ["def hhi_fact", "def _year_position"]),
+    (270, "silk_fact_ledger.py", ["def _hhi_winner"]),
+    (270, "silk_quality_gate.py", ["def _check_chart_metric_identity",
+                                   "chart_metric_identity_mismatch"]),
+    (270, "tests/test_report7_p0.py",
+     ["def test_a_year_that_opens_the_sentence_is_not_read_as_the_hhi",
+      "def test_a_chart_number_that_belongs_to_another_metric_is_rejected"]),
     # ٢٦٩ — تناسبُ الحجب: الجوهريُّ يحجب، والإثرائيُّ يُعلَن ويُسلَّم.
     (269, "silk_quality_gate.py",
      ["_CORE_EVIDENCE_MISSIONS", "agent_failed_optional"]),

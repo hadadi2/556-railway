@@ -432,7 +432,9 @@ def _fill_from_research(dr: dict, put, result: dict | None = None) -> None:
                        note="لم يرصده المحرّك في نتائج هذه البعثة"))
             continue
         put(_entry(key, value, origin=mission,
-                   **_attribution(missions, mission, metric, value)))
+                   **_attribution(missions, mission, metric, value,
+                                  winner=(_hhi_winner(missions)
+                                          if key == "hhi" else None))))
     _fill_series(missions, put)
     put(_entry("population", None, note="لا يُقرأ عدد السكان من البعثات"))
     # الموجة د-٢: استنتاجاتُ التحليل التجاري من الاكتشافات المخزَّنة (نقيّة).
@@ -446,13 +448,48 @@ def _fill_from_research(dr: dict, put, result: dict | None = None) -> None:
         put(_entry("cost_advantage", None, note=f"تعذّر التحليل التجاري: {e}"))
 
 
+def _hhi_winner(missions: dict):
+    """الاكتشافُ الفائزُ بقيمة HHI عند المحرّك نفسِه — أو None.
+
+    الدرس ٢٧٠ (تقرير ٧): الإسنادُ بالمطابقة بالقيمة يفشل على الملخّص المهيكل
+    (قيمتُه قاموس) فتُلتقَط سنةُ اكتشافٍ آخر ومصدرُه. الفائزُ هو ما يعيده
+    `_structured_competition` — القارئُ نفسُه الذي أنتج القيمة.
+    """
+    import silk_deep_pillars as P
+    try:
+        return P._structured_competition(
+            P._metric_findings(missions or {}, "competitors"))[3]
+    except Exception:  # noqa: BLE001 — تعذُّر = مطابقةٌ بالقيمة كما كانت
+        return None
+
+
+def _winner_attribution(f) -> dict:
+    """إسنادُ اكتشافٍ معروفٍ سلفاً: السنةُ من حقل القيمة المهيكل ثم البنيوية."""
+    import silk_deep_pillars as P
+    raw = _g(f, "value")
+    year = raw.get("year") if isinstance(raw, dict) else None
+    try:
+        year = int(year) if year else P._fact_year(f)
+    except (TypeError, ValueError):
+        year = P._fact_year(f)
+    src = str(_g(f, "source", "") or "")
+    st = str(_g(f, "status", "") or "")
+    return {"source": src, "confidence": _g(f, "confidence"),
+            "note": str(_g(f, "note", "") or ""), "year": year,
+            "mirrored": ("مرآة" in src or "mirror" in src.lower()
+                         or st == "mirrored")}
+
+
 def _attribution(missions: dict, mission: str, metric: str,
-                 value: float) -> dict:
+                 value: float, winner=None) -> dict:
     """المصدر/السنة/الثقة للقيمة التي قرأها المحرّك — من الاكتشاف الحامل لها.
 
     المطابقةُ بالقيمة نفسِها (لا بإعادة استخراج): تعذُّرها يترك الإسنادَ
-    فارغاً فتُحسَب الحالةُ على أقسى تقدير، ولا يُختلَق مصدر.
+    فارغاً فتُحسَب الحالةُ على أقسى تقدير، ولا يُختلَق مصدر. و`winner`
+    (الاكتشافُ الذي أنتج القيمةَ عند المحرّك) يعلو المطابقةَ حين يُعرَف.
     """
+    if winner is not None:
+        return _winner_attribution(winner)
     import silk_deep_pillars as P
     try:
         findings = P._metric_findings(missions or {}, mission)
