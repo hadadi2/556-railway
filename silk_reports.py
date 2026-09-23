@@ -5760,11 +5760,9 @@ def _clean_leads(leads: list, dr: dict) -> list:
     # ومن جدولٍ واحد يقرؤه الفحصُ أيضاً. غيرُ المُدرَجة تمرّ بحالها فيلتقطها
     # حاجزُ اتساق اللغة القائم بدل أن تُستَر بترجمةٍ مختلَقة.
     from silk_style_contract import activity_label_ar
-    # الصنف ١٠ (خلف رايته): مِصفاةُ النشاط، وحصانةُ الجهةِ التي يسمّيها المتن.
-    # العيبُ المرصود وجهان: نشاطٌ لا صلةَ له **دخل** القائمة، وموزّعٌ يوصي به
-    # التقريرُ **غاب** عنها. فالنشاطُ صار مِصفاةً (والمجهولُ يمرّ)، والجهةُ
-    # المسمّاةُ في المتن لا تُسقِطها مِصفاةٌ أبداً — لا تُختلَق جهةٌ ولا
-    # يُختلَق اتصال، إنما تُمنَع مِصفاةٌ من إخفاء ما يوصي به التقريرُ نفسُه.
+    # الصنف ١٠ (خلف رايته): مِصفاةُ النشاط. تقرير ٧ §4.4 أنهى «حصانةَ» الجهة
+    # التي يسمّيها المتن: ذكرُ الاسم ليس دليلَ صلةٍ مستقلّاً — تمرّ المصافي
+    # كغيرها، وما يبقى منها بلا دليلِ تخصّصٍ يُعرَض مرشّحاً يحتاج تحققاً.
     _scoped = _leads_reason_on()
     # الدرس ٢٦٣ (مراجعة §58): متنُ التقرير يُقرَأ **دائماً** لا خلف راية —
     # مِصفاةُ الصلة بفئة المنتج تعمل بلا راية، فحصانةُ الجهةِ التي يوصي بها
@@ -5776,7 +5774,8 @@ def _clean_leads(leads: list, dr: dict) -> list:
     # الدرس ٢٦٣: فئةُ المنتج ورمزُه يصلان المِصفاة — المحورُ الثاني الذي
     # كان ناقصاً (نشاطٌ مُدرَجٌ يخدم فئةً أخرى). أسبابُ الإسقاط تُجمَع
     # للمدقّق ولا تصل العميل.
-    from silk_style_contract import lead_relevant_to_product
+    from silk_style_contract import lead_product_fit, EVIDENCE_NAMED, \
+        EVIDENCE_SPECIALIST
     _hs = dr.get("hs_code") or (dr.get("charter") or {}).get("hs_code") or ""
     _product = str(dr.get("product") or "")
     dropped: list = []
@@ -5799,8 +5798,9 @@ def _clean_leads(leads: list, dr: dict) -> list:
         # بعنوانٍ في دولةٍ أخرى أو بلا أيّ اتصالٍ كانت تُعرَض. الحصانةُ
         # مقصورةٌ على النشاط: التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ
         # صحّةِ عنوانٍ ولا وجودِ اتصال.
-        if _scoped and not named and not lead_activity_allowed(
-                lead.get("category")):
+        # تقرير ٧ §4.4: التسميةُ في المتن ليست دليلَ صلة — مِصفاةُ النشاط
+        # تسري على الجهة المسمّاة أيضاً (كانت حصانتُها تُبقي ما تُسقطه).
+        if _scoped and not lead_activity_allowed(lead.get("category")):
             dropped.append({"name": raw_name or lead.get("name"),
                             "why": "نشاطٌ خارج قائمة السماح"})
             continue
@@ -5813,15 +5813,21 @@ def _clean_leads(leads: list, dr: dict) -> list:
         if _address_wrong_geo(lead.get("address"), iso3, tnames):  # البند ٤
             dropped.append({"name": nm, "why": "عنوانٌ في دولةٍ أخرى"})
             continue
-        # الدرس ٢٦٣: صلةُ النشاط بفئة المنتج — الجهةُ التي يسمّيها المتنُ
-        # محصّنةٌ كما هي (دليلُ صلةٍ من التقرير نفسِه).
-        if not named:
-            _ok, _why = lead_relevant_to_product(lead, _hs, _product, iso3)
-            if not _ok:
-                dropped.append({"name": nm, "why": _why})
-                continue
+        # الدرس ٢٦٣ + تقرير ٧ §4.4: صلةُ النشاط بالمنتج تُفحَص للجميع. ذكرُ
+        # الاسم في المتن ليس دليلَ صلةٍ مستقلّاً: تعارضٌ مقيس (مقدّمُ خدمة،
+        # أو نشاطٌ متخصّصٌ بمنتجٍ آخر) يُسقِط حتى الجهةَ المسمّاة؛ وما بقي
+        # منها بلا دليلِ تخصّصٍ يُعرَض «مرشّحاً يحتاج تحققاً» لا مشترياً مؤكَّداً.
+        _ok, _why, _status = lead_product_fit(lead, _hs, _product, iso3)
+        if not _ok:
+            dropped.append({"name": nm, "why": _why})
+            continue
+        lead = dict(lead)
+        lead["evidence_status"] = (EVIDENCE_NAMED if named
+                                   and _status != EVIDENCE_SPECIALIST
+                                   else _status)
         if lead.get("category"):
-            lead = dict(lead)
+            # الخامُ يبقى للتقرير الإنجليزيّ — التسميةُ العربية للعربيّ وحدَه.
+            lead["category_raw"] = lead["category"]
             lead["category"] = activity_label_ar(lead["category"])
         out.append(lead)
     if dropped:
@@ -5866,9 +5872,17 @@ def _lead_cells(lead: dict, lang: str = "ar") -> list:
                 else str(rating) if rating else "—")
     site = lead.get("website") or lead.get("maps_link") or ""
     # WS10: خلية «مستوى التوثيق» (doc_level) أُسقِطت — لا عمود إسناد في المتن.
-    cells = [g("name"), g("address"), g("phone"), g("email"),
+    name = g("name")
+    reason_on = _leads_reason_on()
+    # تقرير ٧ §4.4: الجهةُ التي لا دليلَ صلةٍ لها إلا ذكرُ اسمها في التحليل
+    # تُوسَم مرشّحاً **على السطح الافتراضيّ** أيضاً — عمودُ السبب خلف رايته،
+    # وبدونه كانت تُعرَض كأيّ مشترٍ مؤكَّد. لا عمودَ جديد (قرار WS10).
+    if not reason_on and lead.get("evidence_status") == "named_unverified" \
+            and name != "—":
+        name += " " + _T("lead_name_candidate_mark", lang)
+    cells = [name, g("address"), g("phone"), g("email"),
              site.strip() or "—", rating_s]
-    if _leads_reason_on():
+    if reason_on:
         cells.append(_lead_reason(lead, lang))
     return cells
 
@@ -5876,9 +5890,25 @@ def _lead_cells(lead: dict, lang: str = "ar") -> list:
 def _lead_reason(lead: dict, lang: str = "ar") -> str:
     """سببُ إدراج الجهة بلغة الزائر — نشاطٌ ذو صلة، أو تسميةُ المتن لها،
     أو إفصاحٌ بأنّ نشاطها غير مُصرَّح. لا خانةَ صامتة."""
-    if lead.get("named_in_report"):
+    from silk_style_contract import EVIDENCE_NAMED, EVIDENCE_SPECIALIST, \
+        EVIDENCE_GENERAL
+    status = lead.get("evidence_status")
+    en = silk_i18n.normalize(lang) == "en"
+    cat = str((lead.get("category_raw") if en else None)
+              or lead.get("category") or "").strip()
+    if status == EVIDENCE_NAMED or (status is None
+                                    and lead.get("named_in_report")):
         return _T("lead_reason_named", lang)
-    cat = str(lead.get("category") or "").strip()
+    if status == EVIDENCE_SPECIALIST:
+        # التخصّصُ ثبت بالاسم أو بالنشاط؛ نشاطٌ عامّ مع اسمٍ يذكر المنتج لا
+        # يُكتَب «متخصّصة: شركة تجارية» (مراجعة §58).
+        from silk_style_contract import _activity_key_of, \
+            _ACTIVITY_CATEGORY_FREE
+        if cat and _activity_key_of(lead) not in _ACTIVITY_CATEGORY_FREE:
+            return _T("lead_reason_specialist", lang, activity=cat)
+        return _T("lead_reason_specialist_name", lang)
+    if status == EVIDENCE_GENERAL and cat:
+        return _T("lead_reason_general", lang, activity=cat)
     if cat:
         return _T("lead_reason_activity", lang, activity=cat)
     return _T("lead_reason_unknown", lang)

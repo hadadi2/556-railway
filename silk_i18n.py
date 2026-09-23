@@ -823,8 +823,20 @@ TERMS: dict[str, dict[str, str]] = {
     "col_include_reason": {"ar": "سبب الإدراج", "en": "Why included"},
     "lead_reason_activity": {"ar": "نشاطٌ ذو صلة: {activity}",
                              "en": "Relevant activity: {activity}"},
-    "lead_reason_named": {"ar": "مذكورةٌ في متن التقرير",
-                          "en": "Named in the report body"},
+    # تقرير ٧ §4.4: ذكرُ الاسم في المتن ليس دليلَ صلة — يُقال بحالته.
+    "lead_reason_named": {"ar": "مذكورةٌ في التحليل — صلتُها بالمنتج تحتاج تحققاً",
+                          "en": "Named in the analysis — its link to the "
+                                "product still needs checking"},
+    "lead_reason_specialist": {"ar": "متخصّصةٌ في المنتج: {activity}",
+                               "en": "Specialised in the product: {activity}"},
+    "lead_name_candidate_mark": {"ar": "(مرشّحةٌ تحتاج تحققاً)",
+                                 "en": "(candidate — needs checking)"},
+    "lead_reason_specialist_name": {"ar": "صلتُها بالمنتج ظاهرةٌ في اسمها",
+                                    "en": "Its name shows a link to the product"},
+    "lead_reason_general": {"ar": "تاجرٌ عامّ ({activity}) — تعاملُه مع المنتج "
+                                  "يحتاج تحققاً",
+                            "en": "General trader ({activity}) — whether it "
+                                  "handles the product still needs checking"},
     "lead_reason_unknown": {"ar": "نشاطُها غير مُصرَّح",
                             "en": "Activity not declared"},
     "next_step_deepen": {

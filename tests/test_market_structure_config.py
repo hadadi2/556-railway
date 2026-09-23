@@ -467,11 +467,15 @@ def test_lead_activity_filter_and_reason_column_follow_the_flag():
         on = R._clean_leads(leads, dr)
         names = [x["name"] for x in on]
         assert "متجر الوفاء لقطع الغيار" not in names
-        assert "شركة النيل للتوزيع" in names      # يسمّيها المتن ⇒ حصانة
+        # قفلٌ محدَّث معلن (تقرير ٧ §4.4): مِصفاةُ النشاط تسري على الجهة
+        # المسمّاة أيضاً — التسميةُ في المتن ليست دليلَ صلة.
+        assert "شركة النيل للتوزيع" not in names
         assert "مؤسسة البركة" in names
         head = R._leads_header("ar")
         assert head[-1] == "سبب الإدراج"
-        assert R._lead_cells(on[0], "ar")[-1] == "مذكورةٌ في متن التقرير"
+        named = dict(leads[2], named_in_report=True,
+                     evidence_status="named_unverified")
+        assert R._lead_cells(named, "ar")[-1].startswith("مذكورةٌ في التحليل")
 
 
 def test_broad_hs_disclosure_and_confidence_cap_reuse_the_flagged_machinery():
@@ -742,7 +746,9 @@ def test_review_prose_immunity_covers_only_the_activity_filter():
               "address": "القاهرة، مصر", "phone": "2"}]
     with _env(SILK_MARKET_STRUCTURE_CONFIG="1"):
         names = [x["name"] for x in R._clean_leads(leads, dr)]
-    assert "شركة النيل للتوزيع" in names     # نشاطٌ مستبعَدٌ لكنّ المتن سمّاها
+    # قفلٌ محدَّث معلن (تقرير ٧ §4.4): التسميةُ ليست دليلَ صلة — نشاطٌ
+    # مستبعَدٌ يُسقَط وإن سمّاه المتن.
+    assert "شركة النيل للتوزيع" not in names
     assert "شركة الأمل للتجارة" not in names  # عنوانٌ في دولةٍ أخرى ⇒ يُسقَط
 
 
