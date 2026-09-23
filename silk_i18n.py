@@ -344,6 +344,17 @@ TERMS: dict[str, dict[str, str]] = {
               "بحجمٍ يحتمل ضعفه.",
         "en": "Pillar {pillar} is weak ({pct}%) — address it before you "
               "commit, or enter at a size that can absorb it."},
+    # تقرير ٧ §4.1: خطوةُ استكمالٍ لكلّ شرط — تُربَط بها خطواتُ الخطة.
+    "cond_closure_gate": {"ar": "إدراج المنشأة في قائمة المنشآت المعتمدة لدى "
+                                "الجهة المختصة قبل أي شحن",
+                          "en": "Get the facility onto the approved-"
+                                "establishment list before any shipment"},
+    "cond_closure_missing": {"ar": "استكمال {parts}",
+                             "en": "complete {parts}"},
+    "cond_numbered": {"ar": "الشرط {n}: {text}", "en": "Condition {n}: {text}"},
+    "cond_closure_weak": {"ar": "معالجة ضعف جانب {pillar} قبل الالتزام",
+                          "en": "Address the weak {pillar} aspect before "
+                                "committing"},
     "cond_eligibility_gate": {
         "ar": "منشأتك يجب أن تُدرَج في قائمة المنشآت المعتمدة (EU 2017/625) "
               "قبل أي شحن — ولا يُغني عنها أي إجراء لاحق.",

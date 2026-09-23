@@ -4107,7 +4107,12 @@ def create_app():
             found.get("product", ""), market_name, trace_id=trace_id,
             hs_code=found.get("hs_code"), hs_confirmation=hs_conf_regen,
             style=regen_style, seed_draft=_seed_regen,
-            importer_leads=dr.get("importer_leads"), product_card=found.get("product_card"))
+            importer_leads=dr.get("importer_leads"), product_card=found.get("product_card"),
+            # تقرير ٧ §4.1 (مراجعة §58): قرارُ المحرّك المخزَّن يصل الكاتبَ في
+            # إعادة التوليد أيضاً — وإلا عاد يؤلّف شروطَه وعددَها.
+            entry_decision=(((found.get("markets") or [{}])[0] or {})
+                            .get("decision")),
+            analyst_by_category=(dr.get("analyst") or {}).get("by_category"))
         if (dr.get("trend_refresh") or {}).get("status") == "failed":
             report_out.setdefault("unresolved_notes", []).append(
                 "تعذر تحديث بيانات الاتجاهات؛ احتُفظ بالأدلة السابقة وفجواتها.")

@@ -483,11 +483,18 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
     risks = _risk_register(risk_pi, _clip(coverage))
 
     conditions: list[str] = []
+    # تقرير ٧ §4.1: قائمةُ شروطٍ **مهيكلة** بجانب النصوص (إضافيّ) — كلُّ شرطٍ
+    # بمعرّفٍ ونوعٍ وجانبٍ وخطوةِ استكمال؛ منها يُشتقّ العددُ والصياغةُ على كلّ
+    # سطح بدل إعادة بنائها من الأعمدة (قائمتان كانتا تتباعدان).
+    condition_items: list[dict] = []
     for name in missing_pillars:
         # D4 (البند 16): مفردات الغياب القانونية على سطح الشروط أيضاً.
         conditions.append(f"جانب {_AR[name]} غائب (غير متاح: "
                           f"{_parts_ar(pillars[name]['missing'])}) "
                           "— أكمل مصادره قبل قرار نهائي")
+        condition_items.append({"kind": "pillar_missing", "pillar": name,
+                                "missing": list(pillars[name]["missing"] or []),
+                                "status": "open"})
     for name, p in pillars.items():
         v = p["value"]
         if v is None:
@@ -499,9 +506,15 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
             # أعلاه لنفس السبب (لا رقم آلي خام يصل العميل).
             conditions.append(f"جانب {_AR[name]} ضعيف ({round(eff * 100)}%) "
                               f"— {p['basis']}")
+            condition_items.append({"kind": "pillar_weak", "pillar": name,
+                                    "pct": round(eff * 100), "status": "open"})
     if pillars["regulatory"].get("eligibility_gate"):
         conditions.insert(0, "بوابة أهلية أمامية مفتوحة (منشأة معتمدة EU 2017/625) "
                              "— لا تقدّم قبل عبورها")
+        condition_items.insert(0, {"kind": "eligibility_gate",
+                                   "pillar": "regulatory", "status": "open"})
+    for n, it in enumerate(condition_items, 1):
+        it["id"] = f"C{n}"
 
     # ── البند 2 (أمر إصلاح المحرّك): لا درجةَ ولا حكمَ آلياً بأقل من الحد
     # الأدنى من الأعمدة. `verdict=""` **بالتصميم**: `promote_engine_verdict`
@@ -533,7 +546,7 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
             "pillars": pillars, "missing_pillars": missing_pillars,
             "incumbent_is_self": pillars["competition"].get("incumbent_is_self"),
             "critical_risk": critical, "risks": risks,
-            "conditions": conditions,
+            "conditions": conditions, "condition_items": condition_items,
             "first_steps": [f"أكمل مصادر عمود {n} قبل طلب درجةٍ وحكم"
                             for n in missing_ar],
             "why": (("خطر حرج مرصود (الاستقرار السياسي دون العتبة) يقلب "
@@ -612,6 +625,7 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
         # السوق على داخلٍ جديد أياً كان).
         "incumbent_is_self": pillars["competition"].get("incumbent_is_self"),
         "critical_risk": critical, "risks": risks, "conditions": conditions,
+        "condition_items": condition_items,
         "first_steps": first_steps, "why": why,
         "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — "
                 "الأعمدة الغائبة شروط معلنة، لا تخمين",

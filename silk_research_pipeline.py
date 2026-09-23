@@ -682,6 +682,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     # بوّابةُ الجودة، فلا يُحجَب التقريرُ على طاعةِ الموجّه.
                     entry_decision=_deep_decision,
                     ledger=_ledger,
+                    # تقرير ٧ §4.2: سجلُّ القناة نفسُه الذي يبنيه العرض.
+                    analyst_by_category=(analyst_input or {}).get("by_category"),
                     on_stage=lambda s: silk_context.snapshot_research_progress(
                         analysis_id, s)) if ai_ok else
                     {"report": None, "review_cycles": 0, "unresolved_notes": []})

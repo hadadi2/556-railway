@@ -259,6 +259,108 @@ def _score_arithmetic_line(arith: dict, lang: str = "ar") -> str:
                 score=round(float(arith["score"]) * 100))
 
 
+def entry_channel(by_category: object) -> "dict | None":
+    """`{primary, alternative, source, status}` من `entry_door` — أو None.
+
+    القيمةُ نصُّ المحلل كما هو (لا تُؤلَّف قناة)، والمصدرُ مصدرُ الاكتشاف؛
+    والحالةُ «candidate» دائماً: ترتيبُ المحلل مؤشرٌ لا إثباتُ قناة.
+    """
+    from silk_narrative import EVIDENCE_SECONDARY_MIN
+
+    def _txt(d):
+        if isinstance(d, dict):
+            return str(d.get("value") or d.get("claim") or "").strip()
+        return str(getattr(d, "value", "") or "").strip()
+
+    def _conf(d):
+        c = d.get("confidence") if isinstance(d, dict) \
+            else getattr(d, "confidence", None)
+        try:
+            return float(c)
+        except (TypeError, ValueError):
+            return None
+    doors, seen = [], set()
+    for d in ((by_category or {}).get("entry_door") or []):
+        t = _txt(d)
+        c = _conf(d)
+        # مراجعة §58: بابٌ دون عتبة الدليل الثانويّ يُعلَن للعميل «غير متحقق»
+        # في قسمٍ آخر — لا يصير القناةَ الأولى هنا؛ والمكرّرُ لا يصير بديلاً.
+        if not t or t in seen or (c is not None and c < EVIDENCE_SECONDARY_MIN):
+            continue
+        seen.add(t)
+        doors.append(d)
+    if not doors:
+        return None
+    first = doors[0]
+    src = (first.get("source") if isinstance(first, dict)
+           else getattr(first, "source", "")) or ""
+    return {"primary": _txt(first),
+            "alternative": _txt(doors[1]) if len(doors) > 1 else "",
+            "source": str(src), "status": "candidate"}
+
+
+def condition_texts(ed: object, lang: str = "ar") -> "list | None":
+    """صفوفُ الشروط المفتوحة بلغة القارئ — `[{id, text, closure}]` — أو None.
+
+    تقرير ٧ §4.1: **قائمةٌ واحدة** يُشتقّ منها العددُ والصياغةُ في أساس الحكم
+    وموجّه الكاتب معاً (كان الأساسُ يعيد بناءها من الأعمدة، والكاتبُ لا يراها
+    فيؤلّف شروطَه وعددَها). None للنتائج المخزَّنة قبل `condition_items`
+    فيبقى مسارُ إعادة البناء القائم لها.
+    """
+    import silk_i18n as _I
+    import silk_decision as _D
+    items = (ed or {}).get("condition_items") if isinstance(ed, dict) else None
+    if not isinstance(items, list) or not items:
+        return None
+    rows: list = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        kind = it.get("kind")
+        label = _D.pillar_label(it.get("pillar") or "", lang)
+        if kind == "eligibility_gate":
+            text = _I.t("cond_eligibility_gate", lang)
+            closure = _I.t("cond_closure_gate", lang)
+        elif kind == "pillar_missing":
+            parts = _D.part_labels(it.get("missing"), lang)
+            text = _I.t("cond_pillar_missing", lang, pillar=label, parts=parts)
+            closure = _I.t("cond_closure_missing", lang, parts=parts)
+        elif kind == "pillar_weak":
+            text = _I.t("cond_pillar_weak", lang, pillar=label,
+                        pct=it.get("pct"))
+            closure = _I.t("cond_closure_weak", lang, pillar=label)
+        else:
+            continue
+        cid = str(it.get("id") or f"C{len(rows) + 1}")
+        num = cid[1:] if cid[:1] == "C" and cid[1:].isdigit() \
+            else str(len(rows) + 1)
+        # الرقمُ المعروضُ هو رقمُ المعرّف نفسُه — ما يكتبه الكاتبُ في الخطة
+        # («← الشرط 3») يقع على شرطٍ مرئيٍّ بالرقم ذاته (مراجعة §58).
+        rows.append({"id": cid, "text": text, "closure": closure,
+                     "label": _I.t("cond_numbered", lang, n=num, text=text)})
+    return rows
+
+
+def _items_from_pillars(pillars: dict) -> list:
+    """احتياطٌ للنتائج المخزَّنة قبل `condition_items`: القائمةُ المهيكلة
+    نفسُها تُبنى من الأعمدة — فتمرّ الصياغةُ بمسارٍ واحد (`condition_texts`)."""
+    import silk_decision as _D
+    items: list = []
+    if (pillars.get("regulatory") or {}).get("eligibility_gate"):
+        items.append({"kind": "eligibility_gate", "pillar": "regulatory"})
+    for name, p in pillars.items():
+        strength = _D.pillar_strength(name, (p or {}).get("value"))
+        if strength is None:
+            items.append({"kind": "pillar_missing", "pillar": name,
+                          "missing": list((p or {}).get("missing") or [])})
+        elif strength < 0.5:
+            items.append({"kind": "pillar_weak", "pillar": name,
+                          "pct": round(strength * 100)})
+    for n, it in enumerate(items, 1):
+        it["id"] = f"C{n}"
+    return items
+
+
 def decision_basis(ed: dict, displayed_confidence: object = None,
                    lang: str = "ar",
                    oldest_fact_year: object = None) -> "dict | None":
@@ -297,9 +399,7 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
     conf = displayed_confidence
     if not isinstance(conf, (int, float)):
         conf = ed.get("confidence")
-    rows, conds = [], []
-    if (pillars.get("regulatory") or {}).get("eligibility_gate"):
-        conds.append(_t("cond_eligibility_gate"))
+    rows = []
     for name, p in pillars.items():
         strength = _D.pillar_strength(name, (p or {}).get("value"))
         label = _D.pillar_label(name, lang)
@@ -307,13 +407,10 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
         if strength is None:
             rows.append({"name": label, "strength_pct": None,
                          "note": _t("pillar_missing_lead", parts=parts)})
-            conds.append(_t("cond_pillar_missing", pillar=label, parts=parts))
         else:
             pct = round(strength * 100)
             rows.append({"name": label, "strength_pct": pct,
                          "note": _t("pillar_measured")})
-            if strength < 0.5:
-                conds.append(_t("cond_pillar_weak", pillar=label, pct=pct))
     # الصنف ٧: **العددُ والسقفُ يُوحَّدان، والصياغةُ تبقى صياغةَ القارئ.**
     #
     # جُرِّبت قراءةُ نصوصِ المحرّك مباشرةً وأُسقِطت بالقياس: سلاسلُ المحرّك
@@ -322,6 +419,14 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
     # التفعيلُ **يُعيد** العيبَ الذي سدّه الصنف ١. والعيبُ المرصود لم يكن
     # إعادةَ البناء بل **انزياحَ العدد وصمتَ القصّ**: فيُعلَن العددُ الكامل
     # ويُوحَّد السقفُ ويُقال ما خُفي، والنصُّ كما هو.
+    # تقرير ٧ §4.1: الشروطُ من قائمة المحرّك المهيكلة نفسِها حين تُوجد —
+    # العددُ عددُ المحرّك حرفياً، والصياغةُ صياغةُ القارئ. إعادةُ البناء
+    # من الأعمدة احتياطٌ للنتائج المخزَّنة قبلها.
+    _rows = condition_texts(ed, lang)
+    if _rows is None:
+        _rows = condition_texts(
+            {"condition_items": _items_from_pillars(pillars)}, lang) or []
+    conds = [r["label"] for r in _rows]
     _oc = open_conditions(ed, OPEN_CONDITIONS_CAP)
     _cap = OPEN_CONDITIONS_CAP if open_conditions_single() else 6
     _shown_conds = conds[:_cap]
@@ -340,6 +445,8 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
         # قائمة المحرّك في كلّ حالةٍ مقيسة (كلاهما من الأعمدة نفسِها).
         "conditions_count": len(conds),
         "engine_conditions_count": _oc["count"],
+        # صفوفٌ بمعرّفٍ وخطوةِ استكمال — يربط بها الكاتبُ خطواتِ الـ٩٠ يوماً.
+        "condition_rows": _rows or [],
         "col_pillar": _t("pillar_col"),
         "col_strength": _t("pillar_strength_col"),
         "col_note": _t("pillar_note_col"),
@@ -3318,6 +3425,10 @@ def _deep_research_view(result: dict, lang: str = "ar",
         # سجل رقع العرض (شرط المُشرِف C: التعديل الصامت على نص مُسلَّم
         # ممنوع — كل رقعة قابلة للتدقيق بعد وقوعها).
         "render_repairs": _prefix_repairs,
+        # تقرير ٧ §4.2: سجلُّ القناة الواحد — القناةُ الأولى وبديلُها المشروط
+        # من أبواب الدخول المرتّبة عند المحلل، بحالةٍ صريحة (مرشّحةٌ من التحليل
+        # لا قرارٌ مُثبَت). يقرؤه كلُّ سطحٍ من هنا لا من نثرٍ متفرّق.
+        "entry_channel": entry_channel(by_category),
         "analyst": {"summary": analyst_report["summary"],
                    "missing_categories": analyst.get("missing_categories") or [],
                    "by_category": by_category,
