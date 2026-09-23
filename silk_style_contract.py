@@ -557,6 +557,95 @@ _ACTIVITY_CATEGORY: dict = {
 }
 
 
+#: نشاطٌ غذائيٌّ **متخصّصٌ بمنتجٍ بعينه** ⇒ فصولُ HS التي يخدمها (تقرير ٧
+#: §4.4). فئةُ «منتج غذائي/زراعي» واحدةٌ للفصول ١–٢٤ فلا تُفرّق بين تاجر
+#: مأكولاتٍ بحرية وتاجر قهوة؛ هذا هو المحورُ الثاني الذي طلبه
+#: `LOGIC_ISSUES.md`: فصلُ المنتج × نشاطُ الرابط. الملحمةُ تبقى لمصدّر
+#: اللحوم، وبائعُ الخضار لمصدّر الخضار والفواكه — لا منعٌ عامّ.
+_ACTIVITY_HS_CHAPTERS: dict = {
+    # بادئاتُ HS (فصلٌ أو بندٌ رباعيّ) — البندُ حيث يخلط الفصلُ منتجاتٍ لا
+    # صلةَ بينها (العسلُ في الفصل ٠٤ مع الألبان، والطحينةُ في ٢٠ مع العصائر).
+    "seafood wholesaler": frozenset({"03", "1604", "1605"}),
+    "greengrocer": frozenset({"07", "08"}),
+    "butcher shop": frozenset({"02", "1601", "1602"}),
+    "bakery": frozenset({"1101", "1901", "1905"}),
+    "dairy store": frozenset({"0401", "0402", "0403", "0404", "0405", "0406"}),
+    "dairy farm": frozenset({"0401", "0402", "0403", "0404", "0405", "0406"}),
+    "coffee wholesaler": frozenset({"0901", "2101"}),
+    "coffee store": frozenset({"0901", "2101"}),
+    "spice store": frozenset({"0904", "0905", "0906", "0907", "0908", "0909",
+                              "0910"}),
+    "confectionery": frozenset({"1704", "1806", "1905"}),
+    "candy store": frozenset({"1704", "1806"}),
+    "confectionery wholesaler": frozenset({"1704", "1806", "1905"}),
+}
+
+#: أوصافٌ عامّة في اسم المنتج لا تميّزه («محمصة» تطابق «محمصة المكسرات»
+#: لمنتج «قهوة محمصة»، و«Fresh» تطابق «Fresh Seafood» لمنتج «Fresh Dates»).
+_GENERIC_PRODUCT_WORDS = frozenset({
+    "fresh", "dried", "roasted", "natural", "organic", "premium", "frozen",
+    "raw", "pure", "processed", "prepared", "other", "whole", "ground",
+    "طازج", "طازجة", "محمص", "محمصة", "مجفف", "مجففة", "طبيعي", "طبيعية",
+    "عضوي", "عضوية", "مجمد", "مجمدة", "خام", "مطحون", "مطحونة", "فاخر",
+    "فاخرة", "مصنّع", "مصنع", "أخرى",
+})
+
+#: حالةُ دليل الصلة لكلّ جهةٍ تُعرَض (تقرير ٧ §4.4) — تُكتَب على الرابط ولا
+#: تُحذَف بها البياناتُ الخام: متخصّصٌ مثبت، تاجرٌ عامّ قابلٌ للتحقق، أو جهةٌ
+#: ذكرها التحليلُ بلا دليلِ صلةٍ مستقلّ.
+EVIDENCE_SPECIALIST = "specialist"
+EVIDENCE_GENERAL = "general_trader"
+EVIDENCE_NAMED = "named_unverified"
+
+
+def _hs_digits(hs_code: object) -> str:
+    return "".join(ch for ch in str(hs_code or "") if ch.isdigit())
+
+
+@functools.lru_cache(maxsize=4096)
+def _word_re(word: str):
+    import re as _re
+    w = str(word or "").strip().lower()
+    if not w:
+        return None
+    if _re.search(r"[\u0621-\u064a]", w):
+        pat = (r"(?<![\u0621-\u064a])[وفبكل]{0,2}(?:ال)?" + _re.escape(w)
+               + r"(?![\u0621-\u064a])")
+    else:
+        pat = r"(?<![a-z0-9])" + _re.escape(w) + r"(?![a-z0-9])"
+    return _re.compile(pat)
+
+
+def _word_in(text: str, word: str) -> bool:
+    """كلمةٌ كاملة لا جزءُ كلمة: «food» لا تطابق «seafood»، و«بن» لا تطابق
+    «لبنان». الاسمُ العربيّ يُسمَح قبله بأداةِ جرٍّ/عطفٍ/تعريفٍ ملتصقة."""
+    rx = _word_re(str(word or ""))
+    return bool(rx and rx.search(text))
+
+
+@functools.lru_cache(maxsize=1)
+def _hs_keywords() -> dict:
+    """{رمز سداسيّ: كلماتُه المنسَّقة} — قراءةٌ واحدة لـ`hs_codes.csv` يتشاركها
+    القارئان (مراجعة §58: نسختان من المسح بقاعدتَي مطابقة مختلفتين)."""
+    import csv
+    import os
+    out: dict = {}
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "data", "hs_codes.csv")
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                code = (row.get("hs_code") or "").strip()
+                if code:
+                    out[code] = frozenset(
+                        k.strip().lower()
+                        for k in (row.get("keywords") or "").split(",")
+                        if len(k.strip()) >= 3)
+    except Exception:  # noqa: BLE001 — المرجعُ مساعدٌ لا شرط
+        return {}
+    return out
+
+
 def _lead_text(lead: object) -> str:
     fields = ("name", "category", "activity", "description", "snippet",
               "title")
@@ -669,30 +758,43 @@ def _product_words_cached(hs_code: str, product: str, market_iso3: str) -> froze
     return frozenset(_product_words(hs_code, product, market_iso3))
 
 
+@functools.lru_cache(maxsize=256)
+def _product_specific_words(hs_code: str, product: str) -> frozenset:
+    """كلماتُ **المنتج نفسِه** — كلماتُ بنده السداسيّ، وحين تخلو (090112) كلماتُ
+    أشقّائه في البند الرباعيّ؛ واسمُه بلا الأوصاف العامّة («محمصة»، «Fresh»).
+    بلا كلمات الفئة («food»/«produce») التي تُبقي كلَّ تاجرٍ غذائيّ، وبلا
+    كلمات أشقّاءٍ لمنتجاتٍ أخرى حين يحمل البندُ كلماتِه (المانجو ليست التمر)."""
+    import re as _re
+    words = {w.strip().lower()
+             for w in _re.split(r"[\s,،]+", str(product or ""))
+             if len(w.strip()) >= 3}
+    words -= _GENERIC_PRODUCT_WORDS
+    code = _hs_digits(hs_code)
+    kw = _hs_keywords()
+    own = kw.get(code[:6]) if len(code) >= 6 else None
+    if own:
+        words |= own
+    elif not words and len(code) >= 4:
+        # الأشقّاءُ احتياطٌ أخير حين يخلو البندُ **واسمُ المنتج** معاً — البندُ
+        # الرباعيّ قد يخلط منتجات (2008: الطحينة مع زبدة الفول السوداني).
+        for c, ks in kw.items():
+            if c[:4] == code[:4]:
+                words |= ks
+    return frozenset(w for w in words if w)
+
+
 def _product_words(hs_code: object, product: str, market_iso3: str) -> set:
     """كلماتُ المنتج بالعربية والإنجليزية ولغة السوق — اتحادٌ لا استبدال."""
     import re as _re
     words = {w.strip().lower()
              for w in _re.split(r"[\s,،]+", str(product or ""))
              if len(w.strip()) >= 3}
-    code = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
-    try:
-        import csv
-        import os
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "data", "hs_codes.csv")
-        with open(path, encoding="utf-8") as fh:
-            for row in csv.DictReader(fh):
-                if code and (row.get("hs_code") or "").strip() == code[:6]:
-                    # **عمودُ `keywords` وحدَه** — وصفُ البند الرسميّ نثرٌ
-                    # جمركيّ عامّ («parts»، «other»، «prepared») فيتطابق مع
-                    # «auto parts store» فيُبقي رابطاً لا صلةَ له (قِياسٌ
-                    # كشفه قبل الشحن). الكلماتُ المنسَّقة مميِّزةٌ بالتصميم.
-                    words |= {k.strip().lower()
-                              for k in (row.get("keywords") or "").split(",")
-                              if len(k.strip()) >= 3}
-    except Exception:  # noqa: BLE001 — المرجعُ مساعدٌ لا شرط
-        pass
+    code = _hs_digits(hs_code)
+    # **عمودُ `keywords` وحدَه** — وصفُ البند الرسميّ نثرٌ جمركيّ عامّ
+    # («parts»، «other»، «prepared») فيتطابق مع «auto parts store» فيُبقي
+    # رابطاً لا صلةَ له (قِياسٌ كشفه قبل الشحن). الكلماتُ المنسَّقة مميِّزة.
+    if code:
+        words |= set(_hs_keywords().get(code[:6]) or ())
     try:
         from silk_ai_judge import _product_category
         cat = (_product_category(hs_code) or ("", ""))[0]
@@ -713,19 +815,55 @@ def lead_relevant_to_product(lead: object, hs_code: object = None,
     نشاطٌ عامٌّ يخدم كلَّ الفئات يُبقي؛ ثم نشاطٌ مُدرَجٌ يخدم فئةً أخرى
     يُسقِط **بسببٍ مسمّى**؛ وما عدا ذلك يُبقى (لا حذفَ بالجهل).
     """
+    ok, why, _status = lead_product_fit(lead, hs_code, product, market_iso3)
+    return ok, why
+
+
+def lead_product_fit(lead: object, hs_code: object = None, product: str = "",
+                     market_iso3: str = "") -> tuple:
+    """(يُبقى؟، سببُ الإسقاط، حالةُ الدليل) — تقرير ٧ §4.4 فوق الدرس ٢٦٣.
+
+    ١) كلمةُ **المنتج نفسِه** كلمةً كاملة ⇒ متخصّص. ٢) مقدّمُ خدمة ⇒ يُسقَط.
+    ٣) نشاطٌ غذائيٌّ متخصّص: فصلُه فصلُ المنتج ⇒ متخصّص، وإلا يُسقَط بسببٍ
+    مسمّى (تاجرُ مأكولاتٍ بحرية ليس مشتري قهوة). ٤) كلمةُ الفئة العامّة أو
+    نشاطٌ عامّ أو مجهول ⇒ تاجرٌ عامّ قابلٌ للتحقق. ٥) نشاطٌ لفئةٍ أخرى ⇒ يُسقَط.
+    المطابقةُ بالكلمة الكاملة — «food» لم تعد تطابق «seafood wholesaler».
+    """
     if not isinstance(lead, dict):
-        return False, "ليس صفّاً"
+        return False, "ليس صفّاً", ""
     text = _lead_text(lead)
-    words = _product_words_cached(str(hs_code or ""), str(product or ""),
-                                  str(market_iso3 or ""))
-    if any(w in text for w in words):
-        return True, ""
     key = _activity_key_of(lead)
+    # مراجعة §58: **التعارضُ المقيس أوّلاً** — كلمةٌ في الاسم («Fresh
+    # Seafood» لمنتج «Fresh Dates»، أو «Motor Oil» لزيت الزيتون) لا تُنقذ
+    # مقدّمَ خدمة ولا نشاطاً لمنتجٍ آخر أو لفئةٍ أخرى.
     if key in _ACTIVITY_NON_TRADE:
         return False, (f"نشاطُ «{activity_label_ar(key)}» مقدّمُ خدمةٍ لا "
-                       "طرفٌ تجاريّ يشتري أو يوزّع")
+                       "طرفٌ تجاريّ يشتري أو يوزّع"), ""
+    code = _hs_digits(hs_code)
+    fam = _ACTIVITY_HS_CHAPTERS.get(key)
+    if fam and len(code) >= 2:
+        if any(code.startswith(p) for p in fam):
+            return True, "", EVIDENCE_SPECIALIST
+        return False, (f"نشاطُ «{activity_label_ar(key)}» متخصّصٌ بمنتجٍ آخر "
+                       "لا بهذا المنتج"), ""
+    if key and key not in _ACTIVITY_CATEGORY_FREE:
+        try:
+            from silk_ai_judge import _product_category
+            cat = (_product_category(hs_code) or ("", ""))[0]
+        except Exception:  # noqa: BLE001
+            cat = ""
+        # فئةُ المنتج مجهولة ⇒ لا محورَ للمقارنة فلا حذف (الحذفُ يحتاج
+        # تعارضاً مقيساً لا جهلاً بطرفيه).
+        for other_cat, activities in _ACTIVITY_CATEGORY.items():
+            if cat and key in activities and other_cat != cat:
+                return False, (f"نشاطُ «{activity_label_ar(key)}» يخدم فئة "
+                               f"«{other_cat}» لا فئةَ هذا المنتج «{cat}»"), ""
+    own = _product_specific_words(str(hs_code or ""), str(product or ""))
+    if any(_word_in(text, w) for w in own):
+        return True, "", EVIDENCE_SPECIALIST
+    return True, "", EVIDENCE_GENERAL
     if not key or key in _ACTIVITY_CATEGORY_FREE:
-        return True, ""
+        return True, "", EVIDENCE_GENERAL
     try:
         from silk_ai_judge import _product_category
         cat = (_product_category(hs_code) or ("", ""))[0]
@@ -734,13 +872,13 @@ def lead_relevant_to_product(lead: object, hs_code: object = None,
     if not cat:
         # فئةُ المنتج مجهولة (رمزٌ غائبٌ أو فصلٌ غيرُ مصنَّف) ⇒ **لا محورَ
         # للمقارنة**، فلا حذف. الحذفُ يحتاج تعارضاً مقيساً لا جهلاً بطرفيه.
-        return True, ""
+        return True, "", EVIDENCE_GENERAL
     for other_cat, activities in _ACTIVITY_CATEGORY.items():
         if key in activities and other_cat != cat:
             return False, (f"نشاطُ «{activity_label_ar(key)}» يخدم فئة "
                            f"«{other_cat}» لا فئةَ هذا المنتج"
-                           + (f" «{cat}»" if cat else ""))
-    return True, ""
+                           + (f" «{cat}»" if cat else "")), ""
+    return True, "", EVIDENCE_GENERAL
 
 
 def activity_label_ar(raw: object) -> str:

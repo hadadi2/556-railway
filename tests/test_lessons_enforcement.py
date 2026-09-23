@@ -251,6 +251,13 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٥ — تقرير ٧: تأهيلُ الجهات بمستوى المنتج، والتسميةُ ليست دليلاً.
+    (275, "silk_style_contract.py", ["def lead_product_fit",
+                                     "_ACTIVITY_HS_CHAPTERS", "def _word_in"]),
+    (275, "silk_reports.py", ['lead["evidence_status"]']),
+    (275, "tests/test_report7_leads.py",
+     ["def test_seafood_and_greengrocer_are_not_coffee_buyers",
+      "def test_naming_in_the_narrative_does_not_rescue_a_clear_mismatch"]),
     # ٢٧٤ — تقرير ٧: قوالبُ الكود التي تبلغ العميل بلغة القارئ.
     (274, "silk_reports.py", ["المؤشرات المالية ومدخلاتها", "يتطلب الحساب: ",
                               "الإجراء المطلوب: "]),

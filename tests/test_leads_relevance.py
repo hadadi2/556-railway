@@ -180,11 +180,22 @@ def _view_with_named_lead():
     return R.build_view(blob)
 
 
-def test_a_lead_the_narrative_recommends_is_immune_without_any_flag():
-    """المراجعة #1: الحصانةُ كانت خلف راية مطفأة، فيُحذَف موزّعٌ يرشّحه
-    المتنُ نفسُه — وهو نصفُ العيب الأصليّ الذي وُضعت المِصفاةُ له."""
+def test_a_named_lead_is_kept_as_a_candidate_not_immune_to_a_clear_mismatch():
+    """قفلٌ محدَّث معلن (تقرير ٧ §4.4، قرار المالك «أصلح كل مشاكل التقرير»):
+    ذكرُ الاسم في المتن ليس دليلَ صلةٍ مستقلّاً. مكتبُ محاماةٍ ليس طرفاً
+    تجارياً أيّاً كان ما يقوله المتن ⇒ يُسقَط؛ وتاجرٌ عامّ مسمّى يبقى بحالة
+    «مرشّحٌ يحتاج تحققاً» لا مشترياً مؤكَّداً."""
     il = _view_with_named_lead()["deep_research"]["importer_leads"]
-    assert [l["name"] for l in il["leads"]] == ["مكتب الوفاء للمحاماة"]
+    assert [l["name"] for l in il["leads"]] == []
+    dr = {"market": {"iso3": "LBY", "name_ar": "ليبيا", "name_en": "Libya"},
+          "product": "طحينة", "hs_code": "200899",
+          "report": {"text": "نوصي بالتعامل مع شركة الوفاء للتجارة."}}
+    kept = SR._clean_leads([{"name": "شركة الوفاء للتجارة",
+                             "category": "trading company",
+                             "phone": "+218 21 111111",
+                             "address": "طرابلس، ليبيا"}], dr)
+    assert [k["name"] for k in kept] == ["شركة الوفاء للتجارة"]
+    assert kept[0]["evidence_status"] == "named_unverified"
 
 
 def test_every_drop_path_is_counted_for_the_auditor():

@@ -4597,6 +4597,21 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    275: lambda: (
+        _needles("silk_style_contract.py", "def lead_product_fit",
+                 '"seafood wholesaler": frozenset({"03", "1604", "1605"})',
+                 "any(_word_in(text, w) for w in own)",
+                 "_GENERIC_PRODUCT_WORDS", "def _hs_keywords")(),
+        _needles("silk_reports.py",
+                 "if _scoped and not lead_activity_allowed(lead.get(\"category\")):",
+                 '"lead_name_candidate_mark"')(),
+        _absent("silk_style_contract.py", "if any(w in text for w in words):")(),
+        _needles("silk_reports.py",
+                 "_ok, _why, _status = lead_product_fit(lead, _hs, _product, iso3)")(),
+        _absent("silk_reports.py", "        if not named:\n            _ok, _why")(),
+        _needles("tests/test_report7_leads.py",
+                 "def test_a_specialised_activity_stays_for_its_own_chapter")(),
+        _needles("tests/test_lessons_enforcement.py", "(275, ")()),
     274: lambda: (
         _absent("silk_reports.py", "محسوبة حتمياً", "سبيل الإغلاق",
                 "لا نعرفه بعد — يلزم")(),

@@ -1237,10 +1237,18 @@ def _pick_shelf_anchor(rows: list, local_ccy: str) -> tuple:
         if r[4]:
             return r[0] / r[4]
         return None
-    with_base = [r for r in group if per_base(r) is not None]
+    kg_rows = [r for r in group if r[3]]
+    l_rows = [r for r in group if not r[3] and r[4]]
+    # مراجعة §58: الكيلوغرامُ واللترُ لا يُقارَنان بلا كثافة — أساسٌ واحد
+    # (الأكثرُ صفوفاً، والكيلوغرامُ عند التعادل) والآخرُ مستبعَدٌ معلَن.
+    with_base = kg_rows if len(kg_rows) >= len(l_rows) else l_rows
     if with_base:
-        if len(with_base) < len(group):
-            dropped["بلا وزن عبوة"] = len(group) - len(with_base)
+        other_base = (l_rows if with_base is kg_rows else kg_rows)
+        if other_base:
+            dropped["بوحدة قياسٍ أخرى"] = len(other_base)
+        no_base = len(group) - len(kg_rows) - len(l_rows)
+        if no_base:
+            dropped["بلا وزن عبوة"] = no_base
         return min(with_base, key=per_base), dropped
     return min(group, key=lambda r: r[0]), dropped
 
