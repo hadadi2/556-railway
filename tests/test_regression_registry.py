@@ -4597,6 +4597,27 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    273: lambda: (
+        _needles("silk_economics.py", "IMPORT_ANOMALY_FACTOR = 5.0",
+                 '"import_price_anomaly": import_price_anomaly')(),
+        _needles("silk_render.py", 'return "العملة غير متاحة"')(),
+        _absent("silk_render.py", '|ريال|درهم|\\d")')(),
+        _needles("silk_reports.py", '"العملة غير متاحة": "currency not available"')(),
+        _needles("tests/test_report7_prices.py",
+                 "def test_a_plausible_import_price_still_feeds_the_contradiction_check")(),
+        _needles("tests/test_lessons_enforcement.py", "(273, ")()),
+    272: lambda: (
+        _needles("silk_economics.py", "def _pick_shelf_anchor",
+                 "_pick_shelf_anchor(norm_rows, local_ccy)",
+                 "def market_currency",
+                 "market_ccy or market_currency(market_iso3)",
+                 "market_ccy=local_ccy",
+                 '"type": "annual_average"')(),
+        _absent("silk_economics.py",
+                "lowest, src_note = min(retail_rows, key=lambda t: t[0])")(),
+        _needles("tests/test_report7_prices.py",
+                 "def test_the_anchor_is_the_lowest_per_kg_not_the_lowest_pack_price")(),
+        _needles("tests/test_lessons_enforcement.py", "(272, ")()),
     271: lambda: (
         _needles("silk_narrative.py", '"MYR": "رينجيت ماليزي"')(),
         _needles("silk_economics.py", "def _price_res",

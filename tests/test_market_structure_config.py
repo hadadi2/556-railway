@@ -973,9 +973,25 @@ def test_c19_currency_reverse_lookup_is_scoped_to_the_exporters_own_currency():
                 if "def iso_currency" in line or "`iso_currency`" in line:
                     continue
                 callers.append((name, line.strip()))
-    assert len(callers) == 1, callers
-    assert callers[0][0] == "silk_economics.py"
-    assert "silk_narrative.iso_currency(cur)" in callers[0][1]
+    # قفلٌ محدَّث معلن (الدرس ٢٧٢): مستهلكٌ ثانٍ مقرَّرٌ سياقُه —
+    # `silk_narrative.resolve_market_currency` لعملة السعر المرصود في السوق،
+    # يحسم الأسماءَ العامّة («ريال»/«دولار»/«دينار»…) بعملة السوق **قبل** أن
+    # يبلغ الاتجاهَ العكسيّ، فلا يُوسَم ريالُ قطر SAR.
+    assert len(callers) == 2, callers
+    by_file = {c[0]: c[1] for c in callers}
+    assert "silk_narrative.iso_currency(cur)" in by_file["silk_economics.py"]
+    assert by_file["silk_narrative.py"] == "return iso_currency(cur)"
+    rmc = re.search(r"def resolve_market_currency\(.*?\n(?:.*?\n)*?\n\n",
+                    _repo("silk_narrative.py")).group(0)
+    assert rmc.index("CURRENCY_FAMILIES.get(cur)") < \
+        rmc.index("return iso_currency(cur)"), "الحسمُ بالسوق يسبق العكس"
+    for wide in ("ريال", "دينار", "درهم", "جنيه", "روبية", "ليرة"):
+        assert N.resolve_market_currency(wide) == "", wide
+    assert N.resolve_market_currency("ريال", "QAR") == "QAR"
+    assert N.resolve_market_currency("ريال", "YER") == "YER"
+    # المصدرُ الواحد مُغطّى كلُّه: كلُّ اسمٍ واسعٍ له عائلة.
+    assert set(N._CURRENCY_AMBIGUOUS_AR) <= set(N.CURRENCY_FAMILIES)
+    callers = [c for c in callers if c[0] == "silk_economics.py"]
     body = re.search(r"def _unit_cur\(.*?\n(?:.*?\n)*?\n\n",
                      _repo("silk_economics.py"))
     assert body and "cost_currency" in body.group(0)

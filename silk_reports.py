@@ -3790,6 +3790,7 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
 # الاستبدال (§3.1/§3.2). تُستهلك هنا في مُسلَّم العميل؛ الصف بغير لغة
 # التقرير يُسقَط معلَناً (`_lang_safe` — سياسة الفصل الصلب لا الترجمة).
 _PRICE_REASON_EN = {"الوزن غير متاح": "weight not available",
+                    "العملة غير متاحة": "currency not available",
                     "وحدة غامضة": "unit unclear"}
 
 

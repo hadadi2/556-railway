@@ -251,6 +251,22 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٣ — تقرير ٧: سعرُ استيرادٍ شاذّ يُعزَل، وسببُ صفّ السعر أربعُ حالات.
+    (273, "silk_economics.py", ["IMPORT_ANOMALY_FACTOR",
+                                "import_price_anomaly"]),
+    (273, "silk_render.py", ['return "العملة غير متاحة"']),
+    (273, "tests/test_report7_prices.py",
+     ["def test_an_import_unit_value_above_the_shelf_price_per_kg_is_isolated",
+      "def test_a_price_row_without_a_currency_says_currency_not_available"]),
+    # ٢٧٢ — تقرير ٧: المرجعُ بعد التطبيع وداخل عملةٍ واحدة، والصرفُ لعملته.
+    (272, "silk_economics.py", ["def _pick_shelf_anchor",
+                                "def market_currency", "def _same_currency"]),
+    (272, "silk_quality_gate.py", ["_N.currency_is_local(cur, _loc) is False"]),
+    (272, "silk_narrative.py", ["def resolve_market_currency",
+                                "def currency_is_local", "CURRENCY_FAMILIES"]),
+    (272, "tests/test_report7_prices.py",
+     ["def test_the_anchor_never_takes_a_raw_min_across_currencies",
+      "def test_a_market_fx_rate_never_converts_a_price_in_another_currency"]),
     # ٢٧١ — تقرير ٧: العملاتُ من القاموس الواحد، وصفُّ السعر سعرٌ فعلاً.
     (271, "silk_narrative.py", ['"MYR": "رينجيت ماليزي"']),
     (271, "silk_economics.py", ["def _price_res"]),

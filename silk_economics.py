@@ -963,7 +963,8 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                            cost_currency: str = "",
                            monthly_capacity: float | None = None,
                            reverse: dict | None = None,
-                           cert_fee_range: "tuple | None" = None
+                           cert_fee_range: "tuple | None" = None,
+                           market_ccy: str = ""
                            ) -> list[dict]:
     """الأرقام الخمسة لقسم «أرقام القرار» — حتمياً (نمط Z-01: الكاتب يشرح
     ولا يحسب). كل بند إما تقدير بحقوله الأربعة وإما فجوة بحقولها الثلاثة
@@ -1069,7 +1070,8 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
         elif not _cc:
             align_gap = (f"عملة تكلفتك غير مصرّح بها والسعر المرجعي "
                          f"بعملة {rs_cur}")
-        elif _cc.upper() != rs_cur.upper():
+        elif not _same_currency(_cc, rs_cur,
+                                market_ccy or market_currency(market_iso3)):
             align_gap = (f"تكلفتك بعملة {_cc} والسعر المرجعي بعملة "
                          f"{rs_cur} — لا طرح بين عملتين بلا سعر صرف معلن")
     if cost_per_unit and max_exw and not align_gap and entry \
@@ -1150,6 +1152,106 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                     "impact": "سقف المخاطرة غير معروف قبل الالتزام",
                     "closure": "يكتمل تلقائياً بإدخال تكلفتك"})
     return out
+
+
+# ── الدرس ٢٧٢ (تقرير ٧، §3.3–3.4): عملةٌ برمزها، وعملةُ السوق من مرجعه ──
+def _iso(currency: object, local: str = "") -> str:
+    """رمزُ ISO لعملة سعرٍ مرصود في سوقٍ عملتُه `local` — أو "" (الدرس ٢٧٢).
+
+    المقارنةُ بالنصّ الحرفيّ كانت تجعل «رينجيت» و«MYR» عملتين، و«$» و«دولار»
+    عملتين. الحسمُ من المصدر الواحد `silk_narrative.resolve_market_currency`:
+    «ريال» في قطر QAR، وفي ماليزيا بلا رمز — لا تخمين."""
+    import silk_narrative as _N
+    return _N.resolve_market_currency(currency, local)
+
+
+#: عملةُ المُصدِّر — منصّةُ المُصدِّر السعوديّ (سياقُ `_unit_cur`/قفل c19).
+EXPORTER_CCY = "SAR"
+
+
+def _same_currency(a: object, b: object, local: str = "") -> bool:
+    """هل العملتان واحدة؟ برمز ISO حين يُعرف لكليهما، وإلا بالنصّ — «رينجيت»
+    و«MYR» عملةٌ واحدة، و«ريال» بلا سياقٍ لا تُطابَق إلا بنصّها. `b` سعرٌ
+    مرصودٌ في السوق فيُحسَم بعملة السوق `local`؛ و`a` عملةُ تكلفة المُصدِّر."""
+    # `a` عملةُ تكلفة المُصدِّر السعوديّ: الاسمُ العامّ يُحسَم بعملته (SAR —
+    # نفسُ سياق `_unit_cur` القائم)؛ و`b` سعرٌ مرصودٌ يُحسَم بعملة السوق.
+    ia, ib = _iso(a, EXPORTER_CCY), _iso(b, local)
+    if ia and ib:
+        # «ريال» المُصدِّر (SAR) و«ريال» الرف في قطر (QAR): رمزان حاسمان
+        # مختلفان ⇒ عملتان — يُحسَم هنا قبل أيّ مطابقةٍ نصّية (مراجعة §58).
+        return ia == ib
+    # تعذّر الحسم على جانبٍ: الكلمةُ نفسُها كما صرّح بها المالك والمصدر تبقى
+    # مطابقةً نصّية (السلوكُ القائم — مدوّنة ليبيا «دينار» × سوقٍ بلا صفّ).
+    return str(a or "").strip().upper() == str(b or "").strip().upper()
+
+
+def market_currency(iso3: object) -> str:
+    """عملةُ السوق (ISO 4217) — من `silk_market_structure.market_currency`
+    القائم (الجدول المرجعيّ ثمّ الملامح)، لا قراءةٌ ثانية للجدول."""
+    try:
+        import silk_market_structure as _MS
+        return _MS.market_currency(iso3)
+    except Exception:  # noqa: BLE001 — المرجعُ غائب ⇒ لا عملةَ سوق
+        return ""
+
+
+#: سعرُ استيرادٍ للكيلوغرام يفوق سعرَ الرف للكيلوغرام بأكثر من هذا المعامل
+#: يُعزَل شاذّاً حتى يُفسَّر (الدرس ٢٧٣). سعرُ الحدود أدنى من الرف عادةً؛
+#: وتجاوزُه — حتى بضعة أضعاف — قد يعني فعلاً «لا منافسة سعرية» (فحصُ التناقض
+#: القائم يُقفله مثالُ الحليب ٣٫٨ ضعفاً)، أمّا عشرةُ أضعاف (130.68 مقابل ~13)
+#: فعطلُ قيمةٍ أو وزنٍ أو وحدة لا حقيقةُ سوق. المعاملُ محافظ: يعزل الفادح وحدَه.
+IMPORT_ANOMALY_FACTOR = 5.0
+
+
+def _pick_shelf_anchor(rows: list, local_ccy: str) -> tuple:
+    """(الصفّ المختار، أسبابُ الاستبعاد {سبب: عدد}) — **بعد** التطبيع.
+
+    الدرس ٢٧٢: كان `min` يجري على سعر العبوة الخام وعبر العملات، فيفوز «$4»
+    على «20 رينجيت» لأن رقمه أصغر، ويفوز سعرُ عبوة 250 غ على كيلوغرامٍ
+    أرخص. الآن: عملةٌ واحدة أولاً (عملةُ السوق إن رُصد بها صفّ، وإلا أكبرُ
+    مجموعةٍ عملتُها معروفة، وإلا الصفوفُ بلا عملة)، ثمّ داخلها أدنى سعرٍ
+    للكيلوغرام (أو اللتر) حين يُعرف الوزن، وإلا أدنى سعرٍ خام. وكلُّ صفٍّ لا
+    يدخل المقارنة يُعدّ بسببه كي يُعلَن — لا إسقاطَ صامتاً (مراجعة §58).
+    كلُّ صفّ: (السعر، النصّ، مفتاح العملة، كجم، لتر)."""
+    groups: dict = {}
+    for r in rows:
+        groups.setdefault(r[2], []).append(r)
+    known = {c: g for c, g in groups.items() if c}
+    if local_ccy and local_ccy in known:
+        ccy = local_ccy
+    elif known:
+        ccy = max(known, key=lambda c: (len(known[c]), c == "USD"))
+    else:
+        ccy = ""
+    group = groups.get(ccy) or rows
+    dropped: dict = {}
+    other = sum(len(g) for c, g in known.items() if c != ccy)
+    if other:
+        dropped["بعملة أخرى"] = other
+    if ccy and groups.get(""):
+        dropped["بلا عملة مسمّاة"] = len(groups[""])
+
+    def per_base(r):
+        if r[3]:
+            return r[0] / r[3]
+        if r[4]:
+            return r[0] / r[4]
+        return None
+    with_base = [r for r in group if per_base(r) is not None]
+    if with_base:
+        if len(with_base) < len(group):
+            dropped["بلا وزن عبوة"] = len(group) - len(with_base)
+        return min(with_base, key=per_base), dropped
+    return min(group, key=lambda r: r[0]), dropped
+
+
+# سعرٌ مُعلَنٌ للكيلوغرام/اللتر مباشرةً («20 MYR للكيلو»، «6.5 دولار/كجم») —
+# أساسُه واحد، لا «بلا وزن» (مراجعة §58).
+_PER_KG_PRICE_RE = _re.compile(
+    r"(?:/|لكل|للـ?|per\s*)\s*(?:كجم|كغم|كغ|كيلو(?:غرام)?|kg)\b|للكيلو",
+    _re.IGNORECASE)
+_PER_L_PRICE_RE = _re.compile(r"(?:/|لكل|للـ?|per\s*)\s*(?:لتر|l|litre|liter)\b",
+                              _re.IGNORECASE)
 
 
 def _ledger_entries(dr: dict) -> "dict | None":
@@ -1283,9 +1385,34 @@ def economics_view(dr: dict, product_card: dict | None = None,
     retail_rows = [(v, n) for v, n, lvl in prices if lvl == "retail"]
     other_rows = [(v, n, lvl) for v, n, lvl in prices if lvl != "retail"]
     anchor = None
+    local_ccy = market_currency(market_iso3)
     if retail_rows:
-        lowest, src_note = min(retail_rows, key=lambda t: t[0])
-        pack_kg, pack_litre = _parse_pack_from_note(src_note)
+        # الدرس ٢٧٢: التطبيعُ قبل الاختيار، وعملةٌ واحدة لا `min` عابرٌ لها.
+        import silk_narrative as _N
+        norm_rows = []
+        for v, n in retail_rows:
+            # المفرداتُ الواسعة للاختيار وحدَه («ليرة»، «يوان»…) — الرايةُ
+            # الضيّقة تبقى لعملة المرساة المعروضة كما كانت.
+            cur = currency_in_note(n) or _N.currency_in(n)
+            kg, litre = _parse_pack_from_note(n)
+            if kg is None and litre is None:
+                if _PER_KG_PRICE_RE.search(n):
+                    kg = 1.0
+                elif _PER_L_PRICE_RE.search(n):
+                    litre = 1.0
+            key = _iso(cur, local_ccy)
+            if not key and cur:
+                # اسمٌ عامّ لا ينتمي لعملة السوق: عملةٌ معروفةٌ «أخرى» بنصّها.
+                key = f"~{cur}"
+            norm_rows.append((v, n, key, kg, litre))
+        (lowest, src_note, _c, pack_kg, pack_litre), dropped = \
+            _pick_shelf_anchor(norm_rows, local_ccy)
+        if dropped:
+            gaps.append(
+                "استُبعد من اختيار السعر المرجعي: " + "، ".join(
+                    f"{n_} سعر رف {why}" for why, n_ in dropped.items())
+                + " — لا مقارنة بين عملتين بلا سعر صرف معلن، ولا بين عبوات "
+                  "بلا وزن")
         anchor = normalize_price(lowest, basis="retail", category=category,
                                  pack_kg=pack_kg, pack_litre=pack_litre,
                                  currency=currency_in_note(src_note),
@@ -1396,26 +1523,79 @@ def economics_view(dr: dict, product_card: dict | None = None,
             _kg_per_l, _ = convert_amount(1.0, "litre", "kg", category)
             if _kg_per_l:
                 _exw_cmp = round(float(reverse["max_exw"]) / _kg_per_l, 4)
+    import_price_anomaly = None
     if reverse is not None and ref_import and _exw_cmp is not None:
         _cur = str(reverse.get("currency") or "")
+        _cur_iso = _iso(_cur, local_ccy)
         _exw_usd = None
-        if _cur in ("$", "USD", "دولار"):
+        _fx_used = None
+        if _cur_iso == "USD":
             _exw_usd = _exw_cmp
         else:
-            fx, _ = _mission_numeric(dr, "risk_news",
-                                     ("سعر الصرف الرسمي",), 1e-4, 100_000.0)
-            if fx:
+            fx, _fx_note, _fx_f = _mission_numeric_finding(
+                dr, "risk_news", ("سعر الصرف الرسمي",), 1e-4, 100_000.0)
+            # الدرس ٢٧٢: الصرفُ المُلحَق هو صرفُ **عملة السوق** مقابل الدولار
+            # (البنك الدولي PA.NUS.FCRF، متوسطٌ سنويّ) — كان يُقسَم عليه سعرٌ
+            # بأيّ عملة. يُطبَّق حين تكون عملةُ السعر عملةَ السوق أو يتعذّر
+            # الحكم (رمزٌ غير قاطع/سوقٌ بلا مرجع)، ويُحجَب حين تختلفان يقيناً.
+            import silk_narrative as _N
+            _local = _N.currency_is_local(_cur, local_ccy)
+            if fx and _local is False:
+                gaps.append(
+                    f"سعر الصرف المتاح لعملة السوق ({local_ccy}) لا لعملة السعر "
+                    f"المرجعي ({_cur_iso or _cur}) — مقارنة التنافسية السعرية غير "
+                    "محسوبة، ولا يُحوَّل سعرٌ بصرف عملةٍ أخرى")
+            elif fx:
+                _fx_used = fx
                 # المقارنة الحدودية على أساس كجم ($/كجم)؛ العرضُ يبقى بوحدة
                 # السوق — `max_exw_usd` بالوحدة المعروضة نفسها لا بغيرها.
                 _exw_usd = round(_exw_cmp / fx, 4)
                 reverse["max_exw_usd"] = round(
                     float(reverse["max_exw"]) / fx, 4)
                 reverse["fx_rate"] = fx
+                _dy = (_fx_f.get("data_year") if isinstance(_fx_f, dict)
+                       else getattr(_fx_f, "data_year", None))
+                try:
+                    _dy = int(_dy) if _dy else None
+                except (TypeError, ValueError):
+                    _dy = None
+                if _dy is None:
+                    _ym = _YEARISH_RE.search(str(_fx_note or ""))
+                    _dy = int(_ym.group(0)) if _ym else None
+                reverse["fx"] = {
+                    # عملةُ السوق مجهولة ⇒ «LCU» (وحدةُ العملة المحلية بتسمية
+                    # البنك الدولي) — لا يُنسَب الرقمُ لعملة السعر (مراجعة §58).
+                    "pair": f"{local_ccy or 'LCU'}/USD",
+                    "rate": fx, "year": _dy, "type": "annual_average",
+                    "source": "World Bank PA.NUS.FCRF"}
             else:
                 gaps.append("مقارنة التنافسية السعرية (أقصى EXW مقابل متوسط "
                             "سعر الاستيراد) غير محسوبة — الناقص: سعر الصرف "
                             "لتحويل أقصى سعر المصنع إلى الدولار")
-        if _exw_usd is not None and _exw_usd < 0.8 * ref_import:
+        # الدرس ٢٧٣ (تقرير ٧، §3.4): سعرُ استيرادٍ للكيلوغرام يفوق سعرَ الرف
+        # للكيلوغرام أضعافاً (130.68 مقابل ~13) شذوذٌ في القيمة أو الوزن أو
+        # الوحدة أو نطاق الرمز حتى يُفسَّر — يُعزَل عن المقارنة السعرية ويُعلَن
+        # أثرُه، ولا يُسقط بقيّة الحساب.
+        _shelf_kg = (anchor.per_kg if anchor is not None else None)
+        _shelf_usd_kg = None
+        if _shelf_kg:
+            if _cur_iso == "USD":
+                _shelf_usd_kg = float(_shelf_kg)
+            elif _fx_used:
+                _shelf_usd_kg = float(_shelf_kg) / _fx_used
+        if _shelf_usd_kg and ref_import > IMPORT_ANOMALY_FACTOR * _shelf_usd_kg:
+            import_price_anomaly = {
+                "value_usd_kg": ref_import,
+                "shelf_usd_kg": round(_shelf_usd_kg, 4),
+                "factor": round(ref_import / _shelf_usd_kg, 1),
+                "note": _ref_note}
+            gaps.append(
+                f"استُبعد متوسط سعر الاستيراد ({ref_import} دولار/كجم) من "
+                f"المقارنة السعرية: يفوق سعر الرف للكيلوغرام "
+                f"({round(_shelf_usd_kg, 2)} دولار) بنحو "
+                f"{import_price_anomaly['factor']} ضعفاً — يُراجَع مستوى القيمة "
+                "والوزن والوحدة ونطاق الرمز قبل استخدامه؛ بقيّة الحساب قائمة")
+        elif _exw_usd is not None and _exw_usd < 0.8 * ref_import:
             _short = round((ref_import - _exw_usd) / ref_import * 100, 1)
             pricing_contradiction = {
                 "max_exw_usd": _exw_usd,
@@ -1508,7 +1688,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
                         or product_card.get("currency") or "").strip()
     decision_numbers = build_decision_numbers(
         category=category, cost_per_unit=exw, cost_currency=_cost_cur,
-        monthly_capacity=_capacity, reverse=reverse)
+        monthly_capacity=_capacity, reverse=reverse, market_ccy=local_ccy)
 
     return {
         "product_form": product_form or None,
@@ -1520,6 +1700,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
         "anchor_price": anchor.to_dict() if anchor else None,
         "reverse_solve": reverse,
         "pricing_contradiction": pricing_contradiction,
+        "import_price_anomaly": import_price_anomaly,
         "waterfall": waterfall,
         # عملةُ التكلفة كما صرّح بها المالك في البطاقة — مفتاحٌ إضافيّ لا
         # يغيّر رقماً (مراجعة §58): كلُّ سطحٍ يعرض مبلغاً مشتقّاً من سعر
