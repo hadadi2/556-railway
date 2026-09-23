@@ -251,6 +251,11 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٨٣ — تقرير ٧: حساسيةُ أقصى سعر المصنع وتمويلُ مخزون التجربة.
+    (283, "silk_economics.py", ["def sensitivity_rows", "def _inventory_financing"]),
+    (283, "migrations/platform/026_product_financing.sql", ["financing_rate_pct"]),
+    (283, "tests/test_report7_finance_sensitivity.py",
+     ["def test_financing_is_a_separate_measure_from_two_inputs"]),
     # ٢٨٢ — تقرير ٧: المسؤولُ والخطةُ والقناةُ وخطوةُ الجهة ونسبةُ العيّنة.
     (282, "silk_render.py", ["def condition_owner_key", "def plan_90"]),
     (282, "silk_reports.py", ["def _client_entry_channel", "def _docx_lead_actions"]),

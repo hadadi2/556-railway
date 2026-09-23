@@ -444,6 +444,21 @@ TERMS: dict[str, dict[str, str]] = {
                           "en": "Candidate from the analysis — not proven"},
     "cond_short": {"ar": "الشرط {n}", "en": "Condition {n}"},
     "channel_other": {"ar": "أخرى ({activity})", "en": "Other ({activity})"},
+    "sens_heading": {"ar": "حساسية أقصى سعر المصنع", "en": "Sensitivity of the "
+                                                            "maximum ex-works price"},
+    "sens_col_factor": {"ar": "العامل", "en": "Factor"},
+    "sens_col_change": {"ar": "التغيّر", "en": "Change"},
+    "sens_factor_shelf": {"ar": "سعر الرف المنافس", "en": "Competitor shelf price"},
+    "sens_factor_freight": {"ar": "نسبة الشحن من سعر المصنع",
+                            "en": "Freight as share of ex-works"},
+    "sens_factor_fx": {"ar": "سعر الصرف (المقابل بالدولار)",
+                       "en": "Exchange rate (US-dollar equivalent)"},
+    "sens_points": {"ar": "نقاط", "en": "pt"},
+    "sens_note": {"ar": "كل صف يغيّر عاملاً واحداً ويثبّت الباقي على السيناريو "
+                        "المتوسط — قراءة لاتجاه الأثر وحجمه، لا توقع.",
+                  "en": "Each row changes one factor and holds the rest at the "
+                        "middle scenario — a reading of direction and size, "
+                        "not a forecast."},
     "plan_head": {"ar": "إطار خطة التسعين يوماً", "en": "90-day plan frame"},
     "plan_col_condition": {"ar": "الشرط", "en": "Condition"},
     "plan_col_action": {"ar": "الإجراء", "en": "Action"},

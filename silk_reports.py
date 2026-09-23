@@ -3943,6 +3943,27 @@ def _client_economics_section(doc, dr: dict, lang: str = "ar") -> None:
                     for s in rs["scenarios"]])
         doc.add_paragraph(
             _T("eco_assumptions_note", lang))
+    # الدرس ٢٨٣ (تقرير ٧ §3.5): حساسيةُ أقصى سعر المصنع للسعر والشحن والصرف.
+    if rs.get("sensitivity") and (eco.get("pricing_contradiction") or {}
+                                  ).get("shortfall_pct") is None:
+        _unit = _eco_term(rs.get("unit"), lang)
+
+        def _sv(r):
+            cur = str(r.get("currency") or "").strip()
+            base = "/".join(x for x in (cur, _unit) if x)
+            return f"{round(float(r['max_exw']), 2)} {base}".strip()
+
+        def _chg(r):
+            c = str(r.get("change") or "")
+            if r.get("change_unit") == "pt":
+                c += " " + _T("sens_points", lang)
+            return (c + (f" ({r['pair']})" if r.get("pair") else "")).strip()
+        doc.add_heading(_T("sens_heading", lang), level=3)
+        _add_table(doc, [_T("sens_col_factor", lang), _T("sens_col_change", lang),
+                         _T("col_max_exw", lang)],
+                   [[_T(f"sens_factor_{r['factor']}", lang), _chg(r), _sv(r)]
+                    for r in rs["sensitivity"]], ltr_cols=(2,))
+        doc.add_paragraph(_T("sens_note", lang))
     # البند 6: التحذير الإلزامي بلغة العميل — من الأرقام المحسوبة نفسها.
     pc = eco.get("pricing_contradiction") or {}
     if pc.get("shortfall_pct") is not None:

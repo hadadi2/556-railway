@@ -8,7 +8,8 @@ def test_missing_profitability_remains_a_condition_even_with_public_contacts():
     contacts = {'leads': [{'title': 'Wholesale company', 'phone': '+96260000000'}]}
     conditions = _flip_conditions('conditional', False, contacts, 'Jordan',
                                   missing_components=['factory_price', 'retail_price'])
-    assert len(conditions) == 3
+    # الدرس ٢٨٣ (معلن): المكوّناتُ الناقصة شرطٌ واحد بقائمتها لا شرطٌ لكلٍّ.
+    assert len(conditions) == 2
     assert all(item['met'] is False for item in conditions)
     assert any('إعادة تقييم' in item['condition'] for item in conditions)
 

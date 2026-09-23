@@ -842,7 +842,8 @@ def test_c9_the_checks_are_live_not_dormant_on_production_data():
             v = _prod_view(key)
             eco = ((v.get("deep_research") or {}).get("economics") or {})
             dn = eco.get("decision_numbers") or []
-            assert len(dn) == 6, (key, len(dn))   # تقرير ٧ §3.5: التعادلُ التشغيليّ بندٌ سادس
+            # تقرير ٧ §3.5: التعادلُ التشغيليّ بندٌ سادس، وتمويلُ المخزون سابع (الدرس ٢٨٣).
+            assert len(dn) == 7, (key, len(dn))
             assert any(e.get("tier") == "gap" for e in dn), key
             assert (((v.get("deep_research") or {}).get("report") or {})
                     .get("text") or "").strip(), key

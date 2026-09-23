@@ -4597,6 +4597,14 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    283: lambda: (
+        _needles("silk_economics.py", 'reverse["sensitivity"] = sensitivity_rows(reverse)',
+                 "_inventory_financing(entry, financing_rate_pct,")(),
+        _needles("silk_reports.py", 'if rs.get("sensitivity") and (eco.get("pricing_contradiction") or {}')(),
+        _needles("silk_platform/engine_bridge.py", '("financing_rate_pct", "financing_rate_pct")')(),
+        _needles("tests/test_report7_finance_sensitivity.py",
+                 "def test_sensitivity_follows_the_same_formula")(),
+        _needles("tests/test_lessons_enforcement.py", "(283, ")()),
     282: lambda: (
         _needles("silk_render.py", '"plan": _plan,', "_dominant_buyer(")(),
         _needles("silk_reports.py", "_client_entry_channel(doc, dr, lang)",

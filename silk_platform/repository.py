@@ -68,6 +68,8 @@ _WRITABLE: dict[str, set[str]] = {
                  "shipping_per_unit", "certifications",
                  # تقرير ٧ §3.5 (الترحيل ٠٢٥): مدخلا الهامش والتعادل التشغيليّ.
                  "fixed_costs", "cost_currency",
+                 # الترحيل ٠٢٦: مدخلا تمويل مخزون التجربة.
+                 "financing_rate_pct", "collection_days",
                  # مصدرُ الرمز وتاريخُه (الترحيل ٠١٧) — بلا هذين كان `update`
                  # يُسقطهما صامتَين فيبقى الصفّ على `hs_source='unknown'`.
                  "hs_source", "hs_set_at"},

@@ -1269,6 +1269,7 @@ const ERR_AR = {
   product_negative_number: "لا يكون الرقم سالباً — راجع تكلفة الوحدة أو الطاقة الشهرية.",
   product_bad_tier: "اختر شريحة المنتج من القائمة: فاخر أو قياسي أو اقتصادي.",
   product_bad_currency: "عملة التكلفة رمزٌ من ثلاثة أحرف، مثل SAR.",
+  product_out_of_range: "معدل التمويل لا يتجاوز 100%، ومدة التحصيل لا تتجاوز 730 يوماً.",
   wrong_current_password: "كلمة المرور الحالية غير صحيحة.",
   /* إعادة تعيين الأدمِن (409) — المستخدم أو حسابه معطّل، فلا يُصدَر رمز. */
   user_deactivated: "المستخدم أو حسابه معطّل — لا يُصدَر له رمز إعادة تعيين.",
@@ -1367,6 +1368,7 @@ const ERR_EN = {
   product_negative_number: "The number cannot be negative — check unit cost or monthly capacity.",
   product_bad_tier: "Pick a product tier from the list: Premium, Standard or Economy.",
   product_bad_currency: "The cost currency is a three-letter code, such as SAR.",
+  product_out_of_range: "The financing rate is at most 100% and the collection period at most 730 days.",
   wrong_current_password: "The current password is incorrect.",
   /* Admin password-reset (409) — the user or their account is deactivated. */
   user_deactivated: "The user or their account is deactivated — no reset token is issued.",
@@ -2363,6 +2365,17 @@ function productDialog(p) {
       '</label><input name="pfixed" type="number" step="any" min="0" dir="ltr" ' +
       'value="' + esc(p && p.fixed_costs != null ? p.fixed_costs : "") +
       '"></div>' +
+    /* الدرس ٢٨٣: تمويلُ مخزون التجربة — معدّلٌ سنويّ ومدّةُ التحصيل (رقماك أنت). */
+    '<div class="frow"><label>' + ar_en("معدل التمويل السنوي % (اختياري)",
+      "Annual financing rate % (optional)") +
+      '</label><input name="pfinrate" type="number" step="any" min="0" max="100" dir="ltr" ' +
+      'value="' + esc(p && p.financing_rate_pct != null ? p.financing_rate_pct : "") +
+      '"></div>' +
+    '<div class="frow"><label>' + ar_en("مدة التحصيل بالأيام من الشحن (اختياري)",
+      "Days from shipment to payment (optional)") +
+      '</label><input name="pcoll" type="number" step="1" min="0" max="730" dir="ltr" ' +
+      'value="' + esc(p && p.collection_days != null ? p.collection_days : "") +
+      '"></div>' +
     '<div class="frow"><label>' + ar_en("الشهادات (مفصولة بفاصلة)",
       "Certifications (comma separated)") +
       '</label><input name="pcerts" dir="ltr" placeholder="HALAL, ISO22000" ' +
@@ -2384,6 +2397,8 @@ function productDialog(p) {
         monthly_capacity: num('[name="pcap"]'),
         shipping_per_unit: num('[name="pship"]'),
         fixed_costs: num('[name="pfixed"]'),
+        financing_rate_pct: num('[name="pfinrate"]'),
+        collection_days: num('[name="pcoll"]'),
         cost_currency: v.querySelector('[name="pccy"]').value.trim().toUpperCase() || null,
         certifications: v.querySelector('[name="pcerts"]').value.trim() || null,
       };

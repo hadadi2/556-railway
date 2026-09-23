@@ -773,6 +773,8 @@ def product_card_from_row(row: dict | None) -> dict | None:
                      ("monthly_capacity", "monthly_capacity"),
                      ("shipping_per_unit", "shipping_per_unit"),
                      ("fixed_costs", "fixed_costs"),
+                     ("financing_rate_pct", "financing_rate_pct"),
+                     ("collection_days", "collection_days"),
                      ("cost_currency", "cost_currency")):
         val = row.get(col)
         if val not in (None, ""):
