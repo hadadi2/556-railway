@@ -1107,7 +1107,8 @@ def mount(app) -> bool:
         رقمُ المصنع نفسه، وتقديرُها اختلاقٌ لبيانات العميل لا سدُّ فجوة.
         """
         out: dict = {}
-        for key in ("cost_per_unit", "monthly_capacity", "shipping_per_unit"):
+        for key in ("cost_per_unit", "monthly_capacity", "shipping_per_unit",
+                    "fixed_costs"):
             if key not in body:
                 continue
             raw = body.get(key)
@@ -1127,6 +1128,14 @@ def mount(app) -> bool:
             out[key] = val
         if "cost_unit" in body:
             out["cost_unit"] = str(body.get("cost_unit") or "").strip()[:40] or None
+        if "cost_currency" in body:
+            # تقرير ٧ §3.5: رمزُ ISO كما يصرّح به المصنع — لا تخمين عملة.
+            cur = str(body.get("cost_currency") or "").strip().upper()
+            if cur and not (len(cur) == 3 and cur.isalpha()):
+                raise HTTPException(status_code=422, detail={
+                    "error": "product_bad_currency",
+                    "message": "عملةُ التكلفة رمزٌ من ثلاثة أحرف (مثل SAR)"})
+            out["cost_currency"] = cur or None
         if "tier" in body:
             tier = str(body.get("tier") or "").strip().lower()
             if tier and tier not in _TIERS:

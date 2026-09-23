@@ -1268,6 +1268,7 @@ const ERR_AR = {
   study_bad_production_cost: "تكلفة الإنتاج رقم موجب — اكتبها بالأرقام أو اتركها فارغة.",
   product_negative_number: "لا يكون الرقم سالباً — راجع تكلفة الوحدة أو الطاقة الشهرية.",
   product_bad_tier: "اختر شريحة المنتج من القائمة: فاخر أو قياسي أو اقتصادي.",
+  product_bad_currency: "عملة التكلفة رمزٌ من ثلاثة أحرف، مثل SAR.",
   wrong_current_password: "كلمة المرور الحالية غير صحيحة.",
   /* إعادة تعيين الأدمِن (409) — المستخدم أو حسابه معطّل، فلا يُصدَر رمز. */
   user_deactivated: "المستخدم أو حسابه معطّل — لا يُصدَر له رمز إعادة تعيين.",
@@ -1365,6 +1366,7 @@ const ERR_EN = {
   study_bad_production_cost: "Production cost is a positive number — enter digits or leave it empty.",
   product_negative_number: "The number cannot be negative — check unit cost or monthly capacity.",
   product_bad_tier: "Pick a product tier from the list: Premium, Standard or Economy.",
+  product_bad_currency: "The cost currency is a three-letter code, such as SAR.",
   wrong_current_password: "The current password is incorrect.",
   /* Admin password-reset (409) — the user or their account is deactivated. */
   user_deactivated: "The user or their account is deactivated — no reset token is issued.",
@@ -2350,6 +2352,17 @@ function productDialog(p) {
       '</label><input name="pship" type="number" step="any" min="0" dir="ltr" ' +
       'value="' + esc(p && p.shipping_per_unit != null ? p.shipping_per_unit : "") +
       '"></div>' +
+    /* تقرير ٧ §3.5: عملةُ التكلفة — بدونها لا هامشَ يُحسب (رمز ISO). */
+    '<div class="frow"><label>' + ar_en("عملة التكلفة (رمز ISO، مثل SAR)",
+      "Cost currency (ISO code, e.g. SAR)") +
+      '</label><input name="pccy" maxlength="3" dir="ltr" placeholder="SAR" ' +
+      'value="' + esc(p && p.cost_currency || "") + '"></div>' +
+    /* تقرير ٧ §3.5: التكاليفُ الثابتة — مدخلُ التعادل التشغيليّ (رقمك أنت). */
+    '<div class="frow"><label>' + ar_en("التكاليف الثابتة للسنة الأولى (اختياري — رقمك أنت)",
+      "First-year fixed costs (optional — your own number)") +
+      '</label><input name="pfixed" type="number" step="any" min="0" dir="ltr" ' +
+      'value="' + esc(p && p.fixed_costs != null ? p.fixed_costs : "") +
+      '"></div>' +
     '<div class="frow"><label>' + ar_en("الشهادات (مفصولة بفاصلة)",
       "Certifications (comma separated)") +
       '</label><input name="pcerts" dir="ltr" placeholder="HALAL, ISO22000" ' +
@@ -2370,6 +2383,8 @@ function productDialog(p) {
         tier: v.querySelector('[name="ptier"]').value || null,
         monthly_capacity: num('[name="pcap"]'),
         shipping_per_unit: num('[name="pship"]'),
+        fixed_costs: num('[name="pfixed"]'),
+        cost_currency: v.querySelector('[name="pccy"]').value.trim().toUpperCase() || null,
         certifications: v.querySelector('[name="pcerts"]').value.trim() || null,
       };
       if (isEdit) await api("/products/" + p.id, {method: "PATCH",

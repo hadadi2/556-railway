@@ -92,9 +92,11 @@ def test_freight_verified_lane_path(monkeypatch):
 
 # ── أرقام القرار الخمسة (نمط Z-01) ─────────────────────────────────────────
 
+# قفلٌ محدَّث معلن (تقرير ٧ §3.5): «نقطة التعادل» القديمة كانت استردادَ نقد
+# الشحنة التجريبية — صارت باسمها، والتعادلُ التشغيليّ بندٌ مستقلّ.
 _FIVE = ["حجم الشحنة التجريبية", "كلفة الدخول الكلية حتى أول شحنة",
-         "نقطة التعادل", "الزمن من القرار إلى أول فاتورة",
-         "أقصى خسارة إن فشل الدخول"]
+         "استرداد كلفة الشحنة التجريبية", "نقطة التعادل التشغيلي",
+         "الزمن من القرار إلى أول فاتورة", "أقصى خسارة إن فشل الدخول"]
 
 
 def test_without_cost_five_entries_with_three_field_gaps():
@@ -102,7 +104,7 @@ def test_without_cost_five_entries_with_three_field_gaps():
     dn = build_decision_numbers(category="حليب")
     assert [e["name"] for e in dn] == _FIVE
     gaps = [e for e in dn if e["tier"] == "gap"]
-    assert len(gaps) == 4                      # الشحنة التجريبية تُقدَّر
+    assert len(gaps) == 5                      # الشحنة التجريبية تُقدَّر
     for g in gaps:
         assert g["missing"] and g["impact"] and g["closure"], g["name"]
     entry = dn[1]
@@ -122,7 +124,7 @@ def test_with_cost_the_numbers_compute_and_freight_exclusion_is_declared():
     # الشحن السيناريو واسع → مستبعد معلَناً في الطريقة لا مضافاً صفراً صامتاً:
     assert "الشحن بلا سعر ممر متحقق" in entry["method"]
     assert entry["range"]["low"] == pytest.approx(2.0 * 25_526 / 1.03, rel=1e-3)
-    be = by["نقطة التعادل"]
+    be = by["استرداد كلفة الشحنة التجريبية"]
     assert be["tier"] == "estimated"
     assert be["range"]["low"] == pytest.approx(
         entry["range"]["low"] / 1.5, rel=1e-3)
@@ -138,7 +140,7 @@ def test_negative_margin_declares_a_production_decision_gap():
                                 cost_currency="USD",
                                 reverse={"max_exw": 3.5, "unit": "لتر",
                                          "currency": "USD"})
-    be = {e["name"]: e for e in dn}["نقطة التعادل"]
+    be = {e["name"]: e for e in dn}["استرداد كلفة الشحنة التجريبية"]
     assert be["tier"] == "gap" and "هامش موجب" in be["missing"]
 
 
@@ -150,7 +152,7 @@ def test_no_cross_currency_or_cross_unit_subtraction():
 
     def _be(**kw):
         dn = build_decision_numbers(category="حليب", cost_per_unit=2.0, **kw)
-        return {e["name"]: e for e in dn}["نقطة التعادل"]
+        return {e["name"]: e for e in dn}["استرداد كلفة الشحنة التجريبية"]
 
     # عملة التكلفة غير مصرّح بها:
     be = _be(reverse={"max_exw": 3.5, "unit": "لتر", "currency": "JOD"})
@@ -184,7 +186,8 @@ def test_wide_trial_estimate_never_stacks_into_entry(monkeypatch):
                                                reverse={"max_exw": 3.5})
     by = {e["name"]: e for e in dn}
     assert by["حجم الشحنة التجريبية"]["too_wide"] is True
-    for name in ("كلفة الدخول الكلية حتى أول شحنة", "نقطة التعادل",
+    for name in ("كلفة الدخول الكلية حتى أول شحنة",
+                 "استرداد كلفة الشحنة التجريبية", "نقطة التعادل التشغيلي",
                  "أقصى خسارة إن فشل الدخول"):
         assert by[name]["tier"] == "gap", name
 
