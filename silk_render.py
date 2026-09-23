@@ -274,7 +274,100 @@ def _requirements_safe(result: dict) -> list:
                  "conditional_on_gate": False, "applies_when": ""}]
 
 
-def entry_channel(by_category: object) -> "dict | None":
+#: قناةُ الجهة من نشاطها المُدرَج — تصنيفٌ ثابتٌ للأنشطة المعرّفة وحدها،
+#: والمجهولُ «غير محدد» (لا تخمين).
+_LEAD_CHANNEL: dict = {
+    **{k: "channel_wholesale" for k in (
+        "import export company", "importer", "wholesaler", "wholesale grocer",
+        "distributor", "food broker", "food products supplier",
+        "food wholesaler", "beverage distributor", "coffee wholesaler",
+        "trading company", "confectionery wholesaler", "seafood wholesaler")},
+    **{k: "channel_retail" for k in (
+        "grocery store", "supermarket", "hypermarket", "convenience store",
+        "general store", "coffee store", "spice store", "dairy store",
+        "candy store", "confectionery", "greengrocer", "butcher shop",
+        "bakery")},
+    **{k: "channel_hospitality" for k in (
+        "cafe", "coffee shop", "restaurant", "hotel", "caterer")},
+}
+#: العنوانُ أطولَ من هذا يُختصَر في الجدول ويُطبع كاملاً تحته.
+LEAD_ADDRESS_MAX = 70
+
+
+def lead_channel(lead: dict, lang: str = "ar") -> str:
+    """قناةُ الجهة من نشاطها — المصنَّفُ باسمه، والنشاطُ المعلن غيرُ المصنَّف
+    «أخرى (نشاطه)» لا «غير محدد» (مراجعة §58)، والغائبُ «غير محدد»."""
+    import silk_i18n as _I
+    from silk_style_contract import _activity_key_of, activity_label_ar
+    key = _activity_key_of(lead)
+    if key in _LEAD_CHANNEL:
+        return _I.t(_LEAD_CHANNEL[key], lang)
+    raw = str((lead or {}).get("category_raw" if lang == "en" else "category")
+              or (lead or {}).get("category") or "").strip()
+    if not raw:
+        return _I.t("channel_unknown", lang)
+    label = raw if lang == "en" else activity_label_ar(raw)
+    return _I.t("channel_other", lang, activity=label)
+
+
+def lead_next_step(lead: dict, lang: str = "ar") -> str:
+    """الخطوةُ التجارية التالية بحسب حالة الدليل — التحقّقُ قبل الطلب حين
+    لا دليلَ تخصّص؛ طلبُ الأسعار والشروط حين يثبت التخصّص."""
+    import silk_i18n as _I
+    from silk_style_contract import EVIDENCE_SPECIALIST, EVIDENCE_GENERAL, \
+        EVIDENCE_NAMED
+    st = lead.get("evidence_status")
+    if not str(lead.get("category") or "").strip() and st != EVIDENCE_SPECIALIST:
+        return _I.t("lead_step_verify", lang)  # نشاطٌ غير مُصرَّح ⇒ تحقّقٌ أولاً
+    key = {EVIDENCE_SPECIALIST: "lead_step_quote",
+           EVIDENCE_GENERAL: "lead_step_check_line",
+           EVIDENCE_NAMED: "lead_step_verify"}.get(st, "lead_step_verify")
+    return _I.t(key, lang)
+
+
+_CHANNEL_TAG_RE = re.compile(r"^\s*\[[A-Za-z_]+\]\s*")
+_CHANNEL_NOT_REASON_RE = re.compile(
+    r"^(?:مرشّح|مرشح|من المخزن|تعذّر|تعذر|غير متحقق|يحتاج تحقق)")
+_CONSUMER_WORD_RE = re.compile(
+    r"مستهلك|أسر|أسرة|شريحة|فئة|شباب|طلاب|موظف|منزل|مقاه|مكاتب|"
+    r"consumer|household|segment|young|students|office|home", re.IGNORECASE)
+
+
+def _product_nature(hs_code: object) -> str:
+    """طبيعةُ المنتج من جدول الفئات ودرجة التصنيع (حتمياً) — أو «»."""
+    try:
+        import silk_ai_judge as _AJ
+        prof = _AJ.product_profile(hs_code) or {}
+        lvl = _AJ.processing_level(hs_code)
+    except Exception:  # noqa: BLE001
+        return ""
+    cat = str(prof.get("category") or "").strip()
+    lvl_ar = {"raw": "خام", "semi": "شبه مصنّع", "processed": "مصنّع"}.get(lvl or "")
+    return " — ".join(x for x in (cat, lvl_ar) if x)
+
+
+def _dominant_buyer(leads: object) -> str:
+    """نشاطُ المشتري الغالب بين الجهات المؤهَّلة (متخصّص/عامّ) — أو «»؛
+    المرشّحُ بلا دليل لا يُحتسب."""
+    from silk_style_contract import activity_label_ar
+    counts: dict = {}
+    for ld in leads or []:
+        if not isinstance(ld, dict) or ld.get("evidence_status") == \
+                "named_unverified":
+            continue
+        cat = activity_label_ar(str(ld.get("category") or "").strip())
+        # تسميةٌ لم تُعرَّب لا تدخل سطراً عربياً (الدرس ٢٥٥).
+        if cat and not re.search(r"[A-Za-z]", cat):
+            counts[cat] = counts.get(cat, 0) + 1
+    if not counts:
+        return ""
+    cat, n = max(counts.items(), key=lambda kv: kv[1])
+    # «الغالب» يحتاج جهتين على الأقل — جهةٌ واحدة ليست نمطاً.
+    return f"{cat} ({n})" if n >= 2 else ""
+
+
+def entry_channel(by_category: object,
+                  hs_code: object = None) -> "dict | None":
     """`{primary, alternative, source, status}` من `entry_door` — أو None.
 
     القيمةُ نصُّ المحلل كما هو (لا تُؤلَّف قناة)، والمصدرُ مصدرُ الاكتشاف؛
@@ -309,9 +402,26 @@ def entry_channel(by_category: object) -> "dict | None":
     first = doors[0]
     src = (first.get("source") if isinstance(first, dict)
            else getattr(first, "source", "")) or ""
+    note = (first.get("note") if isinstance(first, dict)
+            else getattr(first, "note", "")) or ""
+    # مراجعة §58: الملاحظةُ تحمل وسمَ الفئة وقد تكون سطرَ حالةٍ أو مصدر
+    # («مرشّح يحتاج تحققاً»، «من المخزن…») — ليست سبباً؛ تُسقَط حينها.
+    why = _strip_internal_plumbing(_CHANNEL_TAG_RE.sub("", str(note))).strip()
+    if len(why) < 8 or _CHANNEL_NOT_REASON_RE.search(why):
+        why = ""
+    # المستهلكُ من ادّعاء طلبٍ **يصف مستهلكاً** — لا إحصاءُ حجمٍ أو نموّ.
+    demand = [d for d in ((by_category or {}).get("demand") or [])
+              if _CONSUMER_WORD_RE.search(_txt(d)) and ((_conf(d) is None)
+                                                      or _conf(d) >= EVIDENCE_SECONDARY_MIN)]
     return {"primary": _txt(first),
             "alternative": _txt(doors[1]) if len(doors) > 1 else "",
-            "source": str(src), "status": "candidate"}
+            "source": str(src), "status": "candidate",
+            # الدرس ٢٨٢ (تقرير ٧ §4.2): سجلُّ القناة الكامل — كلُّ حقلٍ من
+            # دليله أو «» معلَناً؛ لا يُؤلَّف مستهلكٌ ولا مشترٍ.
+            "reasons": why,
+            "target_consumer": _txt(demand[0]) if demand else "",
+            "product_nature": _product_nature(hs_code),
+            "commercial_buyer": ""}
 
 
 def _gate_label_from_research(research: object) -> str:
@@ -367,8 +477,53 @@ def condition_texts(ed: object, lang: str = "ar") -> "list | None":
         # الرقمُ المعروضُ هو رقمُ المعرّف نفسُه — ما يكتبه الكاتبُ في الخطة
         # («← الشرط 3») يقع على شرطٍ مرئيٍّ بالرقم ذاته (مراجعة §58).
         rows.append({"id": cid, "text": text, "closure": closure,
-                     "label": _I.t("cond_numbered", lang, n=num, text=text)})
+                     "label": _I.t("cond_numbered", lang, n=num, text=text),
+                     "kind": kind, "pillar": it.get("pillar") or "",
+                     "num": num,
+                     "owner": _I.t(condition_owner_key(kind, it.get("pillar")),
+                                   lang)})
     return rows
+
+
+def condition_owner_key(kind: object, pillar: object) -> str:
+    """المسؤولُ المقترح عن إغلاق الشرط — **قاعدةٌ بنوع الشرط لا تخمين** (تقرير ٧
+    §4.1، الدرس ٢٨٢): مدخلاتُ الربحية والأهليةُ عند المصنع؛ بياناتُ السوق
+    والمنافسة والمخاطر يستكملها فريقُ الدراسة بإعادة الجلب؛ ضعفُ جانبٍ محسوب
+    قرارٌ تجاريّ للمصنع. يُعرَض «مقترحاً» لأنّ التوزيعَ الفعليّ قرارُ المنشأة."""
+    if kind == "eligibility_gate":
+        return "owner_factory_regulator"
+    if kind == "pillar_missing":
+        return ("owner_factory" if pillar in ("profit",)
+                else "owner_factory_importer" if pillar == "regulatory"
+                else "owner_study_team")
+    return "owner_factory_decision"
+
+
+#: نافذةُ كلّ نوعٍ من الشروط داخل التسعين يوماً — الأهليةُ تسبق كلَّ ما بعدها،
+#: والاستكمالُ قبل قرار الضعف (الإجراءُ يتبع الدليل).
+_PLAN_WINDOW = {"eligibility_gate": "plan_window_gate",
+                "pillar_missing": "plan_window_missing",
+                "pillar_weak": "plan_window_weak"}
+
+
+def plan_90(cond_rows: object, lang: str = "ar") -> list:
+    """إطارُ خطة التسعين يوماً من قائمة الشروط نفسِها (تقرير ٧ §6، الدرس ٢٨٢):
+    لكلّ شرطٍ إجراءُ إغلاقه ومسؤولُه ونافذتُه ومخرجُه وشرطُ الاستمرار أو
+    التوقّف. حتميٌّ؛ لا خطوةَ بلا شرطٍ مرئيّ، واستكمالُ البيانات يقود إلى
+    إعادة التقييم لا إلى «دخول» تلقائيّ."""
+    import silk_i18n as _I
+    out: list = []
+    for r in cond_rows or []:
+        if not isinstance(r, dict) or r.get("kind") not in _PLAN_WINDOW:
+            continue
+        k = r["kind"]
+        out.append({"condition": _I.t("cond_short", lang, n=r.get("num") or ""),
+                    "action": r.get("closure") or "",
+                    "owner": r.get("owner") or "",
+                    "window": _I.t(_PLAN_WINDOW[k], lang),
+                    "output": _I.t(f"plan_output_{k}", lang),
+                    "gate": _I.t(f"plan_gate_{k}", lang)})
+    return out
 
 
 def _items_from_pillars(pillars: dict) -> list:
@@ -466,6 +621,8 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
     _oc = open_conditions(ed, OPEN_CONDITIONS_CAP)
     _cap = OPEN_CONDITIONS_CAP if open_conditions_single() else 6
     _shown_conds = conds[:_cap]
+    # مراجعة §58: الخطةُ للشروط المعروضة نصّاً وحدها — لا «الشرط 5» بلا نصّه.
+    _plan = plan_90(_rows[:_cap], lang)
     _hidden = max(0, len(conds) - len(_shown_conds))
     if open_conditions_single() and _hidden:
         _shown_conds = _shown_conds + [
@@ -474,6 +631,12 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
     out = {
         "head": _t("decision_basis_head"),
         "pillars": rows,
+        # الدرس ٢٨٢: إطارُ الخطة من القائمة نفسِها — لا مصدرَ ثانٍ للخطوات.
+        "plan": _plan,
+        "plan_head": _t("plan_head"),
+        "plan_cols": [_t(k) for k in ("plan_col_condition", "plan_col_action",
+                                      "plan_col_owner", "plan_col_window",
+                                      "plan_col_output", "plan_col_gate")],
         "conditions_head": _t("decision_conditions_head"),
         "conditions": _shown_conds,
         # العددُ الكامل دائماً — سطحٌ يعرض ثلاثةً من ثمانيةٍ يقول ذلك.
@@ -3527,7 +3690,7 @@ def _deep_research_view(result: dict, lang: str = "ar",
         # تقرير ٧ §4.2: سجلُّ القناة الواحد — القناةُ الأولى وبديلُها المشروط
         # من أبواب الدخول المرتّبة عند المحلل، بحالةٍ صريحة (مرشّحةٌ من التحليل
         # لا قرارٌ مُثبَت). يقرؤه كلُّ سطحٍ من هنا لا من نثرٍ متفرّق.
-        "entry_channel": entry_channel(by_category),
+        "entry_channel": entry_channel(by_category, result.get("hs_code")),
         # تقرير ٧ §4.3: الاشتراطاتُ بنوعها من المرجع حتمياً (لا من نثر البعثة).
         "requirements": _requirements_safe(result),
         "analyst": {"summary": analyst_report["summary"],
@@ -3669,6 +3832,17 @@ def _deep_research_view(result: dict, lang: str = "ar",
         # {} لتشغيلات سابقة لم تحمله.
         "verdict_consistency": dr.get("verdict_consistency") or {},
     }
+    # الدرس ٢٨٢: المشتري التجاريّ من الجهات **المؤهَّلة** نفسِها التي يعرضها
+    # الجدول (بعد التصفية بمستوى المنتج) — لا من القائمة الخام.
+    _leads = (out.get("importer_leads") or {}).get("leads") or []
+    for _ld in _leads:
+        if isinstance(_ld, dict):
+            # الدرس ٢٨٢: قناةُ الجهة وخطوتُها في العرض الواحد — يقرؤها كلُّ
+            # مُصدِّر ولوحةُ المصنع، لا حسابٌ في كلّ مُصدِّر.
+            _ld["channel"] = lead_channel(_ld, lang)
+            _ld["next_step"] = lead_next_step(_ld, lang)
+    if out.get("entry_channel"):
+        out["entry_channel"]["commercial_buyer"] = _dominant_buyer(_leads)
     # الموجة الرابعة: وارداتُ السوق بسلسلتها (البند ٢) وبياناتُ الرسوم (البند
     # ٣) — مفتاحان **إضافيّان** خلف رايتيهما؛ مطفأتين العرضُ حرفياً كما كان.
     if imports_spotlight():

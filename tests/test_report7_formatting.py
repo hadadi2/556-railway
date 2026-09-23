@@ -36,7 +36,7 @@ def test_contact_cells_are_left_to_right_and_columns_weighted():
         "market": {"iso3": "MYS", "name_en": "Malaysia", "name_ar": "ماليزيا"},
         "product": "قهوة محمصة", "hs_code": "090121"}
     SR._docx_leads(doc, dr, lang="ar")
-    t = _table(doc)
+    t = doc.tables[0]   # الجدولُ الرئيس — تحته جدولُ القناة والخطوة (الدرس ٢٨٢)
     row = t.rows[1]
     for ci in (2, 3, 4):
         p = row.cells[ci].paragraphs[0]

@@ -80,8 +80,9 @@ def test_one_entry_channel_record_skips_weak_and_duplicate_doors():
         {"value": "متاجر القهوة المتخصصة", "source": "تحليل", "confidence": 0.7},
         {"value": "متاجر القهوة المتخصصة", "confidence": 0.7},
         {"claim": "الضيافة", "confidence": 0.6}]})
-    assert ch == {"primary": "متاجر القهوة المتخصصة", "alternative": "الضيافة",
-                  "source": "تحليل", "status": "candidate"}
+    assert {k: ch[k] for k in ("primary", "alternative", "source", "status")} \
+        == {"primary": "متاجر القهوة المتخصصة", "alternative": "الضيافة",
+            "source": "تحليل", "status": "candidate"}
     assert R.entry_channel({}) is None
     block = AJ._entry_channel_block({"entry_door": [
         {"claim": "متاجر القهوة المتخصصة", "confidence": 0.7}]}, "ar")

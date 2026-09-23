@@ -3807,6 +3807,27 @@ def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
                    [[str(y), v] for y, v in sorted(rows)])
 
 
+def _client_entry_channel(doc, dr: dict, lang: str = "ar") -> None:
+    """سجلُّ القناة المرشّحة (تقرير ٧ §4.2، الدرس ٢٨٢) — عرضٌ لا بناء: كلُّ
+    حقلٍ من `silk_render.entry_channel` بدليله، والغائبُ لا يُطبع. النصوصُ
+    نصُّ المحلل العربيّ، فالجدولُ للتقرير العربيّ وسطرٌ في الإنجليزيّ."""
+    ch = (dr or {}).get("entry_channel") or {}
+    if not ch.get("primary"):
+        return
+    doc.add_heading(_T("channel_heading", lang), level=2)
+    if silk_i18n.normalize(lang) == "en":
+        doc.add_paragraph(_T("channel_en_summary", lang))
+        return
+    rows = [[_T(f"channel_{k}", lang),
+             _client_sanitize(str(ch.get(k) or ""), lang)]
+            for k in ("primary", "alternative", "target_consumer",
+                      "commercial_buyer", "product_nature", "reasons")
+            if str(ch.get(k) or "").strip()]
+    rows.append([_T("channel_status", lang), _T("channel_candidate", lang)])
+    _add_table(doc, [_T("channel_col_field", lang), _T("channel_col_value", lang)],
+               rows, widths=[2, 5])
+
+
 def _gate_label(ag) -> str:
     """اسمُ بوّابة الأهلية من البند الموسوم في قائمة الوكيل (الدرس ٢٨٠) —
     بلا وسم: الصياغةُ الأوروبية القائمة. الأقواس تبقى حول الاسم الأوروبيّ."""
@@ -4468,6 +4489,15 @@ def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
         doc.add_heading(basis["conditions_head"], level=2)
         for c in basis["conditions"]:
             doc.add_paragraph(_client_sanitize(c, lang), style="List Bullet")
+    # الدرس ٢٨٢ (تقرير ٧ §6): إطارُ خطة التسعين يوماً — شرطٌ ← إجراءٌ ومسؤولٌ
+    # وتوقيتٌ ومخرجٌ وشرطُ استمرار، من قائمة الشروط نفسِها.
+    if basis.get("plan"):
+        doc.add_heading(basis["plan_head"], level=2)
+        _add_table(doc, basis["plan_cols"],
+                   [[_client_sanitize(str(p[k]), lang) for k in
+                     ("condition", "action", "owner", "window", "output",
+                      "gate")] for p in basis["plan"]],
+                   widths=[1.2, 3, 2, 1.8, 2, 2.5])
     if basis.get("counter_case_line"):
         doc.add_heading(basis["counter_case_head"], level=2)
         doc.add_paragraph(_client_sanitize(basis["counter_case_line"], lang))
@@ -4634,6 +4664,7 @@ def render_client_docx(view: dict, path: str) -> str:
         if client_head == "المنافسة والتسعير والهامش":
             _client_charts(doc, dr, "competition", lang)
         if client_head == "مسار الدخول والمتطلبات":
+            _client_entry_channel(doc, dr, lang)
             _client_requirements_table(doc, dr, lang)
 
     # §A (حزمة الفكس v2.1): جدول مزيج الثقة (✓/◐/○) وجدول مرشّحي خرائط قوقل
@@ -6104,11 +6135,53 @@ def _lead_cells(lead: dict, lang: str = "ar") -> list:
     if not reason_on and lead.get("evidence_status") == "named_unverified" \
             and name != "—":
         name += " " + _T("lead_name_candidate_mark", lang)
-    cells = [name, g("address"), g("phone"), g("email"),
+    addr = _short_address(lead.get("address") or "", lang) or "—"
+    cells = [name, addr, g("phone"), g("email"),
              site.strip() or "—", rating_s]
     if reason_on:
         cells.append(_lead_reason(lead, lang))
     return cells
+
+
+def _docx_lead_actions(doc, leads: list, lang: str = "ar",
+                       sanitize=None) -> None:
+    """قناةُ كلّ جهةٍ وسببُها وخطوتُها التالية (الدرس ٢٨٢) — **من العرض**
+    (`silk_render` يلحقهما بالجهة في `build_view`)، والحسابُ احتياطٌ لنداءٍ
+    مباشر بجهاتٍ خام؛ والعنوانُ الطويل كاملاً تحته."""
+    import silk_render as _R
+    rows, long_addr = [], []
+    for ld in leads or []:
+        if not isinstance(ld, dict):
+            continue
+        name = str(ld.get("name") or "—").strip() or "—"
+        rows.append([name, ld.get("channel") or _R.lead_channel(ld, lang),
+                     _lead_reason(ld, lang),
+                     ld.get("next_step") or _R.lead_next_step(ld, lang)])
+        addr = str(ld.get("address") or "").strip()
+        if len(addr) > _R.LEAD_ADDRESS_MAX:
+            long_addr.append([name, addr])
+    if not rows:
+        return
+    clean = (lambda r: [sanitize(c) for c in r]) if sanitize else (lambda r: r)
+    doc.add_heading(_T("lead_actions_heading", lang), level=3)
+    _add_table(doc, [_T(k, lang) for k in ("col_name", "lead_col_channel",
+                                           "lead_col_reason",
+                                           "lead_col_next_step")],
+               [clean(r) for r in rows], widths=[3, 2, 3.5, 3.5])
+    if long_addr:
+        doc.add_heading(_T("lead_addresses_heading", lang), level=3)
+        _add_table(doc, [_T("col_name", lang), _T("col_address", lang)],
+                   [clean(r) for r in long_addr], widths=[3, 7])
+
+
+def _short_address(addr: str, lang: str = "ar") -> str:
+    """العنوانُ الطويل مختصراً عند حدّ كلمة مع إحالةٍ إلى نصّه الكامل."""
+    from silk_render import LEAD_ADDRESS_MAX
+    addr = str(addr or "").strip()
+    if len(addr) <= LEAD_ADDRESS_MAX:
+        return addr
+    cut = addr[:LEAD_ADDRESS_MAX].rsplit(" ", 1)[0].rstrip(" ،,")
+    return f"{cut} {_T('lead_address_more', lang)}"
 
 
 def _lead_reason(lead: dict, lang: str = "ar") -> str:
@@ -6155,6 +6228,22 @@ def _md_leads(dr: dict, L: list, internal: bool = False) -> None:
     for lead in leads:
         L.append("| " + " | ".join(c.replace("|", "／")
                                    for c in _lead_cells(lead, "ar")) + " |")
+    L += [""]
+    # الدرس ٢٨٢: القناةُ والخطوةُ التالية، والعنوانُ الطويل كاملاً — كما في Word.
+    import silk_render as _R
+    L += [f"### {_T('lead_actions_heading', 'ar')}", ""]
+    for ld in leads:
+        if isinstance(ld, dict):
+            L.append(f"- {ld.get('name') or '—'}: "
+                     f"{ld.get('channel') or _R.lead_channel(ld)} — "
+                     f"{_lead_reason(ld)} — "
+                     f"{ld.get('next_step') or _R.lead_next_step(ld)}")
+    long_addr = [ld for ld in leads if isinstance(ld, dict) and
+                 len(str(ld.get("address") or "").strip()) > _R.LEAD_ADDRESS_MAX]
+    if long_addr:
+        L += ["", f"### {_T('lead_addresses_heading', 'ar')}", ""]
+        L += [f"- {ld.get('name') or '—'}: {str(ld['address']).strip()}"
+              for ld in long_addr]
     L += ["", MAPS_DISCLAIMER, ""]
 
 
@@ -6181,6 +6270,10 @@ def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar",
     # والموقعُ من اليسار لليمين داخل الجدول العربيّ.
     weights = [3, 3, 2, 2.5, 2.5, 1] + ([3] if len(head) > 6 else [])
     _add_table(doc, head, rows, widths=weights, ltr_cols=(2, 3, 4))
+    # الدرس ٢٨٢ (تقرير ٧ §4.4): لكلّ جهةٍ قناتُها وسببُ ترشيحها وخطوتُها
+    # التالية — جدولٌ إضافيّ لا عمودٌ في الجدول المقفول (قرار WS10)؛
+    # والعنوانُ الطويل كاملاً تحته (§7: «الطويل إلى ملحق»).
+    _docx_lead_actions(doc, leads, lang, sanitize)
     line = MAPS_DISCLAIMER
     doc.add_paragraph(sanitize(line) if sanitize else line,
                       style="Intense Quote")

@@ -1080,14 +1080,27 @@ def _entry_channel_block(analyst_by_category: object, lang: str = "ar") -> str:
     if not ch:
         return ""
     alt = ch.get("alternative") or ""
+    tc = ch.get("target_consumer") or ""
+    why = ch.get("reasons") or ""
     if lang == "en":
         return (f"First candidate entry channel (from the analyst): "
                 f"{_isolate(ch['primary'])}"
                 + (f"; conditional alternative: {_isolate(alt)}" if alt else "")
-                + ". The distributor list and the 90-day plan serve it.")
+                + (f"; target consumer (from the demand analysis): "
+                   f"{_isolate(tc)}" if tc else "")
+                + (f"; why: {_isolate(why)}" if why else "")
+                + ". The distributor list and the 90-day plan serve it. A "
+                  "share from a survey or academic sample is not generalised "
+                  "to the population without its study population, size, "
+                  "date and limits.")
     return (f"القناة الأولى المرشّحة (من المحلل): {_isolate(ch['primary'])}"
             + (f"؛ والبديل المشروط: {_isolate(alt)}" if alt else "")
-            + ". قائمةُ الموزّعين وخطةُ التسعين يوماً تخدمانها.")
+            + (f"؛ والمستهلك المستهدف (من تحليل الطلب): {_isolate(tc)}"
+               if tc else "")
+            + (f"؛ وسبب الاختيار: {_isolate(why)}" if why else "")
+            + ". قائمةُ الموزّعين وخطةُ التسعين يوماً تخدمانها. ونسبةٌ من "
+              "استبيانٍ أو عيّنةٍ أكاديمية لا تُعمَّم على السكان دون مجتمع "
+              "الدراسة وحجمها وتاريخها وحدودها.")
 
 
 def _summarize_verdict(verdict: dict, gap_sources: list | None = None,

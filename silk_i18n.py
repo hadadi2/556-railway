@@ -408,6 +408,74 @@ TERMS: dict[str, dict[str, str]] = {
     "cond_closure_weak": {"ar": "معالجة ضعف جانب {pillar} قبل الالتزام",
                           "en": "Address the weak {pillar} aspect before "
                                 "committing"},
+    # الدرس ٢٨٢ — المسؤولُ المقترح وإطارُ خطة التسعين يوماً.
+    "owner_factory_regulator": {"ar": "المصنع مع الجهة الرقابية (مقترح)",
+                                "en": "Factory with the regulator (suggested)"},
+    "owner_factory": {"ar": "المصنع — التكلفة والسعر (مقترح)",
+                      "en": "Factory — cost and price (suggested)"},
+    "owner_factory_importer": {"ar": "المصنع مع المستورد (مقترح)",
+                               "en": "Factory with the importer (suggested)"},
+    "owner_study_team": {"ar": "فريق الدراسة — استكمال البيانات (مقترح)",
+                         "en": "Study team — complete the data (suggested)"},
+    "owner_factory_decision": {"ar": "إدارة المصنع — قرار تجاري (مقترح)",
+                               "en": "Factory management — commercial "
+                                     "decision (suggested)"},
+    "channel_heading": {"ar": "القناة المرشّحة للدخول",
+                        "en": "Candidate entry channel"},
+    "channel_en_summary": {"ar": "القناة الأولى وبديلها وأسبابها في النسخة "
+                                 "العربية — قناةٌ مرشّحة لا مثبتة.",
+                           "en": "The first candidate channel, its conditional "
+                                 "alternative and the reasons are listed in "
+                                 "the Arabic edition — it is a candidate, not "
+                                 "a proven channel."},
+    "channel_col_field": {"ar": "البند", "en": "Field"},
+    "channel_col_value": {"ar": "القيمة", "en": "Value"},
+    "channel_primary": {"ar": "القناة الأولى", "en": "First channel"},
+    "channel_alternative": {"ar": "البديل المشروط", "en": "Conditional "
+                                                          "alternative"},
+    "channel_target_consumer": {"ar": "المستهلك المستهدف (من تحليل الطلب)",
+                                "en": "Target consumer"},
+    "channel_commercial_buyer": {"ar": "المشتري التجاري الغالب بين الجهات "
+                                       "المؤهّلة", "en": "Main buyer type"},
+    "channel_product_nature": {"ar": "طبيعة المنتج", "en": "Product nature"},
+    "channel_reasons": {"ar": "سبب الاختيار", "en": "Why"},
+    "channel_status": {"ar": "الحالة", "en": "Status"},
+    "channel_candidate": {"ar": "مرشّحة من التحليل — لا قناة مثبتة بعد",
+                          "en": "Candidate from the analysis — not proven"},
+    "cond_short": {"ar": "الشرط {n}", "en": "Condition {n}"},
+    "channel_other": {"ar": "أخرى ({activity})", "en": "Other ({activity})"},
+    "plan_head": {"ar": "إطار خطة التسعين يوماً", "en": "90-day plan frame"},
+    "plan_col_condition": {"ar": "الشرط", "en": "Condition"},
+    "plan_col_action": {"ar": "الإجراء", "en": "Action"},
+    "plan_col_owner": {"ar": "المسؤول", "en": "Owner"},
+    "plan_col_window": {"ar": "التوقيت", "en": "Timing"},
+    "plan_col_output": {"ar": "المخرج", "en": "Output"},
+    "plan_col_gate": {"ar": "الاستمرار أو التوقف", "en": "Continue or stop"},
+    "plan_window_gate": {"ar": "من اليوم الأول — يسبق كل ما بعده",
+                         "en": "From day one — before everything else"},
+    "plan_window_missing": {"ar": "الأسابيع 1–4", "en": "Weeks 1–4"},
+    "plan_window_weak": {"ar": "الأسابيع 5–8، بعد استكمال البيانات",
+                         "en": "Weeks 5–8, after the data is complete"},
+    "plan_output_eligibility_gate": {"ar": "إثبات الاعتماد أو الإدراج",
+                                     "en": "Proof of approval or listing"},
+    "plan_output_pillar_missing": {"ar": "المدخلات المستكملة ثم إعادة التقييم",
+                                   "en": "Completed inputs, then a "
+                                         "re-evaluation"},
+    "plan_output_pillar_weak": {"ar": "قرار موثّق بمعالجة الضعف أو قبوله",
+                                "en": "A documented decision to fix or accept "
+                                      "the weakness"},
+    "plan_gate_eligibility_gate": {"ar": "استمر بعد الاعتماد؛ توقف إن رُفض",
+                                   "en": "Continue once approved; stop if "
+                                         "refused"},
+    "plan_gate_pillar_missing": {"ar": "أعد التقييم بالمدخلات — لا يتحوّل "
+                                       "الحكم إلى «دخول» تلقائياً",
+                                 "en": "Re-evaluate with the inputs — the "
+                                       "recommendation does not turn into "
+                                       "\"enter\" automatically"},
+    "plan_gate_pillar_weak": {"ar": "استمر إن ارتفع الجانب إلى 50% فأكثر؛ "
+                                    "وإلا أجّل",
+                              "en": "Continue if the aspect reaches 50% or "
+                                    "more; otherwise defer"},
     "cond_eligibility_gate_other": {
         "ar": "منشأتك تحتاج أولاً: {item} — قبل أي شحن، ولا يُغني عنه أي "
               "إجراء لاحق.",
@@ -903,6 +971,27 @@ TERMS: dict[str, dict[str, str]] = {
                                 "product still needs checking"},
     "lead_reason_specialist": {"ar": "متخصّصةٌ في المنتج: {activity}",
                                "en": "Specialised in the product: {activity}"},
+    "lead_actions_heading": {"ar": "قناة كل جهة وخطوتها التالية",
+                             "en": "Channel and next step per contact"},
+    "lead_addresses_heading": {"ar": "العناوين الكاملة", "en": "Full addresses"},
+    "lead_address_more": {"ar": "(كاملاً أدناه)", "en": "(full below)"},
+    "lead_col_channel": {"ar": "القناة", "en": "Channel"},
+    "lead_col_reason": {"ar": "سبب الترشيح", "en": "Why listed"},
+    "lead_col_next_step": {"ar": "الخطوة التالية", "en": "Next step"},
+    "channel_wholesale": {"ar": "توزيع وجملة", "en": "Distribution / wholesale"},
+    "channel_retail": {"ar": "تجزئة", "en": "Retail"},
+    "channel_hospitality": {"ar": "ضيافة", "en": "Hospitality"},
+    "channel_unknown": {"ar": "غير محدد", "en": "Not stated"},
+    "lead_step_quote": {"ar": "اطلب قائمة أسعار الشراء وشروط التوريد والحد "
+                              "الأدنى للطلب",
+                        "en": "Ask for the purchase price list, supply terms "
+                              "and minimum order"},
+    "lead_step_check_line": {"ar": "تحقق من تعاملها مع صنفك ثم اطلب عرضاً",
+                             "en": "Check that it handles your product, then "
+                                   "ask for a quote"},
+    "lead_step_verify": {"ar": "تحقق من نشاطها الفعلي قبل التواصل التجاري",
+                         "en": "Verify its actual activity before any "
+                               "commercial contact"},
     "lead_name_candidate_mark": {"ar": "(مرشّحةٌ تحتاج تحققاً)",
                                  "en": "(candidate — needs checking)"},
     "lead_reason_specialist_name": {"ar": "صلتُها بالمنتج ظاهرةٌ في اسمها",
