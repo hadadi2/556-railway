@@ -463,9 +463,13 @@ def currency_in_note(note: object) -> str:
     تكون الرايةُ مفعّلة، وبالنمط الضيّق القائم حرفياً بدونها."""
     if recognition_vocabulary():
         import silk_narrative
-        return silk_narrative.currency_in(note)
-    m = _CURRENCY_RE.search(str(note or ""))
-    return m.group(1) if m else ""
+        cur = silk_narrative.currency_in(note)
+    else:
+        m = _CURRENCY_RE.search(str(note or ""))
+        cur = m.group(1) if m else ""
+    if not cur and _RM_PREFIX_RE.search(str(note or "")):
+        cur = "MYR"
+    return cur
 _VAT_WORDS = ("ضريبة القيمة المضافة", "ضريبة", "VAT")
 _HHI_WORDS = ("HHI", "هيرفندال", "تركّز")
 # بنود بعثة الأسعار التي ليست أسعاراً (عدّادات/نِسَب/مؤشرات) — تُستبعد من
@@ -474,14 +478,19 @@ _NON_PRICE_WORDS = ("عدد", "نسبة", "٪", "%", "HHI", "تركّز", "مؤ�
                     "تقييم", "count", "share")
 
 import re as _re
+# البادئةُ الماليزية «RM» قبل رقمٍ — تُقرأ سعراً في `_price_res` فيجب ألّا
+# تفقد عملتَها هنا (الدرس ٢٧١، مراجعة §58). لا تدخل المفردات العامة: «RM»
+# العارية تسكن داخل كلماتٍ لاتينية كثيرة.
+_RM_PREFIX_RE = _re.compile(r"(?<![A-Za-z])RM\s*\d")
 _PACK_RE = _re.compile(
     r"(\d+(?:[.,]\d+)?)\s*(كجم|كغم|كغ|جم|غرام|غ|لتر|مل|kg|g(?![a-z])|l(?![a-z])|ml)",
     _re.IGNORECASE)
 # البند 6 (مراجعة §58): «دولار/يورو/ريال/جنيه» تلتقطها شبكة الأسعار
-# `_PRICE_IN_TEXT_RE` كعملات إلصاق — غيابها هنا كان يجعل سعراً رُصد
+# (`_price_res`) كعملات إلصاق — غيابها هنا كان يجعل سعراً رُصد
 # **بسبب** عملته يفقدها في المرساة فيُعلَّق الحل العكسي بلا داعٍ.
+# الدرس ٢٧١: والقاعدةُ نفسُها للرينجيت — سعرٌ يُقرأ بعملته لا يفقدها هنا.
 _CURRENCY_RE = _re.compile(r"(€|\$|£|ر\.س|درهم|دينار|يورو|دولار|ريال|جنيه"
-                           r"|EUR|USD|GBP|SAR|AED|JOD)")
+                           r"|رينجيت|EUR|USD|GBP|SAR|AED|JOD|MYR)")
 _PACK_TO_KG = {"كجم": 1.0, "كغم": 1.0, "كغ": 1.0, "kg": 1.0,
                "جم": 0.001, "غرام": 0.001, "غ": 0.001, "g": 0.001}
 _PACK_TO_L = {"لتر": 1.0, "l": 1.0, "مل": 0.001, "ml": 0.001}
@@ -523,8 +532,35 @@ def _num_to_float_eu(tok: str):
     return _num_to_float(tok)
 
 
+# الدرس ٢٧٠ (تقرير ٧): «في عام 2024 بلغ مؤشر HHI نحو 1307» كان يعطي 2024 —
+# أوّلُ رقمٍ في المدى هو السنة. التمييزُ **موضعيّ** لا قائمةُ حظر: رقمٌ تسبقه
+# مباشرةً علامةُ سنة يُقرأ سنةً؛ و2024 في حقلٍ مهيكل تبقى قيمةً صالحة.
+_YEAR_MARKER_BEFORE_RE = _re.compile(
+    r"(?:(?<![\u0621-\u064a])(?:[وفبل]?(?:ال)?عام|[وفبل]?(?:ال)?سنة|منذ)"
+    r"|\b(?:in|year|since|during)\b)\s*$", _re.IGNORECASE)
+
+
+_PLAUSIBLE_YEAR_RE = _re.compile(r"(?:19[89]\d|20\d{2})(?!\d|[.,]\d)")
+
+
+def _year_position(text: str, start: int) -> bool:
+    """هل الرقمُ الذي يبدأ عند `start` سنةٌ؟ علامةُ سنةٍ قبله **و**شكلُ سنةٍ
+    معقولة (1980–2099) — فـ«مؤشر HHI العام 1850» يبقى قيمةً («العام» هنا
+    بمعنى «الإجمالي») ولا يُقرأ سنة (مراجعة §58)."""
+    if not _PLAUSIBLE_YEAR_RE.match(text, start):
+        return False
+    return bool(_YEAR_MARKER_BEFORE_RE.search(text[max(0, start - 12):start]))
+
+
 def _mission_numeric(dr: dict, mission_key: str, words: tuple,
                      lo: float, hi: float):
+    """(القيمة، الملاحظة) — انظر `_mission_numeric_finding`."""
+    val, note, _f = _mission_numeric_finding(dr, mission_key, words, lo, hi)
+    return val, note
+
+
+def _mission_numeric_finding(dr: dict, mission_key: str, words: tuple,
+                             lo: float, hi: float):
     """أول قيمة رقمية ضمن مدى معقول تحمل ملاحظتها إحدى الكلمات — أو None.
 
     **الموجة C (البند E-05).** كان `float(val)` وحدَه، والبعثاتُ على المسار
@@ -545,7 +581,10 @@ def _mission_numeric(dr: dict, mission_key: str, words: tuple,
             fv = float(val)
         except (TypeError, ValueError):
             fv = None
-            for m in _NUM_NEAR_RE.finditer(str(val or "")):
+            text = str(val or "")
+            for m in _NUM_NEAR_RE.finditer(text):
+                if _year_position(text, m.start()):
+                    continue
                 # الفاصلةُ فاصلُ آلافٍ لا عشريّ (عرفُ الريبو) **مع تمييز
                 # الفاصلةِ العشريّةِ الأوروبية**: «2,350»→2350، لكنّ «2,35»→2.35
                 # فلا يُضخَّم رقمٌ أوروبيّ ١٠٠ ضعف (مراجعة §58).
@@ -554,8 +593,8 @@ def _mission_numeric(dr: dict, mission_key: str, words: tuple,
                     fv = cand
                     break
         if fv is not None and lo <= fv <= hi:
-            return fv, note
-    return None, ""
+            return fv, note, f
+    return None, "", None
 
 
 def _parse_pack_from_note(note: str) -> tuple:
@@ -624,16 +663,43 @@ _RETAIL_BY_SOURCE = ("google maps", "maps", "serper", "local price",
 # الالتصاق وحدَها كانت تلتقط ٩ فقط — أي **الحدَّ الأعلى**، وهو الاتجاه
 # المتفائل بالضبط الذي تعالجه هذه الموجة (مرساةٌ أعلى ⇒ هامشٌ أكبر من الحقيقة).
 # فالمدى يُلتقَط كوحدةٍ واحدة ويُؤخَذ طرفاه، ثمّ يفوز أدناهما.
-_PRICE_RANGE_RE = _re.compile(
-    r"(\d+(?:[.,]\d+)?)\s*(?:و|–|—|-|إلى|الى|to)\s*"
-    r"(\d+(?:[.,]\d+)?)\s*(?:€|\$|£|ر\.س|درهم|دينار|يورو|دولار|جنيه|ريال|"
-    r"EUR|USD|GBP|SAR|AED|JOD)")
+# الدرس ٢٧١ (تقرير ٧): بديلُ العملات كان قائمةً مُثبَّتة (١٥ عملة) فلا يُقرأ
+# «25.80 رينجيت ماليزي» ولا «25.80 MYR». يُبنى الآن كسولاً من المصدر الواحد
+# `silk_narrative.currency_tokens()` (سجلُّ العرض نفسُه)، مع البادئة الماليزية
+# «RM» قبل الرقم وحدَها (لا تدخل المفردات كي لا تطابق داخل كلمة).
+_NUM_TOK = r"(\d+(?:[.,]\d+)?)"
+_PRICE_RES: dict = {}
 
-_PRICE_IN_TEXT_RE = _re.compile(
-    r"(?:(€|\$|£)\s*(\d+(?:[.,]\d+)?))"                      # €7.49
-    r"|(?:(\d+(?:[.,]\d+)?)\s*(€|\$|£|ر\.س|درهم|دينار|يورو|دولار|"
-    r"جنيه|ريال|EUR|USD|GBP|SAR|AED|JOD))"                    # 7.49 يورو
-)
+
+def _price_res() -> tuple:
+    """(نمطُ المدى، نمطُ السعر الملتصق) — يُبنيان مرّةً من المفردات الواحدة."""
+    if not _PRICE_RES:
+        import silk_narrative as _N
+        # منطقةُ العمى المعلنة نفسُها في `currency_in`: الاسمُ العربيّ الأقصرُ
+        # من ثلاثة أحرف («ين») يسكن داخل «بين»/«سنتين» فيُستبعَد، ورمزُه ISO
+        # يُقرَأ. «ر.س» اختصارٌ بنقطةٍ فيبقى.
+        toks = [t for t in _N.currency_tokens() if t and not (
+            _re.fullmatch(r"[\u0621-\u064a ]+", t)
+            and len(_re.findall(r"[\u0621-\u064a]", t)) < _N._CURRENCY_MIN_AR)]
+        cur = "|".join(_re.escape(t) for t in toks)
+        # الاسمُ العربيّ يَرِد بأداةِ جرٍّ/تعريفٍ ملتصقة («بالرينجيت») وبجمعٍ
+        # («دولارات»)، ولا يليه حرفٌ عربيّ آخر («10 راندوم» ليست سعراً —
+        # حدُّ `_currency_token_re` نفسُه)؛ والرمزُ اللاتينيّ لا يلتصق بحرفٍ
+        # لاتينيّ بعده.
+        suffix = (r"\s*(?:[وفبكل]{0,2}(?:ال)?)?(?:" + cur + r")"
+                  r"(?:ات|ان|ين)?(?![A-Za-z\u0621-\u064a])")
+        # البادئة: الرموزُ و«ر.س» ورموزُ ISO («AED 18.50»، «SAR 15») و«RM».
+        iso = "|".join(t for t in toks if _re.fullmatch(r"[A-Z]{3}", t))
+        prefix = (r"(€|\$|£|ر\.س|(?<![A-Za-z])(?:" + iso + r"|RM)"
+                  r"(?![A-Za-z]))")
+        _PRICE_RES["range"] = _re.compile(
+            _NUM_TOK + r"\s*(?:و|–|—|-|إلى|الى|to)\s*" + _NUM_TOK + suffix)
+        _PRICE_RES["single"] = _re.compile(
+            r"(?:" + prefix + r"\s*" + _NUM_TOK + r")"
+            r"|(?:" + _NUM_TOK + r"(" + suffix + r"))")
+    return _PRICE_RES["range"], _PRICE_RES["single"]
+
+
 # سنواتٌ ونسبٌ لا تكون أسعاراً حتى لو لامست عملةً في جملةٍ مزدحمة.
 _YEARISH_RE = _re.compile(r"\b(19|20)\d{2}\b")
 
@@ -649,7 +715,8 @@ def price_numbers_in_text(text: object) -> list:
     if not raw:
         return []
     out: list = []
-    for rm in _PRICE_RANGE_RE.finditer(raw):
+    _range_re, _single_re = _price_res()
+    for rm in _range_re.finditer(raw):
         for grp in (rm.group(1), rm.group(2)):
             try:
                 v = float(str(grp).replace(",", "."))
@@ -657,7 +724,7 @@ def price_numbers_in_text(text: object) -> list:
                 continue
             if v > 0 and not _YEARISH_RE.search(str(grp)):
                 out.append(v)
-    for m in _PRICE_IN_TEXT_RE.finditer(raw):
+    for m in _single_re.finditer(raw):
         num = m.group(2) or m.group(3)
         if not num:
             continue
@@ -1085,17 +1152,78 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
     return out
 
 
-def _tariff_from_ledger(dr: dict) -> tuple:
+def _ledger_entries(dr: dict) -> "dict | None":
+    """مداخلُ سجلّ الحقائق مرّةً واحدة لكلّ عرضٍ اقتصاديّ — أو None."""
+    if ledger_reader_off():
+        return None
+    try:
+        import silk_fact_ledger as _FL
+        return _FL.build_ledger({"deep_research": dr}).get("entries") or {}
+    except Exception:  # noqa: BLE001 — السجلُّ إضافةٌ لا شرطُ حساب
+        return None
+
+
+def hhi_fact(dr: dict, entries: "dict | None" = None) -> dict:
+    """حقيقةُ HHI الواحدة: `{"value","year","source","origin"}` — القيمةُ
+    وسنتُها ومصدرُها من سجلٍّ واحد.
+
+    الدرس ٢٧٠ (تقرير ٧): كانت القيمةُ تُقرأ من النثر («أوّلُ رقم») والسنةُ
+    والمصدرُ من أوّل اكتشافٍ في البعثة، والمحرّكُ يقرأ الملخّصَ المهيكل —
+    ثلاثةُ قرّاء لرقمٍ واحد. الآن: سجلُّ الحقائق أوّلاً (قارئُ المحرّك نفسه،
+    `_structured_competition`)، والنثرُ احتياطٌ حين يغيب السجلّ وحدَه، وإسنادُه
+    من الاكتشاف الذي قُرئ منه الرقم. الغيابُ `value=None` — لا صفر.
+    """
+    empty = {"value": None, "year": None, "source": "", "origin": ""}
+    if entries is None:
+        entries = _ledger_entries(dr)
+    if entries is not None:
+        e = entries.get("hhi") or {}
+        v = _num_or_none(e.get("value"))
+        if v is not None:
+            if v <= 1.0:
+                v = float(round(v * HHI_SCALE_MAX))
+            try:
+                year = int(e.get("year")) if e.get("year") else None
+            except (TypeError, ValueError):
+                year = None
+            return {"value": v, "year": year,
+                    "source": str(e.get("source") or ""), "origin": "ledger"}
+    # مدى الوحدة نفسُه في قارئ المحرّك (`_structured_competition`): الأرضية
+    # 100 تحسم الوحدةَ الملتبسة — حصةُ مورّدٍ (84.05) قرب «تركّز» لا تصير
+    # HHI (مراجعة §58)؛ والكسرُ ≤1 صيغةٌ مقبولة يُعاد قياسُها.
+    v, _note, f = _mission_numeric_finding(dr, "competitors", _HHI_WORDS,
+                                           100.0, 10_000.0)
+    if v is None:
+        v, _note, f = _mission_numeric_finding(dr, "competitors", _HHI_WORDS,
+                                               0.0, 1.0)
+    if v is None or v <= 0:
+        return empty
+    if v <= 1.0:
+        v = float(round(v * HHI_SCALE_MAX))
+    dy = (f.get("data_year") if isinstance(f, dict)
+          else getattr(f, "data_year", None))
+    try:
+        year = int(dy) if dy else None
+    except (TypeError, ValueError):
+        year = None
+    src = (f.get("source") if isinstance(f, dict)
+           else getattr(f, "source", "")) or ""
+    return {"value": v, "year": year, "source": str(src), "origin": "prose"}
+
+
+def _tariff_from_ledger(dr: dict, entries: "dict | None" = None) -> tuple:
     """(القيمة، الملاحظة) من سجلّ الحقائق الواحد — أو (None, "") عند تعذّره.
 
     الدرس ٢٦٢: لا مسارَ استخراجٍ ثانٍ للتعرفة؛ السجلّ هو القارئ الوحيد.
     """
-    try:
-        import silk_fact_ledger as _FL
-        e = (_FL.build_ledger({"deep_research": dr}).get("entries")
-             or {}).get("tariff_applied_pct") or {}
-    except Exception:  # noqa: BLE001 — السجلُّ إضافةٌ لا شرطُ حساب
-        return None, ""
+    import silk_fact_ledger as _FL
+    if entries is None:
+        try:
+            entries = (_FL.build_ledger({"deep_research": dr}).get("entries")
+                       or {})
+        except Exception:  # noqa: BLE001 — السجلُّ إضافةٌ لا شرطُ حساب
+            return None, ""
+    e = entries.get("tariff_applied_pct") or {}
     # الموجة د-١: التقديرُ والاستنتاجُ لا يُحتسبان متحققاً منهما (قيدُ المالك) —
     # مسارُ المال يقرأ المرصودَ وحدَه، وإلا صار تقديرٌ رسماً جمركياً فعلياً.
     if e.get("status") == _FL.MISSING or e.get("status") in _FL._RANGED:
@@ -1146,7 +1274,10 @@ def economics_view(dr: dict, product_card: dict | None = None,
         fv = min(c for c in candidates if c > 0) if any(
             c > 0 for c in candidates) else None
         if fv:
-            prices.append((fv, note, level))
+            # الدرس ٢٧١: العملةُ قد تعيش في نصّ القيمة («25.80 رينجيت») لا في
+            # الملاحظة — المرساةُ تقرؤها من النصّين معاً.
+            prices.append((fv, blob.strip() if isinstance(val, str) else note,
+                           level))
     # **الموجة C (E-01/E-09).** المرساةُ من صفوف **التجزئة المُصرَّح بها** فقط.
     # خلطُ المستويات كان يُنتِج تفاؤلاً منهجياً: سعرُ حدودٍ يُتبنّى سعرَ رفّ.
     retail_rows = [(v, n) for v, n, lvl in prices if lvl == "retail"]
@@ -1178,8 +1309,10 @@ def economics_view(dr: dict, product_card: dict | None = None,
     # ويُعلَن «غير متاحة» بينما القسم التنظيميّ يطبع ٢٥٪ — تناقضٌ يراه العميل
     # في تقريرٍ واحد (بلاغ التقرير 6). المصدرُ الآن سجلُّ الحقائق الواحد،
     # ومسارُ الregex يبقى احتياطاً حين يتعذّر بناء السجلّ (لا سلوكَ أسوأ).
-    tariff, t_note = (None, "") if ledger_reader_off() \
-        else _tariff_from_ledger(dr)
+    # سجلُّ الحقائق يُبنى مرّةً للتعرفة وHHI معاً (مراجعة §58).
+    _entries = _ledger_entries(dr)
+    tariff, t_note = (None, "") if _entries is None \
+        else _tariff_from_ledger(dr, _entries)
     if tariff is None:
         tariff, t_note = _mission_numeric(dr, "tariffs_agreements",
                                           tariff_words(), 0.0, 100.0)
@@ -1334,9 +1467,9 @@ def economics_view(dr: dict, product_card: dict | None = None,
 
     # سؤال الإزاحة عند تركّز مرتفع (§5.1): HHI من بعثة المنافسين، بتطبيع
     # مقياس صريح (≤1 = كسر → ×10000 عبر hhi_from_fractions المنطق الموحّد).
-    hhi_val, _ = _mission_numeric(dr, "competitors", _HHI_WORDS, 0.0, 10_000.0)
-    if hhi_val is not None and hhi_val <= 1.0:
-        hhi_val = round(hhi_val * HHI_SCALE_MAX)
+    # الدرس ٢٧٠: حقيقةٌ واحدة (القيمة + السنة + المصدر) — `hhi_fact`.
+    _hhi = hhi_fact(dr, _entries)
+    hhi_val = _hhi["value"]
     # **الموجة C (E-05).** `bool(None ...)` كانت `False` — أي أنّ «الإزاحة غير
     # مطلوبة» تُقال بثقةٍ حين لم تُقَس أصلاً. الحالتان مختلفتان تجارياً: سوقٌ
     # مفتّتٌ يُدخَل بالتنافس السعريّ، وسوقٌ **لم يُقَس تركّزُه** يُدخَل بحذر.
@@ -1394,6 +1527,8 @@ def economics_view(dr: dict, product_card: dict | None = None,
         # (`margin_waterfall(currency="USD")` افتراضٌ لم يصرّح به أحد).
         "cost_currency": _cost_cur or None,
         "hhi": hhi_val,
+        "hhi_year": _hhi["year"],
+        "hhi_source": _hhi["source"],
         "displacement_required": displacement_required,
         "displacement_measured": displacement_measured,
         "parameter_scenarios": PARAMETER_SCENARIOS,

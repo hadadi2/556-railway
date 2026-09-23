@@ -709,6 +709,34 @@ def _price_row_reason(text: object) -> str:
     return "وحدة غامضة"
 
 
+_LEADING_NUM_RE = re.compile(r"^\s*(?:€|\$|£|RM)?\s*\d")
+
+
+def _is_price_row(value: object, note: object) -> bool:
+    """هل هذا صفُّ سعرٍ فعلاً؟ (الدرس ٢٧١ — تقرير ٧)
+
+    كان كلُّ صفٍّ بملاحظةٍ يُطبَع تحت «الأسعار المرصودة على الرف»: صفُّ
+    استبعادِ منتجٍ مختلف (قيمتُه None)، ومعلومةُ حلال، وملاحظةُ بحث. يبقى
+    الصفّ إن حمل قيمةً رقمية أو قاموسَ عرض، أو نصّاً يبدأ برقم (سعرٌ تنقصه
+    العملة يبقى بحالته المعلنة «وحدة غامضة»)، أو سعراً ملتصقاً بعملة في
+    القيمة أو الملاحظة. ما عدا ذلك يبقى في البيانات الخام ولا يُعرض سعراً.
+    """
+    import silk_economics as _E
+    import silk_narrative as _N
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float, dict)):
+        return True
+    text = f"{value if isinstance(value, str) else ''} {note or ''}"
+    if isinstance(value, str) and _LEADING_NUM_RE.match(value):
+        return True
+    if _E.price_numbers_in_text(text):
+        return True
+    # احتياطٌ لا يُخفي رصداً حقيقياً بصيغةٍ لا يقرؤها النمط (مراجعة §58):
+    # رقمٌ وعملةٌ مسمّاة في النصّ نفسِه ⇒ صفُّ سعر.
+    return bool(re.search(r"\d", text) and _N.currency_in(text))
+
+
 def _price_row_reason_row(dp: dict) -> str:
     """سبب صف سعرٍ كامل — القيمة أولاً ثم الملاحظة (صيد ٣ + دورة C4).
 
@@ -3350,7 +3378,8 @@ def _deep_research_view(result: dict, lang: str = "ar",
                  # "None" كانت تُحقن في النص المصنف.
                  "reason": _price_row_reason_row(_dp(x))}
                 for x in ((missions.get("pricing_scout") or {}).get("findings") or []))
-            if row["note"] or row["value"] is not None],
+            if (row["note"] or row["value"] is not None)
+            and _is_price_row(row["value"], row["note"])],
         "price_unlock": PRICE_UNLOCK_LINE,
         # Wave 3.2: عند تعليم الرمز، التركّز (HHI) سياقٌ فقط لا إشارة تسجيل
         # للحكم لهذا المنتج — الشارة تستهلكها المُصدِّرات.
@@ -3672,26 +3701,6 @@ def _chart_demand_interest(dr: dict, lang: str) -> "dict | None":
     }
 
 
-def _hhi_provenance(dr: dict) -> tuple:
-    """(المصدر، السنة) لحقيقة HHI في بعثة المنافسين — أو ("", None)."""
-    m = (dr.get("missions") or {}).get("competitors")
-    findings = (m.get("findings") if isinstance(m, dict)
-                else getattr(m, "findings", None)) or []
-    for f in findings:
-        val = f.get("value") if isinstance(f, dict) else getattr(f, "value", None)
-        note = str((f.get("note") if isinstance(f, dict)
-                    else getattr(f, "note", "")) or "")
-        src = str((f.get("source") if isinstance(f, dict)
-                   else getattr(f, "source", "")) or "")
-        year = f.get("data_year") if isinstance(f, dict) else getattr(f, "data_year", None)
-        if isinstance(val, dict) and "hhi" in val:
-            return src, (val.get("year") or year)
-        if isinstance(val, (int, float)) and not isinstance(val, bool) \
-                and any(w in note for w in ("HHI", "هيرفندال", "تركّز")):
-            return src, year
-    return "", None
-
-
 def _chart_supplier_concentration(dr: dict, eco: dict, lang: str,
                                   context_only: bool = False) -> "dict | None":
     """تركّزُ المورّدين: قيمةُ HHI المحسوبة (`economics.hhi`) على مناطقٍ ثلاث من
@@ -3709,10 +3718,13 @@ def _chart_supplier_concentration(dr: dict, eco: dict, lang: str,
     labels = {"open": _I.t("chart_band_open", lang),
               "moderate": _I.t("chart_band_moderate", lang),
               "high": _I.t("chart_band_high", lang)}
-    src, year = _hhi_provenance(dr)
+    # الدرس ٢٧٠: القيمةُ والسنةُ والمصدرُ من حقيقةٍ واحدة (`silk_economics.
+    # hhi_fact` عبر العرض الاقتصادي) — لا قارئَ ثانياً للإسناد في المُصيِّر.
+    src = str((eco or {}).get("hhi_source") or "")
+    year = (eco or {}).get("hhi_year")
     return {
         "id": "supplier_concentration", "kind": "gauge", "unit": "index",
-        "section": "competition",
+        "metric": "hhi", "section": "competition",
         "title": _I.t("chart_supplier_concentration", lang),
         "value": float(hhi), "band": band, "band_label": labels[band],
         "bands": [

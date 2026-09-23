@@ -3799,8 +3799,14 @@ _BADGE_MARKS_RE = re.compile(r"[✓◐○]\s*")
 def _client_price_observations(doc, dr: dict, lang: str = "ar") -> None:
     rows = dr.get("price_rows") or []
     lines: list[str] = []
+    seen: set = set()
+    from silk_render import _is_price_row
     for r in rows:
         if not isinstance(r, dict):
+            continue
+        # الدرس ٢٧١: حارسٌ ثانٍ للمحفوظات السابقة للإصلاح — صفٌّ غيرُ سعريّ
+        # (استبعاد/حلال/ملاحظة بحث) لا يُطبَع تحت عنوان أسعار الرف.
+        if not _is_price_row(r.get("value"), r.get("note")):
             continue
         # ملاحظات البعثة تحمل وسم التقاطع «[category]» وشارة الدليل (✓/◐/○)
         # — تِلِمِتري داخلي لا يبلغ نص العميل (حارس المُنتَج يرفضهما).
@@ -3814,6 +3820,12 @@ def _client_price_observations(doc, dr: dict, lang: str = "ar") -> None:
         if reason:
             body += " — " + (reason if lang != "en"
                              else _PRICE_REASON_EN.get(reason, reason))
+        # المفتاحُ من النصّ الكامل قبل الاقتطاع — رصدان يختلفان بعد ١٦٠ حرفاً
+        # (متجرٌ أو عبوةٌ أخرى) ليسا مكرّرين (مراجعة §58).
+        key = (" ".join(raw.split()).casefold(), reason)
+        if key in seen:        # الرصدُ نفسُه مرّتين يُطبَع مرّة
+            continue
+        seen.add(key)
         lines.append(body)
     if not lines:
         return

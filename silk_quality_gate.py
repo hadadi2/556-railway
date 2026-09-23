@@ -6412,6 +6412,82 @@ def _check_chart_backing(dr: dict) -> list[dict]:
                         "مقابلَ لها تعني حساباً جديداً في مُصيِّر")}]
 
 
+# مدى وحدةِ كلِّ مقياسٍ مرسوم — ثابتٌ مستقلٌّ عن القارئ (أرضيةُ HHI 100 هي
+# نفسُها في `_structured_competition`: تحسم الحصةَ الملتبسة 84.05).
+_CHART_METRIC_RANGE = {"hhi": (100.0, 10_000.0)}
+
+
+def _chart_metric_reference(dr: dict, metric: str,
+                            ledger: "dict | None") -> "dict | None":
+    """سجلُّ المحرّك للمقياس (`ledger.entries[metric]`) — أو None.
+
+    السجلُّ يُمرَّر من العرض (`view["ledger"]`، مبنيّاً من النتيجة الخام قبل
+    أن يُسقِط `_dp` الأدلةَ الأصلية)؛ وبدونه يُبنى من `dr` نفسِه."""
+    entries = (ledger or {}).get("entries") if ledger else None
+    if entries is None:
+        try:
+            import silk_fact_ledger as _FL
+            entries = _FL.build_ledger({"deep_research": dr or {}}).get(
+                "entries") or {}
+        except Exception:  # noqa: BLE001 — تعذّر السجلّ = لا مرجع
+            return None
+    e = entries.get(metric) or {}
+    return e if e.get("value") is not None else None
+
+
+def _check_chart_metric_identity(dr: dict,
+                                 ledger: "dict | None" = None) -> list[dict]:
+    """`chart_metric_identity_mismatch` (الدرس ٢٧٠ — تحذيريّ، خلف راية
+    الرسوم بالبناء): رسمٌ يُعلن مقياسَه (`metric`) يُفحَص بالهوية لا بالوجود.
+
+    ما يُثبِته (مُعلَنٌ حدُّه، مراجعة §58):
+    ١) **الوحدة** — القيمةُ داخل مدى المقياس (HHI 100–10000) أيّاً كان مصدرُها:
+       حصةُ مورّدٍ 84.05 مرسومةً HHI تُلتقَط حتى لو قرأها القارئ النثريّ.
+    ٢) **السجلّ** — حين يحمل سجلُّ المحرّك قيمةً للمقياس، يجب أن تطابقها قيمةُ
+       الرسم وسنتُه. هذا يلتقط رسماً بُني من قارئٍ آخر غير السجلّ؛ ولا يدّعي
+       إثباتَ صحّة الرقم في أصله (ذلك شأنُ فحوص المحرّك).
+    `_check_chart_backing` يُثبت فقط أن الرقم موجودٌ في مكانٍ ما من الأدلة.
+    رسمٌ بلا `metric` خارج نطاق هذا الفحص."""
+    charts = (dr or {}).get("charts")
+    if not isinstance(charts, list) or not charts:
+        return []
+    hits: list[str] = []
+    for ch in charts:
+        if not isinstance(ch, dict) or not ch.get("metric"):
+            continue
+        cid = str(ch.get("id") or "?")
+        metric = str(ch["metric"])
+        v = ch.get("value")
+        if not isinstance(v, (int, float)) or isinstance(v, bool):
+            hits.append(f"{cid}: قيمةٌ غير رقمية لمقياس {metric}")
+            continue
+        lo_hi = _CHART_METRIC_RANGE.get(metric)
+        if lo_hi and not (lo_hi[0] <= float(v) <= lo_hi[1]):
+            hits.append(f"{cid}: {v:g} خارج مقياس {metric} "
+                        f"({lo_hi[0]:g}–{lo_hi[1]:g})")
+            continue
+        ref = _chart_metric_reference(dr, metric, ledger)
+        if ref is None:
+            continue
+        try:
+            rv = float(ref["value"])
+        except (TypeError, ValueError):
+            continue
+        if abs(float(v) - rv) > 1e-6:
+            hits.append(f"{cid}: {v:g} ≠ {metric} في السجلّ {rv:g}")
+            continue
+        cy, ry = str(ch.get("year") or ""), ref.get("year")
+        if cy and ry and cy != str(ry):
+            hits.append(f"{cid}: سنة {cy} ≠ سنة {metric} في السجلّ {ry}")
+    if not hits:
+        return []
+    return [{"check": "chart_metric_identity_mismatch", "repairable": True,
+             "note": ("رسمٌ لا تطابق قيمتُه أو سنتُه حقيقةَ المقياس الذي "
+                      "يُعلنه: " + "؛ ".join(hits[:5])
+                      + " — الرسمُ يقرأ القيمةَ والسنةَ والمصدرَ من حقيقةٍ "
+                        "واحدة، لا من رقمٍ موجودٍ في مكانٍ آخر")}]
+
+
 # فحوصٌ **تقرأ تسميةَ الثقة في النثر** وتصير — مع خصوصية أرقام القياس —
 # خارجَ مسار التوقّع: النثرُ لا يستلم التسميةَ فلا يكتبها. **لا يُحذَف منها
 # شيء** (اثنان في `FAIL_TRIGGER_CHECKS` المجمَّدة تقرؤها عشراتُ الاختبارات
@@ -6842,6 +6918,8 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_amount_false_precision(text)
     # الموجة الخامسة: رسمٌ بقيمةٍ بلا حقيقة — تحذيريّ خلف راية الرسوم.
     findings += _check_chart_backing(dr)
+    # الدرس ٢٧٠: هويةُ المقياس المرسوم — لا وجودُ الرقم وحده.
+    findings += _check_chart_metric_identity(dr, view.get("ledger"))
     # البند ٧: تقدير بلا حقوله الأربعة أو واسعٌ معه قيمة — تحذيري.
     findings += _check_estimate_fields_complete(view)
     # البند ٤ (هدف الدراسة الاحترافية): الملخص التنفيذي يفتتح بالتوصية
