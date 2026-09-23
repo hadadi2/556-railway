@@ -251,6 +251,14 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٩ — تقرير ٧: السنةُ الناقصة صفٌّ، والاشتراطُ بنوعه، والملاءمةُ تُسمّى.
+    (279, "silk_requirements_agent.py", ["def requirement_rows",
+                                         "REQUIREMENT_STATUSES"]),
+    (279, "silk_reports.py", ["def _client_requirements_table",
+                              "imports_year_missing"]),
+    (279, "data/requirements_l1.csv", ["requirement_status"]),
+    (279, "tests/test_report7_series_regulatory.py",
+     ["def test_the_client_report_splits_requirements_by_type"]),
     # ٢٧٨ — تقرير ٧: إحالةُ المراجع، ورأسُ الجدول، وخلايا LTR، وبصمةُ المدخلات.
     (278, "silk_reports.py", ["def _set_table_flow", "def _mark_ltr_cells",
                               "def _supported_facts", "def _input_fingerprint"]),

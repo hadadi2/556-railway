@@ -259,6 +259,21 @@ def _score_arithmetic_line(arith: dict, lang: str = "ar") -> str:
                 score=round(float(arith["score"]) * 100))
 
 
+def _requirements_safe(result: dict) -> list:
+    try:
+        from silk_requirements_agent import requirement_rows
+        return requirement_rows(
+            str((result.get("market") or {}).get("iso3") or ""),
+            result.get("hs_code"))
+    except Exception as e:  # noqa: BLE001 — مرجعٌ مساعد لا شرطُ عرض
+        # لا غيابَ صامت (مراجعة §58): يُسجَّل، ويُعلَن صفَّ فجوة.
+        log.warning("requirement_rows failed: %s", e)
+        return [{"item": "تعذّرت قراءة مرجع الاشتراطات — تحقق محلياً قبل "
+                         "الشحن", "authority": "", "source_url": "",
+                 "direction": "entry", "status": "", "gap": True,
+                 "conditional_on_gate": False, "applies_when": ""}]
+
+
 def entry_channel(by_category: object) -> "dict | None":
     """`{primary, alternative, source, status}` من `entry_door` — أو None.
 
@@ -410,7 +425,11 @@ def decision_basis(ed: dict, displayed_confidence: object = None,
         else:
             pct = round(strength * 100)
             rows.append({"name": label, "strength_pct": pct,
-                         "note": _t("pillar_measured")})
+                         # تقرير ٧ §4.3: الملاءمةُ التنظيمية تُشرح بما تقيسه
+                         # — لا تعني ١٠٠٪ أنّ المصنع حاصلٌ على الموافقات.
+                         "note": _t("pillar_regulatory_note"
+                                    if name == "regulatory"
+                                    else "pillar_measured")})
     # الصنف ٧: **العددُ والسقفُ يُوحَّدان، والصياغةُ تبقى صياغةَ القارئ.**
     #
     # جُرِّبت قراءةُ نصوصِ المحرّك مباشرةً وأُسقِطت بالقياس: سلاسلُ المحرّك
@@ -3429,6 +3448,8 @@ def _deep_research_view(result: dict, lang: str = "ar",
         # من أبواب الدخول المرتّبة عند المحلل، بحالةٍ صريحة (مرشّحةٌ من التحليل
         # لا قرارٌ مُثبَت). يقرؤه كلُّ سطحٍ من هنا لا من نثرٍ متفرّق.
         "entry_channel": entry_channel(by_category),
+        # تقرير ٧ §4.3: الاشتراطاتُ بنوعها من المرجع حتمياً (لا من نثر البعثة).
+        "requirements": _requirements_safe(result),
         "analyst": {"summary": analyst_report["summary"],
                    "missing_categories": analyst.get("missing_categories") or [],
                    "by_category": by_category,

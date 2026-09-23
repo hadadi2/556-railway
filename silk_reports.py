@@ -3777,12 +3777,60 @@ def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
         if imp.get(key):
             doc.add_paragraph(str(imp[key]))
     pts = [p for p in (imp.get("series") or []) if isinstance(p, dict)]
-    if len(pts) >= 2:
+    if len(pts) >= 2 or (pts and imp.get("years_missing")):
         from silk_render import _fmt_usd
+        # تقرير ٧ §3.2: السنةُ التي تعذّر جلبُها صفٌّ معلَنٌ في الجدول نفسِه
+        # (لا جملةٌ مجمّعة وحدها) — لا تقديرَ ولا ملء.
+        rows = [(int(p.get("year")), _fmt_usd(p.get("value"), lang))
+                for p in pts if str(p.get("year") or "").isdigit()]
+        seen = {y for y, _ in rows}
+        # كلُّ سنةٍ أعلنت السلسلةُ غيابَها — أحدثُها أيضاً (الحالةُ الأهمّ).
+        for y in (imp.get("years_missing") or []):
+            try:
+                y = int(y)
+            except (TypeError, ValueError):
+                continue
+            if y not in seen:
+                seen.add(y)
+                rows.append((y, _T("imports_year_missing", lang)))
         _add_table(doc, [_T("imports_col_year", lang),
                          _T("imports_col_value", lang)],
-                   [[str(p.get("year")), _fmt_usd(p.get("value"), lang)]
-                    for p in pts])
+                   [[str(y), v] for y, v in sorted(rows)])
+
+
+def _client_requirements_table(doc, dr: dict, lang: str = "ar") -> None:
+    """الاشتراطاتُ بنوعها (تقرير ٧ §4.3): إلزاميٌّ قانوناً / بحسب الفئة أو
+    الوجهة / اختياريٌّ داعم — لا تُساوى شروطُ المشتري بالواجب القانونيّ.
+    نصوصُ البنود عربيةٌ من المرجع، فالجدولُ للتقرير العربيّ وحدَه (سياسةُ
+    الفصل الصلب — نمطُ جدول الأرقام)."""
+    rows = [r for r in (dr.get("requirements") or []) if isinstance(r, dict)
+            and str(r.get("item") or "").strip()]
+    if not rows:
+        return
+    if silk_i18n.normalize(lang) == "en":
+        # مراجعة §58: لا صمتَ في التقرير الإنجليزيّ — عددُ البنود ونوعُها،
+        # ونصوصُها العربية في النسخة العربية (سياسةُ الفصل الصلب).
+        real = [r for r in rows if not r.get("gap")]
+        legal = sum(1 for r in real if r.get("status") == "legal_mandatory")
+        doc.add_heading(_T("req_heading", lang), level=2)
+        doc.add_paragraph(_T("req_en_summary", lang, n=len(real), m=legal))
+        return
+    doc.add_heading(_T("req_heading", lang), level=2)
+    cells = []
+    for r in rows:
+        st = r.get("status") or ("gap" if r.get("gap") else "unknown")
+        kind = _T(f"req_status_{st}", lang)
+        if r.get("conditional_on_gate"):
+            kind += " " + _T("req_after_gate", lang)
+        cells.append([str(r["item"]).replace("**", ""),
+                      _T("req_dir_" + (r.get("direction") or "entry"), lang),
+                      str(r.get("authority") or "—"), kind,
+                      str(r.get("source_url") or "—")])
+    _add_table(doc, [_T("req_col_item", lang), _T("req_col_direction", lang),
+                     _T("req_col_authority", lang), _T("req_col_type", lang),
+                     _T("req_col_link", lang)],
+               cells, widths=[4, 1.5, 2.5, 2, 2.5], ltr_cols=(4,))
+    doc.add_paragraph(_T("req_note", lang))
 
 
 def _client_economics_section(doc, dr: dict, lang: str = "ar") -> None:
@@ -4555,6 +4603,8 @@ def render_client_docx(view: dict, path: str) -> str:
                                  lang)
         if client_head == "المنافسة والتسعير والهامش":
             _client_charts(doc, dr, "competition", lang)
+        if client_head == "مسار الدخول والمتطلبات":
+            _client_requirements_table(doc, dr, lang)
 
     # §A (حزمة الفكس v2.1): جدول مزيج الثقة (✓/◐/○) وجدول مرشّحي خرائط قوقل
     # أُسقطا من بناء العميل — يبقيان في التصدير الداخلي (?internal=1) فقط.
