@@ -341,6 +341,11 @@ def _numeric_with_source(findings: list, metric: str) -> tuple:
     if len(cands) == 1:
         return cands[0][0], cands[0][1]
     dated = [c for c in cands if c[3] is not None]
+    if usd_metric and dated:
+        # الدرس ٢٨٠: قيمةُ السنة الجارية جزئية — سنةٌ كاملةٌ مرصودة تفوز
+        # عليها، فيتّفق حجمُ السوق مع عنوان الواردات والنموّ.
+        full = [c for c in dated if not _is_partial_year(c[3])]
+        dated = full or dated
     if dated:
         top_y = max(c[3] for c in dated)
         tied = [c for c in dated if c[3] == top_y]
@@ -350,6 +355,15 @@ def _numeric_with_source(findings: list, metric: str) -> tuple:
     if structured:
         return structured[0][0], structured[0][1]
     return None, None      # C2: نثرٌ متعدد بلا سنوات — فجوة معلنة لا اعتباط
+
+
+def _is_partial_year(year: object) -> bool:
+    """السنةُ الجارية (أو اللاحقة) لم تكتمل — رقمُها التجاريّ جزئيّ."""
+    import datetime as _dt
+    try:
+        return int(year) >= _dt.date.today().year
+    except (TypeError, ValueError):
+        return False
 
 
 def _scaled_hhi(value: "float | None") -> "float | None":
@@ -587,6 +601,10 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
         # التي بنتها الموجة C، لا بمطابقة عبارةٍ في نثرٍ قد يصوغها الكاتب بألف
         # صيغة. حاجزٌ صلبٌ مؤكَّدُ الانطباق وغيرُ محسوم = بوّابةٌ مفتوحة.
         "eligibility_gate": bool(reg_state.get("open_hard")),
+        # الدرس ٢٨٠: اسمُ البوّابة يرافقها — ليست كلُّ بوّابةٍ إدراجاً أوروبياً
+        # (حلالُ اللحوم في ماليزيا بوّابةٌ صلبة أيضاً).
+        "eligibility_gate_item": str(((reg_state.get("open_hard") or [{}])[0]
+                                      or {}).get("item") or ""),
     }
     card = product_card or {}
     profitability = {
@@ -799,12 +817,17 @@ def import_series(missions: dict) -> dict:
                                  "source": src or "UN Comtrade",
                                  "confidence": conf, "mirrored": mirrored})
     series = [best[y][1] for y in sorted(best)]
+    # تقرير ٧ §3.2: السنةُ الجارية لم تكتمل بعد — رقمُها جزئيٌّ يُوسَم ولا
+    # يدخل النموّ (مقارنةُ سنةٍ ناقصة بسنةٍ كاملة تُظهر انكماشاً زائفاً).
+    for p in series:
+        p["partial"] = _is_partial_year(p["year"])
+    full = [p for p in series if not p["partial"]]
     years_missing = sorted(y for y in missing if y not in best)
     growth = cagr = None
-    if len(series) >= 2:
+    if len(full) >= 2:
         try:
             from silk_trend import cagr_pct, growth_pct
-            pairs = [(p["year"], p["value"]) for p in series]
+            pairs = [(p["year"], p["value"]) for p in full]
             growth, cagr = growth_pct(pairs), cagr_pct(pairs)
         except Exception:  # noqa: BLE001 — النموُّ تحسينٌ لا شرط
             growth = cagr = None

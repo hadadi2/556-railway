@@ -22,7 +22,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
-          "retrieved_at": "2026-09-23T15:28:37+00:00",
+          "retrieved_at": "2026-09-23T16:34:43+00:00",
           "status": "",
           "data_year": 2023,
           "source_ids": [],
@@ -132,7 +132,8 @@
             "direction": "exit",
             "source_url": "https://mc.gov.sa",
             "seq": 20,
-            "status": "conditional_legal"
+            "status": "conditional_legal",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.8,
@@ -155,7 +156,8 @@
             "direction": "exit",
             "source_url": "https://www.sfda.gov.sa",
             "seq": 30,
-            "status": "conditional_legal"
+            "status": "conditional_legal",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
@@ -178,7 +180,8 @@
             "direction": "exit",
             "source_url": "https://saudiexports.sa",
             "seq": 40,
-            "status": "voluntary"
+            "status": "voluntary",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -336,8 +339,8 @@
             ],
             "rejected": [],
             "coverage": 0.6,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "competitor": {
             "agent": "competitor",
@@ -434,8 +437,8 @@
             ],
             "rejected": [],
             "coverage": 0.8,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:41+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:47+00:00"
           },
           "regulatory": {
             "agent": "regulatory",
@@ -452,7 +455,8 @@
                     "direction": "exit",
                     "source_url": "https://mc.gov.sa",
                     "seq": 20,
-                    "status": "conditional_legal"
+                    "status": "conditional_legal",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
@@ -460,7 +464,8 @@
                     "direction": "exit",
                     "source_url": "https://www.sfda.gov.sa",
                     "seq": 30,
-                    "status": "conditional_legal"
+                    "status": "conditional_legal",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
@@ -468,7 +473,8 @@
                     "direction": "exit",
                     "source_url": "https://saudiexports.sa",
                     "seq": 40,
-                    "status": "voluntary"
+                    "status": "voluntary",
+                    "eligibility_gate": false
                   }
                 ],
                 "unit": null,
@@ -522,8 +528,8 @@
             ],
             "rejected": [],
             "coverage": 0.75,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:41+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "pricing": {
             "agent": "pricing",
@@ -571,8 +577,8 @@
             ],
             "rejected": [],
             "coverage": 0.4,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:43+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:49+00:00"
           },
           "risk": {
             "agent": "risk",
@@ -605,8 +611,8 @@
             ],
             "rejected": [],
             "coverage": 0.2,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "consumer_demand": {
             "agent": "consumer_demand",
@@ -655,8 +661,8 @@
             ],
             "rejected": [],
             "coverage": 0.33,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:41+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "supplier": {
             "agent": "supplier",
@@ -670,8 +676,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "logistics": {
             "agent": "logistics",
@@ -688,8 +694,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           }
         },
         "coverage": 0.39,
@@ -793,6 +799,7 @@
               "tariff"
             ],
             "eligibility_gate": false,
+            "eligibility_gate_item": "",
             "basis": "متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
           },
           "profit": {
@@ -952,7 +959,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 total imports (World) to market 156 2023, USD — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "status": "",
             "data_year": null,
             "source_ids": [],
@@ -973,7 +980,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to CHN 2023; share 50.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -994,7 +1001,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to CHN 2023; share 30.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -1015,7 +1022,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to CHN 2023; share 20.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -1048,7 +1055,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
-          "retrieved_at": "2026-09-23T15:28:37+00:00",
+          "retrieved_at": "2026-09-23T16:34:43+00:00",
           "status": "",
           "data_year": 2023,
           "source_ids": [],
@@ -1125,35 +1132,13 @@
       "requirements": [
         {
           "value": {
-            "item": "شهادة حلال من جهة معتمدة لمنتجات اللحوم والدواجن ومشتقاتها",
-            "authority": "المركز الخليجي للاعتماد GAC / الجهات المعتمدة بالسوق",
-            "direction": "entry",
-            "source_url": "https://www.gac.org.sa",
-            "seq": 20,
-            "status": "conditional_legal"
-          },
-          "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-          "confidence": 0.7,
-          "note": "مرجع طبقة ١ — تحقق من الجهة المعتمدة بالسوق قبل الشحن؛ مزامنة ربع سنوية",
-          "retrieved_at": "2026-09-23",
-          "status": "",
-          "data_year": null,
-          "source_ids": [],
-          "unit": "",
-          "url": "",
-          "reference_period": "",
-          "retrieval_method": "",
-          "evidence_ids": [],
-          "raw_evidence": []
-        },
-        {
-          "value": {
             "item": "مطابقة المواصفات القياسية الخليجية (GSO) للفئات الخاضعة وشهادة المطابقة",
             "authority": "هيئة التقييس لدول مجلس التعاون GSO",
             "direction": "entry",
             "source_url": "https://www.gso.org.sa",
             "seq": 30,
-            "status": "conditional_legal"
+            "status": "conditional_legal",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1176,7 +1161,8 @@
             "direction": "entry",
             "source_url": "https://www.gso.org.sa",
             "seq": 40,
-            "status": "legal_mandatory"
+            "status": "legal_mandatory",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1199,7 +1185,8 @@
             "direction": "entry",
             "source_url": "https://www.moccae.gov.ae",
             "seq": 50,
-            "status": "legal_mandatory"
+            "status": "legal_mandatory",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1222,7 +1209,8 @@
             "direction": "exit",
             "source_url": "https://mc.gov.sa",
             "seq": 20,
-            "status": "conditional_legal"
+            "status": "conditional_legal",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.8,
@@ -1245,7 +1233,8 @@
             "direction": "exit",
             "source_url": "https://www.sfda.gov.sa",
             "seq": 30,
-            "status": "conditional_legal"
+            "status": "conditional_legal",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
@@ -1268,7 +1257,8 @@
             "direction": "exit",
             "source_url": "https://saudiexports.sa",
             "seq": 40,
-            "status": "voluntary"
+            "status": "voluntary",
+            "eligibility_gate": false
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1486,8 +1476,8 @@
             ],
             "rejected": [],
             "coverage": 0.6,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "competitor": {
             "agent": "competitor",
@@ -1572,8 +1562,8 @@
             ],
             "rejected": [],
             "coverage": 0.8,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:42+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:48+00:00"
           },
           "regulatory": {
             "agent": "regulatory",
@@ -1585,20 +1575,13 @@
                 "metric": "requirements_checklist",
                 "value": [
                   {
-                    "item": "شهادة حلال من جهة معتمدة لمنتجات اللحوم والدواجن ومشتقاتها",
-                    "authority": "المركز الخليجي للاعتماد GAC / الجهات المعتمدة بالسوق",
-                    "direction": "entry",
-                    "source_url": "https://www.gac.org.sa",
-                    "seq": 20,
-                    "status": "conditional_legal"
-                  },
-                  {
                     "item": "مطابقة المواصفات القياسية الخليجية (GSO) للفئات الخاضعة وشهادة المطابقة",
                     "authority": "هيئة التقييس لدول مجلس التعاون GSO",
                     "direction": "entry",
                     "source_url": "https://www.gso.org.sa",
                     "seq": 30,
-                    "status": "conditional_legal"
+                    "status": "conditional_legal",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "بطاقة غذائية عربية (أو ثنائية) مطابقة للمواصفة الخليجية للبطاقات الغذائية",
@@ -1606,7 +1589,8 @@
                     "direction": "entry",
                     "source_url": "https://www.gso.org.sa",
                     "seq": 40,
-                    "status": "legal_mandatory"
+                    "status": "legal_mandatory",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "تسجيل المنتج الغذائي قبل الاستيراد لدى الجهة الاتحادية/بلدية الإمارة المستهدفة",
@@ -1614,7 +1598,8 @@
                     "direction": "entry",
                     "source_url": "https://www.moccae.gov.ae",
                     "seq": 50,
-                    "status": "legal_mandatory"
+                    "status": "legal_mandatory",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "شهادة المنشأ السعودية للصادرات (وزارة التجارة / الغرف التجارية)",
@@ -1622,7 +1607,8 @@
                     "direction": "exit",
                     "source_url": "https://mc.gov.sa",
                     "seq": 20,
-                    "status": "conditional_legal"
+                    "status": "conditional_legal",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
@@ -1630,7 +1616,8 @@
                     "direction": "exit",
                     "source_url": "https://www.sfda.gov.sa",
                     "seq": 30,
-                    "status": "conditional_legal"
+                    "status": "conditional_legal",
+                    "eligibility_gate": false
                   },
                   {
                     "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
@@ -1638,7 +1625,8 @@
                     "direction": "exit",
                     "source_url": "https://saudiexports.sa",
                     "seq": 40,
-                    "status": "voluntary"
+                    "status": "voluntary",
+                    "eligibility_gate": false
                   }
                 ],
                 "unit": null,
@@ -1648,15 +1636,15 @@
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
                     "retrieved_at": "2026-09-23",
-                    "confidence": 0.7,
+                    "confidence": 0.6,
                     "url": null
                   }
                 ],
-                "note": "7 بند اشتراطات (دخول السوق + خروج سعودي) — كل بند بلائحته ورابطه الرسمي"
+                "note": "6 بند اشتراطات (دخول السوق + خروج سعودي) — كل بند بلائحته ورابطه الرسمي"
               },
               {
                 "metric": "entry_requirements_count",
-                "value": 7,
+                "value": 6,
                 "unit": null,
                 "modeled": false,
                 "formula": null,
@@ -1664,7 +1652,7 @@
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
                     "retrieved_at": "2026-09-23",
-                    "confidence": 0.7,
+                    "confidence": 0.6,
                     "url": null
                   }
                 ],
@@ -1680,7 +1668,7 @@
                   {
                     "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
                     "retrieved_at": "2026-09-23",
-                    "confidence": 0.7,
+                    "confidence": 0.6,
                     "url": null
                   }
                 ],
@@ -1706,8 +1694,8 @@
             "gaps": [],
             "rejected": [],
             "coverage": 1.0,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "pricing": {
             "agent": "pricing",
@@ -1755,8 +1743,8 @@
             ],
             "rejected": [],
             "coverage": 0.4,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:45+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:50+00:00"
           },
           "risk": {
             "agent": "risk",
@@ -1789,8 +1777,8 @@
             ],
             "rejected": [],
             "coverage": 0.2,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "consumer_demand": {
             "agent": "consumer_demand",
@@ -1839,8 +1827,8 @@
             ],
             "rejected": [],
             "coverage": 0.33,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:41+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "supplier": {
             "agent": "supplier",
@@ -1854,8 +1842,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           },
           "logistics": {
             "agent": "logistics",
@@ -1872,8 +1860,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T15:28:40+00:00",
-            "finished_at": "2026-09-23T15:28:40+00:00"
+            "started_at": "2026-09-23T16:34:46+00:00",
+            "finished_at": "2026-09-23T16:34:46+00:00"
           }
         },
         "coverage": 0.42,
@@ -1893,7 +1881,7 @@
           },
           "regulatory_fit": {
             "tariff_applied_pct": 0.0,
-            "entry_requirements_count": 7,
+            "entry_requirements_count": 6,
             "eligibility_gate": false
           },
           "profitability": {
@@ -1923,7 +1911,7 @@
         "decision_rule": "قاعدة القرار (معلنة قبل تطبيقها): مضيّ حين تبلغ الدرجة الموزونة 65% فأعلى مع ثقة 60% فأعلى وبلا شروط مفتوحة؛ رفض حين تنخفض الدرجة دون 45% أو عند إطلاق بوابة الخطر الحرجة (الاستقرار السياسي دون العتبة)؛ وما بينهما دخول مشروط بشروط مسماة. الثقة = التغطية × نسبة الأعمدة المحسوبة — لا نسبة مجرّدة.",
         "schema": "silk.decision/v1",
         "verdict": "CONDITIONAL-GO",
-        "score": 0.589,
+        "score": 0.578,
         "confidence": 0.34,
         "confidence_basis": "التغطية 42% × الأعمدة المحسوبة 4/5",
         "weights_option": "A",
@@ -1935,8 +1923,8 @@
           "risk": 0.15
         },
         "scores_by_option": {
-          "A": 0.589,
-          "B": 0.67
+          "A": 0.578,
+          "B": 0.648
         },
         "weights_label": "الأوزان القياسية",
         "weights_note": "تُحسب الدرجة بمجموعتي أوزان معاً للمقارنة؛ المعتمد لهذا القرار: الأوزان القياسية",
@@ -1968,13 +1956,14 @@
             "basis": "متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)؛ المورّد المهيمن سعوديّ — منطق الدخول الفعلي دفاعُ حصةٍ قائمة عبر القناة القائمة (علمٌ مستقل لا يعدّل الدرجة)"
           },
           "regulatory": {
-            "value": 0.938,
+            "value": 0.875,
             "components": {
               "tariff": 1.0,
-              "legibility": 0.875
+              "legibility": 0.75
             },
             "missing": [],
             "eligibility_gate": false,
+            "eligibility_gate_item": "",
             "basis": "متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
           },
           "profit": {
@@ -2050,10 +2039,10 @@
         "first_steps": [
           "سوق مركّز: ادخل عبر موزّع قائم من مرشّحي التوريد المرصودين بدل البناء المباشر"
         ],
-        "why": "الدرجة الموزونة 59% في النطاق الشرطي والثقة منخفضة (34%) دون الحد الأدنى (60%) وشروط مفتوحة (2)",
+        "why": "الدرجة الموزونة 58% في النطاق الشرطي والثقة منخفضة (34%) دون الحد الأدنى (60%) وشروط مفتوحة (2)",
         "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — الأعمدة الغائبة شروط معلنة، لا تخمين",
         "counter_case": {
-          "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «الملاءمة التنظيمية» (94%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (0%) يدعم رفضاً.",
+          "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «الملاءمة التنظيمية» (88%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (0%) يدعم رفضاً.",
           "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
         }
       },
@@ -2125,7 +2114,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 total imports (World) to market 784 2023, USD — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "status": "",
             "data_year": null,
             "source_ids": [],
@@ -2146,7 +2135,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to ARE 2023; share 100.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -2390,7 +2379,7 @@
             "value": 60000000.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
             "status": "",
             "unit": "",
@@ -2754,8 +2743,8 @@
               ],
               "rejected": [],
               "coverage": 0.6,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "competitor": {
               "agent": "competitor",
@@ -2852,8 +2841,8 @@
               ],
               "rejected": [],
               "coverage": 0.8,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:41+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:47+00:00"
             },
             "regulatory": {
               "agent": "regulatory",
@@ -2870,7 +2859,8 @@
                       "direction": "exit",
                       "source_url": "https://mc.gov.sa",
                       "seq": 20,
-                      "status": "conditional_legal"
+                      "status": "conditional_legal",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
@@ -2878,7 +2868,8 @@
                       "direction": "exit",
                       "source_url": "https://www.sfda.gov.sa",
                       "seq": 30,
-                      "status": "conditional_legal"
+                      "status": "conditional_legal",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
@@ -2886,7 +2877,8 @@
                       "direction": "exit",
                       "source_url": "https://saudiexports.sa",
                       "seq": 40,
-                      "status": "voluntary"
+                      "status": "voluntary",
+                      "eligibility_gate": false
                     }
                   ],
                   "unit": null,
@@ -2940,8 +2932,8 @@
               ],
               "rejected": [],
               "coverage": 0.75,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:41+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "pricing": {
               "agent": "pricing",
@@ -2989,8 +2981,8 @@
               ],
               "rejected": [],
               "coverage": 0.4,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:43+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:49+00:00"
             },
             "risk": {
               "agent": "risk",
@@ -3023,8 +3015,8 @@
               ],
               "rejected": [],
               "coverage": 0.2,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "consumer_demand": {
               "agent": "consumer_demand",
@@ -3073,8 +3065,8 @@
               ],
               "rejected": [],
               "coverage": 0.33,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:41+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "supplier": {
               "agent": "supplier",
@@ -3088,8 +3080,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "logistics": {
               "agent": "logistics",
@@ -3106,8 +3098,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             }
           },
           "coverage": 0.39,
@@ -3211,6 +3203,7 @@
                 "tariff"
               ],
               "eligibility_gate": false,
+              "eligibility_gate_item": "",
               "basis": "متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
             },
             "profit": {
@@ -3348,7 +3341,7 @@
             "value": 20000000.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-23T15:28:37+00:00",
+            "retrieved_at": "2026-09-23T16:34:43+00:00",
             "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
             "status": "",
             "unit": "",
@@ -3537,8 +3530,8 @@
             "low_confidence": true
           },
           "regulatory": {
-            "attempted": 7,
-            "contributed": 7,
+            "attempted": 6,
+            "contributed": 6,
             "score": 1.0,
             "single_source": true,
             "low_confidence": true
@@ -3590,7 +3583,7 @@
           },
           "regulatory": {
             "status": "ok",
-            "contributed": 7,
+            "contributed": 6,
             "threshold": 2,
             "sources_attempted": [
               "Silk L1 requirements reference (official portals / EUR-Lex)"
@@ -3700,8 +3693,8 @@
               ],
               "rejected": [],
               "coverage": 0.6,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "competitor": {
               "agent": "competitor",
@@ -3786,8 +3779,8 @@
               ],
               "rejected": [],
               "coverage": 0.8,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:42+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:48+00:00"
             },
             "regulatory": {
               "agent": "regulatory",
@@ -3799,20 +3792,13 @@
                   "metric": "requirements_checklist",
                   "value": [
                     {
-                      "item": "شهادة حلال من جهة معتمدة لمنتجات اللحوم والدواجن ومشتقاتها",
-                      "authority": "المركز الخليجي للاعتماد GAC / الجهات المعتمدة بالسوق",
-                      "direction": "entry",
-                      "source_url": "https://www.gac.org.sa",
-                      "seq": 20,
-                      "status": "conditional_legal"
-                    },
-                    {
                       "item": "مطابقة المواصفات القياسية الخليجية (GSO) للفئات الخاضعة وشهادة المطابقة",
                       "authority": "هيئة التقييس لدول مجلس التعاون GSO",
                       "direction": "entry",
                       "source_url": "https://www.gso.org.sa",
                       "seq": 30,
-                      "status": "conditional_legal"
+                      "status": "conditional_legal",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "بطاقة غذائية عربية (أو ثنائية) مطابقة للمواصفة الخليجية للبطاقات الغذائية",
@@ -3820,7 +3806,8 @@
                       "direction": "entry",
                       "source_url": "https://www.gso.org.sa",
                       "seq": 40,
-                      "status": "legal_mandatory"
+                      "status": "legal_mandatory",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "تسجيل المنتج الغذائي قبل الاستيراد لدى الجهة الاتحادية/بلدية الإمارة المستهدفة",
@@ -3828,7 +3815,8 @@
                       "direction": "entry",
                       "source_url": "https://www.moccae.gov.ae",
                       "seq": 50,
-                      "status": "legal_mandatory"
+                      "status": "legal_mandatory",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "شهادة المنشأ السعودية للصادرات (وزارة التجارة / الغرف التجارية)",
@@ -3836,7 +3824,8 @@
                       "direction": "exit",
                       "source_url": "https://mc.gov.sa",
                       "seq": 20,
-                      "status": "conditional_legal"
+                      "status": "conditional_legal",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
@@ -3844,7 +3833,8 @@
                       "direction": "exit",
                       "source_url": "https://www.sfda.gov.sa",
                       "seq": 30,
-                      "status": "conditional_legal"
+                      "status": "conditional_legal",
+                      "eligibility_gate": false
                     },
                     {
                       "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
@@ -3852,7 +3842,8 @@
                       "direction": "exit",
                       "source_url": "https://saudiexports.sa",
                       "seq": 40,
-                      "status": "voluntary"
+                      "status": "voluntary",
+                      "eligibility_gate": false
                     }
                   ],
                   "unit": null,
@@ -3862,15 +3853,15 @@
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
                       "retrieved_at": "2026-09-23",
-                      "confidence": 0.7,
+                      "confidence": 0.6,
                       "url": null
                     }
                   ],
-                  "note": "7 بند اشتراطات (دخول السوق + خروج سعودي) — كل بند بلائحته ورابطه الرسمي"
+                  "note": "6 بند اشتراطات (دخول السوق + خروج سعودي) — كل بند بلائحته ورابطه الرسمي"
                 },
                 {
                   "metric": "entry_requirements_count",
-                  "value": 7,
+                  "value": 6,
                   "unit": null,
                   "modeled": false,
                   "formula": null,
@@ -3878,7 +3869,7 @@
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
                       "retrieved_at": "2026-09-23",
-                      "confidence": 0.7,
+                      "confidence": 0.6,
                       "url": null
                     }
                   ],
@@ -3894,7 +3885,7 @@
                     {
                       "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
                       "retrieved_at": "2026-09-23",
-                      "confidence": 0.7,
+                      "confidence": 0.6,
                       "url": null
                     }
                   ],
@@ -3920,8 +3911,8 @@
               "gaps": [],
               "rejected": [],
               "coverage": 1.0,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "pricing": {
               "agent": "pricing",
@@ -3969,8 +3960,8 @@
               ],
               "rejected": [],
               "coverage": 0.4,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:45+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:50+00:00"
             },
             "risk": {
               "agent": "risk",
@@ -4003,8 +3994,8 @@
               ],
               "rejected": [],
               "coverage": 0.2,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "consumer_demand": {
               "agent": "consumer_demand",
@@ -4053,8 +4044,8 @@
               ],
               "rejected": [],
               "coverage": 0.33,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:41+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "supplier": {
               "agent": "supplier",
@@ -4068,8 +4059,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             },
             "logistics": {
               "agent": "logistics",
@@ -4086,8 +4077,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T15:28:40+00:00",
-              "finished_at": "2026-09-23T15:28:40+00:00"
+              "started_at": "2026-09-23T16:34:46+00:00",
+              "finished_at": "2026-09-23T16:34:46+00:00"
             }
           },
           "coverage": 0.42,
@@ -4107,7 +4098,7 @@
             },
             "regulatory_fit": {
               "tariff_applied_pct": 0.0,
-              "entry_requirements_count": 7,
+              "entry_requirements_count": 6,
               "eligibility_gate": false
             },
             "profitability": {
@@ -4137,7 +4128,7 @@
           "decision_rule": "قاعدة القرار (معلنة قبل تطبيقها): مضيّ حين تبلغ الدرجة الموزونة 65% فأعلى مع ثقة 60% فأعلى وبلا شروط مفتوحة؛ رفض حين تنخفض الدرجة دون 45% أو عند إطلاق بوابة الخطر الحرجة (الاستقرار السياسي دون العتبة)؛ وما بينهما دخول مشروط بشروط مسماة. الثقة = التغطية × نسبة الأعمدة المحسوبة — لا نسبة مجرّدة.",
           "schema": "silk.decision/v1",
           "verdict": "CONDITIONAL-GO",
-          "score": 0.589,
+          "score": 0.578,
           "confidence": 0.34,
           "confidence_basis": "التغطية 42% × الأعمدة المحسوبة 4/5",
           "weights_option": "A",
@@ -4149,8 +4140,8 @@
             "risk": 0.15
           },
           "scores_by_option": {
-            "A": 0.589,
-            "B": 0.67
+            "A": 0.578,
+            "B": 0.648
           },
           "weights_label": "الأوزان القياسية",
           "weights_note": "تُحسب الدرجة بمجموعتي أوزان معاً للمقارنة؛ المعتمد لهذا القرار: الأوزان القياسية",
@@ -4182,13 +4173,14 @@
               "basis": "متوسط المتاح من: HHI مقسوماً على 5000، وحصة المورّد الأكبر مقسومةً على 100، وعدد المرشّحين بالاسم مقسوماً على 10 — الدرجة المستهلكة في المجموع هي (1 − الشدة)؛ المورّد المهيمن سعوديّ — منطق الدخول الفعلي دفاعُ حصةٍ قائمة عبر القناة القائمة (علمٌ مستقل لا يعدّل الدرجة)"
             },
             "regulatory": {
-              "value": 0.938,
+              "value": 0.875,
               "components": {
                 "tariff": 1.0,
-                "legibility": 0.875
+                "legibility": 0.75
               },
               "missing": [],
               "eligibility_gate": false,
+              "eligibility_gate_item": "",
               "basis": "متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
             },
             "profit": {
@@ -4264,10 +4256,10 @@
           "first_steps": [
             "سوق مركّز: ادخل عبر موزّع قائم من مرشّحي التوريد المرصودين بدل البناء المباشر"
           ],
-          "why": "الدرجة الموزونة 59% في النطاق الشرطي والثقة منخفضة (34%) دون الحد الأدنى (60%) وشروط مفتوحة (2)",
+          "why": "الدرجة الموزونة 58% في النطاق الشرطي والثقة منخفضة (34%) دون الحد الأدنى (60%) وشروط مفتوحة (2)",
           "note": "قرار حتمي قابل للتفسير من الحزمة البحثية المتحقَّق منها — الأعمدة الغائبة شروط معلنة، لا تخمين",
           "counter_case": {
-            "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «الملاءمة التنظيمية» (94%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (0%) يدعم رفضاً.",
+            "case": "أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب «الملاءمة التنظيمية» (88%) يدعم مضيّاً كاملاً، ومن جهةٍ أضعفها «شدة المنافسة» (0%) يدعم رفضاً.",
             "rebuttal": "لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام بلا أساس."
           }
         },
@@ -4904,8 +4896,8 @@
       },
       {
         "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
-        "attempted": 17,
-        "contributed": 16,
+        "attempted": 16,
+        "contributed": 15,
         "failures": [
           "سوق CHN (موثّق جزئياً) غير مغطى بالمرجع الثابت بعد — تحقق محلياً (verify locally)"
         ],

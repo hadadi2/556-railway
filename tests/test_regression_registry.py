@@ -4597,6 +4597,14 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    280: lambda: (
+        _needles("silk_requirements_agent.py", '"verified_at": (r.get("verified_at") or "").strip()',
+                 'key == "not_hs_chapter"')(),
+        _needles("silk_economics.py", "لا يعني انعدام بقية")(),
+        _needles("silk_render.py", 'full = [p for p in pts if not p.get("partial")] or pts')(),
+        _needles("tests/test_report7_malaysia_regulatory.py",
+                 "def test_a_zero_tariff_names_the_unmeasured_sales_tax")(),
+        _needles("tests/test_lessons_enforcement.py", "(280, ")()),
     279: lambda: (
         _needles("silk_render.py", '"requirements": _requirements_safe(result)',
                  '"pillar_regulatory_note"')(),

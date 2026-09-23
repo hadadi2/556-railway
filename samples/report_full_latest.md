@@ -175,7 +175,7 @@
 ## ملحق: أثر المصادر (المحاولات والإسهام)
 
 - UN Comtrade: أسهم 18 من 18 محاولة — ثقة المرصود 90%
-- Silk L1 requirements reference (official portals / EUR-Lex): أسهم 16 من 17 محاولة — ثقة المرصود 60–80%
+- Silk L1 requirements reference (official portals / EUR-Lex): أسهم 15 من 16 محاولة — ثقة المرصود 60–80%
   - فشل مُسجَّل: سوق CHN (موثّق جزئياً) غير مغطى بالمرجع الثابت بعد — تحقق محلياً (verify locally)
 - UN Comtrade (مخزن الحقائق): أسهم 14 من 14 محاولة — ثقة المرصود 85–90%
 - Pew Research Center (لقطة ساكنة مقرّبة): أسهم 4 من 4 محاولة — ثقة المرصود 70% · (https://www.pewresearch.org/religion/feature/religious-composition-by-country-2010-2050/)

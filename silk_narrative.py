@@ -93,7 +93,7 @@ INTERNAL_AR: dict[str, str] = {
     "population": "عدد السكان",
     "requirements_count": "عدد الاشتراطات",
     "entry_requirements_count": "عدد اشتراطات الدخول",
-    "eligibility_gate": "بوابة الأهلية الأوروبية",
+    "eligibility_gate": "بوابة الأهلية الأمامية",
     "saudi_suppliers": "مرشّحو الموردين السعوديين",
     "target_distributors": "مرشّحو الموزّعين المستهدفين",
     "retail_references": "مراجع أسعار التجزئة",

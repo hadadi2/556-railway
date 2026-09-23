@@ -160,6 +160,8 @@ def applies_to(row: dict, hs_code: str | None, category: str) -> bool | None:
       `category:food`         فئةُ المرجع
       `needs_evidence`        لا يُعرَف من المدخلات — يُعاد `None`
       `processing:raw,semi`   درجةُ تصنيع الصنف (الموجة د-٢)
+      `hs_prefix:090111,0902` بادئاتُ البند المنطبقة (تقرير ٧ §4.3)
+      `not_hs_chapter:02,16`  فصولٌ مستثناة (بندٌ يغطّيها صفٌّ آخر)
     """
     spec = (row.get("applies_when") or "").strip()
     if not spec:
@@ -175,6 +177,14 @@ def applies_to(row: dict, hs_code: str | None, category: str) -> bool | None:
             if not digits:
                 return None          # لا رمزَ ⇒ الانطباقُ غيرُ معروف
             if digits[:2] not in vals:
+                return False
+        elif key in ("hs_prefix", "not_hs_chapter"):
+            if not digits:
+                return None
+            if key == "hs_prefix" and not any(digits.startswith(v)
+                                              for v in vals):
+                return False
+            if key == "not_hs_chapter" and digits[:2] in vals:
                 return False
         elif key == "category":
             if (category or "").lower() not in vals:
@@ -283,20 +293,28 @@ REQUIREMENT_STATUSES = ("legal_mandatory", "conditional_legal", "voluntary",
                         "buyer_requirement")
 
 
-def _checklist_rows(market: str, category: str, animal: bool) -> tuple:
+def _checklist_rows(market: str, category: str, animal: bool,
+                    hs_code: str | None = None) -> tuple:
     """(صفوفُ الدخول، أهلية أوّلاً؟، صفوفُ الخروج) — **مطابقةٌ واحدة** يسلكها
     `_execute` و`requirement_rows` معاً (مراجعة §58: نسخٌ متباعدةٌ من الحلقة
-    كانت تُسقط شرطَ الأهلية في إحداها)."""
+    كانت تُسقط شرطَ الأهلية في إحداها).
+
+    الدرس ٢٨٠: يُسقَط هنا — لا في العرض وحده — ما يستبعده `applies_to`
+    صراحةً لهذا الرمز، فيرى الوكيلُ والكاتبُ والجدولُ البنودَ نفسَها؛ وبندُ
+    الأهلية يُقرأ من أوّل صفٍّ **باقٍ** (حلالُ اللحوم لا يسري على الألبان)."""
     rows = _load_reference()
+
+    def _keep(r):
+        return applies_to(r, hs_code, category) is not False
     entry_rows = sorted((r for r in rows
-                         if _matches(r, market, category, "entry", animal)),
-                        key=_seq)
+                         if _matches(r, market, category, "entry", animal)
+                         and _keep(r)), key=_seq)
     eligibility_first = bool(animal and entry_rows
                              and (entry_rows[0].get("category") or "")
                              == "animal")
     exit_rows = sorted((r for r in rows
-                        if _matches(r, "SAU", category, "exit", animal)),
-                       key=_seq)
+                        if _matches(r, "SAU", category, "exit", animal)
+                        and _keep(r)), key=_seq)
     return entry_rows, eligibility_first, exit_rows
 
 
@@ -318,15 +336,17 @@ def requirement_rows(market: str, hs_code: str | None,
         return []
     cat = (category or hs_category(hs_code)).lower()
     animal = is_animal_origin(hs_code)
-    entry_rows, gate_first, exit_rows = _checklist_rows(m, cat, animal)
+    entry_rows, gate_first, exit_rows = _checklist_rows(m, cat, animal,
+                                                        hs_code)
     out: list[dict] = []
 
     def _row(r, direction, conditional):
         return {"item": r.get("item_ar"), "authority": r.get("authority"),
                 "source_url": r.get("source_url"), "direction": direction,
                 "status": _status_of(r), "conditional_on_gate": conditional,
-                "applies_when": (r.get("applies_when") or "").strip()}
-    kept = [r for r in entry_rows if applies_to(r, hs_code, cat) is not False]
+                "applies_when": (r.get("applies_when") or "").strip(),
+                "verified_at": (r.get("verified_at") or "").strip()}
+    kept = entry_rows
     for i, r in enumerate(kept):
         out.append(_row(r, "entry", bool(gate_first and i > 0)))
     if not kept:
@@ -337,12 +357,12 @@ def requirement_rows(market: str, hs_code: str | None,
                     "status": "", "conditional_on_gate": False,
                     "applies_when": "", "gap": True})
     for r in exit_rows:
-        if applies_to(r, hs_code, cat) is not False:
-            out.append(_row(r, "exit", False))
+        out.append(_row(r, "exit", False))
     return out
 
 
-def _row_dp(row: dict, direction: str, conditional: bool = False) -> DataPoint:
+def _row_dp(row: dict, direction: str, conditional: bool = False,
+            gate: bool = False) -> DataPoint:
     """بند مرجع كنقطة موسومة — one checklist item as a provenance DataPoint."""
     try:
         conf = float(row.get("confidence") or 0.5)
@@ -357,7 +377,9 @@ def _row_dp(row: dict, direction: str, conditional: bool = False) -> DataPoint:
                "seq": _seq(row),
                # تقرير ٧ §4.3: نوعُ الاشتراط يرافق البندَ حيثما ذهب — بالتحقّق
                # نفسِه الذي يسلكه العرض.
-               "status": _status_of(row)},
+               "status": _status_of(row),
+               # الدرس ٢٨٠: بندُ الأهلية موسومٌ بنيوياً — لا بمطابقة «2017/625».
+               "eligibility_gate": bool(gate)},
         source=_SOURCE, confidence=conf, note=note, retrieved_at=_today())
 
 
@@ -426,9 +448,10 @@ class RequirementsAgent(BaseAgent):
         tier, tier_note = codification_tier(market)
         # الأهلية أولاً (§12.7-2): وجود بند حيواني seq=10 يجعل البقية مشروطة.
         entry_rows, eligibility_first, exit_rows = _checklist_rows(
-            market, category, animal)
+            market, category, animal, hs)
         entry = [_row_dp(r, "entry",
-                         conditional=(eligibility_first and i > 0))
+                         conditional=(eligibility_first and i > 0),
+                         gate=(eligibility_first and i == 0))
                  for i, r in enumerate(entry_rows)]
         exit_items = [_row_dp(r, "exit") for r in exit_rows]
 

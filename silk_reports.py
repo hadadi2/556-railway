@@ -2117,8 +2117,8 @@ def _docx_regulatory(doc, m: dict) -> None:
         return
     gate_f = _rfind(ag, "eligibility_gate")
     if gate_f and gate_f.get("value"):
-        doc.add_paragraph("تحذير — بوابة أهلية أمامية: هذا السوق يتطلب منشأة "
-                          "معتمدة (EU 2017/625) قبل أي بند لاحق؛ لا بند أدناه "
+        doc.add_paragraph("تحذير — بوابة أهلية أمامية: هذا السوق يتطلب "
+                          + _gate_label(ag) + " قبل أي بند لاحق؛ لا بند أدناه "
                           "يُعتبر سالكاً قبل اجتيازها.")
     checklist_f = _rfind(ag, "requirements_checklist")
     checklist = (checklist_f or {}).get("value") or []
@@ -3781,7 +3781,16 @@ def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
         from silk_render import _fmt_usd
         # تقرير ٧ §3.2: السنةُ التي تعذّر جلبُها صفٌّ معلَنٌ في الجدول نفسِه
         # (لا جملةٌ مجمّعة وحدها) — لا تقديرَ ولا ملء.
-        rows = [(int(p.get("year")), _fmt_usd(p.get("value"), lang))
+        def _cell(p):
+            # السنةُ الجزئية والمرآةُ موسومتان في خليّتهما — لا تُقرآن سنةً
+            # مباشرةً كاملة (تقرير ٧ §3.2).
+            v = _fmt_usd(p.get("value"), lang)
+            if p.get("partial"):
+                v += " " + _T("imports_partial_year", lang)
+            if p.get("mirrored"):
+                v += " " + _T("imports_mirrored", lang)
+            return v
+        rows = [(int(p.get("year")), _cell(p))
                 for p in pts if str(p.get("year") or "").isdigit()]
         seen = {y for y, _ in rows}
         # كلُّ سنةٍ أعلنت السلسلةُ غيابَها — أحدثُها أيضاً (الحالةُ الأهمّ).
@@ -3796,6 +3805,17 @@ def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
         _add_table(doc, [_T("imports_col_year", lang),
                          _T("imports_col_value", lang)],
                    [[str(y), v] for y, v in sorted(rows)])
+
+
+def _gate_label(ag) -> str:
+    """اسمُ بوّابة الأهلية من البند الموسوم في قائمة الوكيل (الدرس ٢٨٠) —
+    بلا وسم: الصياغةُ الأوروبية القائمة. الأقواس تبقى حول الاسم الأوروبيّ."""
+    from silk_decision import gate_label_ar, is_eu_gate
+    items = (_rfind(ag, "requirements_checklist") or {}).get("value") or []
+    gi = next((i.get("item") for i in items if isinstance(i, dict)
+               and i.get("eligibility_gate")), "")
+    return ("منشأة معتمدة (EU 2017/625)" if is_eu_gate(gi)
+            else gate_label_ar(gi))
 
 
 def _client_requirements_table(doc, dr: dict, lang: str = "ar") -> None:
@@ -3824,7 +3844,10 @@ def _client_requirements_table(doc, dr: dict, lang: str = "ar") -> None:
             kind += " " + _T("req_after_gate", lang)
         cells.append([str(r["item"]).replace("**", ""),
                       _T("req_dir_" + (r.get("direction") or "entry"), lang),
-                      str(r.get("authority") or "—"), kind,
+                      str(r.get("authority") or "—") + (
+                          "\n" + _T("req_verified_at", lang,
+                                     date=r["verified_at"])
+                          if r.get("verified_at") else ""), kind,
                       str(r.get("source_url") or "—")])
     _add_table(doc, [_T("req_col_item", lang), _T("req_col_direction", lang),
                      _T("req_col_authority", lang), _T("req_col_type", lang),
@@ -6917,9 +6940,9 @@ def render_markdown(view: dict) -> str:
     else:
         gate_f = _rfind(reg, "eligibility_gate")
         if gate_f and gate_f.get("value"):
-            L += ["**تحذير — بوابة أهلية أمامية:** هذا السوق يتطلب منشأة معتمدة "
-                  "(EU 2017/625) قبل أي بند لاحق؛ لا بند أدناه يُعتبر سالكاً "
-                  "قبل اجتيازها.", ""]
+            L += ["**تحذير — بوابة أهلية أمامية:** هذا السوق يتطلب "
+                  + _gate_label(reg) + " قبل أي بند لاحق؛ لا بند أدناه "
+                  "يُعتبر سالكاً قبل اجتيازها.", ""]
         checklist_f = _rfind(reg, "requirements_checklist")
         checklist = (checklist_f or {}).get("value") or []
         if checklist:

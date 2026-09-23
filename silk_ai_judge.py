@@ -1305,8 +1305,41 @@ def halal_demand_min_ratio(hs_code: object) -> "float | None":
     return (product_profile(hs_code) or {}).get("halal_demand_min_ratio")
 
 
+_HS_PROCESSING_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "data", "hs_processing_l1.csv")
+
+
+def _load_hs_processing(path: str = _HS_PROCESSING_PATH) -> dict:
+    """بادئةُ البند ← درجةُ تصنيعه (`data/hs_processing_l1.csv`). تعذُّرُ القراءة
+    = لا تصحيح (تصنيفُ الفصل كما كان) وسطرُ خطأ — لا تخمين."""
+    import csv
+    out: dict = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for r in csv.DictReader(l for l in fh if not l.startswith("#")):
+                pre = "".join(ch for ch in str(r.get("hs_prefix") or "")
+                              if ch.isdigit())
+                lvl = (r.get("processing_level") or "").strip()
+                if pre and lvl in ("raw", "semi", "processed"):
+                    out[pre] = lvl
+    except (OSError, ValueError, csv.Error) as e:  # noqa: BLE001 — ترميزٌ خاطئ
+        log.error("hs_processing_l1.csv unreadable: %s", e)   # لا يُسقط الاستيراد
+    return out
+
+
+_HS_PROCESSING: dict = _load_hs_processing()
+
+
 def processing_level(hs_code: object) -> "str | None":
-    """raw / semi / processed — أو None لفصلٍ غيرِ مصنَّف."""
+    """raw / semi / processed — أو None لفصلٍ غيرِ مصنَّف.
+
+    تقرير ٧ §4.3: البندُ أولاً (أطولُ بادئةٍ في `hs_processing_l1.csv`)، ثمّ
+    الفصل — فالبنُّ المحمّص 0901.21 «مصنَّع» لا «خام» كالبنّ الأخضر."""
+    digits = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
+    for n in range(len(digits), 3, -1):
+        lvl = _HS_PROCESSING.get(digits[:n])
+        if lvl:
+            return lvl
     prof = product_profile(hs_code)
     return (prof or {}).get("processing_level") or None
 

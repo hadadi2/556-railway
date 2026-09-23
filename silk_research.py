@@ -791,10 +791,17 @@ class RegulatoryAgent(ResearchAgent):
                              "— كل بند بلائحته ورابطه الرسمي"))
             F.append(_f("entry_requirements_count", len(items), [l1],
                         note="عدد بنود قائمة التحقق"))
-            gate = any("2017/625" in str(i) for i in items)
+            # الدرس ٢٨٠: البوّابةُ من وسم الوكيل البنيويّ (أوّلُ بندٍ حيوانيّ
+            # باقٍ بعد `applies_to`) — لا مطابقةَ «2017/625» فتفوتها بوّابةُ
+            # حلال اللحوم الماليزية.
+            gate_items = [i for i in items if isinstance(i, dict)
+                          and i.get("eligibility_gate")]
+            gate = bool(gate_items) or any("2017/625" in str(i) for i in items)
+            from silk_decision import gate_label_ar
             F.append(_f("eligibility_gate", gate, [l1],
-                        note=("بوابة أهلية أمامية: منشأة معتمدة (EU 2017/625) قبل "
-                              "أي بند لاحق" if gate else
+                        note=("بوابة أهلية أمامية: " + gate_label_ar(
+                            (gate_items[0] if gate_items else {}).get("item"))
+                              + " قبل أي بند لاحق" if gate else
                               "لا بوابة أهلية أمامية مسجّلة لهذا السوق/الفصل")))
         else:
             gaps.append("requirements_checklist: "

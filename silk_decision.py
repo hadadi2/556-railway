@@ -343,6 +343,22 @@ def _pillar_competition(pi: dict) -> dict:
             "basis": basis}
 
 
+def is_eu_gate(item: object) -> bool:
+    """بلا بند (نتائجُ مخزّنة قبل الحقل) أو بندُ الإدراج الأوروبيّ = الصياغةُ
+    الأوروبية القائمة كما كانت."""
+    item = str(item or "")
+    return not item.strip() or "2017/625" in item
+
+
+def gate_label_ar(item: object) -> str:
+    """اسمُ بوّابة الأهلية للقارئ — الإدراجُ الأوروبيّ باسمه المعروف، وغيرُه
+    ببنده من المرجع (الدرس ٢٨٠: حلالُ اللحوم في ماليزيا ليس «EU 2017/625»)."""
+    if is_eu_gate(item):
+        return "منشأة معتمدة EU 2017/625"
+    item = " ".join(str(item).replace("**", "").split())
+    return item if len(item) <= 90 else item[:88].rsplit(" ", 1)[0] + "…"
+
+
 def _pillar_regulatory(pi: dict) -> dict:
     """الملاءمة التنظيمية — تعريفة منخفضة + وضوح الاشتراطات؛ بوابة الأهلية تُخفّض."""
     tariff, req = pi.get("tariff_applied_pct"), pi.get("entry_requirements_count")
@@ -357,6 +373,7 @@ def _pillar_regulatory(pi: dict) -> dict:
         v = round(min(v, 0.3), 3)
     return {"value": v, "components": parts, "missing": missing,
             "eligibility_gate": bool(gate) if gate is not None else None,
+            "eligibility_gate_item": str(pi.get("eligibility_gate_item") or ""),
             "basis": "متوسط المتاح من: (1 − تعريفة/30%)، وضوح القائمة (بنود/8)"
                      + ("؛ بوابة أهلية مفتوحة ⇒ سقف 0.3 حتى اعتماد المنشأة"
                         if gated else "")}
@@ -509,10 +526,12 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
             condition_items.append({"kind": "pillar_weak", "pillar": name,
                                     "pct": round(eff * 100), "status": "open"})
     if pillars["regulatory"].get("eligibility_gate"):
-        conditions.insert(0, "بوابة أهلية أمامية مفتوحة (منشأة معتمدة EU 2017/625) "
-                             "— لا تقدّم قبل عبورها")
+        gate_item = pillars["regulatory"].get("eligibility_gate_item") or ""
+        conditions.insert(0, "بوابة أهلية أمامية مفتوحة ("
+                             + gate_label_ar(gate_item) + ") — لا تقدّم قبل عبورها")
         condition_items.insert(0, {"kind": "eligibility_gate",
-                                   "pillar": "regulatory", "status": "open"})
+                                   "pillar": "regulatory", "status": "open",
+                                   "item": gate_item})
     for n, it in enumerate(condition_items, 1):
         it["id"] = f"C{n}"
 
@@ -643,8 +662,10 @@ def _first_steps(verdict: str, pillars: dict, conditions: list[str],
         return ["عالج سبب NO-GO المذكور أولاً ثم أعد التحليل — لا خطوات دخول "
                 "قبل ذلك"]
     if pillars["regulatory"].get("eligibility_gate"):
-        steps.append("ابدأ بمسار اعتماد المنشأة (القائمة الأوروبية EU 2017/625) "
-                     "— كل ما بعده محجوب عليه")
+        steps.append("ابدأ بمسار اعتماد المنشأة ("
+                     + gate_label_ar(pillars["regulatory"].get(
+                         "eligibility_gate_item") or "")
+                     + ") — كل ما بعده محجوب عليه")
     # سدّ تسريب (الطبقة ٩): كانت الخطوات تشير لاسم وكيل داخلي خام إنجليزي
     # بين قوسين ("وكيل regulatory"/"وكيل supplier") — لا قيمة للقارئ في
     # معرفة أي وكيل داخلي غذّى الخطوة؛ عربية صرفة بلا إسناد داخلي الآن.
