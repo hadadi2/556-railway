@@ -498,6 +498,10 @@ TERMS: dict[str, dict[str, str]] = {
     "meta_generated_at": {"ar": "تاريخ التوليد", "en": "Generated at"},
     "meta_schema_version": {"ar": "نسخة مخطّط التقرير", "en": "Report schema version"},
     "meta_engine_version": {"ar": "نسخة محرّك التقرير", "en": "Report engine version"},
+    # تقرير ٧ §7: قابليةُ التتبّع.
+    "meta_rules_version": {"ar": "نسخة قواعد القرار", "en": "Decision rules version"},
+    "meta_input_fingerprint": {"ar": "بصمة المدخلات", "en": "Input fingerprint"},
+    "ref_supports": {"ar": "يسند: {facts}", "en": "supports: {facts}"},
     # ── اسم اللغة نفسها (للمؤشّر في الواجهة) ───────────────────────────────
     "lang_name_ar": {"ar": "العربية", "en": "Arabic"},
     "lang_name_en": {"ar": "الإنجليزية", "en": "English"},

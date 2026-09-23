@@ -251,6 +251,11 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٨ — تقرير ٧: إحالةُ المراجع، ورأسُ الجدول، وخلايا LTR، وبصمةُ المدخلات.
+    (278, "silk_reports.py", ["def _set_table_flow", "def _mark_ltr_cells",
+                              "def _supported_facts", "def _input_fingerprint"]),
+    (278, "tests/test_report7_formatting.py",
+     ["def test_contact_cells_are_left_to_right_and_columns_weighted"]),
     # ٢٧٧ — تقرير ٧: قائمةُ شروطٍ واحدة يراها الكاتب، وسجلُّ قناةٍ واحد.
     (277, "silk_decision.py", ['"condition_items": condition_items']),
     (277, "silk_render.py", ["def condition_texts", "def entry_channel"]),

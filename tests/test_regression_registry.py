@@ -4597,6 +4597,14 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    278: lambda: (
+        _needles("silk_reports.py", "_set_table_flow(table)",
+                 "_add_table(doc, head, rows, widths=weights, ltr_cols=(2, 3, 4))",
+                 '_client_references_section(doc, dr, lang, ledger=view.get("ledger"))',
+                 '("meta_rules_version", _rules_version())')(),
+        _needles("tests/test_report7_formatting.py",
+                 "def test_every_table_repeats_its_header_and_rows_do_not_split")(),
+        _needles("tests/test_lessons_enforcement.py", "(278, ")()),
     277: lambda: (
         _needles("silk_render.py", "_rows = condition_texts(ed, lang)",
                  '"entry_channel": entry_channel(by_category)')(),
