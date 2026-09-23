@@ -6502,6 +6502,39 @@ def _check_chart_metric_identity(dr: dict,
                         "واحدة، لا من رقمٍ موجودٍ في مكانٍ آخر")}]
 
 
+_SURVEY_WORD_RE = re.compile(
+    r"(?<![\u0600-\u06FF])[وفبل]?(?:ال)?(?:استبيان|استطلاع|عيّنة|عينة|"
+    r"مسح ميداني|دراسة أكاديمية|دراسة جامعية)(?![\u0600-\u06FF])"
+    r"|\b(?:survey|questionnaire|respondents?|sample of|sample size)\b",
+    re.IGNORECASE)
+_SURVEY_PCT_RE = re.compile(r"\d+(?:[.,٫]\d+)?\s*(?:%|٪|في المئة|بالمئة|percent)")
+# ما يجعل النسبةَ قابلةً للقراءة: حجمُ العيّنة أو مجتمعُها صراحةً.
+_SURVEY_SCOPE_RE = re.compile(
+    r"(?:حجم(?:ها)? العيّنة|حجم العينة|"
+    r"\d+\s*(?:مشارك|مستجيب|شخص|طالب|أسرة|متجر|شركة|منشأة|مقه)|"
+    r"n\s*=\s*\d+|\d+\s*(?:respondents|participants)|مجتمع الدراسة|"
+    r"study population)", re.IGNORECASE)
+
+
+def _check_survey_share_generalized(text: str) -> list[dict]:
+    """`survey_share_generalized` (الدرس ٢٨٢ — تحذيريّ): نسبةٌ من استبيانٍ أو
+    عيّنةٍ أكاديمية في جملةٍ لا تذكر حجمَ العيّنة ولا مجتمعَ الدراسة — تُقرأ
+    نسبةً عن السكان (تقرير ٧ §4.2). يقيس الجملةَ الواحدة فقط، ولا يحكم على
+    صحّة النسبة."""
+    hits: list[str] = []
+    for sent in re.split(r"(?<=[.!؟?])\s+|\n+", text or ""):
+        if _SURVEY_WORD_RE.search(sent) and _SURVEY_PCT_RE.search(sent) \
+                and not _SURVEY_SCOPE_RE.search(sent):
+            hits.append(sent.strip()[:90])
+    if not hits:
+        return []
+    return [{"check": "survey_share_generalized", "repairable": True,
+             "note": ("نسبةٌ من استبيانٍ أو عيّنة بلا حجمٍ ولا مجتمعِ دراسة — "
+                      "تُقرأ حكماً على السكان: " + " | ".join(hits[:3])
+                      + " — اذكر مجتمعَ الدراسة وحجمَها وتاريخَها أو قدّمها "
+                        "مؤشّراً على العيّنة وحدها")}]
+
+
 # فحوصٌ **تقرأ تسميةَ الثقة في النثر** وتصير — مع خصوصية أرقام القياس —
 # خارجَ مسار التوقّع: النثرُ لا يستلم التسميةَ فلا يكتبها. **لا يُحذَف منها
 # شيء** (اثنان في `FAIL_TRIGGER_CHECKS` المجمَّدة تقرؤها عشراتُ الاختبارات
@@ -6934,6 +6967,8 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_chart_backing(dr)
     # الدرس ٢٧٠: هويةُ المقياس المرسوم — لا وجودُ الرقم وحده.
     findings += _check_chart_metric_identity(dr, view.get("ledger"))
+    # الدرس ٢٨٢: نسبةُ عيّنةٍ تُعمَّم على السكان — تحذيريّ.
+    findings += _check_survey_share_generalized(text)
     # البند ٧: تقدير بلا حقوله الأربعة أو واسعٌ معه قيمة — تحذيري.
     findings += _check_estimate_fields_complete(view)
     # البند ٤ (هدف الدراسة الاحترافية): الملخص التنفيذي يفتتح بالتوصية

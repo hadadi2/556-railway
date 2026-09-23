@@ -4597,6 +4597,14 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    282: lambda: (
+        _needles("silk_render.py", '"plan": _plan,', "_dominant_buyer(")(),
+        _needles("silk_reports.py", "_client_entry_channel(doc, dr, lang)",
+                 "_docx_lead_actions(doc, leads, lang, sanitize)")(),
+        _needles("silk_quality_gate.py", "findings += _check_survey_share_generalized(text)")(),
+        _needles("tests/test_report7_plan_channel_leads.py",
+                 "def test_each_contact_has_channel_reason_and_next_step")(),
+        _needles("tests/test_lessons_enforcement.py", "(282, ")()),
     281: lambda: (
         _needles("silk_economics.py", "if non_equivalent_basis(product_text, hs_code):",
                  "لا سعر يوم الرصد")(),
@@ -4629,7 +4637,7 @@ _LESSONS = {
         _needles("tests/test_lessons_enforcement.py", "(278, ")()),
     277: lambda: (
         _needles("silk_render.py", "_rows = condition_texts(ed, lang)",
-                 '"entry_channel": entry_channel(by_category)')(),
+                 '"entry_channel": entry_channel(by_category, result.get("hs_code"))')(),
         _needles("silk_ai_judge.py", "_conditions_block(_ed, lang),")(),
         _needles("silk_render.py", "def _items_from_pillars",
                  'conds = [r["label"] for r in _rows]')(),

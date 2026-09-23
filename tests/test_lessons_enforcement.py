@@ -251,6 +251,12 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٨٢ — تقرير ٧: المسؤولُ والخطةُ والقناةُ وخطوةُ الجهة ونسبةُ العيّنة.
+    (282, "silk_render.py", ["def condition_owner_key", "def plan_90"]),
+    (282, "silk_reports.py", ["def _client_entry_channel", "def _docx_lead_actions"]),
+    (282, "silk_quality_gate.py", ["def _check_survey_share_generalized"]),
+    (282, "tests/test_report7_plan_channel_leads.py",
+     ["def test_the_plan_frame_comes_from_the_same_conditions"]),
     # ٢٨١ — تقرير ٧: المنتجُ المكافئ، وحالاتُ صفّ السعر، ونوعُ الصرف.
     (281, "silk_economics.py", ["def non_equivalent_basis", "PRICE_CHECK_MAX_CONF = 0.5", "def price_row_state"]),
     (281, "silk_render.py", ["def _price_observation", "PRICE_STATUS_NON_EQUIVALENT"]),
