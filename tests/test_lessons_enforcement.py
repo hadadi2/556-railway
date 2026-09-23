@@ -251,6 +251,12 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٧ — تقرير ٧: قائمةُ شروطٍ واحدة يراها الكاتب، وسجلُّ قناةٍ واحد.
+    (277, "silk_decision.py", ['"condition_items": condition_items']),
+    (277, "silk_render.py", ["def condition_texts", "def entry_channel"]),
+    (277, "silk_ai_judge.py", ["def _conditions_block"]),
+    (277, "tests/test_report7_conditions.py",
+     ["def test_the_basis_shows_the_engine_list_with_its_numbers"]),
     # ٢٧٦ — تقرير ٧: استردادُ الشحنة والتعادلُ التشغيليّ مقياسان باسمين.
     (276, "silk_economics.py", ["RECOVERY_NAME", "OPERATING_BE_NAME",
                                 "fixed_costs: float | None = None"]),

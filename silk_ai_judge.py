@@ -1043,6 +1043,53 @@ def _mission_declared_gaps(mission_reports: dict) -> list[str]:
     return out
 
 
+def _conditions_block(ed: object, lang: str = "ar") -> str:
+    """تقرير ٧ §4.1: الشروطُ المفتوحة المحسوبة بأرقامها — الكاتبُ لا يؤلّف
+    شروطَه ولا عددَها، ويربط كلَّ خطوةٍ في خارطة الـ٩٠ يوماً برقم شرطها.
+    الأرقامُ هي نفسُها المعروضة على أسطح العميل («الشرط N»)، وبلغة التقرير.
+    نصوصٌ من المحرّك وi18n (لا مدخلٌ خارجيّ) فلا تمرّ بـ`_isolate`."""
+    try:
+        import silk_render as _R
+        rows = _R.condition_texts(ed, lang)
+    except Exception:  # noqa: BLE001 — غيابُها = السلوكُ القائم
+        rows = None
+    if not rows:
+        return ""
+    en = lang == "en"
+    lines = [(f"Computed open conditions ({len(rows)}) — use them exactly as "
+              "numbered; do not add, drop or recount any, and tie every step "
+              "of the 90-day roadmap to the number of the condition it closes:")
+             if en else
+             (f"الشروط المفتوحة المحسوبة ({len(rows)}) — استعملها بأرقامها كما "
+              "هي، لا تضف شرطاً ولا تحذفه ولا تغيّر عددها، واربط كل خطوة في "
+              "خارطة الـ٩٠ يوماً برقم الشرط الذي تُقفله:")]
+    for r in rows:
+        lines.append(f"{r['label']} — " + (f"action: {r['closure']}" if en
+                                          else f"الإجراء: {r['closure']}"))
+    return "\n".join(lines)
+
+
+def _entry_channel_block(analyst_by_category: object, lang: str = "ar") -> str:
+    """تقرير ٧ §4.2: سجلُّ القناة نفسُه الذي يعرضه العرض — لا يستنتجه الكاتب
+    من ترتيب النثر فيختار قناةً غيرَ التي يحملها العرض."""
+    try:
+        import silk_render as _R
+        ch = _R.entry_channel(analyst_by_category)
+    except Exception:  # noqa: BLE001
+        ch = None
+    if not ch:
+        return ""
+    alt = ch.get("alternative") or ""
+    if lang == "en":
+        return (f"First candidate entry channel (from the analyst): "
+                f"{_isolate(ch['primary'])}"
+                + (f"; conditional alternative: {_isolate(alt)}" if alt else "")
+                + ". The distributor list and the 90-day plan serve it.")
+    return (f"القناة الأولى المرشّحة (من المحلل): {_isolate(ch['primary'])}"
+            + (f"؛ والبديل المشروط: {_isolate(alt)}" if alt else "")
+            + ". قائمةُ الموزّعين وخطةُ التسعين يوماً تخدمانها.")
+
+
 def _summarize_verdict(verdict: dict, gap_sources: list | None = None,
                        pillars: object = None,
                        conditions: object = None) -> str:
@@ -1426,7 +1473,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                 seed_draft: str | None = None,
                 revision_draft: str | None = None,
                 entry_decision: dict | None = None,
-                ledger: dict | None = None) -> str | None:
+                ledger: dict | None = None,
+                analyst_by_category: dict | None = None) -> str | None:
     """اكتب تقرير البحث العميق — the 11-section international-structure report
     (وكيل الكتابة، الموجة ١٠ — أسلوب Euromonitor/ESOMAR).
 
@@ -1580,6 +1628,8 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         # تسمية الثقة نفسُه الذي تفرضه البوابةُ عليه — لا تسميةٌ أعلى.
         f"{_isolate(_summarize_verdict(verdict, _mission_declared_gaps(mission_reports), pillars=_ed.get('pillars'), conditions=_ed.get('conditions')))}. "
         + _confidence_mention_rule(),
+        *[b for b in (_conditions_block(_ed, lang),
+                      _entry_channel_block(analyst_by_category, lang)) if b],
         f"مسوّدة المحلل الشامل (خمس تقاطعات + SWOT):\n{_isolate(analyst_summary)}",
         f"حقائق البعثات الاثنتي عشرة (لا تتجاوزها، كل رقم من هنا فقط):\n{facts}",
     ]
@@ -1780,6 +1830,11 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         "بعد استكمال الشروط يُعاد التقييم؛ لا يحل الكاتب محل القرار المحسوب. "
         "اربط كل خطوة في خارطة الـ٩٠ يوماً بالشرط الذي تعالجه "
         "('الخطوة ← الشرط الذي تُقفله').\n"
+        "- **6.1ب قناةٌ واحدة (تقرير ٧ §4.2)**: القناةُ الأولى هي «القناة "
+        "الأولى المرشّحة» المعطاة أعلاه (إن أُعطيت)؛ اجعل قائمةَ الموزّعين "
+        "وخطةَ التسعين يوماً تخدمانها، واذكر البديلَ المشروط باسمه ودليله منفصلاً. نسبةٌ من عيّنةٍ "
+        "محدودة أو اهتمامُ بحثٍ مؤشرٌ مساعد لا تقديرُ مبيعات — لا تُعمَّم على "
+        "السوق دون ذكر مجتمع الدراسة وحجمها وتاريخها.\n"
         "- **6.2 سقف الخلاصة التنفيذية (هدف الدراسة الاحترافية)**: أبقِ "
         "'الخلاصة التنفيذية' **تحت 150 كلمة** بقالب معيار الكتابة الثابت: "
         "سطر التوصية وحده أولاً، ثم رقمان أو ثلاثة يتبع كلَّ رقمٍ معناه لا "
@@ -3248,7 +3303,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                           seed_draft: str | None = None,
                           importer_leads: dict | None = None,
                           entry_decision: dict | None = None,
-                          ledger: dict | None = None) -> dict:
+                          ledger: dict | None = None,
+                          analyst_by_category: dict | None = None) -> dict:
     """حلقة الكتابة والمراجعة — Writer → Reviewer.
 
     `lang` (الموجة ٠): لغة التقرير المولَّد — تُمرَّر للكاتب والمراجع معاً فلا
@@ -3311,7 +3367,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                         lang=lang, product_card=product_card,
                         on_attempt=lambda: _stage("writer"),
                         seed_draft=seed_draft,
-                        entry_decision=entry_decision, ledger=ledger)
+                        entry_decision=entry_decision, ledger=ledger,
+                        analyst_by_category=analyst_by_category)
     draft = _decision_language(draft)
     if not draft:
         out = {"report": None, "review_cycles": 0, "unresolved_notes": [],
@@ -3383,7 +3440,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             lang=lang, product_card=product_card,
                             on_attempt=lambda: _stage("writer"),
                             revision_draft=draft,
-                            entry_decision=entry_decision, ledger=ledger)
+                            entry_decision=entry_decision, ledger=ledger,
+                        analyst_by_category=analyst_by_category)
         if not fixed or _writer_incomplete(fixed, lang):
             break
         draft = _decision_language(fixed)
@@ -3415,7 +3473,8 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                             lang=lang, product_card=product_card,
                             on_attempt=lambda: _stage("writer"),
                             revision_draft=draft,
-                            entry_decision=entry_decision, ledger=ledger)
+                            entry_decision=entry_decision, ledger=ledger,
+                        analyst_by_category=analyst_by_category)
         if fixed:
             fixed = _decision_language(fixed)
             if _writer_incomplete(fixed, lang):

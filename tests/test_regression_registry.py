@@ -4597,6 +4597,16 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    277: lambda: (
+        _needles("silk_render.py", "_rows = condition_texts(ed, lang)",
+                 '"entry_channel": entry_channel(by_category)')(),
+        _needles("silk_ai_judge.py", "_conditions_block(_ed, lang),")(),
+        _needles("silk_render.py", "def _items_from_pillars",
+                 'conds = [r["label"] for r in _rows]')(),
+        _needles("api.py", 'analyst_by_category=(dr.get("analyst") or {})')(),
+        _needles("tests/test_report7_conditions.py",
+                 "def test_the_real_engine_emits_one_item_per_condition_string")(),
+        _needles("tests/test_lessons_enforcement.py", "(277, ")()),
     276: lambda: (
         _needles("silk_economics.py",
                  'RECOVERY_NAME = "استرداد كلفة الشحنة التجريبية"',
