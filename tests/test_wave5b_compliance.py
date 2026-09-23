@@ -115,7 +115,12 @@ def test_gcc_regression_unchanged():
     items = " ".join(dp.value["item"] for dp in entry)
     # صيد الفجوات ٣ (الدرس 162): أسبقية العوامل جعلت الشرط `(A and B) or
     # True` توتولوجيا — فحص محتوى الخليج كان مفرغاً.
-    assert "حلال" in items
+    # تغييرٌ معلن (الدرس ٢٨٠): حلالُ اللحوم يُصفّى عن التمور بـ`applies_to`
+    # في الوكيل كما في الجدول؛ ويبقى لمنتجٍ لحميّ.
+    assert "حلال" not in items
     assert "GSO" in items.replace("جي إس أو", "GSO")
-    assert len(entry) == 4
+    assert len(entry) == 3
+    meat = _entry(RequirementsAgent().run({"market_iso3": "ARE",
+                                           "hs_code": "020130"}))
+    assert "حلال" in " ".join(dp.value["item"] for dp in meat)
     assert "شبه موحّد" in rep.summary

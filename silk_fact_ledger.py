@@ -529,14 +529,17 @@ def _fill_series(missions: dict, put) -> None:
         put(_entry("imports_latest_year", None, note="لا سلسلة واردات مرصودة"))
         put(_entry("import_growth_pct", None, note="لا سلسلة واردات مرصودة"))
         return
-    latest = max(int(p["year"]) for p in pts)
+    # الدرس ٢٨٠: أحدثُ سنةٍ **كاملة** — السنةُ الجارية الجزئية تبقى في
+    # البنود موسومةً ولا تصير سنةَ العنوان.
+    full = [p for p in pts if not p.get("partial")] or pts
+    latest = max(int(p["year"]) for p in full)
     put(_entry("imports_latest_year", latest, source="UN Comtrade",
-               confidence=0.9, note="أحدث سنة مرصودة في سلسلة الواردات",
+               confidence=0.9, note="أحدث سنة كاملة مرصودة في سلسلة الواردات",
                origin="trade_flow", items=[dict(p) for p in pts]))
     g = _num(series.get("growth_pct"))
     put(_entry("import_growth_pct", g, source="UN Comtrade", confidence=0.9,
                origin="trade_flow",
-               note=("نمو الواردات بين أول وآخر سنة مرصودة" if g is not None
+               note=("نمو الواردات بين أول وآخر سنة كاملة مرصودة" if g is not None
                      else "يتطلب سنتين مرصودتين")))
 
 

@@ -251,6 +251,13 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٨٠ — تقرير ٧: ماليزيا بمرجع، والمحمّصُ مصنَّع، والسنةُ الجزئية خارج النموّ.
+    (280, "silk_ai_judge.py", ["def _load_hs_processing", "_HS_PROCESSING.get("]),
+    (280, "data/hs_processing_l1.csv", ["090121,processed"]),
+    (280, "data/requirements_l1.csv", ["verified_at", "MYS,food,entry,10,"]),
+    (280, "silk_deep_pillars.py", ['p["partial"] = _is_partial_year(p["year"])']),
+    (280, "tests/test_report7_malaysia_regulatory.py",
+     ["def test_roasted_coffee_is_processed_not_raw"]),
     # ٢٧٩ — تقرير ٧: السنةُ الناقصة صفٌّ، والاشتراطُ بنوعه، والملاءمةُ تُسمّى.
     (279, "silk_requirements_agent.py", ["def requirement_rows",
                                          "REQUIREMENT_STATUSES"]),

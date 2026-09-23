@@ -349,15 +349,25 @@ TERMS: dict[str, dict[str, str]] = {
     "req_status_buyer_requirement": {"ar": "شرطُ مشترٍ لا قانون",
                                      "en": "Buyer requirement, not law"},
     "req_status_unknown": {"ar": "نوعٌ غير مصنّف", "en": "Type not classified"},
+    "imports_partial_year": {"ar": "(سنة جارية — رقم جزئي)",
+                             "en": "(current year — partial)"},
+    "imports_partial_chart_note": {
+        "ar": "سنة {year} جارية ورقمها جزئي — في الجدول لا في الرسم",
+        "en": "{year} is the current year with a partial figure — shown in "
+              "the table, not the chart"},
+    "imports_mirrored": {"ar": "(من بيانات الشركاء)",
+                         "en": "(from partner data)"},
+    "req_verified_at": {"ar": "آخر تحقق: {date}", "en": "Last checked: {date}"},
     "req_note": {"ar": "النوعُ من المرجع المنسّق لكلّ بند؛ يُتحقَّق من انطباقه "
-                       "على منتجك وقناتك قبل الشحن، ولا تاريخَ تحقّقٍ مسجّلاً "
-                       "للبنود بعد. إعفاءُ التعرفة لا يعني انعدامَ بقية "
-                       "الرسوم ولا تحقّقَ الامتثال.",
+                       "على منتجك وقناتك قبل الشحن، والبندُ الذي لا يحمل "
+                       "«آخر تحقق» لم يُراجَع بعدُ مقابل مصدره. إعفاءُ التعرفة "
+                       "لا يعني انعدامَ بقية الرسوم ولا تحقّقَ الامتثال.",
                  "en": "The type comes from the curated reference for each "
                        "item; check that it applies to your product and "
-                       "channel before shipping — no verification date is "
-                       "recorded yet. A zero tariff does not remove other "
-                       "fees or compliance."},
+                       "channel before shipping — an item without a \"last "
+                       "checked\" date has not yet been reviewed against its "
+                       "source. A zero tariff does not remove other fees or "
+                       "compliance."},
     "imports_year_missing": {"ar": "غير متاح (لم يُجلب رقمها)",
                              "en": "Not available (not retrieved)"},
     "pillar_measured": {
@@ -397,6 +407,12 @@ TERMS: dict[str, dict[str, str]] = {
     "cond_closure_weak": {"ar": "معالجة ضعف جانب {pillar} قبل الالتزام",
                           "en": "Address the weak {pillar} aspect before "
                                 "committing"},
+    "cond_eligibility_gate_other": {
+        "ar": "منشأتك تحتاج أولاً: {item} — قبل أي شحن، ولا يُغني عنه أي "
+              "إجراء لاحق.",
+        "en": "Your facility must first clear the mandatory prior approval "
+              "listed first among the entry requirements — nothing later "
+              "substitutes for it."},
     "cond_eligibility_gate": {
         "ar": "منشأتك يجب أن تُدرَج في قائمة المنشآت المعتمدة (EU 2017/625) "
               "قبل أي شحن — ولا يُغني عنها أي إجراء لاحق.",

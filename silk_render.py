@@ -314,6 +314,18 @@ def entry_channel(by_category: object) -> "dict | None":
             "source": str(src), "status": "candidate"}
 
 
+def _gate_label_from_research(research: object) -> str:
+    """اسمُ بوّابة الأهلية من قائمة الوكيل (البندُ الموسوم) — الدرس ٢٨٠."""
+    import silk_decision as _D
+    try:
+        items = _rmetric(research, "regulatory", "requirements_checklist") or []
+        gi = next((i.get("item") for i in items if isinstance(i, dict)
+                   and i.get("eligibility_gate")), "")
+    except Exception:  # noqa: BLE001
+        gi = ""
+    return _D.gate_label_ar(gi)
+
+
 def condition_texts(ed: object, lang: str = "ar") -> "list | None":
     """صفوفُ الشروط المفتوحة بلغة القارئ — `[{id, text, closure}]` — أو None.
 
@@ -334,7 +346,10 @@ def condition_texts(ed: object, lang: str = "ar") -> "list | None":
         kind = it.get("kind")
         label = _D.pillar_label(it.get("pillar") or "", lang)
         if kind == "eligibility_gate":
-            text = _I.t("cond_eligibility_gate", lang)
+            gi = it.get("item")
+            text = (_I.t("cond_eligibility_gate", lang) if _D.is_eu_gate(gi)
+                    else _I.t("cond_eligibility_gate_other", lang,
+                              item=_D.gate_label_ar(gi)))
             closure = _I.t("cond_closure_gate", lang)
         elif kind == "pillar_missing":
             parts = _D.part_labels(it.get("missing"), lang)
@@ -362,7 +377,9 @@ def _items_from_pillars(pillars: dict) -> list:
     import silk_decision as _D
     items: list = []
     if (pillars.get("regulatory") or {}).get("eligibility_gate"):
-        items.append({"kind": "eligibility_gate", "pillar": "regulatory"})
+        items.append({"kind": "eligibility_gate", "pillar": "regulatory",
+                      "item": (pillars.get("regulatory") or {}).get(
+                          "eligibility_gate_item") or ""})
     for name, p in pillars.items():
         strength = _D.pillar_strength(name, (p or {}).get("value"))
         if strength is None:
@@ -1404,7 +1421,8 @@ def _swot(research: dict | None) -> dict:
             break
     gate = _rmetric(research, "regulatory", "eligibility_gate")
     if gate:
-        W.append({"text": "بوابة أهلية أوروبية مفتوحة (منشأة معتمدة EU 2017/625)",
+        W.append({"text": "بوابة أهلية أمامية مفتوحة ("
+                          + _gate_label_from_research(research) + ")",
                   "evidence": f"مرجع L1 — {internal_ar('eligibility_gate')}"})
     cagr = _rmetric(research, "market_size", "import_cagr_pct")
     if cagr is not None and cagr > 5:
@@ -3642,7 +3660,10 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
     pts = s.get("series") or []
     if not pts:
         return None
-    latest = pts[-1]
+    # تقرير ٧ §3.2: سنةُ الملخّص والنموّ سنةٌ كاملةٌ واحدة — السنةُ الجارية
+    # الجزئية تبقى صفّاً موسوماً في الجدول لا رقمَ العنوان.
+    full = [p for p in pts if not p.get("partial")] or pts
+    latest = full[-1]
     out = {
         "head": _I.t("imports_head", lang),
         "series": pts,
@@ -3657,9 +3678,9 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
         "cagr_pct": s.get("cagr_pct"),
         "years_missing": s.get("years_missing") or [],
     }
-    if len(pts) >= 2 and s.get("growth_pct") is not None:
+    if len(full) >= 2 and s.get("growth_pct") is not None:
         g = float(s["growth_pct"])
-        y0, y1 = pts[0]["year"], pts[-1]["year"]
+        y0, y1 = full[0]["year"], full[-1]["year"]
         has_cagr = s.get("cagr_pct") is not None
         out["growth_line"] = _I.t(
             "imports_growth_line" if has_cagr else "imports_growth_line_nocagr",
@@ -3668,10 +3689,10 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
             verb=("grew" if g >= 0 else "shrank"),
             growth=fmt_pct(abs(g)), first_year=y0, last_year=y1,
             cagr=(fmt_pct(s["cagr_pct"]) if has_cagr else ""))
-    elif len(pts) >= 2:
+    elif len(full) >= 2:
         # سنتان فأكثر ولا نموَّ محسوب (مراجعة §58): غيابٌ يُقال لا يُسكَت.
         out["note"] = _I.t("imports_trend_not_computed", lang)
-    if len(pts) < 2:
+    if len(full) < 2:
         out["note"] = _I.t("imports_single_year_note", lang,
                            year=latest["year"])
     # فاصلُ القائمة يتبع لغةَ التقرير: الفاصلةُ العربية «،» حرفٌ عربيّ،
@@ -3744,7 +3765,11 @@ def _chart_labels_fit_lang(rows: list, lang: str) -> bool:
 
 def _chart_imports_trend(imports: "dict | None", lang: str) -> "dict | None":
     import silk_i18n as _I
-    pts = (imports or {}).get("series") or []
+    all_pts = (imports or {}).get("series") or []
+    # الدرس ٢٨٠: السنةُ الجارية الجزئية لا تُرسَم عموداً بجوار سنواتٍ كاملة
+    # (انكماشٌ زائف بصرياً) — تبقى صفّاً موسوماً في الجدول، ويقولها التعليق.
+    pts = [p for p in all_pts if not p.get("partial")]
+    partial = [p for p in all_pts if p.get("partial")]
     # مراجعة §58: عمودٌ واحدٌ بعنوان «بالسنوات» ومعه تعليقٌ يقول «لا يُرسَم
     # مسارٌ بلا سنتين» — الرسمُ يكذّب تعليقَه. سنتان شرطُ المسار كما هو شرطُ
     # جدولِ الواردات نفسِه (`_client_imports_section`).
@@ -3763,7 +3788,9 @@ def _chart_imports_trend(imports: "dict | None", lang: str) -> "dict | None":
         # السطورُ الثلاثة تُضمّ معاً.
         "note": " · ".join(x for x in (
             (imports or {}).get("note"), (imports or {}).get("gap_line"),
-            (imports or {}).get("mirror_line")) if x),
+            (imports or {}).get("mirror_line"),
+            _I.t("imports_partial_chart_note", lang,
+                 year=partial[-1]["year"]) if partial else "") if x),
     }
 
 

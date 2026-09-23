@@ -85,9 +85,11 @@ def test_requirements_agent_gcc_dual_direction_offline():
         assert dp.value["authority"]
         assert 0.0 < dp.confidence <= 1.0
         assert dp.note                                # ملاحظة "تحقق" حاضرة
-    # حلال للحوم ضمن دخول الغذائي الخليجي، وسابر ضمن دخول السعودية فقط.
+    # سابر ضمن دخول السعودية فقط. تغييرٌ معلن (الدرس ٢٨٠): حلالُ اللحوم
+    # (`applies_when: hs_chapter:02,04,16`) لا يُطلب من مصدّر التمور —
+    # الوكيلُ يرى الآن البنودَ المصفّاة نفسَها التي يعرضها الجدول.
     items = " ".join(dp.value["item"] for dp in entry)
-    assert "حلال" in items and "سابر" not in items
+    assert "حلال" not in items and "سابر" not in items
 
 
 def test_requirements_agent_unknown_market_honest_gap():
