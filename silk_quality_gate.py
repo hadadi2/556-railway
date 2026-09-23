@@ -4145,7 +4145,7 @@ def _check_border_price_out_of_range(view: dict) -> list[dict]:
                      f" — «{str(note)[:40]}»؛ راجع البند أو المصدر قبل بناء "
                      "هامشٍ عليه")}]
     try:
-        shelf, s_note = _E._mission_numeric(
+        shelf, s_note, s_f = _E._mission_numeric_finding(
             dr, "pricing_scout", ("سعر رف", "سعر تجزئة", "shelf"),
             0.0, 10 ** 9)
         if shelf is None:
@@ -4158,9 +4158,22 @@ def _check_border_price_out_of_range(view: dict) -> list[dict]:
         # مرصودٌ **بالدولار** كان يُقسَم على سعر الصرف فيصير خمسَ قيمته،
         # فيُطلِق الحارسُ على تقريرٍ سعرُ رفِّه ضِعفُ سعرِ الحدود. نفسُ
         # استثناء `silk_economics` القائم (`_cur in ("$","USD","دولار")`).
-        cur = _E.currency_in_note(s_note)
-        if cur in ("$", "USD", "دولار"):
+        _s_val = (s_f.get("value") if isinstance(s_f, dict)
+                  else getattr(s_f, "value", ""))
+        # العملةُ قد تعيش في نصّ القيمة لا في الملاحظة (الدرس ٢٧١).
+        cur = _E.currency_in_note(
+            f"{s_note} {_s_val if isinstance(_s_val, str) else ''}")
+        # الدرس ٢٧٢: الحسمُ بعملة السوق من المصدر الواحد نفسِه الذي يقرؤه
+        # `silk_economics` — «$» في سنغافورة ليس دولاراً أمريكياً، وصرفُ
+        # الرينجيت لا يُقسَم عليه سعرٌ باليورو (كان هنا بلا فحص).
+        import silk_narrative as _N
+        _iso3 = str((view.get("market") or {}).get("iso3")
+                    or (dr.get("market") or {}).get("iso3") or "")
+        _loc = _E.market_currency(_iso3)
+        if _E._iso(cur, _loc) == "USD":
             shelf_usd, rate = shelf, None
+        elif _N.currency_is_local(cur, _loc) is False:
+            return []           # عملةٌ أخرى يقيناً — لا تحويلَ بصرف السوق
         else:
             rate, _fx_note = _E._mission_numeric(
                 dr, "risk_news", ("سعر الصرف الرسمي",), 1e-4, 100_000.0)

@@ -706,6 +706,70 @@ def iso_currency(currency: object) -> str:
     return ""
 
 
+# ── الدرس ٢٧٢: عملةُ سعرٍ مرصودٍ في السوق — تُحسَم بعملة السوق لا بالتخمين ──
+# اسمٌ أو رمزٌ عامّ يسعُ عائلةَ عملات: (رموزُ العائلة، الافتراضُ المعلن حين لا
+# تكون عملةُ السوق منها). «دولار/$» ⇒ USD اصطلاحُ الريبو القائم؛ و«ريال»
+# بلا سوقٍ منها بلا رمز (قفل c19: ريالُ قطر ليس SAR). المصدرُ الواحد نفسُه
+# (`_CURRENCY_AMBIGUOUS_AR`) مُغطّى كلُّه هنا — يُقفله اختبار.
+_DOLLAR_CODES = frozenset({"USD", "SGD", "AUD", "CAD", "HKD", "NZD", "BND",
+                           "TWD"})
+CURRENCY_FAMILIES = {
+    "دولار": (_DOLLAR_CODES, "USD"), "$": (_DOLLAR_CODES, "USD"),
+    "£": (frozenset({"GBP", "EGP"}), "GBP"),
+    "ريال": (frozenset({"SAR", "QAR", "YER", "OMR", "IRR"}), ""),
+    "دينار": (frozenset({"KWD", "JOD", "BHD", "IQD", "LYD", "TND", "DZD",
+                         "RSD"}), ""),
+    "درهم": (frozenset({"AED", "MAD"}), ""),
+    "جنيه": (frozenset({"EGP", "GBP", "SDG", "SSP"}), ""),
+    "روبية": (frozenset({"INR", "PKR", "LKR", "IDR", "NPR", "MUR"}), ""),
+    "ليرة": (frozenset({"TRY", "LBP", "SYP"}), ""),
+    "بيزو": (frozenset({"MXN", "ARS", "CLP", "COP", "PHP", "UYU"}), ""),
+    "شلن": (frozenset({"KES", "TZS", "UGX", "SOS"}), ""),
+    "فرنك": (frozenset({"CHF", "XOF", "XAF", "RWF", "DJF"}), ""),
+    "كرونة": (frozenset({"SEK", "NOK", "DKK", "ISK", "CZK"}), ""),
+    "يوان": (frozenset({"CNY"}), "CNY"),
+    "روبل": (frozenset({"RUB", "BYN"}), ""),
+    "راند": (frozenset({"ZAR"}), "ZAR"),
+}
+_SYMBOL_CODES = {"€": "EUR", "ر.س": "SAR", "RM": "MYR"}
+
+
+def resolve_market_currency(currency: object, local: object = "") -> str:
+    """رمزُ ISO لعملةِ سعرٍ **مرصودٍ في سوقٍ** عملتُه `local` — أو "".
+
+    الاسمُ العامّ يُقرأ عملةَ السوق حين تكون من عائلته، وإلّا افتراضُه المعلن
+    أو لا رمز؛ والاسمُ القُطريّ الصريح والرمزُ يمرّان بالاتجاه العكسيّ القائم.
+    """
+    cur = str(currency or "").strip()
+    loc = str(local or "").strip().upper()
+    if not cur:
+        return ""
+    fam = CURRENCY_FAMILIES.get(cur)
+    if fam:
+        return loc if loc in fam[0] else fam[1]
+    if cur in _SYMBOL_CODES:
+        return _SYMBOL_CODES[cur]
+    return iso_currency(cur)
+
+
+def currency_is_local(currency: object, local: object) -> "bool | None":
+    """هل عملةُ السعر هي عملةُ السوق؟ True/False حين يُقطَع، None حين يتعذّر.
+
+    «درهم» في ماليزيا ليست الرينجيت **يقيناً** وإن تعذّر رمزُها — فلا يُطبَّق
+    عليها صرفُ الرينجيت؛ وسعرٌ بلا عملةٍ مسمّاة يبقى «يتعذّر الحكم»."""
+    loc = str(local or "").strip().upper()
+    cur = str(currency or "").strip()
+    if not loc or not cur:
+        return None
+    code = resolve_market_currency(cur, loc)
+    if code:
+        return code == loc
+    fam = CURRENCY_FAMILIES.get(cur)
+    if fam:
+        return loc in fam[0]
+    return None
+
+
 _LATIN_RE = re.compile(r"[A-Za-z]")
 APPENDIX_SOURCE_AR = "المصدر مذكورٌ في ملحق المراجع"
 

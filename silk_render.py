@@ -648,7 +648,9 @@ def _real_list(x: object) -> list:
 _PER_KG_RE = re.compile(
     r"(?:/|\bلكل\b|\bper\b)?\s*(?:كجم|كيلو|كغ|للكيلو|kg|كيلوغرام)"
     r"|(?:كجم|كيلو|كغ|kg)\s*/?\s*(?:€|\$|£|دولار|يورو)")
-_CURRENCY_RE = re.compile(r"€|\$|£|دولار|يورو|ريال|درهم|\d")
+# الدرس ٢٧٣: كان البديلُ الأخير `\d` — فأيُّ رقمٍ «عملة»، و«12.5 للعبوة» يُوسَم
+# «الوزن غير متاح» وهو بلا عملةٍ أصلاً. العملةُ الآن عملةٌ مسمّاة.
+_CURRENCY_RE = re.compile(r"€|\$|£|دولار|يورو|ريال|درهم|(?<![A-Za-z])RM\s*\d")
 _WEIGHT_RE = re.compile(
     r"\d+\s*(?:غ|جم|جرام|غرام|كجم|كيلو|كغ|kg|g|مل|لتر|ml|l|أونصة|oz)")
 
@@ -692,21 +694,20 @@ def _hypotheses_safe(dr: dict) -> list:
 def _price_row_reason(text: object) -> str:
     """سبب تعذّر حساب السعر/كجم لصفّ سعر — «» إن كان قابلاً للحساب.
 
-    - يحوي سعراً لكل كيلوغرام/وحدة => «» (قابل للحساب).
-    - سعرٌ بلا وزن مذكور => «الوزن غير متاح» (البند 16: مفردتا الغياب).
-    - بلا سعر واضح أصلاً => «وحدة غامضة». حتمي، لا اختلاق."""
+    - بلا رقمٍ أصلاً => «وحدة غامضة».
+    - رقمٌ بلا عملةٍ مسمّاة => «العملة غير متاحة» (الدرس ٢٧٣ — حالةٌ مستقلة
+      عن غياب الوزن، §3.3 من مراجعة التقرير ٧).
+    - يحوي سعراً لكل كيلوغرام، أو سعراً ووزناً => «» (قابل للحساب/الاشتقاق).
+    - سعرٌ بعملةٍ بلا وزن => «الوزن غير متاح». حتمي، لا اختلاق."""
     s = str(text or "").strip()
-    if not s:
+    if not s or not re.search(r"\d", s):
         return "وحدة غامضة"
-    if _PER_KG_RE.search(s):
-        return ""  # سعر/كجم مرصود مباشرة
-    has_currency = bool(_CURRENCY_RE.search(s))
-    has_weight = bool(_WEIGHT_RE.search(s))
-    if has_currency and has_weight:
-        return ""  # سعر + وزن => قابل للاشتقاق
-    if has_currency and not has_weight:
-        return "الوزن غير متاح"
-    return "وحدة غامضة"
+    import silk_narrative as _N
+    if not (_CURRENCY_RE.search(s) or _N.currency_in(s)):
+        return "العملة غير متاحة"
+    if _PER_KG_RE.search(s) or _WEIGHT_RE.search(s):
+        return ""  # سعر/كجم مرصود مباشرة، أو سعر + وزن => قابل للاشتقاق
+    return "الوزن غير متاح"
 
 
 _LEADING_NUM_RE = re.compile(r"^\s*(?:€|\$|£|RM)?\s*\d")
