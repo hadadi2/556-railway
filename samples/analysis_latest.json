@@ -22,7 +22,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
-          "retrieved_at": "2026-09-23T14:32:30+00:00",
+          "retrieved_at": "2026-09-23T15:28:37+00:00",
           "status": "",
           "data_year": 2023,
           "source_ids": [],
@@ -131,7 +131,8 @@
             "authority": "وزارة التجارة",
             "direction": "exit",
             "source_url": "https://mc.gov.sa",
-            "seq": 20
+            "seq": 20,
+            "status": "conditional_legal"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.8,
@@ -153,7 +154,8 @@
             "authority": "الهيئة العامة للغذاء والدواء SFDA",
             "direction": "exit",
             "source_url": "https://www.sfda.gov.sa",
-            "seq": 30
+            "seq": 30,
+            "status": "conditional_legal"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
@@ -175,7 +177,8 @@
             "authority": "هيئة تنمية الصادرات السعودية",
             "direction": "exit",
             "source_url": "https://saudiexports.sa",
-            "seq": 40
+            "seq": 40,
+            "status": "voluntary"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -333,8 +336,8 @@
             ],
             "rejected": [],
             "coverage": 0.6,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "competitor": {
             "agent": "competitor",
@@ -431,8 +434,8 @@
             ],
             "rejected": [],
             "coverage": 0.8,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:35+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:41+00:00"
           },
           "regulatory": {
             "agent": "regulatory",
@@ -448,21 +451,24 @@
                     "authority": "وزارة التجارة",
                     "direction": "exit",
                     "source_url": "https://mc.gov.sa",
-                    "seq": 20
+                    "seq": 20,
+                    "status": "conditional_legal"
                   },
                   {
                     "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
                     "authority": "الهيئة العامة للغذاء والدواء SFDA",
                     "direction": "exit",
                     "source_url": "https://www.sfda.gov.sa",
-                    "seq": 30
+                    "seq": 30,
+                    "status": "conditional_legal"
                   },
                   {
                     "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
                     "authority": "هيئة تنمية الصادرات السعودية",
                     "direction": "exit",
                     "source_url": "https://saudiexports.sa",
-                    "seq": 40
+                    "seq": 40,
+                    "status": "voluntary"
                   }
                 ],
                 "unit": null,
@@ -516,8 +522,8 @@
             ],
             "rejected": [],
             "coverage": 0.75,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:41+00:00"
           },
           "pricing": {
             "agent": "pricing",
@@ -565,8 +571,8 @@
             ],
             "rejected": [],
             "coverage": 0.4,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:37+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:43+00:00"
           },
           "risk": {
             "agent": "risk",
@@ -599,8 +605,8 @@
             ],
             "rejected": [],
             "coverage": 0.2,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "consumer_demand": {
             "agent": "consumer_demand",
@@ -649,8 +655,8 @@
             ],
             "rejected": [],
             "coverage": 0.33,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:41+00:00"
           },
           "supplier": {
             "agent": "supplier",
@@ -664,8 +670,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "logistics": {
             "agent": "logistics",
@@ -682,8 +688,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           }
         },
         "coverage": 0.39,
@@ -946,7 +952,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 total imports (World) to market 156 2023, USD — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "status": "",
             "data_year": null,
             "source_ids": [],
@@ -967,7 +973,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to CHN 2023; share 50.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -988,7 +994,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to CHN 2023; share 30.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -1009,7 +1015,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to CHN 2023; share 20.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -1042,7 +1048,7 @@
           "source": "UN Comtrade",
           "confidence": 0.9,
           "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
-          "retrieved_at": "2026-09-23T14:32:30+00:00",
+          "retrieved_at": "2026-09-23T15:28:37+00:00",
           "status": "",
           "data_year": 2023,
           "source_ids": [],
@@ -1123,7 +1129,8 @@
             "authority": "المركز الخليجي للاعتماد GAC / الجهات المعتمدة بالسوق",
             "direction": "entry",
             "source_url": "https://www.gac.org.sa",
-            "seq": 20
+            "seq": 20,
+            "status": "conditional_legal"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
@@ -1145,7 +1152,8 @@
             "authority": "هيئة التقييس لدول مجلس التعاون GSO",
             "direction": "entry",
             "source_url": "https://www.gso.org.sa",
-            "seq": 30
+            "seq": 30,
+            "status": "conditional_legal"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1167,7 +1175,8 @@
             "authority": "GSO / جهة الرقابة الغذائية بالسوق",
             "direction": "entry",
             "source_url": "https://www.gso.org.sa",
-            "seq": 40
+            "seq": 40,
+            "status": "legal_mandatory"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1189,7 +1198,8 @@
             "authority": "وزارة التغير المناخي والبيئة / بلديات الإمارات",
             "direction": "entry",
             "source_url": "https://www.moccae.gov.ae",
-            "seq": 50
+            "seq": 50,
+            "status": "legal_mandatory"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1211,7 +1221,8 @@
             "authority": "وزارة التجارة",
             "direction": "exit",
             "source_url": "https://mc.gov.sa",
-            "seq": 20
+            "seq": 20,
+            "status": "conditional_legal"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.8,
@@ -1233,7 +1244,8 @@
             "authority": "الهيئة العامة للغذاء والدواء SFDA",
             "direction": "exit",
             "source_url": "https://www.sfda.gov.sa",
-            "seq": 30
+            "seq": 30,
+            "status": "conditional_legal"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.7,
@@ -1255,7 +1267,8 @@
             "authority": "هيئة تنمية الصادرات السعودية",
             "direction": "exit",
             "source_url": "https://saudiexports.sa",
-            "seq": 40
+            "seq": 40,
+            "status": "voluntary"
           },
           "source": "Silk L1 requirements reference (official portals / EUR-Lex)",
           "confidence": 0.6,
@@ -1473,8 +1486,8 @@
             ],
             "rejected": [],
             "coverage": 0.6,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "competitor": {
             "agent": "competitor",
@@ -1559,8 +1572,8 @@
             ],
             "rejected": [],
             "coverage": 0.8,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:34+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:42+00:00"
           },
           "regulatory": {
             "agent": "regulatory",
@@ -1576,49 +1589,56 @@
                     "authority": "المركز الخليجي للاعتماد GAC / الجهات المعتمدة بالسوق",
                     "direction": "entry",
                     "source_url": "https://www.gac.org.sa",
-                    "seq": 20
+                    "seq": 20,
+                    "status": "conditional_legal"
                   },
                   {
                     "item": "مطابقة المواصفات القياسية الخليجية (GSO) للفئات الخاضعة وشهادة المطابقة",
                     "authority": "هيئة التقييس لدول مجلس التعاون GSO",
                     "direction": "entry",
                     "source_url": "https://www.gso.org.sa",
-                    "seq": 30
+                    "seq": 30,
+                    "status": "conditional_legal"
                   },
                   {
                     "item": "بطاقة غذائية عربية (أو ثنائية) مطابقة للمواصفة الخليجية للبطاقات الغذائية",
                     "authority": "GSO / جهة الرقابة الغذائية بالسوق",
                     "direction": "entry",
                     "source_url": "https://www.gso.org.sa",
-                    "seq": 40
+                    "seq": 40,
+                    "status": "legal_mandatory"
                   },
                   {
                     "item": "تسجيل المنتج الغذائي قبل الاستيراد لدى الجهة الاتحادية/بلدية الإمارة المستهدفة",
                     "authority": "وزارة التغير المناخي والبيئة / بلديات الإمارات",
                     "direction": "entry",
                     "source_url": "https://www.moccae.gov.ae",
-                    "seq": 50
+                    "seq": 50,
+                    "status": "legal_mandatory"
                   },
                   {
                     "item": "شهادة المنشأ السعودية للصادرات (وزارة التجارة / الغرف التجارية)",
                     "authority": "وزارة التجارة",
                     "direction": "exit",
                     "source_url": "https://mc.gov.sa",
-                    "seq": 20
+                    "seq": 20,
+                    "status": "conditional_legal"
                   },
                   {
                     "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
                     "authority": "الهيئة العامة للغذاء والدواء SFDA",
                     "direction": "exit",
                     "source_url": "https://www.sfda.gov.sa",
-                    "seq": 30
+                    "seq": 30,
+                    "status": "conditional_legal"
                   },
                   {
                     "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
                     "authority": "هيئة تنمية الصادرات السعودية",
                     "direction": "exit",
                     "source_url": "https://saudiexports.sa",
-                    "seq": 40
+                    "seq": 40,
+                    "status": "voluntary"
                   }
                 ],
                 "unit": null,
@@ -1686,8 +1706,8 @@
             "gaps": [],
             "rejected": [],
             "coverage": 1.0,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "pricing": {
             "agent": "pricing",
@@ -1735,8 +1755,8 @@
             ],
             "rejected": [],
             "coverage": 0.4,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:36+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:45+00:00"
           },
           "risk": {
             "agent": "risk",
@@ -1769,8 +1789,8 @@
             ],
             "rejected": [],
             "coverage": 0.2,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "consumer_demand": {
             "agent": "consumer_demand",
@@ -1819,8 +1839,8 @@
             ],
             "rejected": [],
             "coverage": 0.33,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:41+00:00"
           },
           "supplier": {
             "agent": "supplier",
@@ -1834,8 +1854,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           },
           "logistics": {
             "agent": "logistics",
@@ -1852,8 +1872,8 @@
             ],
             "rejected": [],
             "coverage": 0.0,
-            "started_at": "2026-09-23T14:32:33+00:00",
-            "finished_at": "2026-09-23T14:32:33+00:00"
+            "started_at": "2026-09-23T15:28:40+00:00",
+            "finished_at": "2026-09-23T15:28:40+00:00"
           }
         },
         "coverage": 0.42,
@@ -2105,7 +2125,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 total imports (World) to market 784 2023, USD — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "status": "",
             "data_year": null,
             "source_ids": [],
@@ -2126,7 +2146,7 @@
             "source": "UN Comtrade (مخزن الحقائق)",
             "confidence": 0.9,
             "note": "HS080410 imports to ARE 2023; share 100.0% — من المخزن، جُلبت أصلاً 2026-09-23",
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "status": "",
             "data_year": 2023,
             "source_ids": [],
@@ -2273,7 +2293,7 @@
           {
             "name": "الملاءمة التنظيمية",
             "strength_pct": 38,
-            "note": "مرصودٌ من مصادر مباشرة."
+            "note": "يقيس انخفاضَ التعرفة ووضوحَ الاشتراطات المنشورة — لا يعني حصولَ منشأتك على الموافقات."
           },
           {
             "name": "هامش الربحية",
@@ -2370,7 +2390,7 @@
             "value": 60000000.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
             "status": "",
             "unit": "",
@@ -2734,8 +2754,8 @@
               ],
               "rejected": [],
               "coverage": 0.6,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "competitor": {
               "agent": "competitor",
@@ -2832,8 +2852,8 @@
               ],
               "rejected": [],
               "coverage": 0.8,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:35+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:41+00:00"
             },
             "regulatory": {
               "agent": "regulatory",
@@ -2849,21 +2869,24 @@
                       "authority": "وزارة التجارة",
                       "direction": "exit",
                       "source_url": "https://mc.gov.sa",
-                      "seq": 20
+                      "seq": 20,
+                      "status": "conditional_legal"
                     },
                     {
                       "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
                       "authority": "الهيئة العامة للغذاء والدواء SFDA",
                       "direction": "exit",
                       "source_url": "https://www.sfda.gov.sa",
-                      "seq": 30
+                      "seq": 30,
+                      "status": "conditional_legal"
                     },
                     {
                       "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
                       "authority": "هيئة تنمية الصادرات السعودية",
                       "direction": "exit",
                       "source_url": "https://saudiexports.sa",
-                      "seq": 40
+                      "seq": 40,
+                      "status": "voluntary"
                     }
                   ],
                   "unit": null,
@@ -2917,8 +2940,8 @@
               ],
               "rejected": [],
               "coverage": 0.75,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:41+00:00"
             },
             "pricing": {
               "agent": "pricing",
@@ -2966,8 +2989,8 @@
               ],
               "rejected": [],
               "coverage": 0.4,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:37+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:43+00:00"
             },
             "risk": {
               "agent": "risk",
@@ -3000,8 +3023,8 @@
               ],
               "rejected": [],
               "coverage": 0.2,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "consumer_demand": {
               "agent": "consumer_demand",
@@ -3050,8 +3073,8 @@
               ],
               "rejected": [],
               "coverage": 0.33,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:41+00:00"
             },
             "supplier": {
               "agent": "supplier",
@@ -3065,8 +3088,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "logistics": {
               "agent": "logistics",
@@ -3083,8 +3106,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             }
           },
           "coverage": 0.39,
@@ -3325,7 +3348,7 @@
             "value": 20000000.0,
             "source": "UN Comtrade",
             "confidence": 0.9,
-            "retrieved_at": "2026-09-23T14:32:30+00:00",
+            "retrieved_at": "2026-09-23T15:28:37+00:00",
             "note": "total imports HS080410 2023 (USD) — من المخزن — جُلبت أصلاً 2026-09-23",
             "status": "",
             "unit": "",
@@ -3677,8 +3700,8 @@
               ],
               "rejected": [],
               "coverage": 0.6,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "competitor": {
               "agent": "competitor",
@@ -3763,8 +3786,8 @@
               ],
               "rejected": [],
               "coverage": 0.8,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:34+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:42+00:00"
             },
             "regulatory": {
               "agent": "regulatory",
@@ -3780,49 +3803,56 @@
                       "authority": "المركز الخليجي للاعتماد GAC / الجهات المعتمدة بالسوق",
                       "direction": "entry",
                       "source_url": "https://www.gac.org.sa",
-                      "seq": 20
+                      "seq": 20,
+                      "status": "conditional_legal"
                     },
                     {
                       "item": "مطابقة المواصفات القياسية الخليجية (GSO) للفئات الخاضعة وشهادة المطابقة",
                       "authority": "هيئة التقييس لدول مجلس التعاون GSO",
                       "direction": "entry",
                       "source_url": "https://www.gso.org.sa",
-                      "seq": 30
+                      "seq": 30,
+                      "status": "conditional_legal"
                     },
                     {
                       "item": "بطاقة غذائية عربية (أو ثنائية) مطابقة للمواصفة الخليجية للبطاقات الغذائية",
                       "authority": "GSO / جهة الرقابة الغذائية بالسوق",
                       "direction": "entry",
                       "source_url": "https://www.gso.org.sa",
-                      "seq": 40
+                      "seq": 40,
+                      "status": "legal_mandatory"
                     },
                     {
                       "item": "تسجيل المنتج الغذائي قبل الاستيراد لدى الجهة الاتحادية/بلدية الإمارة المستهدفة",
                       "authority": "وزارة التغير المناخي والبيئة / بلديات الإمارات",
                       "direction": "entry",
                       "source_url": "https://www.moccae.gov.ae",
-                      "seq": 50
+                      "seq": 50,
+                      "status": "legal_mandatory"
                     },
                     {
                       "item": "شهادة المنشأ السعودية للصادرات (وزارة التجارة / الغرف التجارية)",
                       "authority": "وزارة التجارة",
                       "direction": "exit",
                       "source_url": "https://mc.gov.sa",
-                      "seq": 20
+                      "seq": 20,
+                      "status": "conditional_legal"
                     },
                     {
                       "item": "متطلبات SFDA لتصدير الفئات الخاضعة (منشآت مرخّصة وشهادات صحية عند طلب سوق الوجهة)",
                       "authority": "الهيئة العامة للغذاء والدواء SFDA",
                       "direction": "exit",
                       "source_url": "https://www.sfda.gov.sa",
-                      "seq": 30
+                      "seq": 30,
+                      "status": "conditional_legal"
                     },
                     {
                       "item": "التسجيل في بوابة هيئة تنمية الصادرات السعودية (خدمات وبرامج دعم المصدرين)",
                       "authority": "هيئة تنمية الصادرات السعودية",
                       "direction": "exit",
                       "source_url": "https://saudiexports.sa",
-                      "seq": 40
+                      "seq": 40,
+                      "status": "voluntary"
                     }
                   ],
                   "unit": null,
@@ -3890,8 +3920,8 @@
               "gaps": [],
               "rejected": [],
               "coverage": 1.0,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "pricing": {
               "agent": "pricing",
@@ -3939,8 +3969,8 @@
               ],
               "rejected": [],
               "coverage": 0.4,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:36+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:45+00:00"
             },
             "risk": {
               "agent": "risk",
@@ -3973,8 +4003,8 @@
               ],
               "rejected": [],
               "coverage": 0.2,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "consumer_demand": {
               "agent": "consumer_demand",
@@ -4023,8 +4053,8 @@
               ],
               "rejected": [],
               "coverage": 0.33,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:41+00:00"
             },
             "supplier": {
               "agent": "supplier",
@@ -4038,8 +4068,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             },
             "logistics": {
               "agent": "logistics",
@@ -4056,8 +4086,8 @@
               ],
               "rejected": [],
               "coverage": 0.0,
-              "started_at": "2026-09-23T14:32:33+00:00",
-              "finished_at": "2026-09-23T14:32:33+00:00"
+              "started_at": "2026-09-23T15:28:40+00:00",
+              "finished_at": "2026-09-23T15:28:40+00:00"
             }
           },
           "coverage": 0.42,

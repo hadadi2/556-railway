@@ -276,6 +276,72 @@ def unverified_blockers(blockers: list[dict]) -> list[dict]:
             if b.get("applies") is None and not b.get("resolved")]
 
 
+#: تقرير ٧ §4.3: نوعُ الاشتراط — من نصّ البند ومرجعه في `requirements_l1.csv`:
+#: إلزاميٌّ قانوناً، أو إلزاميٌّ بحسب فئة المنتج/سوق الوجهة، أو اختياريٌّ داعم.
+#: شرطُ المشتري (شهادةٌ يطلبها موزّعٌ لا قانون) نوعٌ رابع لا صفَّ له بعد.
+REQUIREMENT_STATUSES = ("legal_mandatory", "conditional_legal", "voluntary",
+                        "buyer_requirement")
+
+
+def _checklist_rows(market: str, category: str, animal: bool) -> tuple:
+    """(صفوفُ الدخول، أهلية أوّلاً؟، صفوفُ الخروج) — **مطابقةٌ واحدة** يسلكها
+    `_execute` و`requirement_rows` معاً (مراجعة §58: نسخٌ متباعدةٌ من الحلقة
+    كانت تُسقط شرطَ الأهلية في إحداها)."""
+    rows = _load_reference()
+    entry_rows = sorted((r for r in rows
+                         if _matches(r, market, category, "entry", animal)),
+                        key=_seq)
+    eligibility_first = bool(animal and entry_rows
+                             and (entry_rows[0].get("category") or "")
+                             == "animal")
+    exit_rows = sorted((r for r in rows
+                        if _matches(r, "SAU", category, "exit", animal)),
+                       key=_seq)
+    return entry_rows, eligibility_first, exit_rows
+
+
+def _status_of(row: dict) -> str:
+    st = (row.get("requirement_status") or "").strip()
+    return st if st in REQUIREMENT_STATUSES else ""
+
+
+def requirement_rows(market: str, hs_code: str | None,
+                     category: str | None = None) -> list[dict]:
+    """صفوفُ الاشتراطات (دخولاً وخروجاً) **حتمياً من المرجع** — بلا شبكة.
+
+    المطابقةُ نفسُها التي يسلكها `_execute` (`_checklist_rows`)، مع إسقاط ما
+    يستبعده `applies_to` صراحةً لهذا الرمز (شهادةُ حلال اللحوم لا تُطلب من
+    مصدّر التمور)، ووسمِ ما بعد بند الأهلية مشروطاً به، وصفِّ فجوةٍ معلنٍ
+    لسوقٍ لا يغطّيه المرجع — لا جدولَ دخولٍ فارغٌ صامت."""
+    m = (market or "").strip().upper()
+    if not m:
+        return []
+    cat = (category or hs_category(hs_code)).lower()
+    animal = is_animal_origin(hs_code)
+    entry_rows, gate_first, exit_rows = _checklist_rows(m, cat, animal)
+    out: list[dict] = []
+
+    def _row(r, direction, conditional):
+        return {"item": r.get("item_ar"), "authority": r.get("authority"),
+                "source_url": r.get("source_url"), "direction": direction,
+                "status": _status_of(r), "conditional_on_gate": conditional,
+                "applies_when": (r.get("applies_when") or "").strip()}
+    kept = [r for r in entry_rows if applies_to(r, hs_code, cat) is not False]
+    for i, r in enumerate(kept):
+        out.append(_row(r, "entry", bool(gate_first and i > 0)))
+    if not kept:
+        tier, _ = codification_tier(m)
+        out.append({"item": f"سوق {m} غير مغطى بالمرجع الثابت بعد — تحقق "
+                            "محلياً من اشتراطات الدخول",
+                    "authority": "", "source_url": "", "direction": "entry",
+                    "status": "", "conditional_on_gate": False,
+                    "applies_when": "", "gap": True})
+    for r in exit_rows:
+        if applies_to(r, hs_code, cat) is not False:
+            out.append(_row(r, "exit", False))
+    return out
+
+
 def _row_dp(row: dict, direction: str, conditional: bool = False) -> DataPoint:
     """بند مرجع كنقطة موسومة — one checklist item as a provenance DataPoint."""
     try:
@@ -288,7 +354,10 @@ def _row_dp(row: dict, direction: str, conditional: bool = False) -> DataPoint:
     return DataPoint(
         value={"item": row.get("item_ar"), "authority": row.get("authority"),
                "direction": direction, "source_url": row.get("source_url"),
-               "seq": _seq(row)},
+               "seq": _seq(row),
+               # تقرير ٧ §4.3: نوعُ الاشتراط يرافق البندَ حيثما ذهب — بالتحقّق
+               # نفسِه الذي يسلكه العرض.
+               "status": _status_of(row)},
         source=_SOURCE, confidence=conf, note=note, retrieved_at=_today())
 
 
@@ -355,19 +424,13 @@ class RequirementsAgent(BaseAgent):
                 True, "لا مرجع اشتراطات — L1 reference unavailable")
 
         tier, tier_note = codification_tier(market)
-        entry_rows = sorted((r for r in rows
-                             if _matches(r, market, category, "entry", animal)),
-                            key=_seq)
         # الأهلية أولاً (§12.7-2): وجود بند حيواني seq=10 يجعل البقية مشروطة.
-        eligibility_first = (animal and entry_rows
-                             and (entry_rows[0].get("category") or "") == "animal")
+        entry_rows, eligibility_first, exit_rows = _checklist_rows(
+            market, category, animal)
         entry = [_row_dp(r, "entry",
                          conditional=(eligibility_first and i > 0))
                  for i, r in enumerate(entry_rows)]
-        exit_items = [_row_dp(r, "exit")
-                      for r in sorted((r for r in rows
-                                       if _matches(r, "SAU", category,
-                                                   "exit", animal)), key=_seq)]
+        exit_items = [_row_dp(r, "exit") for r in exit_rows]
 
         findings: list[DataPoint] = []
         if entry:

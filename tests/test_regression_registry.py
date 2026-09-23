@@ -4597,6 +4597,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    279: lambda: (
+        _needles("silk_render.py", '"requirements": _requirements_safe(result)',
+                 '"pillar_regulatory_note"')(),
+        _needles("silk_reports.py", "_client_requirements_table(doc, dr, lang)")(),
+        _needles("tests/test_report7_series_regulatory.py",
+                 "def test_a_missing_year_is_a_declared_row_in_the_imports_table")(),
+        _needles("tests/test_lessons_enforcement.py", "(279, ")()),
     278: lambda: (
         _needles("silk_reports.py", "_set_table_flow(table)",
                  "_add_table(doc, head, rows, widths=weights, ltr_cols=(2, 3, 4))",

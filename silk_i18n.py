@@ -318,6 +318,48 @@ TERMS: dict[str, dict[str, str]] = {
     "pillar_missing_lead": {
         "ar": "ينقصنا: {parts} — أكمِلها قبل أي التزام.",
         "en": "We still need: {parts} — close these before committing."},
+    "pillar_regulatory_note": {
+        "ar": "يقيس انخفاضَ التعرفة ووضوحَ الاشتراطات المنشورة — لا يعني "
+              "حصولَ منشأتك على الموافقات.",
+        "en": "Measures low tariffs and how clearly the rules are published "
+              "— it does not mean your facility holds the approvals."},
+    "req_heading": {"ar": "متطلبات الدخول والخروج بحسب نوعها",
+                    "en": "Entry and exit requirements by type"},
+    "req_col_item": {"ar": "البند", "en": "Item"},
+    "req_col_direction": {"ar": "الاتجاه", "en": "Direction"},
+    "req_dir_entry": {"ar": "دخول السوق", "en": "Market entry"},
+    "req_dir_exit": {"ar": "خروج من السعودية", "en": "Saudi exit"},
+    "req_after_gate": {"ar": "(مشروط باجتياز بند الأهلية)",
+                       "en": "(conditional on the eligibility gate)"},
+    "req_status_gap": {"ar": "غير مغطى — تحقق محلياً",
+                       "en": "Not covered — check locally"},
+    "req_en_summary": {"ar": "{n} بنداً، منها {m} إلزامي قانوناً.",
+                       "en": "{n} requirement items, {m} of them legally "
+                             "mandatory — the item texts are in the Arabic "
+                             "edition of this study."},
+    "req_col_authority": {"ar": "الجهة", "en": "Authority"},
+    "req_col_type": {"ar": "النوع", "en": "Type"},
+    "req_col_link": {"ar": "الرابط", "en": "Link"},
+    "req_status_legal_mandatory": {"ar": "إلزامي قانوناً",
+                                   "en": "Legally mandatory"},
+    "req_status_conditional_legal": {"ar": "إلزامي بحسب الفئة أو الوجهة",
+                                     "en": "Mandatory depending on category "
+                                           "or destination"},
+    "req_status_voluntary": {"ar": "اختياري داعم", "en": "Optional, supportive"},
+    "req_status_buyer_requirement": {"ar": "شرطُ مشترٍ لا قانون",
+                                     "en": "Buyer requirement, not law"},
+    "req_status_unknown": {"ar": "نوعٌ غير مصنّف", "en": "Type not classified"},
+    "req_note": {"ar": "النوعُ من المرجع المنسّق لكلّ بند؛ يُتحقَّق من انطباقه "
+                       "على منتجك وقناتك قبل الشحن، ولا تاريخَ تحقّقٍ مسجّلاً "
+                       "للبنود بعد. إعفاءُ التعرفة لا يعني انعدامَ بقية "
+                       "الرسوم ولا تحقّقَ الامتثال.",
+                 "en": "The type comes from the curated reference for each "
+                       "item; check that it applies to your product and "
+                       "channel before shipping — no verification date is "
+                       "recorded yet. A zero tariff does not remove other "
+                       "fees or compliance."},
+    "imports_year_missing": {"ar": "غير متاح (لم يُجلب رقمها)",
+                             "en": "Not available (not retrieved)"},
     "pillar_measured": {
         # تقرير ٧ §5: بيانُ نوع الدليل لا ادّعاءُ تحقّقٍ لم يجرِ بشرياً.
         "ar": "مرصودٌ من مصادر مباشرة.",
