@@ -728,6 +728,9 @@ def create_app():
         # بدونها لا هامشَ يُطرح أصلاً (مراجعة §58 — كانت تُسقَط بالنموذج).
         fixed_costs: float | None = Field(default=None, ge=0)
         cost_currency: str | None = Field(default=None, max_length=3)
+        # الدرس ٢٨٣: تمويلُ مخزون التجربة — معدّلٌ سنويّ ٪ ومدّةُ التحصيل بالأيام.
+        financing_rate_pct: float | None = Field(default=None, ge=0, le=100)
+        collection_days: float | None = Field(default=None, ge=0, le=730)
 
     class AnalyzeRequest(BaseModel):
         """طلب تحليل منتج (المسار العادي) — analyze request body.

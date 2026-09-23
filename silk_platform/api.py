@@ -1108,7 +1108,7 @@ def mount(app) -> bool:
         """
         out: dict = {}
         for key in ("cost_per_unit", "monthly_capacity", "shipping_per_unit",
-                    "fixed_costs"):
+                    "fixed_costs", "financing_rate_pct", "collection_days"):
             if key not in body:
                 continue
             raw = body.get(key)
@@ -1125,6 +1125,13 @@ def mount(app) -> bool:
                 raise HTTPException(status_code=422, detail={
                     "error": "product_negative_number",
                     "message": f"«{key}» لا يكون سالباً"})
+            # الدرس ٢٨٣: معدّلٌ سنويّ ٪ ومدّةٌ بالأيام — حدّان معقولان.
+            _bound = {"financing_rate_pct": (100, "معدل التمويل السنوي"),
+                      "collection_days": (730, "مدة التحصيل بالأيام")}.get(key)
+            if _bound and val > _bound[0]:
+                raise HTTPException(status_code=422, detail={
+                    "error": "product_out_of_range",
+                    "message": f"«{_bound[1]}» يجب ألا يتجاوز {_bound[0]}"})
             out[key] = val
         if "cost_unit" in body:
             out["cost_unit"] = str(body.get("cost_unit") or "").strip()[:40] or None

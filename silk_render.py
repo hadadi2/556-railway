@@ -3028,11 +3028,22 @@ def _flip_conditions(verdict_tone: str, hs_flagged: bool,
         # Public contact details cannot establish a signed distribution agreement.
         "met": False})
     from silk_decision import _parts_ar
-    for component in dict.fromkeys(missing_components or []):
-        label = _parts_ar([component]) if lang == "ar" else str(component).replace('_', ' ')
+    comps = list(dict.fromkeys(missing_components or []))
+    if comps:
+        # الدرس ٢٨٣ (المراجعةُ البصرية للعيّنة): مكوّناتٌ تُغلَق بالطريق نفسِه
+        # شرطٌ واحد — كان كلُّ مكوّنٍ شرطاً بالذيل نفسِه حرفياً عشرَ مرّات.
+        # ثلاثةٌ بالاسم والباقي عدداً، فيبقى السطرُ قصيراً في كلّ موجز.
+        shown = comps[:3]
+        rest = len(comps) - len(shown)
+        if lang == "ar":
+            label = _parts_ar(shown) + (f" و{rest} مكوّنات أخرى" if rest else "")
+            cond = f"استكمال بيانات {label} وإعادة تقييم القرار"
+        else:
+            label = ", ".join(str(c).replace("_", " ") for c in shown) + (
+                f" and {rest} more" if rest else "")
+            cond = f"Complete the evidence for {label} and reassess the decision"
         conds.append({
-            "condition": (f"استكمال بيانات {label} وإعادة تقييم القرار" if lang == "ar"
-                          else f"Complete the evidence for {label} and reassess the decision"),
+            "condition": cond,
             "closes_via": ("توثيق المدخلات من مصدر مناسب، ثم إعادة الحساب قبل الالتزام بالبيع"
                            if lang == "ar" else
                            "Document the required inputs and recalculate before committing to sales"),

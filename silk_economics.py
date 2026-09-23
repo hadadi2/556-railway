@@ -404,6 +404,9 @@ def reverse_solve_max_exw(shelf_price: float, *, tariff_pct, vat_pct,
         "max_exw": scenarios[1]["max_exw"] if scenario_needed
         else solve(fixed_fr, fixed_dist, fixed_ret),
         "headline_scenario": "متوسط" if scenario_needed else "مرصود",
+        # الدرس ٢٨٣: نسبةُ الشحن التي بُني عليها الرقمُ الرئيس — مدخلُ الحساسية.
+        "freight_pct": scenarios[1]["freight_pct"] if scenario_needed
+        else fixed_fr,
         "scenarios": scenarios if scenario_needed else [],
         "parameters": params,
     }
@@ -1067,6 +1070,90 @@ def _unit_cur(cost_currency: str) -> str:
 #: دُفع لأول حاوية) لا التعادلَ التشغيليّ؛ والتعادلُ التشغيليّ = التكاليفُ
 #: الثابتة ذات الصلة ÷ هامش المساهمة للوحدة (أساس EXW).
 RECOVERY_NAME = "استرداد كلفة الشحنة التجريبية"
+FINANCING_NAME = "تكلفة تمويل مخزون التجربة"
+
+
+def sensitivity_rows(reverse: "dict | None") -> list:
+    """حساسيةُ أقصى سعر المصنع لسعر الرف والشحن والصرف (تقرير ٧ §3.5، الدرس
+    ٢٨٣) — حسابٌ جبريّ من المعادلة نفسِها لا نموذجٌ جديد: سعرُ الرف خطّيّ
+    (±10%)، والشحنُ يدخل مقاماً (±5 نقاط)، والصرفُ يغيّر المقابلَ بالدولار
+    وحده (±10%) ويُعرض فقط حين يُستعمل صرفٌ مرصود. كلُّ صفّ: {factor, change,
+    max_exw, currency}."""
+    try:
+        mx = float((reverse or {}).get("max_exw"))
+    except (TypeError, ValueError):
+        return []
+    cur = str((reverse or {}).get("currency") or "")
+    rows = [{"factor": "shelf", "change": "-10%", "max_exw": round(mx * 0.9, 4),
+             "currency": cur},
+            {"factor": "shelf", "change": "+10%", "max_exw": round(mx * 1.1, 4),
+             "currency": cur}]
+    try:
+        fr = float(reverse.get("freight_pct"))
+    except (TypeError, ValueError):
+        fr = None
+    if fr is not None:
+        for d in (5.0, -5.0):
+            if fr + d < 0:
+                continue
+            rows.append({"factor": "freight", "change": f"{d:+g}",
+                         "change_unit": "pt",
+                         "max_exw": round(mx * (1 + fr / 100) / (1 + (fr + d) / 100), 4),
+                         "currency": cur})
+    fx = (reverse.get("fx") or {}).get("rate")
+    try:
+        fx = float(fx) if fx else None
+    except (TypeError, ValueError):
+        fx = None
+    if fx:
+        for d in (0.10, -0.10):
+            pair = str((reverse.get("fx") or {}).get("pair") or "").strip()
+            rows.append({"factor": "fx", "change": f"{d * 100:+g}%",
+                         "pair": pair,
+                         "max_exw": round(mx / (fx * (1 + d)), 4),
+                         "currency": "USD"})
+    return rows
+
+
+def _card_num(card: "dict | None", key: str) -> "float | None":
+    """رقمٌ غيرُ سالبٍ من بطاقة المنتج — أو None (الغيابُ لا يصير صفراً)."""
+    try:
+        v = float((card or {}).get(key))
+    except (TypeError, ValueError):
+        return None
+    return v if v >= 0 else None
+
+
+def _inventory_financing(entry: dict, rate_pct, days, cost_currency) -> dict:
+    """تمويلُ مخزون الشحنة التجريبية — مقياسٌ منفصلٌ عن التعادل والاسترداد
+    (تقرير ٧ §3.5، الدرس ٢٨٣): قيمةُ الشحنة × المعدّل السنويّ × أيامُ التحصيل
+    ÷ 365. المدخلان رقما المصنع؛ غيابُ أيٍّ منهما فجوةٌ تسمّيه، وكلفةُ دخولٍ
+    واسعة لا يُركَّب عليها تقدير (قاعدة عدم التراكب)."""
+    missing = [n for n, v in (("معدل التمويل السنوي", rate_pct),
+                              ("مدة التحصيل بالأيام", days)) if v in (None, "")]
+    if missing:
+        return {"name": FINANCING_NAME, "tier": "gap",
+                "missing": "، ".join(missing),
+                "impact": "لا تُعرف كلفة المال المحبوس في الشحنة حتى التحصيل",
+                "closure": "أدخل معدل تمويلك ومدة التحصيل المتوقعة من المشتري "
+                           "في بطاقة المنتج — دقيقة واحدة"}
+    if entry.get("too_wide"):
+        return {"name": FINANCING_NAME, "tier": "gap",
+                "missing": "كلفة دخول بمدى ضيق",
+                "impact": "تقديرٌ فوق تقديرٍ واسع لا يُركَّب",
+                "closure": "يكتمل بتضييق كلفة الدخول (عرض شحن رسمي)"}
+    f = float(rate_pct) / 100.0 * float(days) / 365.0
+    return _mk_estimate(
+        FINANCING_NAME, entry["range"]["low"] * f, entry["range"]["high"] * f,
+        "كلفة الدخول × معدل التمويل السنوي × أيام التحصيل ÷ 365 — كلفة المال "
+        "المحبوس لا ربح ولا تعادل",
+        "شروط سداد أقصر من المشتري أو خطاب اعتماد",
+        "بند تفاوضي في أول عقد", unit=_unit_cur(cost_currency),
+        inputs=[{"name": "كلفة الدخول الكلية حتى أول شحنة",
+                 "source": "بند «كلفة الدخول» في هذا الجدول"},
+                {"name": "معدل التمويل السنوي ومدة التحصيل",
+                 "source": "بطاقة المنتج التي أدخلتها"}],
+        unknown=list(entry.get("unknown") or []))
 OPERATING_BE_NAME = "نقطة التعادل التشغيلي"
 
 
@@ -1145,7 +1232,9 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                            reverse: dict | None = None,
                            cert_fee_range: "tuple | None" = None,
                            market_ccy: str = "",
-                           fixed_costs: float | None = None
+                           fixed_costs: float | None = None,
+                           financing_rate_pct: float | None = None,
+                           collection_days: float | None = None
                            ) -> list[dict]:
     """الأرقام الخمسة لقسم «أرقام القرار» — حتمياً (نمط Z-01: الكاتب يشرح
     ولا يحسب). كل بند إما تقدير بحقوله الأربعة وإما فجوة بحقولها الثلاثة
@@ -1211,6 +1300,8 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
             + ([] if cert_fee_range else
                ["رسوم التسجيل والاعتماد (غير متحققة)"]))
         out.append(entry)
+        out.append(_inventory_financing(entry, financing_rate_pct,
+                                        collection_days, cost_currency))
     else:
         out.append({"name": "كلفة الدخول الكلية حتى أول شحنة",
                     "tier": "gap",
@@ -1219,6 +1310,16 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                               "ولا أقصى الخسارة",
                     "closure": "أدخلها في نموذج الدراسة — دقيقة واحدة، "
                                "رقمك أنت لا يُبحث عنه"})
+        # مراجعة §58: المانعُ الفعليّ باسمه — التكلفةُ أم حجمُ الشحنة.
+        _blk = ("تكلفة إنتاج الوحدة" if not cost_per_unit
+                else "حجم شحنة تجريبية محسوب بمدى ضيّق")
+        out.append({"name": FINANCING_NAME, "tier": "gap",
+                    "missing": f"كلفة الدخول (أعلاه) — الناقص: {_blk}",
+                    "impact": "لا تُعرف كلفة المال المحبوس في الشحنة",
+                    "closure": ("أدخل تكلفتك في بطاقة المنتج — دقيقة واحدة"
+                                if not cost_per_unit else
+                                "أدخل وزن العبوة أو ثابت الفئة ليُحسب حجم "
+                                "الشحنة")})
 
     # مراجعة §58 (الإقفال): معادلة الهامش طرحٌ بين رقمين من مصدرين —
     # أقصى EXW بعملة السعر المرصود ووحدة أساسه، وتكلفة المصنع بعملة لم
@@ -1909,12 +2010,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
     _capacity = None
     # تقرير ٧ §3.5: التكاليفُ الثابتة من البطاقة (بعملة التكلفة نفسِها) —
     # غيابُها يُبقي التعادلَ التشغيليّ فجوةً معلنة.
-    _fixed = None
-    if product_card and product_card.get("fixed_costs") not in (None, ""):
-        try:
-            _fixed = float(product_card.get("fixed_costs"))
-        except (TypeError, ValueError):
-            _fixed = None
+    _fixed = _card_num(product_card, "fixed_costs")
     if product_card:
         try:
             _capacity = float(product_card.get("monthly_capacity") or 0) \
@@ -1928,10 +2024,17 @@ def economics_view(dr: dict, product_card: dict | None = None,
     if product_card:
         _cost_cur = str(product_card.get("cost_currency")
                         or product_card.get("currency") or "").strip()
+    # مراجعة §58: سقفٌ يُحجَب أساساً تفاوضياً (تناقضُ التسعير) لا تُعرَض
+    # حساسيتُه — صفوفُ «+10%» تُقرأ مدىً للتفاوض.
+    if isinstance(reverse, dict) and reverse.get("max_exw") is not None \
+            and not pricing_contradiction:
+        reverse["sensitivity"] = sensitivity_rows(reverse)
     decision_numbers = build_decision_numbers(
         category=category, market_iso3=market_iso3, cost_per_unit=exw,
         cost_currency=_cost_cur, monthly_capacity=_capacity, reverse=reverse,
-        market_ccy=local_ccy, fixed_costs=_fixed)
+        market_ccy=local_ccy, fixed_costs=_fixed,
+        financing_rate_pct=_card_num(product_card, "financing_rate_pct"),
+        collection_days=_card_num(product_card, "collection_days"))
 
     return {
         "product_form": product_form or None,

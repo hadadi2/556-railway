@@ -94,7 +94,9 @@ def test_freight_verified_lane_path(monkeypatch):
 
 # قفلٌ محدَّث معلن (تقرير ٧ §3.5): «نقطة التعادل» القديمة كانت استردادَ نقد
 # الشحنة التجريبية — صارت باسمها، والتعادلُ التشغيليّ بندٌ مستقلّ.
+# الدرس ٢٨٣ (معلن): تمويلُ مخزون التجربة بندٌ مستقلٌّ بعد كلفة الدخول.
 _FIVE = ["حجم الشحنة التجريبية", "كلفة الدخول الكلية حتى أول شحنة",
+         "تكلفة تمويل مخزون التجربة",
          "استرداد كلفة الشحنة التجريبية", "نقطة التعادل التشغيلي",
          "الزمن من القرار إلى أول فاتورة", "أقصى خسارة إن فشل الدخول"]
 
@@ -104,7 +106,7 @@ def test_without_cost_five_entries_with_three_field_gaps():
     dn = build_decision_numbers(category="حليب")
     assert [e["name"] for e in dn] == _FIVE
     gaps = [e for e in dn if e["tier"] == "gap"]
-    assert len(gaps) == 5                      # الشحنة التجريبية تُقدَّر
+    assert len(gaps) == 6                      # الشحنة التجريبية تُقدَّر
     for g in gaps:
         assert g["missing"] and g["impact"] and g["closure"], g["name"]
     entry = dn[1]
