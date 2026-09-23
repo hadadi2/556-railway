@@ -4597,6 +4597,17 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    276: lambda: (
+        _needles("silk_economics.py",
+                 'RECOVERY_NAME = "استرداد كلفة الشحنة التجريبية"',
+                 'OPERATING_BE_NAME = "نقطة التعادل التشغيلي"',
+                 "fixed_costs=_fixed", "سعةٌ لوجستية لا حجمُ طلب",
+                 "def _operating_break_even")(),
+        _absent("silk_economics.py", '"نقطة التعادل",\n')(),
+        _needles("silk_platform/engine_bridge.py", '("fixed_costs", "fixed_costs")')(),
+        _needles("tests/test_report7_financial.py",
+                 "def test_operating_break_even_is_fixed_costs_over_contribution_margin")(),
+        _needles("tests/test_lessons_enforcement.py", "(276, ")()),
     275: lambda: (
         _needles("silk_style_contract.py", "def lead_product_fit",
                  '"seafood wholesaler": frozenset({"03", "1604", "1605"})',

@@ -66,6 +66,8 @@ _WRITABLE: dict[str, set[str]] = {
     "products": {"name", "description", "hs_code", "image_id",
                  "cost_per_unit", "cost_unit", "tier", "monthly_capacity",
                  "shipping_per_unit", "certifications",
+                 # تقرير ٧ §3.5 (الترحيل ٠٢٥): مدخلا الهامش والتعادل التشغيليّ.
+                 "fixed_costs", "cost_currency",
                  # مصدرُ الرمز وتاريخُه (الترحيل ٠١٧) — بلا هذين كان `update`
                  # يُسقطهما صامتَين فيبقى الصفّ على `hs_source='unknown'`.
                  "hs_source", "hs_set_at"},

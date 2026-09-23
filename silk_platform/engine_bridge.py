@@ -771,7 +771,9 @@ def product_card_from_row(row: dict | None) -> dict | None:
     card = {"cost_per_unit": cost}
     for key, col in (("unit", "cost_unit"), ("tier", "tier"),
                      ("monthly_capacity", "monthly_capacity"),
-                     ("shipping_per_unit", "shipping_per_unit")):
+                     ("shipping_per_unit", "shipping_per_unit"),
+                     ("fixed_costs", "fixed_costs"),
+                     ("cost_currency", "cost_currency")):
         val = row.get(col)
         if val not in (None, ""):
             card[key] = val

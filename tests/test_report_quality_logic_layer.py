@@ -651,7 +651,8 @@ def test_c9_gate_catches_a_number_for_a_figure_the_engine_declares_unknown():
     import silk_quality_gate as G
     dn = _engine_dn(cost=None)          # بلا تكلفةٍ ⇒ البنودُ فجواتٌ معلنة
     gaps = [e["name"] for e in dn if e.get("tier") == "gap"]
-    assert "نقطة التعادل" in gaps and any("أقصى خسارة" in g for g in gaps)
+    assert any("نقطة التعادل" in g for g in gaps) \
+        and any("أقصى خسارة" in g for g in gaps)
     view = _dn_view(dn, "تبلغ نقطة التعادل 3 شحنات، وأقصى خسارة إن فشل "
                         "الدخول 8,900 ريال.")
     out = G._check_reference_to_nonexistent_figure(view)
@@ -841,7 +842,7 @@ def test_c9_the_checks_are_live_not_dormant_on_production_data():
             v = _prod_view(key)
             eco = ((v.get("deep_research") or {}).get("economics") or {})
             dn = eco.get("decision_numbers") or []
-            assert len(dn) == 5, (key, len(dn))
+            assert len(dn) == 6, (key, len(dn))   # تقرير ٧ §3.5: التعادلُ التشغيليّ بندٌ سادس
             assert any(e.get("tier") == "gap" for e in dn), key
             assert (((v.get("deep_research") or {}).get("report") or {})
                     .get("text") or "").strip(), key

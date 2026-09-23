@@ -870,7 +870,11 @@ def estimate_trial_shipment(category: str, unit_kg: float | None = None
         lo / unit_kg, hi / unit_kg,
         f"حمولة حاوية 40 قدماً المنشورة ÷ وزن "
         f"{mu_ar} الواحد ({unit_kg:g} كجم)",
-        "عرض أسعار رسمي من خط ملاحي/وكيل شحن للحاوية والممر المحددين",
+        # تقرير ٧ §3.5: السعةُ حدٌّ لوجستيّ لا حجمُ طلب — في خانة «ما يؤكده»
+        # التي تُطبع مرّةً (الطريقةُ تتكرّر في مدخلات البنود التالية).
+        "سعةٌ لوجستية لا حجمُ طلب — الكميةُ الفعلية يحدّدها طلبُ الموزّع "
+        "والحدُّ الأدنى للطلب؛ وعرضُ أسعارٍ رسميّ من خطٍّ ملاحيّ للحاوية "
+        "والممرّ المحددين",
         "3–5 أيام عمل", unit=mu_ar,
         inputs=[{"name": "حمولة حاوية 40 قدماً", "source": spec["source"],
                  "source_client": "مواصفة حمولة الحاوية المنشورة"},
@@ -958,13 +962,90 @@ def _unit_cur(cost_currency: str) -> str:
     return silk_narrative.iso_currency(cur) or cur
 
 
+#: تقرير ٧ §3.5: مقياسان مختلفان لا يُعرضان باسمٍ واحد. «كلفة الدخول ÷ هامش
+#: الوحدة» يقيس **استردادَ نقد الشحنة التجريبية** (عدد الوحدات التي تعيد ما
+#: دُفع لأول حاوية) لا التعادلَ التشغيليّ؛ والتعادلُ التشغيليّ = التكاليفُ
+#: الثابتة ذات الصلة ÷ هامش المساهمة للوحدة (أساس EXW).
+RECOVERY_NAME = "استرداد كلفة الشحنة التجريبية"
+OPERATING_BE_NAME = "نقطة التعادل التشغيلي"
+
+
+def _operating_break_even(fixed_costs, cost_per_unit, max_exw, align_gap,
+                          reverse, mu_ar, monthly_capacity) -> dict:
+    """بندُ «نقطة التعادل التشغيلي» — تقديرٌ بمدى أو فجوةٌ تسمّي مانعَها."""
+    if fixed_costs is not None and fixed_costs < 0:
+        fixed_costs = None           # سالبٌ ليس تكلفةً ثابتة — لا رقمَ فوقه
+    if cost_per_unit and max_exw and not align_gap:
+        margins = [max_exw - cost_per_unit]
+        raw_mid = (reverse or {}).get("max_exw")
+        try:
+            factor = float(max_exw) / float(raw_mid) if raw_mid else 1.0
+        except (TypeError, ValueError, ZeroDivisionError):
+            factor = 1.0
+        for sc in (reverse or {}).get("scenarios") or []:
+            try:
+                margins.append(float(sc["max_exw"]) * factor - cost_per_unit)
+            except (KeyError, TypeError, ValueError):
+                continue
+    else:
+        margins = []
+    if fixed_costs is None:
+        return {"name": OPERATING_BE_NAME, "tier": "gap",
+                "missing": "التكاليف الثابتة ذات الصلة للسنة الأولى (تسجيل "
+                           "واعتماد، تسويق أولي، وكيل أو ممثل محلي) بعملة "
+                           "تكلفتك",
+                "impact": "لا يُعرف كم وحدة تغطي المصروف الثابت — مقياسٌ غير "
+                          "استرداد الشحنة التجريبية",
+                "closure": "أدخل التكاليف الثابتة المتوقعة للسنة الأولى في "
+                           "بطاقة المنتج"}
+    if not margins:
+        # التكاليفُ مُدخَلة والمانعُ غيرُها — يُسمّى هو لا تُطلَب ثانيةً.
+        return {"name": OPERATING_BE_NAME, "tier": "gap",
+                "missing": align_gap or ("تكلفتك + سعر رف منافس مرصود"
+                                         if not cost_per_unit else
+                                         "سعر رف منافس مرصود"),
+                "impact": "هامش المساهمة طرحٌ بين رقمين — لا يصح إلا بوحدة "
+                          "وعملة واحدتين وسعر منافس مرصود",
+                "closure": ("صرّح بعملة تكلفتك في بطاقة المنتج — دقيقة واحدة"
+                            if align_gap else
+                            "ارصد سعر رف منافس واحداً (زيارة متجر/موقع — ساعة)")}
+    positive = [m for m in margins if m > 0]
+    if len(positive) < len(margins) or not positive:
+        return {"name": OPERATING_BE_NAME, "tier": "gap",
+                "missing": "هامش مساهمة موجب في كل السيناريوهات — تكلفتك "
+                           "أعلى من أقصى سعر مصنع منافس في أحدها",
+                "impact": "لا تعادل تشغيلياً مضموناً بالأسعار المرصودة",
+                "closure": "خفّض التكلفة أو استهدف شريحة سعرية أعلى"}
+    lo, hi = fixed_costs / max(positive), fixed_costs / min(positive)
+    est = _mk_estimate(
+        OPERATING_BE_NAME, lo, hi,
+        "التكاليف الثابتة للسنة الأولى ÷ هامش المساهمة للوحدة (أقصى سعر "
+        "مصنع منافس − تكلفة إنتاج الوحدة، أساس EXW)؛ المدى من سيناريوهات "
+        "الشحن والتوزيع المعلنة — وحداتٌ خلال السنة الأولى",
+        "عرضُ سعرٍ فعليّ من مستوردٍ يثبّت الهامش", "مع أول عرض سعر جاد",
+        unit=mu_ar,
+        inputs=[{"name": "التكاليف الثابتة ذات الصلة للسنة الأولى",
+                 "source": "بطاقة المنتج التي أدخلتها"},
+                {"name": "أقصى سعر مصنع قابل للمنافسة",
+                 "source": "هوامشُ الشحن والتوزيع من معلمات السيناريو "
+                           "المعلنة فوق أدنى سعر رف منافس مرصود",
+                 "assumed": True},
+                {"name": "تكلفة إنتاج الوحدة لديك",
+                 "source": "بطاقة المنتج التي أدخلتها"}])
+    if monthly_capacity and not est.get("too_wide"):
+        est["months_at_capacity"] = {"low": round(lo / monthly_capacity, 1),
+                                     "high": round(hi / monthly_capacity, 1)}
+    return est
+
+
 def build_decision_numbers(*, category: str, market_iso3: str = "",
                            cost_per_unit: float | None = None,
                            cost_currency: str = "",
                            monthly_capacity: float | None = None,
                            reverse: dict | None = None,
                            cert_fee_range: "tuple | None" = None,
-                           market_ccy: str = ""
+                           market_ccy: str = "",
+                           fixed_costs: float | None = None
                            ) -> list[dict]:
     """الأرقام الخمسة لقسم «أرقام القرار» — حتمياً (نمط Z-01: الكاتب يشرح
     ولا يحسب). كل بند إما تقدير بحقوله الأربعة وإما فجوة بحقولها الثلاثة
@@ -1081,10 +1162,11 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
             lo = entry["range"]["low"] / margin
             hi = entry["range"]["high"] / margin
             be = _mk_estimate(
-                "نقطة التعادل",
+                RECOVERY_NAME,
                 lo, hi,
                 "كلفة الدخول ÷ هامش الوحدة (أقصى سعر مصنع منافس − "
-                "تكلفتك)",
+                "تكلفتك) — عددُ الوحدات التي تستردّ نقدَ أول شحنة، لا "
+                "تعادلاً تشغيلياً",
                 "تثبيت سعر بيع فعلي من أول مفاوضة مستورد",
                 "مع أول عرض سعر جاد", unit=mu_ar,
                 inputs=[
@@ -1103,7 +1185,7 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                     "high": round(hi / monthly_capacity, 1)}
             out.append(be)
         else:
-            out.append({"name": "نقطة التعادل", "tier": "gap",
+            out.append({"name": RECOVERY_NAME, "tier": "gap",
                         "missing": "هامش موجب — تكلفتك أعلى من أقصى سعر "
                                    "مصنع منافس",
                         "impact": "لا تعادل ممكناً بالأسعار المرصودة: كل "
@@ -1111,20 +1193,28 @@ def build_decision_numbers(*, category: str, market_iso3: str = "",
                         "closure": "خفّض التكلفة أو استهدف شريحة سعرية "
                                    "أعلى — قرار إنتاج لا بحث"})
     elif align_gap and cost_per_unit and max_exw:
-        out.append({"name": "نقطة التعادل", "tier": "gap",
+        out.append({"name": RECOVERY_NAME, "tier": "gap",
                     "missing": align_gap,
                     "impact": "هامش الوحدة طرحٌ بين رقمين — لا يصح إلا "
                               "بوحدة وعملة واحدتين",
                     "closure": "أدخل تكلفتك بعملة السعر المرجعي نفسها "
                                "(أو صرّح بعملتها) — دقيقة واحدة"})
     else:
-        out.append({"name": "نقطة التعادل", "tier": "gap",
+        out.append({"name": RECOVERY_NAME, "tier": "gap",
                     "missing": "تكلفتك + سعر رف منافس مرصود"
                     if not cost_per_unit else "سعر رف منافس مرصود",
-                    "impact": "معادلة التعادل = كلفة الدخول ÷ هامش الوحدة "
+                    "impact": "معادلة الاسترداد = كلفة الدخول ÷ هامش الوحدة "
                               "— طرفها الناقص يعطّلها",
                     "closure": "أدخل التكلفة (دقيقة) وارصد سعر رف واحداً "
                                "(زيارة متجر/موقع — ساعة)"})
+
+    # تقرير ٧ §3.5: التعادلُ التشغيليّ مقياسٌ مستقلّ — ثابتٌ ÷ هامش مساهمة،
+    # بعملةٍ ووحدةٍ واحدتين (فحصُ المحاذاة نفسُه أعلاه). مداه من سيناريوهات
+    # الحلّ العكسيّ لا نقطةٌ زائفة الدقّة (الهامشُ فرقٌ صغيرٌ حسّاس)؛
+    # و«صفر» تكاليف ثابتة مدخلٌ حقيقيّ لا غياب (مراجعة §58).
+    out.append(_operating_break_even(
+        fixed_costs, cost_per_unit, max_exw, align_gap, reverse, mu_ar,
+        monthly_capacity))
 
     out.append({"name": "الزمن من القرار إلى أول فاتورة", "tier": "gap",
                 "missing": "مدد التسجيل والاعتماد الرسمية للسوق المستهدف",
@@ -1681,6 +1771,14 @@ def economics_view(dr: dict, product_card: dict | None = None,
     # يشرحها والأسطح تعرضها؛ كل بند تقدير بحقوله الأربعة أو فجوة بحقولها
     # الثلاثة. الطاقة الشهرية من البطاقة إن وُجدت (تحوّل التعادل زمناً).
     _capacity = None
+    # تقرير ٧ §3.5: التكاليفُ الثابتة من البطاقة (بعملة التكلفة نفسِها) —
+    # غيابُها يُبقي التعادلَ التشغيليّ فجوةً معلنة.
+    _fixed = None
+    if product_card and product_card.get("fixed_costs") not in (None, ""):
+        try:
+            _fixed = float(product_card.get("fixed_costs"))
+        except (TypeError, ValueError):
+            _fixed = None
     if product_card:
         try:
             _capacity = float(product_card.get("monthly_capacity") or 0) \
@@ -1695,8 +1793,9 @@ def economics_view(dr: dict, product_card: dict | None = None,
         _cost_cur = str(product_card.get("cost_currency")
                         or product_card.get("currency") or "").strip()
     decision_numbers = build_decision_numbers(
-        category=category, cost_per_unit=exw, cost_currency=_cost_cur,
-        monthly_capacity=_capacity, reverse=reverse, market_ccy=local_ccy)
+        category=category, market_iso3=market_iso3, cost_per_unit=exw,
+        cost_currency=_cost_cur, monthly_capacity=_capacity, reverse=reverse,
+        market_ccy=local_ccy, fixed_costs=_fixed)
 
     return {
         "product_form": product_form or None,

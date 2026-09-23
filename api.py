@@ -723,6 +723,11 @@ def create_app():
         # الموجة د-٢: هويةُ المنشأ/الصنف المحلي — سمةُ تمايزٍ تُقارَن بما
         # يملكه المنافسون (البند ٤). الوصفُ التجاري لمصطلحات البحث يأتي في د-٣.
         origin_claim: str | None = None
+        # تقرير ٧ §3.5: التكاليفُ الثابتة ذات الصلة (بعملة التكلفة) — مدخلُ
+        # التعادل التشغيليّ؛ غيابُها يُبقيه فجوةً معلنة. وعملةُ التكلفة (ISO):
+        # بدونها لا هامشَ يُطرح أصلاً (مراجعة §58 — كانت تُسقَط بالنموذج).
+        fixed_costs: float | None = Field(default=None, ge=0)
+        cost_currency: str | None = Field(default=None, max_length=3)
 
     class AnalyzeRequest(BaseModel):
         """طلب تحليل منتج (المسار العادي) — analyze request body.

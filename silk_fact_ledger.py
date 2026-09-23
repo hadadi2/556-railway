@@ -179,6 +179,7 @@ _SELF_DESCRIBING_KEYS = frozenset(r.key for r in KEYS if r.self_describing)
 #: بها الرقم (إن وقعت كلمةٌ منها في جملة الرقم لا يُعَدّ رقماً عارياً).
 DERIVED_ALLOWED: tuple = (
     "الشحنة التجريبية", "كلفة الدخول", "نقطة التعادل", "أقصى خسارة",
+    "استرداد كلفة", "التعادل التشغيلي", "cash recovery",
     "أقصى سعر مصنع", "التكلفة الواصلة", "حصة", "نصيب", "سنة", "عام",
     "trial shipment", "entry cost", "break-even", "maximum loss", "share",
 )

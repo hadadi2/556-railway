@@ -251,6 +251,12 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٦ — تقرير ٧: استردادُ الشحنة والتعادلُ التشغيليّ مقياسان باسمين.
+    (276, "silk_economics.py", ["RECOVERY_NAME", "OPERATING_BE_NAME",
+                                "fixed_costs: float | None = None"]),
+    (276, "migrations/platform/025_product_fixed_costs.sql", ["fixed_costs"]),
+    (276, "tests/test_report7_financial.py",
+     ["def test_cash_recovery_and_operating_break_even_are_two_items"]),
     # ٢٧٥ — تقرير ٧: تأهيلُ الجهات بمستوى المنتج، والتسميةُ ليست دليلاً.
     (275, "silk_style_contract.py", ["def lead_product_fit",
                                      "_ACTIVITY_HS_CHAPTERS", "def _word_in"]),
