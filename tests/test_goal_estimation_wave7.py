@@ -314,7 +314,7 @@ def test_markdown_and_client_docx_show_decision_numbers(tmp_path):
     dn = view["deep_research"]["economics"]["decision_numbers"]
     assert [e["name"] for e in dn] == _FIVE
     md = render_markdown(view)
-    assert "أرقام القرار (محسوبة حتمياً" in md
+    assert "المؤشرات المالية ومدخلاتها" in md
     assert "حجم الشحنة التجريبية" in md
     assert "ما يؤكده ومدته" in md
     assert "المصدر:" in md                       # الاستشهاد على سطح المشغّل
@@ -322,8 +322,8 @@ def test_markdown_and_client_docx_show_decision_numbers(tmp_path):
     with block_network():
         render_client_docx(view, path)
     text = docx_all_text(path)
-    assert "أرقام القرار (محسوبة حتمياً)" in text
-    assert "لا نعرفه بعد — يلزم:" in text        # فجوات الزمن/التعادل (د-١: لغة قارئ)
+    assert "المؤشرات المالية ومدخلاتها" in text
+    assert "يتطلب الحساب:" in text        # فجوات الزمن/التعادل (د-١: لغة قارئ)
     assert "الناقص:" not in text
 
 
@@ -333,4 +333,4 @@ def test_writer_prompt_transfers_precomputed_numbers_verbatim():
     assert "انقلها كما وردت داخل قسم " in src
     assert "لا تحسب بديلاً" in src
     # الفجوة تصل الكاتب بحقولها الثلاثة لا كإعلان غياب عارٍ:
-    assert "المعطى الناقص:" in src and "سبيل الإغلاق:" in src
+    assert "المعطى الناقص:" in src and "الإجراء المطلوب:" in src

@@ -3402,9 +3402,9 @@ function viewReportBtn(s) {
             ar_en("المكوّن", "Component") + "</th><th>" +
             ar_en("القيمة", "Value") + "</th>" +
             /* البند ٣ (لغة الزائر): «الثقة» مصطلح قياس داخلي — العنوان
-               يقول معناه: كم تحقّقنا من هذا الرقم. الموجة الرابعة: العمودُ
+               يقول معناه: موثوقيةُ مصدر هذا الرقم (لا ادّعاءَ تحقّقٍ — تقرير ٧ §5). الموجة الرابعة: العمودُ
                كلُّه يُسقَط عند إخفاء ثقة المكوّنات. */
-            (_showCC ? "<th>" + ar_en("كم تحقّقنا منه", "How much we verified") + "</th>" : "") +
+            (_showCC ? "<th>" + ar_en("موثوقية المصدر", "Source reliability") + "</th>" : "") +
             "<th>" + ar_en("المصدر", "Source") + "</th></tr></thead><tbody>";
           comps.slice(0, 8).forEach((c) => {
             const conf = c.confidence != null

@@ -251,6 +251,12 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٧٤ — تقرير ٧: قوالبُ الكود التي تبلغ العميل بلغة القارئ.
+    (274, "silk_reports.py", ["المؤشرات المالية ومدخلاتها", "يتطلب الحساب: ",
+                              "الإجراء المطلوب: "]),
+    (274, "silk_fact_ledger.py", ["المتطلب السابق للتعاقد أو الشحن"]),
+    (274, "tests/test_report7_language.py",
+     ["def test_i18n_client_keys_carry_no_internal_or_personal_terms"]),
     # ٢٧٣ — تقرير ٧: سعرُ استيرادٍ شاذّ يُعزَل، وسببُ صفّ السعر أربعُ حالات.
     (273, "silk_economics.py", ["IMPORT_ANOMALY_FACTOR",
                                 "import_price_anomaly"]),

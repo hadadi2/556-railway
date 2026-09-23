@@ -2301,8 +2301,10 @@ def _economics_md_lines(dr: dict) -> list[str]:
     dn_lines: list[str] = []
     dn = eco.get("decision_numbers") or []
     if dn:
-        dn_lines += ["", "### أرقام القرار (محسوبة حتمياً — الدقة الكاملة "
-                     "هنا)", "",
+        # تقرير ٧ §5: العنوانُ يصف المحتوى لا طريقةَ التوليد — الصفوفُ
+        # قد تكون غيرَ محسوبة، فوصفُ طريقة التوليد كان يَعِد بما لا يقع.
+        dn_lines += ["", "### المؤشرات المالية ومدخلاتها (بالدقة الكاملة)",
+                     "",
                      "| الرقم | القيمة/المدى | كيف اشتُق | ما يؤكده ومدته |",
                      "| --- | --- | --- | --- |"]
         for e in dn:
@@ -2328,9 +2330,9 @@ def _economics_md_lines(dr: dict) -> list[str]:
                 dn_lines.append(f"| {e['name']} | {val} | {_mth} | "
                                 f"{e['confirm']} — {e['confirm_time']} |")
             else:
-                dn_lines.append(f"| {e['name']} | لا نعرفه بعد — يلزم: "
+                dn_lines.append(f"| {e['name']} | يتطلب الحساب: "
                                 f"{e['missing']} | أثره: {e['impact']} | "
-                                f"سبيل الإغلاق: {e['closure']} |")
+                                f"الإجراء المطلوب: {e['closure']} |")
     if not rs:
         if not _gaps and not dn_lines:
             return []
@@ -3759,7 +3761,7 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
     dn = eco.get("decision_numbers") or []
     if not dn or lang == "en":
         return
-    doc.add_heading("أرقام القرار (محسوبة حتمياً)", level=2)
+    doc.add_heading("المؤشرات المالية ومدخلاتها", level=2)
     rows = []
     for e in dn:
         if e.get("tier") == "estimated":
@@ -3777,9 +3779,9 @@ def _client_decision_numbers_table(doc, eco: dict, lang: str) -> None:
             rows.append([e["name"],
                          # «الناقص:» اسمُ حالةٍ لا لغةُ قارئ (الموجة د-١) —
                          # في منشئه هنا، والملفُّ يُنقّي المخزَّنَ القديم.
-                         f"لا نعرفه بعد — يلزم: {e['missing']}",
+                         f"يتطلب الحساب: {e['missing']}",
                          f"أثره: {e['impact']}",
-                         f"سبيل الإغلاق: {e['closure']}"])
+                         f"الإجراء المطلوب: {e['closure']}"])
     _add_table(doc, ["الرقم", "القيمة/المدى", "كيف اشتُق",
                      "ما يؤكده ومدته"], rows)
 

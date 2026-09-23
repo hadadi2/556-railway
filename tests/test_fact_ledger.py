@@ -390,9 +390,9 @@ def test_repair_fixes_the_offending_sentence_only():
 
 def test_no_blocking_condition_is_stated_as_a_decision_not_a_gap():
     """المراجعة #4: «لا شرط حاجب» قرارٌ محسوب لا فجوةٌ غيرُ مقيسة."""
-    led = _ledger_with("blocking_condition", None, note="لا شرط حاجب")
+    led = _ledger_with("blocking_condition", None, note="لا متطلب سابق")
     out, _ = L.bind("{{blocking_condition}}", led)
-    assert out == "لا شرط حاجب"
+    assert out == "لا متطلب سابق"   # تقرير ٧ §5: قفلٌ محدَّث معلن
 
 
 def test_analyze_path_can_actually_block(tmp_path):

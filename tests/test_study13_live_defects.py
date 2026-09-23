@@ -197,7 +197,9 @@ def test_coverage_labels_name_verification_tiers():
     import silk_i18n
     assert silk_i18n.t("coverage_col_kind", "ar") == "رتبة التحقق"
     assert "رسمي أوّلي" not in silk_i18n.t("coverage_primary", "ar")
-    assert "متحقق" in silk_i18n.t(
+    # قفلٌ محدَّث معلن (تقرير ٧ §5): الرتبةُ تُسمّى بتعريف الشارة ✓ (مصدرٌ
+    # رسميّ) بصياغةٍ محايدة — لا بادّعاء تحقّقٍ بشريّ لم يجرِ.
+    assert "مصدر رسمي" in silk_i18n.t(
         "coverage_primary", "ar").replace("ُ", "").replace("َ", "").replace("ّ", "")
     # رتبة ○ منقسمة: قيمة حاضرة لم يكتمل تحققها ≠ فجوة معلنة بلا قيمة
     assert "لم يكتمل التحقق" in silk_i18n.t("coverage_unverified", "ar")

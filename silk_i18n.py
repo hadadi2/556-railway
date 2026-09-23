@@ -294,14 +294,14 @@ TERMS: dict[str, dict[str, str]] = {
     # القاعدة نفسها والعتبات نفسها، بلا مصطلح قياس داخلي على سطح العميل.
     "decision_rule_lead": {
         "ar": "قاعدة الحكم مُعلنة قبل النظر في الأرقام: نوصي بالمضي حين "
-              "تبلغ قوة الفرصة {go} من 100 فأعلى وقد تحقّقنا من {conf}% من "
-              "بياناتها فأعلى وبلا شروط مفتوحة؛ ونرفض حين تنزل القوة دون "
+              "تبلغ قوة الفرصة {go} من 100 فأعلى ويبلغ مستوى الثقة {conf}% "
+              "فأعلى وبلا شروط مفتوحة؛ ونرفض حين تنزل القوة دون "
               "{nogo} أو عند اختلال أمان السوق؛ "
               "وما بينهما دخول مشروط بشروط مسمّاة أدناه.",
         "en": "The decision rule, stated before the numbers were weighed: we "
               "recommend proceeding when the opportunity strength reaches "
-              "{go} out of 100 or more with {conf}% or more of its data "
-              "directly verified and no open conditions; we decline "
+              "{go} out of 100 or more with a confidence of {conf}% or more "
+              "and no open conditions; we decline "
               "when it falls below {nogo} or when market safety breaks down; "
               "anything in between is a conditional entry, with the "
               "conditions named below."},
@@ -312,28 +312,31 @@ TERMS: dict[str, dict[str, str]] = {
     "pillar_col": {"ar": "الجانب", "en": "Aspect"},
     "pillar_strength_col": {"ar": "قوّته", "en": "Strength"},
     "pillar_note_col": {"ar": "ماذا يعني", "en": "What it means"},
-    "pillar_not_computed": {"ar": "لا نعرفه بعد", "en": "Not known yet"},
+    # تقرير ٧ §5: حالةُ الحساب لا مخاطبةٌ شخصية («لا نعرفه بعد»).
+    "pillar_not_computed": {"ar": "لم يُحسب بعد", "en": "Not computed yet"},
     # D4 (دراسة #12، البند 16) ثم البند ٣: الغياب يُقال بما ينقصنا فعلاً.
     "pillar_missing_lead": {
         "ar": "ينقصنا: {parts} — أكمِلها قبل أي التزام.",
         "en": "We still need: {parts} — close these before committing."},
     "pillar_measured": {
-        "ar": "تحقّقنا منه مباشرة من مصادره.",
-        "en": "Verified directly from its sources."},
+        # تقرير ٧ §5: بيانُ نوع الدليل لا ادّعاءُ تحقّقٍ لم يجرِ بشرياً.
+        "ar": "مرصودٌ من مصادر مباشرة.",
+        "en": "Observed from direct sources."},
     "decision_weighted_line": {
-        "ar": "قوة هذه الفرصة في تقييمنا {score} من 100، وقد تحقّقنا "
-              "مباشرة من نحو {conf}% من البيانات خلف هذا التقييم.",
-        "en": "We rate this opportunity {score} out of 100, and we "
-              "directly verified about {conf}% of the data behind that "
-              "rating."},
+        # مراجعة §58: {conf} ثقةُ الحكم (قد تكون مسقوفة) لا حصةُ دليلٍ مرصود —
+        # تُسمّى بما هي، بلا ادّعاء تحقّقٍ ولا نسبةِ مصادرَ لم تُحسب.
+        "ar": "قوة هذه الفرصة في تقييمنا {score} من 100، ومستوى الثقة في "
+              "هذا التقييم نحو {conf}%.",
+        "en": "We rate this opportunity {score} out of 100, and our "
+              "confidence in that rating is about {conf}%."},
     # الشروطُ تُبنى **بنيوياً** من الأعمدة في اللغتين، لا من نثر المحرّك
     # العربيّ: نثرُه يُسقَط في تقريرٍ إنجليزيّ (الفصلُ الصلب §5) فيبقى القارئ
     # الإنجليزيّ بلا الشروط التي تَعِده قاعدةُ الحكم بها — وسطرُ العمود الضعيف
     # فيه معادلةُ حسابٍ بلغةِ مشغّل لا بلغةِ عميل.
     "cond_pillar_missing": {
-        "ar": "جانب {pillar} لا نعرفه بعد — ينقصنا: {parts}. أكمِلها "
+        "ar": "جانب {pillar} لم يُحسب بعد — يتطلب: {parts}. أكمِلها "
               "قبل أي التزام إنتاجي أو شحني.",
-        "en": "The {pillar} aspect is not known yet — we still need: "
+        "en": "The {pillar} aspect is not computed yet — it requires: "
               "{parts}. Close these before you commit to "
               "production or shipping."},
     "cond_pillar_weak": {
@@ -588,12 +591,12 @@ TERMS: dict[str, dict[str, str]] = {
     # المسمّى الحقيقي (compute_source_coverage) بُعدٌ ثانٍ منفصل.
     "coverage_intro": {
         "ar": "من إجمالي {total} قيمة معدودة في سجل أدلة هذه الدراسة، نحو "
-              "{pct}% منها مُتحقَّقٌ منه مباشرةً، والبقية بين قيم مرصودة "
+              "{pct}% منها من مصادر رسمية مباشرة، والبقية بين قيم مرصودة "
               "بثقة متوسطة وقيم لم يكتمل التحقق منها وفجوات معلنة. مصادرُ "
               "كل قيمةٍ مجموعةٌ في قسم «المراجع» ختام التقرير، فالقرار "
               "يُتَّخذ بمعرفة مدى التغطية خلف الأرقام لا على ثقة عمياء.",
         "en": "Of the {total} values tallied in this study's evidence log, "
-              "about {pct}% are directly verified; the rest range from "
+              "about {pct}% come from official direct sources; the rest range from "
               "medium-confidence observations to values whose verification "
               "is incomplete, plus explicitly declared gaps. Each value's "
               "source is collected under \u201cReferences\u201d at the "
@@ -610,8 +613,10 @@ TERMS: dict[str, dict[str, str]] = {
               "as an explicit gap."},
     "coverage_col_kind": {"ar": "رتبة التحقق", "en": "Verification tier"},
     "coverage_col_count": {"ar": "عدد القيم", "en": "Values"},
-    "coverage_primary": {"ar": "مُتحقَّق منه مباشرة",
-                         "en": "Directly verified"},
+    # رتبةُ الشارة ✓ (مصدرٌ رسميّ — `silk_narrative.evidence_badge`) بصياغةٍ
+    # محايدة بلا مصطلح الشارة، ولا ادّعاءِ تحقّقٍ بشريّ (تقرير ٧ §5).
+    "coverage_primary": {"ar": "من مصدر رسمي مباشر",
+                         "en": "From an official direct source"},
     "coverage_public": {"ar": "مرصود بثقة متوسطة (مصدر مسمّى)",
                         "en": "Observed at medium confidence (named source)"},
     "coverage_unverified": {"ar": "قيمة حاضرة لم يكتمل التحقق منها",
@@ -1181,13 +1186,13 @@ TERMS.update({
               "observed source is still stated as an explicit gap."},
     "decision_rule_lead_empty": {
         "ar": "قاعدة الحكم مُعلنة قبل النظر في الأرقام: نوصي بالمضي حين تبلغ "
-              "قوة الفرصة عتبتَها المُعلنة وقد تحقّقنا من حدٍّ أدنى من "
-              "بياناتها وبلا شروط مفتوحة؛ ونرفض حين تنزل دون عتبة الرفض أو "
+              "قوة الفرصة عتبتَها المُعلنة ويبلغ مستوى الثقة حدَّه الأدنى "
+              "وبلا شروط مفتوحة؛ ونرفض حين تنزل دون عتبة الرفض أو "
               "عند اختلال أمان السوق؛ وما بينهما دخول مشروط بشروط مسمّاة "
               "أدناه. عتباتُ هذه التشغيلة غير متاحة للعرض.",
         "en": "The decision rule, stated before the numbers were weighed: we "
               "recommend proceeding when the opportunity strength reaches its "
-              "stated threshold with a minimum share of its data verified and "
+              "stated threshold with at least the minimum confidence and "
               "no open conditions; we decline below the rejection threshold or "
               "when market safety breaks down; anything in between is a "
               "conditional entry, with the conditions named below. This study's "
