@@ -35,7 +35,7 @@ def test_confidence_section_tallies_badges_correctly():
     assert "50%" in text                     # 2 من 4 مُتحقَّق منها مباشرة
     tbl = doc.tables[0]
     cells = [c.text for row in tbl.rows for c in row.cells]
-    assert "مُتحقَّق منه مباشرة" in cells      # صفٌّ محايد بعدّه (2)
+    assert "من مصدر رسمي مباشر" in cells  # صفٌّ محايد بعدّه (2) — تقرير ٧ §5
     assert "2" in cells
     # WS10: صفر شارة/مصطلح قوة دليل في المتن — الرُتبة داخلية، الإسناد للمراجع.
     for sym in ("✓", "◐", "○", "موثّق", "ثانوي", "غير متحقق"):

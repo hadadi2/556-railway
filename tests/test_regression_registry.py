@@ -2899,7 +2899,7 @@ def _guard_the_decision_basis_reaches_the_client_artefact():
     blob = "\n".join(_z_client_lines(_z_view()))
     for needle in ("على أيّ أساس صدر هذا الحكم",
                    "قاعدة الحكم مُعلنة قبل النظر في الأرقام",
-                   "جاذبية السوق", "لا نعرفه بعد", "ينقصنا:",
+                   "جاذبية السوق", "لم يُحسب بعد", "ينقصنا:",
                    "أقوى ما يُقال ضدّ هذا الحكم"):
         assert needle in blob, f"أساسُ الحكم غائبٌ عن المُسلَّم: {needle!r}"
     for banned in ("political_stability", "price_position", "tam_log"):
@@ -4597,6 +4597,17 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    274: lambda: (
+        _absent("silk_reports.py", "محسوبة حتمياً", "سبيل الإغلاق",
+                "لا نعرفه بعد — يلزم")(),
+        _absent("silk_i18n.py", "تحقّقنا منه مباشرة", "وقد تحقّقنا")(),
+        _needles("silk_fact_ledger.py",
+                 '_KEY_ROWS["blocking_condition"].words',
+                 "sent = text[m.end():m.end() + 200]")(),
+        _absent("silk_fact_ledger.py", '"لا شرط حاجب"')(),
+        _needles("tests/test_report7_language.py",
+                 "def test_the_prerequisite_label_replaces_the_internal_term_everywhere")(),
+        _needles("tests/test_lessons_enforcement.py", "(274, ")()),
     273: lambda: (
         _needles("silk_economics.py", "IMPORT_ANOMALY_FACTOR = 5.0",
                  '"import_price_anomaly": import_price_anomaly')(),

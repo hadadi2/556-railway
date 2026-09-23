@@ -62,7 +62,7 @@ def test_decision_basis_view_is_plain_on_a_real_engine_decision():
         + [str(c) for c in basis.get("conditions") or []])
     for banned in ("الدرجة الموزونة", "غير مرصود", "العمود ", "بثقة "):
         assert banned not in blobtxt, banned
-    assert basis.get("not_computed") == "لا نعرفه بعد"
+    assert basis.get("not_computed") == "لم يُحسب بعد"
     assert "قوة هذه الفرصة" in str(basis.get("score_line") or "")
     # الجانب الغائب يقول ما ينقصه بلغة الزائر.
     missing_notes = [r["note"] for r in basis["pillars"]
@@ -123,7 +123,7 @@ def test_scenarios_table_header_carries_currency_and_unit():
 def test_platform_components_show_unit_and_plain_confidence():
     page = io.open(os.path.join(_ROOT, "web", "platform.html"),
                    encoding="utf-8").read()
-    assert "كم تحقّقنا منه" in page
+    assert "موثوقية المصدر" in page
     assert "c.unit" in page              # الوحدة كانت في الحمولة وتُتجاهل
 
 

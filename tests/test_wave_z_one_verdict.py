@@ -357,7 +357,7 @@ def test_an_uncomputed_pillar_is_declared_with_what_it_needs(tmp_path):
                                  tmp_path))
     # هدف الدراسة الاحترافية (البند ٣): صياغة العميل «لا نعرفه بعد /
     # ينقصنا:» بدل مصطلح القياس — النية نفسها: الغياب معلن ويقول ما ينقصه.
-    assert "لا نعرفه بعد" in blob
+    assert "لم يُحسب بعد" in blob
     assert "ينقصنا:" in blob
     leaked = [k for k in _INTERNAL_KEYS if k in blob]
     assert not leaked, f"معرّفاتٌ داخلية في مُسلَّم العميل: {leaked}"
@@ -558,7 +558,7 @@ def test_one_confidence_number_in_one_document(tmp_path):
     capped = 0.5
     v = _view(engine="NO-GO", capped_confidence=capped)
     blob = "\n".join(_docx_lines(v, tmp_path))
-    assert f"من نحو {round(capped * 100)}% من البيانات" in blob, (
+    assert f"مستوى الثقة في هذا التقييم نحو {round(capped * 100)}%" in blob, (
         "القسمُ يعرض ثقةَ المحرّك الخام بدل المسقوفة — غلافٌ برقمٍ وقسمٌ بآخر")
 
 
@@ -588,7 +588,7 @@ def test_the_named_conditions_promised_by_the_rule_are_actually_printed(
     """قاعدةُ الحكم تَعِد بشروطٍ «مسمّاة أدناه» — فلتكن أدناه فعلاً."""
     blob = "\n".join(_docx_lines(_view(engine="NO-GO"), tmp_path))
     assert "ما يجب إغلاقه قبل الالتزام" in blob
-    assert "لا نعرفه بعد" in blob   # البند ٣: صياغة العميل
+    assert "لم يُحسب بعد" in blob   # البند ٣: صياغة العميل
 
 
 def test_the_coverage_disclaimer_is_not_dropped_by_the_promotion():

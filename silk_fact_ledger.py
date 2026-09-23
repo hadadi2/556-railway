@@ -114,8 +114,10 @@ KEYS: tuple = (
     _fact("competitor_prices", "أسعار المنافسين", "competitor prices", "",
           ("أسعار المنافسين", "competitor prices"), numeric_check=False,
           writer_hidden=True),
-    _fact("blocking_condition", "الشرط الحاجب", "blocking condition", "",
-          ("الشرط الحاجب", "blocking condition"), mandatory=True,
+    # تقرير ٧ §5: «الشرط الحاجب» مصطلحٌ داخليّ — التسميةُ للعميل وصفٌ لما
+    # يعنيه؛ والمصطلحُ القديم يبقى كلمةَ تعرّفٍ (نصوصٌ محفوظة قبل التغيير).
+    _fact("blocking_condition", "المتطلب السابق للتعاقد أو الشحن", "prerequisite before contracting or shipping", "",
+          ("المتطلب السابق للتعاقد أو الشحن", "الشرط الحاجب", "blocking condition"), mandatory=True,
           self_describing=True, numeric_check=False, engine_computed=True,
           gap_listed=False),
     # ── الموجة د-٢: مفاتيحُ التحليل التجاري (`silk_commercial_analysis`) —
@@ -609,7 +611,7 @@ def _fill_decision(row: dict, result: dict, put) -> None:
     put(_entry("blocking_condition", blocking, source="محرك القرار",
                confidence=1.0, origin="decision",
                note="شرط واحد بتعريف واحد لكل الأقسام" if blocking
-               else "لا شرط حاجب"))
+               else "لا متطلب سابق"))
 
 
 def _fill_competitor_prices(row: dict, put) -> None:
@@ -662,7 +664,7 @@ def render_value(entry: dict, lang: str = "ar") -> str:
     st, key = entry["status"], entry["key"]
     if key == "blocking_condition" and not entry.get("value"):
         # قرارٌ محسوبٌ («لا شرطَ يحجب») لا فجوةٌ غيرُ مقيسة.
-        return "no blocking condition" if lang == "en" else "لا شرط حاجب"
+        return "no prerequisite" if lang == "en" else "لا متطلب سابق"
     if st == MISSING:
         return "not available" if lang == "en" else "غير متاح"
     if st == ESTIMATE:
@@ -762,9 +764,10 @@ def render_sentence(entry: dict, lang: str = "ar") -> str:
     if key == "blocking_condition":
         v = entry.get("value")
         if not v:
-            return "No single condition blocks the decision." if en else \
-                "لا شرط حاجب يعلّق القرار."
-        return f"The blocking condition: {v}." if en else f"الشرط الحاجب: {v}."
+            return "No single prerequisite holds the decision." if en else \
+                "لا متطلب سابق يعلّق القرار."
+        return (f"Prerequisite before contracting or shipping: {v}." if en
+                else f"المتطلب السابق للتعاقد أو الشحن: {v}.")
     if st == MISSING:
         return f"{label} is not available." if en else f"{label} غير متاح."
     return f"{label}: {render_value(entry, lang)}."
@@ -1374,12 +1377,18 @@ def check(view: dict, text: str) -> list:
     bc = entries.get("blocking_condition") or {}
     if bc.get("value"):
         needle = _distinct_tokens(str(bc["value"]))
-        for m in re.finditer(r"الشرط الحاجب", text):
-            sent = text[m.start():m.start() + 200].split("\n")[0]
+        # الأنماطُ من كلمات التعرّف نفسِها (التسميةُ الجديدة والقديمة — مصدرٌ
+        # واحد)، والمقارنةُ على ما **بعد** التسمية: كلماتُ التسمية نفسِها
+        # («الشحن»…) كانت تُرضي الإبرةَ فيمرّ تعريفٌ مخالف (مراجعة §58).
+        _bc_words = [w for w in _KEY_ROWS["blocking_condition"].words
+                     if re.search(r"[؀-ۿ]", w)]
+        _bc_re = "|".join(map(re.escape, _bc_words))
+        for m in re.finditer(_bc_re, text):
+            sent = text[m.end():m.end() + 200].split("\n")[0]
             if needle and not any(t in sent for t in needle):
                 findings.append(_finding(
                     "blocking_condition_drift",
-                    f"النص يذكر «الشرط الحاجب» بغير تعريف السجلّ "
+                    f"النص يذكر «المتطلب السابق للتعاقد أو الشحن» بغير تعريف السجلّ "
                     f"({str(bc['value'])[:60]}) قرب «…{sent[:60]}…»"))
                 break
     return findings

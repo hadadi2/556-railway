@@ -432,9 +432,9 @@ _CLIENT_REASONS: dict[str, dict[str, str]] = {
         "en": "The chart's labelled year differs from the year of its "
               "observed data. Fix: regenerate."},
     "blocking_condition_drift": {
-        "ar": "«الشرط الحاجب» مذكورٌ في موضعين بتعريفين مختلفين. يُغلقه: "
+        "ar": "«المتطلب السابق للتعاقد أو الشحن» مذكورٌ في موضعين بتعريفين مختلفين. يُغلقه: "
               "إعادة التوليد.",
-        "en": "The blocking condition is stated twice with two different "
+        "en": "The prerequisite is stated twice with two different "
               "definitions. Fix: regenerate."},
     "ledger_stale": {
         "ar": "تحدّثت بياناتُ أحد المعطيات منذ كتابة هذا التقرير، فبعضُ "
