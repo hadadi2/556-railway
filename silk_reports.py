@@ -608,6 +608,69 @@ def _set_rtl_run_fonts(rpr, font: str = _RTL_BODY_FONT) -> None:
         rpr.append(szcs)
 
 
+_CANT_SPLIT_MAX_CHARS = 700
+
+
+def _set_table_flow(table) -> None:
+    """تقرير ٧ §7: رأسُ الجدول يتكرّر في كلّ صفحة، والصفُّ لا ينقسم بين
+    صفحتين — جداولُ الاتصال والأرقام كانت تنشطر فيضيع رأسُها وتتقطّع خلاياها."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    for i, row in enumerate(table.rows):
+        trPr = row._tr.get_or_add_trPr()
+        # مراجعة §58: صفٌّ نصُّه أطولُ من صفحةٍ تقريباً لا يُمنَع انقسامُه —
+        # منعُه يترك فراغاً كبيراً أو يقصّ الفائضَ في الـPDF.
+        text_len = sum(len(c.text) for c in row.cells)
+        if text_len <= _CANT_SPLIT_MAX_CHARS \
+                and trPr.find(qn("w:cantSplit")) is None:
+            trPr.append(OxmlElement("w:cantSplit"))
+        if i == 0 and trPr.find(qn("w:tblHeader")) is None:
+            trPr.append(OxmlElement("w:tblHeader"))
+
+
+def _set_table_widths(table, weights: list) -> None:
+    """عرضُ أعمدةٍ بأوزانٍ نسبية (DXA) بدل التوزيع المتساوي — عمودُ العنوان
+    والاسم أعرضُ من التقييم (تقرير ٧ §7)."""
+    from docx.shared import Twips
+    cols = len(table.columns)
+    if not weights or len(weights) != cols:
+        return
+    total, s = 9360, float(sum(weights)) or 1.0
+    for col, w in zip(table.columns, weights):
+        width = Twips(int(total * w / s))
+        # `col.width` يكتب `w:gridCol` — LibreOffice (مسار الـPDF) يرسم من
+        # الشبكة لا من عرض الخلية وحده (مراجعة §58).
+        col.width = width
+        for cell in col.cells:
+            cell.width = width
+
+
+def _mark_ltr_cells(table, cols: tuple) -> None:
+    """خلايا الهاتف والبريد والروابط **من اليسار لليمين** داخل جدولٍ عربيّ
+    (تقرير ٧ §7): `w:bidi="0"` على الفقرة و`w:rtl="0"` على المقاطع — الصريحُ
+    يبقى بعد تمريرة `_finalize_rtl` لأنها تضيف الاتجاه حيث يغيب فقط."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    for row in list(table.rows)[1:]:
+        for ci in cols:
+            if ci >= len(row.cells):
+                continue
+            for p in row.cells[ci].paragraphs:
+                ppr = p._p.get_or_add_pPr()
+                bidi = ppr.find(qn("w:bidi"))
+                if bidi is None:
+                    bidi = OxmlElement("w:bidi")
+                    ppr.append(bidi)
+                bidi.set(qn("w:val"), "0")
+                for run in p.runs:
+                    rpr = run._r.get_or_add_rPr()
+                    rtl = rpr.find(qn("w:rtl"))
+                    if rtl is None:
+                        rtl = OxmlElement("w:rtl")
+                        rpr.append(rtl)
+                    rtl.set(qn("w:val"), "0")
+
+
 def _set_table_rtl(table) -> None:
     """§4: اجعل الجدول من اليمين لليسار — <w:bidiVisual/> على tblPr (تتدفّق
     الأعمدة يميناً) + محاذاة كل خلية يميناً + عرض أعمدة حقيقي بوحدات DXA."""
@@ -938,6 +1001,39 @@ def _shape_safe_ar(text: str) -> str:
     return _AR_COMBINING_RE.sub("", text or "")
 
 
+def _rules_version() -> str:
+    try:
+        import silk_decision as _D
+        return str(_D.SCHEMA)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _input_fingerprint(view: dict) -> str:
+    """بصمةٌ قصيرة (sha256، ١٢ حرفاً) لمدخلات القرار المختارة: الرمز والسوق
+    والمنتج وبطاقته وقيمُ السجلّ بسنواتها ومصادرها — لا نصُّ الكاتب."""
+    from silk_request_identity import fingerprint
+    entries = ((view or {}).get("ledger") or {}).get("entries")
+    if not isinstance(entries, dict):
+        entries = {}
+    facts = {k: [e.get("value"), e.get("year"), e.get("source"),
+                 e.get("items")]
+             for k, e in sorted(entries.items()) if isinstance(e, dict)}
+    header = (view or {}).get("header") or {}
+    eco = ((view or {}).get("deep_research") or {}).get("economics") or {}
+    payload = {"hs": (view or {}).get("hs_code") or header.get("hs_code"),
+               "market": header.get("target_market"),
+               "product": header.get("product") or (view or {}).get("product"),
+               # أثرُ بطاقة المنتج في العرض (العرضُ لا يحمل البطاقةَ نفسَها):
+               # عملةُ التكلفة وأرقامُ القرار المحسوبة منها.
+               "card": {"cost_currency": eco.get("cost_currency"),
+                        "decision_numbers": eco.get("decision_numbers")},
+               "facts": facts}
+    if not facts and not payload["hs"]:
+        return ""
+    return fingerprint(payload)[:12]
+
+
 def _stamp_report_metadata(doc, view: dict, lang: str) -> None:
     """بيانات المستند (§14) — على **خصائص الملف** وفي **متن التقرير** معاً.
 
@@ -963,14 +1059,24 @@ def _stamp_report_metadata(doc, view: dict, lang: str) -> None:
          or (view.get("header") or {}).get("date")),
         ("meta_schema_version", silk_i18n.REPORT_SCHEMA_VERSION),
         ("meta_engine_version", silk_i18n.REPORT_ENGINE_VERSION),
+        # تقرير ٧ §7: نسخةُ قواعد القرار — تُعرَض وتُحفَظ.
+        ("meta_rules_version", _rules_version()),
     ]
     shown = [(k, v) for k, v in fields if v not in (None, "")]
+    # وبصمةُ المدخلات المختارة في خصائص الملف وحدها (تنجو من التحويل إلى
+    # PDF): تقريران بالبصمة نفسِها بُنيا على الحقائق نفسِها. حروفُها
+    # اللاتينية تسرّبُ لغةٍ على متنٍ عربيّ، فلا تُعرَض في المتن.
+    try:
+        _fp = _input_fingerprint(view)
+    except Exception:  # noqa: BLE001 — بياناتٌ وصفية تحسينية لا شرطُ توليد
+        _fp = ""
+    props_fields = shown + ([("meta_input_fingerprint", _fp)] if _fp else [])
     # (١) خصائص الملف — `comments` هو الحقل الحرّ الذي ينجو من التحويل.
     try:
         props = doc.core_properties
         props.language = "ar-SA" if lang == "ar" else "en-US"
         props.comments = "; ".join(f"{k.replace('meta_', '')}={v}"
-                                   for k, v in shown)
+                                   for k, v in props_fields)
     except Exception:  # noqa: BLE001 — بياناتٌ وصفية تحسينية لا شرطُ توليد
         pass
     # (٢) سطرٌ مقروء في المتن — تحت عنوان صغير في ذيل التقرير.
@@ -1621,7 +1727,8 @@ def render_brief(view: dict, dashboard_url: str = "/") -> str:
 # ── بناة أقسام Word الجديدة (§7) — new docx section builders (pure display) ──
 
 def _add_table(doc, headers: list[str], rows: list[list],
-               caption: str | None = None) -> None:
+               caption: str | None = None, widths: "list | None" = None,
+               ltr_cols: tuple = ()) -> None:
     """جدول Word موحّد سِلك — رأس بلون سِلك الأساس وخط أبيض، أشرطة متناوبة
     خفيفة، تسمية اختيارية أعلاه؛ no rows => no-op.
 
@@ -1668,6 +1775,11 @@ def _add_table(doc, headers: list[str], rows: list[list],
                 _set_cell_shading(c, _TABLE_ZEBRA_FILL)
     _set_table_borders(table)   # §7: حدودٌ شعريّةٌ خافتة بدل أسود Grid
     _set_table_rtl(table)   # §4: تدفّق أعمدة يميناً + محاذاة خلايا + عرض DXA
+    _set_table_flow(table)  # تقرير ٧ §7: رأسٌ متكرّر وصفٌّ لا ينقسم
+    if widths:
+        _set_table_widths(table, widths)
+    if ltr_cols:
+        _mark_ltr_cells(table, ltr_cols)
 
 
 def _docx_entry_strategy(doc, m: dict) -> None:
@@ -4100,7 +4212,31 @@ def _reference_row_from_finding(source_raw: object, value: object,
     return (label, url)
 
 
-def _client_references_section(doc, dr: dict, lang: str = "ar") -> None:
+def _supported_facts(ledger: "dict | None", lang: str) -> dict:
+    """{اسم مصدرٍ بحروفٍ صغيرة: [تسمياتُ الحقائق التي يسندها]} من السجلّ —
+    إحالةٌ تفصيليةٌ خفيفة لكلّ مرجع (تقرير ٧ §7) بلا جدول أدلةٍ تدقيقيّ."""
+    out: dict = {}
+    en = silk_i18n.normalize(lang) == "en"
+    entries = (ledger or {}).get("entries") if isinstance(ledger, dict) else None
+    if not isinstance(entries, dict):
+        return out
+    for key, e in entries.items():
+        # مراجعة §58: المرصودُ وحدَه «يُسنَد» إلى مصدر — الاستنتاجُ والتقديرُ
+        # والضعيفُ لا يُعرَضان حقيقةً يسندها مصدرٌ عامّ.
+        if not isinstance(e, dict) or e.get("status") != "observed" \
+                or e.get("value") in (None, "", []):
+            continue
+        src = _clean_source_label(e.get("source")).strip().lower()
+        label = str(e.get("label_en" if en else "label_ar") or "").strip()
+        if src and label:
+            out.setdefault(src, [])
+            if label not in out[src]:
+                out[src].append(label)
+    return out
+
+
+def _client_references_section(doc, dr: dict, lang: str = "ar",
+                               ledger: "dict | None" = None) -> None:
     """المراجع (§A) — مصادر عمومية فريدة فقط، سطر واحد لكل مصدر: الاسم +
     الرابط الرسمي الحقيقي + تاريخ آخر جمع بيانات منه. لا جدول أدلة تدقيقي
     ببند لكل حقيقة، ولا بند بشارة ○ غير متحقَّق (§A-4: لا يُعرَض كمرجعٍ
@@ -4136,6 +4272,7 @@ def _client_references_section(doc, dr: dict, lang: str = "ar") -> None:
     if not refs:
         doc.add_paragraph(_T("references_none", lang))
         return
+    _supported = _supported_facts(ledger, lang)
     for key in sorted(refs, key=lambda k: refs[k]["name"]):
         r = refs[key]
         # الموجة ٠: اسمُ المصدر يبقى كما رُصد (اسمُ علَم)، وما حوله بلغة
@@ -4145,6 +4282,13 @@ def _client_references_section(doc, dr: dict, lang: str = "ar") -> None:
         if r["retrieved_at"]:
             line += " (" + _T("collected_on", lang,
                               date=r["retrieved_at"]) + ")"
+        # تقرير ٧ §7: ما يسنده هذا المصدرُ من حقائق التقرير — بالاسم.
+        # مطابقةٌ بالتساوي بعد التطبيع — «World Bank» لا تسند حقائقَ
+        # «World Bank WITS» (مراجعة §58).
+        sup = _supported.get(key) or []
+        if sup:
+            sep = ", " if silk_i18n.normalize(lang) == "en" else "، "
+            line += " — " + _T("ref_supports", lang, facts=sep.join(sup))
         doc.add_paragraph(line, style="List Bullet")
 
 
@@ -4436,7 +4580,7 @@ def render_client_docx(view: dict, path: str) -> str:
     _client_gaps_section(doc, dr, lang, ledger=view.get("ledger"))
 
     # ٧) المراجع (تحلّ محلّ «سجل الأدلة للمدققين» — مصادر عمومية فقط، §A)
-    _client_references_section(doc, dr, lang)
+    _client_references_section(doc, dr, lang, ledger=view.get("ledger"))
 
     # B1 (SPEC-v2): مسرد المصطلحات — تقرير العميل يعيد ترتيب الأقسام فلا يرث
     # المسرد من نصّ السرد؛ يُعرَض هنا صراحةً من بنية النموذج (مُطهَّراً).
@@ -5180,7 +5324,7 @@ def render_academic_docx(view: dict, path: str) -> str:
         _client_render_body_block(doc, roadmap_part)
 
     # المراجع + المسرد — نفس أقسام العميل القائمة.
-    _client_references_section(doc, dr)
+    _client_references_section(doc, dr, ledger=view.get("ledger"))
     _docx_glossary(doc, dr, sanitize=_client_sanitize)
 
     # نفس سلسلة بوابات العميل الختامية حرفياً.
@@ -5952,7 +6096,11 @@ def _docx_leads(doc, dr: dict, sanitize=None, lang: str = "ar",
         return
     rows = [[(sanitize(c) if sanitize else c) for c in _lead_cells(lead, lang)]
             for lead in leads]
-    _add_table(doc, _leads_header(lang), rows)
+    head = _leads_header(lang)
+    # تقرير ٧ §7: الاسمُ والعنوانُ أعرض، والتقييمُ أضيق؛ والهاتفُ والبريدُ
+    # والموقعُ من اليسار لليمين داخل الجدول العربيّ.
+    weights = [3, 3, 2, 2.5, 2.5, 1] + ([3] if len(head) > 6 else [])
+    _add_table(doc, head, rows, widths=weights, ltr_cols=(2, 3, 4))
     line = MAPS_DISCLAIMER
     doc.add_paragraph(sanitize(line) if sanitize else line,
                       style="Intense Quote")
