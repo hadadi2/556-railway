@@ -744,6 +744,106 @@ def price_numbers_in_text(text: object) -> list:
     return out
 
 
+import logging as _logging
+import os as _os
+
+log = _logging.getLogger(__name__)
+_EQUIV_PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                            "data", "product_equivalence_l1.csv")
+_EQUIV_ROWS: "list | None" = None
+#: عتبةُ الدليل لرصد السعر — عندها فما دون نتيجةُ بحثٍ «تحتاج تحققاً» (الدرس
+#: ٢٨١). النتيجةُ العضوية لأداة البحث تحمل 0.5 بالضبط (`silk_websearch_agent`)،
+#: وصفحةُ المنتج 0.65 — فالحدُّ شاملٌ لا صارم.
+PRICE_CHECK_MAX_CONF = 0.5
+_AR = "\u0600-\u06FF"
+# نفيٌ قبل العبارة («غير فوري»، «not instant») يقلب معناها — لا تُحتسب.
+_NEGATION_RE = _re.compile(r"(?:غير|بدون|بلا|ليس|not|non|without|no)[\s\-]*$",
+                           _re.IGNORECASE)
+# ما بعد «مبني على:» سجلُّ مصدرٍ (استعلامُ البحث) لا وصفُ المنتج، وكذلك النصُّ
+# بين علامتي اقتباس — لا يُقرأ منهما تكافؤ.
+_PROVENANCE_RE = _re.compile(r"مبني على\s*:.*$|'[^']*'|\"[^\"]*\"|«[^»]*»",
+                             _re.DOTALL)
+
+
+def _term_re(term: str) -> str:
+    """حدودُ العبارة: العربيةُ بأدوات الالتصاق («بالسكر»، «القهوة الفورية»)
+    ولواحقِ التأنيث/النسبة (فورية)؛ اللاتينيةُ والأرقامُ بحدٍّ لاتينيّ —
+    نمطُ `silk_narrative._currency_token_re` نفسُه."""
+    esc = _re.escape(term)
+    if _re.match(f"[{_AR}]", term):
+        return (f"(?<![{_AR}])[وفبكل]{{0,2}}(?:ال)?{esc}(?:ة|ية|ات)?"
+                f"(?![{_AR}])")
+    return f"(?<![A-Za-z0-9]){esc}(?![A-Za-z])"
+
+
+def _equivalence_rows() -> list:
+    """صفوفُ `data/product_equivalence_l1.csv` — (بادئة، نمطٌ مجمَّع، أساس)،
+    الأطولُ بادئةً أولاً. تعذّرُ القراءة = لا تصفية (السلوكُ السابق) وسطرُ
+    خطأ، لا تخمين."""
+    global _EQUIV_ROWS
+    if _EQUIV_ROWS is not None:
+        return _EQUIV_ROWS
+    import csv as _csv
+    rows: list = []
+    try:
+        with open(_EQUIV_PATH, encoding="utf-8") as fh:
+            for r in _csv.DictReader(l for l in fh if not l.startswith("#")):
+                pre = "".join(ch for ch in str(r.get("hs_prefix") or "")
+                              if ch.isdigit())
+                terms = [t.strip() for t in str(r.get("terms") or "").split("|")
+                         if t.strip()]
+                if not pre or not terms:
+                    continue
+                pat = _re.compile("|".join(_term_re(t) for t in terms),
+                                  _re.IGNORECASE)
+                rows.append((pre, pat, (r.get("basis") or "").strip()))
+    except (OSError, ValueError, _csv.Error) as e:  # noqa: BLE001
+        log.error("product_equivalence_l1.csv unreadable: %s", e)
+    rows.sort(key=lambda r: -len(r[0]))
+    _EQUIV_ROWS = rows
+    return rows
+
+
+def non_equivalent_basis(text: object, hs_code: object) -> str:
+    """أساسُ عدم التكافؤ («HS 2101…») حين يصف **نصُّ المنتج** بديلاً غيرَ مكافئٍ
+    لمنتج هذا البند — وإلا «». تقرير ٧ §3.3 (الدرس ٢٨١): القهوةُ الفورية
+    و«٣ في ١» ليست بنّاً محمّصاً، فلا تصير سعراً مرجعياً له.
+
+    سجلُّ المصدر («مبني على: …»، الاستعلامُ المقتبس) والعبارةُ المنفيّة لا
+    تُحتسب — «بنٌّ محمّص غير فوري» مكافئ."""
+    digits = "".join(ch for ch in str(hs_code or "") if ch.isdigit())
+    s = _PROVENANCE_RE.sub(" ", str(text or ""))
+    if not digits or not s.strip():
+        return ""
+    for pre, pat, basis in _equivalence_rows():
+        if not digits.startswith(pre):
+            continue
+        for m in pat.finditer(s):
+            if not _NEGATION_RE.search(s[max(0, m.start() - 12):m.start()]):
+                return basis or pre
+    return ""
+
+
+def price_row_state(value: object, note: object, source: object,
+                    confidence: object, hs_code: object) -> str:
+    """حالةُ صفّ السعر المشتركة بين المرساة والعرض — «العرضُ والمرساةُ حكمٌ
+    واحد» (الدرس ٢٨١، مراجعة §58): `non_equivalent` ثمّ `needs_verification`
+    (رصدُ تجزئةٍ عند عتبة الدليل فما دون) ثمّ «» (يُكمله العرضُ بنقص العملة/
+    الوزن). الضعفُ يخصّ سعرَ الرف وحده: سعرُ الجملة لا يصير مرجعاً أصلاً."""
+    product_text = f"{value if isinstance(value, str) else ''} {note or ''}"
+    if non_equivalent_basis(product_text, hs_code):
+        return "non_equivalent"
+    try:
+        conf = float(confidence)
+    except (TypeError, ValueError):
+        conf = None
+    blob = f"{note or ''} {value if isinstance(value, str) else ''}"
+    if conf is not None and conf <= PRICE_CHECK_MAX_CONF and \
+            detect_price_level(blob, source) == "retail":
+        return "needs_verification"
+    return ""
+
+
 def detect_price_level(note: object, source: object = "") -> "str | None":
     """استنتِج مستوى السعر من ملاحظته ثمّ من مصدره — أو `None`. حتميٌّ بلا نموذج.
 
@@ -1450,6 +1550,7 @@ def economics_view(dr: dict, product_card: dict | None = None,
     # يُستبعد كل ما ليس سعراً: البوليان، والعدّادات/النِسَب/المؤشرات
     # (مراجعة §58: «عدد المتاجر 3» كان يمكن أن يصبح مرساة السعر).
     prices = []
+    excluded: dict = {}
     for f in _findings_of(missions.get("pricing_scout")):
         val, note = _fv(f), _fnote(f)
         if isinstance(val, bool):
@@ -1476,12 +1577,30 @@ def economics_view(dr: dict, product_card: dict | None = None,
         if fv:
             # الدرس ٢٧١: العملةُ قد تعيش في نصّ القيمة («25.80 رينجيت») لا في
             # الملاحظة — المرساةُ تقرؤها من النصّين معاً.
+            # الدرس ٢٨١: الحالةُ من المصنِّف المشترك مع العرض.
+            _st = price_row_state(val, note, _fsource(f),
+                                  f.get("confidence") if isinstance(f, dict)
+                                  else getattr(f, "confidence", None), hs_code)
+            if level == "retail" and _st:
+                excluded[_st] = excluded.get(_st, 0) + 1
+                continue
             prices.append((fv, blob.strip() if isinstance(val, str) else note,
                            level))
     # **الموجة C (E-01/E-09).** المرساةُ من صفوف **التجزئة المُصرَّح بها** فقط.
     # خلطُ المستويات كان يُنتِج تفاؤلاً منهجياً: سعرُ حدودٍ يُتبنّى سعرَ رفّ.
     retail_rows = [(v, n) for v, n, lvl in prices if lvl == "retail"]
     other_rows = [(v, n, lvl) for v, n, lvl in prices if lvl != "retail"]
+    # الدرس ٢٨١ (تقرير ٧ §3.3): بديلٌ غيرُ مكافئ (فوري/«٣ في ١»/خليط) ورصدٌ
+    # عند عتبة الدليل لا يدخلان اختيارَ المرجع — يُعدّان ويُعلَنان.
+    _why = {"non_equivalent": "لمنتج غير مكافئ (فوري أو مخلوط أو من بند آخر) "
+                              "— يُعرض بديلاً غير مباشر",
+            "needs_verification": "من نتائج بحث تحتاج تحققاً — لا يصير "
+                                  "مرجعاً قبل تثبيته بصفحة منتج"}
+    for st, n_ in excluded.items():
+        gaps.append(f"استُبعد {n_} سعر رف {_why[st]}")
+    if excluded and not retail_rows:
+        gaps.append("لا سعر رف لمنتج مكافئ ومثبت مرصود بعد — الحل العكسي "
+                    "معلّق حتى يُرصد واحد")
     anchor = None
     local_ccy = market_currency(market_iso3)
     if retail_rows:
@@ -1516,6 +1635,8 @@ def economics_view(dr: dict, product_card: dict | None = None,
                                  currency=currency_in_note(src_note),
                                  source=src_note,
                                  note="أدنى سعر رف منافس مرصود")
+    elif excluded:
+        pass    # الاستبعادُ أُعلن أعلاه بسببه — لا «لا سعر رف مرصود» مناقِض
     elif other_rows:
         # أسعارٌ مرصودةٌ فعلاً لكن **بمستوىً آخر أو مجهول** — تُعلَن ولا تُرسي.
         named = sorted({PRICE_LEVEL_AR.get(lvl, "مستوى غير محدد")
@@ -1674,6 +1795,13 @@ def economics_view(dr: dict, product_card: dict | None = None,
                     "pair": f"{local_ccy or 'LCU'}/USD",
                     "rate": fx, "year": _dy, "type": "annual_average",
                     "source": "World Bank PA.NUS.FCRF"}
+                # الدرس ٢٨١ (تقرير ٧ §3.4): نوعُ الصرف يُقال حيث يُستعمل —
+                # متوسطٌ سنويّ لا سعرُ يوم الرصد؛ صالحٌ للمقارنة التقريبية لا
+                # للدقيقة، ولا يُقال «لا سعر صرف» ما دام مرصوداً.
+                reverse.setdefault("parameters", []).append(
+                    f"سعر الصرف {fx:g} {local_ccy or 'LCU'}/USD متوسط سنوي"
+                    + (f" {_dy}" if _dy else "")
+                    + " (البنك الدولي) لا سعر يوم الرصد — التحويل تقريبي")
             else:
                 gaps.append("مقارنة التنافسية السعرية (أقصى EXW مقابل متوسط "
                             "سعر الاستيراد) غير محسوبة — الناقص: سعر الصرف "

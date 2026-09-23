@@ -4597,6 +4597,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    281: lambda: (
+        _needles("silk_economics.py", "if non_equivalent_basis(product_text, hs_code):",
+                 "لا سعر يوم الرصد")(),
+        _needles("silk_reports.py", '_T("price_observed_at", lang,')(),
+        _needles("tests/test_report7_price_states.py",
+                 "def test_each_row_carries_its_state_and_readable_fields")(),
+        _needles("tests/test_lessons_enforcement.py", "(281, ")()),
     280: lambda: (
         _needles("silk_requirements_agent.py", '"verified_at": (r.get("verified_at") or "").strip()',
                  'key == "not_hs_chapter"')(),

@@ -894,6 +894,62 @@ def _price_row_reason_row(dp: dict) -> str:
     return _price_row_reason(f"{v} {dp.get('note') or ''}")
 
 
+# الدرس ٢٨١ (تقرير ٧ §3.3): حالاتُ صفّ السعر الخمس لا تُقال بجملةٍ واحدة —
+# صالحٌ للمقارنة / ناقصُ العملة أو العبوة / منتجٌ غيرُ مكافئ / نتيجةُ بحثٍ
+# تحتاج تحققاً / (لا سعرَ مرصود = غيابُ القسم وفجوةُ الاقتصاد المسمّاة).
+PRICE_STATUS_COMPARABLE = "comparable"
+PRICE_STATUS_INCOMPLETE = "incomplete"
+PRICE_STATUS_NON_EQUIVALENT = "non_equivalent"
+PRICE_STATUS_NEEDS_CHECK = "needs_verification"
+PRICE_REASON_NON_EQUIVALENT = "منتج غير مكافئ"
+PRICE_REASON_NEEDS_CHECK = "نتيجة بحث تحتاج تحققاً"
+PRICE_REASON_CURRENCY_UNRESOLVED = "عملة غير محسومة لهذا السوق"
+
+
+def _price_observation(dp: dict, hs_code: object = None,
+                       market_ccy: str = "") -> dict:
+    """صفُّ سعرٍ مرصود بحالته وحقوله المستخرَجة حتمياً — لا تخمين.
+
+    الحالةُ من المصنِّف المشترك مع المرساة (`silk_economics.price_row_state`):
+    غيرُ المكافئ، ثمّ نتيجةُ البحث عند عتبة الدليل، ثمّ النقصُ القائم (عملة/
+    وزن/وحدة)، وإلا صالحٌ للمقارنة. الحقول: العملةُ ISO محسومةً بعملة السوق
+    (أو اسمُها كما رُصد حين لا تُحسَم — والصفُّ ناقصٌ حينها)، ووزنُ العبوة،
+    والرابطُ (الحقلُ المهيكل أولاً)، وتاريخُ الرصد؛ الغائبُ `None`."""
+    import silk_economics as _E
+    import silk_narrative as _N
+    from silk_reports import _URL_RE
+    value = dp.get("value")
+    note = _clean_price_row_note(_strip_internal_plumbing(str(dp.get("note") or "")))
+    # دورة C4: قيمة None تحتفظ بسببها («وحدة غامضة») — ضمُّ الملاحظة كان
+    # يجعل ذكرَ الوحدة في جملةِ نفيٍ «قابلاً للحساب».
+    reason = _price_row_reason_row(dp)
+    blob = f"{value if isinstance(value, str) else ''} {note}"
+    cur = _E.currency_in_note(blob) or _N.currency_in(blob)
+    iso = _E._iso(cur, market_ccy) if cur else ""
+    if cur and not iso and not reason:
+        reason = PRICE_REASON_CURRENCY_UNRESOLVED
+    state = _E.price_row_state(value, dp.get("note"), dp.get("source"),
+                               dp.get("confidence"), hs_code)
+    if state == PRICE_STATUS_NON_EQUIVALENT:
+        reason = PRICE_REASON_NON_EQUIVALENT
+    elif state == PRICE_STATUS_NEEDS_CHECK:
+        # النقصُ القائم يبقى مذكوراً مع ضعف الدليل — لا يُخفي أحدُهما الآخر.
+        reason = (f"{reason}؛ " if reason else "") + PRICE_REASON_NEEDS_CHECK
+    else:
+        state = PRICE_STATUS_INCOMPLETE if reason else PRICE_STATUS_COMPARABLE
+    try:
+        kg, _litre = _E._parse_pack_from_note(blob)
+    except Exception:  # noqa: BLE001
+        kg = None
+    url = str(dp.get("url") or "").strip() or None
+    if not url:
+        m = _URL_RE.search(f"{blob} {dp.get('source') or ''}")
+        url = m.group(0) if m else None
+    return {"value": value, "note": note, "reason": reason, "status": state,
+            "currency": iso or (cur or None), "pack_kg": kg, "url": url,
+            "observed_at": str(dp.get("retrieved_at") or "")[:10] or None}
+
+
 def _prices(row: dict) -> list:
     """أسعار السوق المرصودة — observed retail listings (localprice layer)."""
     out = []
@@ -3077,6 +3133,12 @@ def _deep_research_view(result: dict, lang: str = "ar",
     dr = result.get("deep_research")
     if not dr:
         return None
+    # عملةُ السوق مرّةً للعرض كلّه (مراجعة §58) — تحسم عملةَ كلّ صفّ سعر.
+    try:
+        import silk_economics as _Eco
+        _mkt_ccy = _Eco.market_currency((result.get("market") or {}).get("iso3"))
+    except Exception:  # noqa: BLE001
+        _mkt_ccy = ""
     missions = {}
     for key, rep in (dr.get("missions") or {}).items():
         f = _report_fields(rep)
@@ -3521,13 +3583,7 @@ def _deep_research_view(result: dict, lang: str = "ar",
         # وصفُّ المرجع الداخلي الخالص يُسقَط (انظر `_clean_price_row_note`).
         "price_rows": [
             row for row in (
-                {"value": (_dp(x).get("value")),
-                 "note": _clean_price_row_note(
-                     _strip_internal_plumbing(str(_dp(x).get("note") or ""))),
-                 # دورة C4: قيمة None تحتفظ بسببها («وحدة غامضة») — ضمُّ الملاحظة
-                 # كان يجعل ذكرَ الوحدة في جملةِ نفيٍ «قابلاً للحساب»، وحرفية
-                 # "None" كانت تُحقن في النص المصنف.
-                 "reason": _price_row_reason_row(_dp(x))}
+                _price_observation(_dp(x), result.get("hs_code"), _mkt_ccy)
                 for x in ((missions.get("pricing_scout") or {}).get("findings") or []))
             if (row["note"] or row["value"] is not None)
             and _is_price_row(row["value"], row["note"])],

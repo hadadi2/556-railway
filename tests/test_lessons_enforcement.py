@@ -251,6 +251,12 @@ _TEST_ANCHORS = [
      ["def test_text_drawn_inside_the_image_passes_the_client_guard",
       "def test_a_label_emptied_by_the_sanitizer_drops_the_whole_chart",
       "def test_a_missing_value_draws_no_bar_measured_in_ink"]),
+    # ٢٨١ — تقرير ٧: المنتجُ المكافئ، وحالاتُ صفّ السعر، ونوعُ الصرف.
+    (281, "silk_economics.py", ["def non_equivalent_basis", "PRICE_CHECK_MAX_CONF = 0.5", "def price_row_state"]),
+    (281, "silk_render.py", ["def _price_observation", "PRICE_STATUS_NON_EQUIVALENT"]),
+    (281, "data/product_equivalence_l1.csv", ["hs_prefix,terms,basis,note"]),
+    (281, "tests/test_report7_price_states.py",
+     ["def test_a_non_equivalent_price_never_becomes_the_anchor"]),
     # ٢٨٠ — تقرير ٧: ماليزيا بمرجع، والمحمّصُ مصنَّع، والسنةُ الجزئية خارج النموّ.
     (280, "silk_ai_judge.py", ["def _load_hs_processing", "_HS_PROCESSING.get("]),
     (280, "data/hs_processing_l1.csv", ["090121,processed"]),
