@@ -76,7 +76,7 @@ async function settleAfterClassification(page) {
 // ترتيبِ الحالات (dialog قبل auto) التي كانت تلتفّ حول بقاء الشارة. أبطأُ
 // بثوانٍ، وحتميٌّ بدل مرهونٍ بسرعة الشبكة.
 async function resetPage(page) {
-  await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.goto(BASE + "/index.html", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#marketBox .mrow", { timeout: 20000 });
 }
 
@@ -141,7 +141,7 @@ async function main() {
   page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
   try {
-    await page.goto(BASE, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(BASE + "/index.html", { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector("#marketBox .mrow", { timeout: 15000 });
     ok("dashboard_render");
 

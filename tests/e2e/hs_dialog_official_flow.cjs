@@ -37,7 +37,7 @@ function fail(name, detail) {
 // عزلُ الجولات — نفس درسِ `hs_tier_family_flow.cjs`: أعِد تحميل الصفحة بين
 // الحالات كي لا يتسرّب طلبٌ معلَّقٌ ولا لافتةٌ متأخّرة إلى الجولة التالية.
 async function resetPage(page) {
-  await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.goto(BASE + "/index.html", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#marketBox .mrow", { timeout: 20000 });
 }
 
