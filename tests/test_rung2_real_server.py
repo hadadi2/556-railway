@@ -52,15 +52,25 @@ def server():
 # ── الواجهة تُخدَم فعلياً (الشريط الجانبي/أزرار التصدير موجودة) ──────────────
 
 def test_dashboard_html_is_served_with_the_touched_ui_hooks(server):
-    """`GET /` يخدم اللوحة الفعلية بمرابط الواجهة التي تختبرها رُتبة ٣:
-    الشريط الجانبي (#histList)، وزرّا التصدير (Word=#pdfBtn، Markdown=#mdBtn)."""
-    st, body, _ = _get(server.base_url, "/")
+    """`GET /index.html` يخدم اللوحة الفعلية بمرابط الواجهة التي تختبرها رُتبة ٣:
+    الشريط الجانبي (#histList)، وزرّا التصدير (Word=#pdfBtn، Markdown=#mdBtn).
+    تغييرٌ معلن (طلب المالك 2026-09-24): الجذرُ يحوّل إلى `/platform`، واللوحةُ
+    ملفُّها الثابت نفسُه على `/index.html`."""
+    st, body, _ = _get(server.base_url, "/index.html")
     assert st == 200
     html = body.decode("utf-8", "replace")
     assert 'id="histList"' in html          # الشريط الجانبي
     assert 'id="pdfBtn"' in html            # تصدير Word/PDF
     assert 'id="mdBtn"' in html             # تصدير Markdown
     assert 'id="boardBody"' in html         # لوحة العرض
+
+
+def test_root_opens_the_platform_on_the_real_server(server):
+    st, body, _ = _get(server.base_url, "/")      # urllib يتبع التحويل
+    assert st == 200
+    # صفحةُ هبوط المنصّة نفسُها، لا اللوحة.
+    assert "<title>سِلك للدراسات</title>".encode() in body
+    assert b'id="histList"' not in body
 
 
 def test_health_is_200_on_the_real_server(server):

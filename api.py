@@ -4387,6 +4387,16 @@ def create_app():
     # Render service hosts BOTH the API and the UI (same origin, no CORS needed).
     # Registered last so the API routes above take precedence over static files.
     web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+
+    # طلب المالك (2026-09-24): رابطُ الخدمة المجرّد يفتح المنصّة `/platform`
+    # (صفحة الهبوط ثمّ البوابة) — لا لوحةَ المشغّل. اللوحةُ باقيةٌ كما هي على
+    # `/index.html` (الملفُّ الثابت نفسُه). مسجَّلٌ قبل التركيب الثابت فيفوز
+    # على `html=True` الذي كان يخدم `index.html` للجذر.
+    @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+    def root_to_platform():
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse("/platform", status_code=307)
+
     if os.path.isdir(web_dir):
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 

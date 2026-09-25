@@ -36,7 +36,7 @@ async function main() {
 
   try {
     // ١) افتح اللوحة — /config يعيد hs_classifier/producer_advisory=true.
-    await page.goto(BASE, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(BASE + "/index.html", { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector("#marketBox .mrow", { timeout: 15000 });
     ok("dashboard_render");
 

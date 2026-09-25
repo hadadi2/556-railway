@@ -42,7 +42,7 @@ async function main() {
 
   try {
     // ١) افتح اللوحة — الصفحة تُحمَّل والشريط الجانبي يُملأ من GET /analyses.
-    await page.goto(BASE, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(BASE + "/index.html", { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector("#histList .hist", { timeout: 15000 });
     ok("dashboard_render");
 
