@@ -96,8 +96,19 @@ def _analyze_markdown() -> str:
     return render_markdown(build_sample_result()["view"])
 
 
+def _golden_malaysia_markdown() -> str:
+    """العيّنةُ المرجعية للمالك (قهوة محمصة → ماليزيا، 9.5/10 بعد خمس جولات) —
+    نصٌّ مثبَّت لا يُولَّد من الشيفرة **بعد**: هدفُ محرك القوالب (P0-T في
+    `docs/plans/STUDY_MODE_FIX_PLAN.md`) أن يُنتِجه حرفاً بحرف. حتى ذلك الحين
+    القفلُ قفلُ ثباتٍ على المحتوى المثبَّت نفسه (كعيّنة الكويت التاريخية)، ويُستبدَل
+    بمسار التوليد فورَ وجوده."""
+    return (_ROOT / "samples" / "golden_malaysia_coffee_study.md").read_text(
+        encoding="utf-8")
+
+
 _CASES = [
     ("kuwait_peanut_butter_research_report.md", _kuwait_markdown),
+    ("golden_malaysia_coffee_study.md", _golden_malaysia_markdown),
     ("research_report_latest.md", _research_markdown),
     ("report_full_latest.md", _analyze_markdown),
 ]
