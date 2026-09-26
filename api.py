@@ -3839,15 +3839,15 @@ def create_app():
                 status_code=503, detail=silk_reports.pdf_busy_detail(),
                 headers={"Retry-After": str(silk_reports.PDF_RETRY_AFTER_S)})
         except RuntimeError as e:
-            import silk_ops_log
-            silk_ops_log.record_error(
-                "pdf_export_failure",
-                "فشل إنتاج PDF (محرّك التحويل غير متاح أو فشل) — التفصيل في "
-                "استجابة الطلب الأصلي",
-                context={"analysis_id": analysis_id})
+            # البند ٢٨٤: السجلُّ برمزٍ مسمّى (غيابُ المحرّك ≠ فشلُ التحويل ≠ رفضُ
+            # فحص) عبر الدالة نفسِها التي يستدعيها مسارُ المصنع.
+            detail = silk_reports.record_pdf_failure(
+                e, "operator", {"analysis_id": analysis_id})
             import shutil as _sh
             _sh.rmtree(_td, ignore_errors=True)   # نظّف عند الفشل أيضاً
-            raise HTTPException(status_code=503, detail=_redact_text(str(e)))
+            # جسمٌ مسمّى كسطح المصنع (`error` + `message` منقًّى) — لوحةُ المشغّل
+            # تقرأ `message` (`detailText`)، والرمزُ يفرّق الأسباب في الردّ نفسه.
+            raise HTTPException(status_code=503, detail=detail)
         return FileResponse(path, filename=fname, media_type="application/pdf",
                             background=_rmtree_bg(_td))
 

@@ -80,6 +80,10 @@ jobs:
       - name: Check platform dialogs and PDF refusal at phone and desktop sizes
         run: NODE_PATH=$(npm root -g) node tests/e2e/platform_dialog_recovery.cjs
 
+      # البند ٢٨٤: «معطَّل على الخادم» لغياب المحرّك وحده — كلُّ رمزِ عطلٍ بجملته.
+      - name: Check each PDF failure code shows its own sentence (lesson 284)
+        run: NODE_PATH=$(npm root -g) node tests/e2e/platform_pdf_failure_codes.cjs
+
       - name: Run rungs 2-3 (real server + real browser)
         env:
           SILK_RUN_E2E: "1"
@@ -152,6 +156,11 @@ jobs:
           uid="$(docker exec silk-ci sh -c "awk '/^Uid:/{print \$2}' /proc/1/status")"
           echo "pid 1 uid=$uid"
           test "$uid" = "10001"
+      # البند ٢٨٤: رفضُ PDF على LibreOffice الإنتاج وخطّه (Debian + IBM Plex) لم
+      # يكن يراه CI — رُتبتا ٢–٣ تحوّلان على LibreOffice مشغّل Ubuntu. هنا تُحوَّل
+      # دراساتٌ عربيةٌ حقيقيةُ الشكل **داخل الصورة المنشورة** بدوالّ الإنتاج نفسها.
+      - name: Convert real-shape Arabic studies to PDF inside the image (lesson 284)
+        run: docker exec silk-ci python tools/pdf_smoke.py
       - name: Container logs (always — the evidence when the step above fails)
         if: always()
         run: docker logs silk-ci 2>&1 | tail -n 100 || true

@@ -28,6 +28,17 @@ log = logging.getLogger(__name__)
 _DOCX_HINT = "python-docx غير مثبتة — pip install python-docx"
 
 
+class ReportGateError(RuntimeError):
+    """بوّابةُ محتوى/جودة رفضت المُنتَج — **حتميّ**: يتكرّر مع كلّ محاولة على
+    المستند نفسه (البند ٢٨٤). سطحُ المصنع يسمّيه `pdf_rejected` لا «أعد المحاولة»
+    ولا «معطَّل». `RuntimeError` كي لا ينكسر مستدعٍ قديم."""
+
+
+class ExportEngineUnavailable(RuntimeError):
+    """محرّكُ التصدير غائب (python-docx، أو soffice عبر `PdfEngineUnavailable`) —
+    العطلُ الوحيد الذي هو «معطَّل على الخادم» (البند ٢٨٤)."""
+
+
 class ClientArtifactGateError(RuntimeError):
     """رفضُ بوّابةِ نصّ المُنتَج النهائي — **رفضُ جودةٍ لا عطلُ ميزة**.
 
@@ -58,7 +69,7 @@ def _assert_production_clean(view: dict) -> None:
     blob = _json.dumps(view, ensure_ascii=False, default=str)
     for marker in _HERMETIC_MARKERS:
         if marker in blob:
-            raise RuntimeError(
+            raise ReportGateError(
                 f"hermetic artifact '{marker}' found in a production report "
                 "view — رفض التوليد: أثر برهاني في تقرير إنتاجي (اضبط "
                 "SILK_HERMETIC=1 للتشغيلات البرهانية)")
@@ -823,7 +834,11 @@ def classify_bracket_sequence(seq: str, opener: str, closer: str) -> tuple:
 
     **الصفُّ غيرُ المتوازن يُتجاهَل كاملاً** (زوجٌ تشظّى عند لفّ السطر يترك
     قوساً يتيماً يزيح كلَّ الأزواج التالية فيُنتِج إنذاراً كاذباً) — تحفّظٌ
-    مقصود: لا حكمَ حيث لا يقين. Unbalanced row ⇒ no verdict."""
+    مقصود: لا حكمَ حيث لا يقين. Unbalanced row ⇒ no verdict.
+
+    البند ٢٨٤: المقياسُ الإنتاجيّ (`bracket_orientation_counts`) لم يعد يحكم صفّاً
+    صفّاً — يقرن الأقواسَ بترتيب القراءة عبر المستند. تبقى هذه الدالةُ تعريفَ
+    الاتجاه المرجعيّ لصفٍّ متوازنٍ واحد (`)(` سليم، `()` مقلوب) الذي يُعايَر عليه."""
     if seq.count(opener) != seq.count(closer):
         return 0, 0
     ok = inverted = 0
@@ -836,55 +851,149 @@ def classify_bracket_sequence(seq: str, opener: str, closer: str) -> tuple:
     return ok, inverted
 
 
+# البند ٢٨٤: نوافذُ حملِ قوسٍ افتتاحيٍّ معلَّق (بعدد خطوط الأساس). قِيست على ٨٢ PDF
+# حقيقيّ الشكل (خطّان): كلُّ زوجٍ عربيٍّ سليم يُغلَق خلال ٥ خطوطٍ (لفُّ سطرٍ، خلايا
+# جدولٍ متشابكة، فاصلُ صفحة) — `_BRACKET_CARRY_ROWS` هامشٌ فوق ذلك. المعلَّقُ
+# الأبعدُ منه لا يُحتسَب «سليماً»، لكنّ ختاميّه إن جاء خلال `_BRACKET_EXPIRED_ROWS`
+# يُتخطّى لا يُعَدّ مقلوباً (قوسٌ طويلٌ في خليّة ضيّقة). القوسُ الافتتاحيُّ في مقطعٍ
+# لاتينيّ يُقرَن بختاميٍّ عربيٍّ في السطر التالي فقط (`_BRACKET_LATIN_ROWS`، ٦ حالاتٍ
+# كلُّها على مسافة ١) — أبعدُ من ذلك يتيمٌ (رابطٌ مبتور) لا يبتلع انقلاباً.
+_BRACKET_CARRY_ROWS = 8
+_BRACKET_EXPIRED_ROWS = 30
+_BRACKET_LATIN_ROWS = 1
+_BASELINE_TOL = 0.5
+
+
+def _bracket_segments(page) -> list:
+    """مقاطعُ الصفحة بترتيب القراءة — `[(خطّ الأساس، [(x، محرف)...])...]`.
+
+    المقطعُ = (كتلة fitz، خطّ أساس): خطُّ الأساس وحده كان يدمج **خلايا الجدول
+    المتجاورة** في صفٍّ واحد (البند ٢٨٤)، و«سطر» fitz وحده يتشظّى عند تغيّر
+    الخطّ فيفصل قوساً عن قرينه في `(1+هامش)` (البند ٢٠١). الترتيب: أعلى⇐أسفل،
+    ثمّ يمين⇐يسار بين مقاطع خطّ الأساس الواحد (المستندُ RTL)."""
+    import collections
+    spans = []
+    for bi, block in enumerate(page.get_text("rawdict").get("blocks", [])):
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                spans.append((span["origin"][1], bi, span.get("chars", [])))
+    # خطوطُ أساسٍ تبعد ≤ `_BASELINE_TOL` نقطةً سطرٌ واحد (تغيّرُ الخطّ داخل السطر
+    # يزيحها كسورَ نقطة) — التقريبُ وحده كان يشطر سطراً على حدّ التقريب.
+    rows = {}
+    anchor = None
+    for y in sorted({y for y, _b, _c in spans}):
+        if anchor is None or y - anchor > _BASELINE_TOL:
+            anchor = y
+        rows[y] = anchor
+    segs = collections.defaultdict(list)
+    for y, bi, chars in spans:
+        for ch in chars:
+            segs[(rows[y], bi)].append((ch["bbox"][0], ch["c"]))
+    order = sorted(segs, key=lambda k: (k[0], -max(x for x, _ in segs[k])))
+    return [(k[0], sorted(segs[k])) for k in order]
+
+
+def _pair_segment(seq, opener, closer, row, judged, state, counts) -> None:
+    """اقرن أقواسَ مقطعٍ واحد بترتيب القراءة — يحدّث `counts` [سليم، مقلوب، متخطّى].
+
+    `state` = (المكدّس، الأرصدة): المكدّسُ `(خطّ، عربيّ؟، ملوَّث؟)` لكلّ افتتاحيٍّ
+    معلَّق، والأرصدةُ خطوطُ افتتاحيّاتٍ عربيةٍ تجاوزت نافذةَ الحمل. **التلوّث**: بعد
+    ختاميٍّ مقلوبٍ في مقطع، الافتتاحيُّ التالي فيه قرينُ ذلك الانقلاب؛ فإن أغلقه
+    ختاميُّ سطرٍ لاحق فالزوجُ مقلوبٌ أيضاً — بلا ذلك يُحسَب بناءٌ مقلوبٌ بالكامل
+    زوجاً واحداً (كلُّ ختاميٍّ مقلوب يُغلق افتتاحيَّ الفقرة السابقة).
+
+    ختاميٌّ بلا مفتوحٍ **مقلوبٌ فقط إن تبعه قرينُه في المقطع نفسه** (الزوجُ المقلوب
+    `()` يقع في سطرٍ واحد)؛ ختاميٌّ يتيمٌ بلا قرين («١)»، أو نصفُ سطرٍ شطره خطُّ
+    أساسٍ مختلفٌ قليلاً) لا حكمَ عليه — كما كان الصفُّ غيرُ المتوازن يُتخطّى."""
+    stack, credits = state
+    tainted = False
+    for i, c in enumerate(seq):
+        if c == opener:
+            stack.append((row, judged, tainted))
+            continue
+        if c != closer:
+            continue
+        while stack and row - stack[0][0] > _BRACKET_CARRY_ROWS:
+            r0, was_judged, was_tainted = stack.pop(0)
+            if was_judged and not was_tainted:  # قرينُ انقلابٍ لا يصير رصيداً
+                credits.append(r0)
+            counts[2] += 1
+        credits[:] = [r for r in credits if row - r <= _BRACKET_EXPIRED_ROWS]
+        if not judged:                     # مقطعٌ لاتينيّ: يُقرَن ولا يُحكَم عليه
+            if stack:
+                stack.pop()
+            counts[2] += 1
+            continue
+        while (stack and not stack[-1][1]
+               and row - stack[-1][0] > _BRACKET_LATIN_ROWS):
+            stack.pop()                    # يتيمٌ لاتينيٌّ قديم في الطريق
+            counts[2] += 1
+        if stack:
+            _r0, was_judged, was_tainted = stack.pop()
+            if was_tainted:
+                counts[1] += 1
+                tainted = True
+            elif was_judged:
+                counts[0] += 1
+            else:
+                counts[2] += 1             # فُتح لاتينياً وأُغلق عربياً: لا حكم
+        elif credits:
+            credits.pop()
+            counts[2] += 1
+        elif opener in seq[i + 1:]:
+            counts[1] += 1                 # ختاميٌّ سبق قرينَه في مقطعه: مقلوب
+            tainted = True
+        else:
+            counts[2] += 1                 # ختاميٌّ يتيم («١)»، سطرٌ مشطور): لا حكم
+
+
 def bracket_orientation_counts(pdf_path: str):
     """قِس اتجاهَ الأقواس هندسياً في PDF — يعيد `(سليم، مقلوب، متخطّى)`،
     أو **`None`** إن لم يقع قياسٌ أصلاً.
 
-    المحارفُ تُجمَّع على **خطّ الأساس** (`origin.y` لكلّ مقطع) لا على «سطر»
-    fitz: ذاك يتشظّى عند تغيّر الخط فيفصل قوساً عن قرينه في صيغةٍ مثل
-    `(1+هامش)` — وهو مصدرُ الإنذارات الكاذبة الأخير الذي قِيس ثمّ أُزيل.
-    الصفوفُ لاتينيّةُ الأغلبية والصفوفُ غيرُ المتوازنة تُستثنى.
+    البند ٢٨٤: الأقواسُ تُقرَن **بترتيب القراءة عبر المستند** لا صفّاً صفّاً.
+    في مقطعٍ عربيّ الأغلبية يقع القوسُ الافتتاحيُّ المنطقيّ على **يمين** مقطعه
+    فتُقرأ الأقواسُ يمين⇐يسار؛ الافتتاحيُّ يُكدَّس، والختاميُّ يُغلق آخرَ مفتوح
+    (**سليم**)، أو — إن لم يكن مفتوحٌ — فهو ختاميٌّ سبق قرينَه: **مقلوب**. هكذا
+    يُغلَق زوجٌ تشظّى عند لفّ السطر أو بين صفحتين أو داخل خليّة جدول في موضعه،
+    وكان المقياسُ القديم يقرأ نصفَيه اليتيمين `()` فيرفض تقاريرَ سليمة.
+
+    المقاطعُ لاتينيّةُ الأغلبية (هاتف، رابط، `UN Comtrade`) لا يُحكَم عليها:
+    أقواسُها تُقرَن يسار⇐يمين ويُتخطّى ختاميُّها اليتيم. النوافذُ والتلوّثُ في
+    `_pair_segment`؛ على عيّنة المعايرة المقلوبة يعدّ ٥/٥ كالمقياس القديم.
+
+    **حدٌّ معروف:** افتتاحيٌّ لاتينيٌّ يتيمٌ في السطر السابق مباشرةً لانقلابٍ عربيّ
+    يُقرَن به فيُتخطّى ذلك الانقلاب — الحالةُ نفسُها هندسياً قرنٌ مشروعٌ (فُتح في سطرٍ
+    لاتينيّ الأغلبية وأُغلق في التالي)، والدقّةُ (لا رفضَ لتقريرٍ سليم) مقدَّمة.
 
     **`None` لا `(0,0,0)`** حين تغيب `pymupdf` أو يتعذّر الاستخراج: العقدُ
     المؤسِّس نفسُه (فشلُ القياس => `None` لا صفرٌ مختلَق) — صفرٌ هنا كان
     يُقرَأ «فُحِص فكان نظيفاً»، وهو ادعاءُ فحصٍ لم يقع."""
-    import collections
     try:
         import fitz  # pymupdf — تبعيةُ إنتاجٍ منذ تدقيق 2026-08-27
     except ImportError:
         log.info("pdf bracket geometry skipped: pymupdf غير مثبّتة")
         return None
-    ok = inverted = skipped = 0
+    counts = [0, 0, 0]                      # سليم، مقلوب، متخطّى
+    state = {opener: ([], []) for opener, _ in _BRACKET_PAIRS}
+    row = 0
     try:
         with fitz.open(pdf_path) as pdf:
             for page in pdf:
-                rows = collections.defaultdict(list)
-                for block in page.get_text("rawdict").get("blocks", []):
-                    for line in block.get("lines", []):
-                        for span in line.get("spans", []):
-                            key = round(span["origin"][1], 1)
-                            for ch in span.get("chars", []):
-                                rows[key].append((ch["bbox"][0], ch["c"]))
-                for chars in rows.values():
-                    chars.sort()
-                    text = "".join(c for _, c in chars)
-                    if not is_arabic_majority(text):
-                        continue
+                last_y = None
+                for y, chars in _bracket_segments(page):
+                    if y != last_y:
+                        row, last_y = row + 1, y
+                    judged = is_arabic_majority("".join(c for _, c in chars))
+                    seq = [c for _, c in (reversed(chars) if judged else chars)]
                     for opener, closer in _BRACKET_PAIRS:
-                        seq = "".join(c for _, c in chars
-                                      if c in (opener, closer))
-                        if not seq:
-                            continue
-                        if seq.count(opener) != seq.count(closer):
-                            skipped += 1
-                            continue
-                        good, bad = classify_bracket_sequence(
-                            seq, opener, closer)
-                        ok += good
-                        inverted += bad
+                        _pair_segment(seq, opener, closer, row, judged,
+                                      state[opener], counts)
     except Exception as e:  # noqa: BLE001 — تعذّر القياس ≠ مستند مقلوب
         log.warning("pdf bracket geometry failed: %s", e)
         return None
+    ok, inverted, skipped = counts
+    skipped += sum(len(stack) for stack, _ in state.values())
     return ok, inverted, skipped
 
 
@@ -913,7 +1022,12 @@ def _pdf_bracket_check(pdf_path: str) -> None:
     log.info("pdf bracket geometry: ok=%d inverted=%d skipped=%d limit=%d",
              ok, inverted, skipped, limit)
     if inverted > limit:
-        raise RuntimeError(
+        # البند ٢٨٤: الرفضُ يُسجَّل بمستوى WARNING — سطرُ INFO أعلاه لا يُطبَع
+        # تحت uvicorn، فكان رفضُ الإنتاج بلا أيّ أثرٍ في السجلّ.
+        log.warning("pdf bracket gate rejected %s: ok=%d inverted=%d "
+                    "skipped=%d limit=%d", os.path.basename(pdf_path), ok,
+                    inverted, skipped, limit)
+        raise PdfBracketGateError(
             f"فشل فحص اتجاه الأقواس في الـPDF النهائي: {inverted} زوجاً "
             f"مقلوباً هندسياً (العتبة {limit}) — القوسُ الافتتاحيُّ يُصيَّر على "
             "يسار مقطعه في سطرٍ عربيّ؛ لا يُسلَّم مستند معكوس الأقواس")
@@ -1318,7 +1432,7 @@ def _assert_verdict_consistency_doc(doc, vtxt: str, where: str,
     conflicting = sorted({d for d in _declared_verdict_labels(doc, lang)
                           if d and d != canonical_label})
     if conflicting:
-        raise RuntimeError(
+        raise ReportGateError(
             f"تناقض حكمٍ في {where}: الحكم القانوني الواحد "
             f"'{canonical_label}' بينما مواضع عرضٍ أخرى (الشارة/الجدول/"
             f"سطر القرار) تذكر '{'، '.join(conflicting)}' — كل موضع عرضٍ "
@@ -1352,7 +1466,7 @@ def _assert_verdict_consistency_text(blob: str, vtxt: str, where: str) -> None:
     conflicting = sorted({d for d in _declared_verdict_labels_text(blob)
                           if d and d != canonical_label})
     if conflicting:
-        raise RuntimeError(
+        raise ReportGateError(
             f"تناقض حكمٍ في {where}: الحكم القانوني الواحد "
             f"'{canonical_label}' بينما مواضع عرضٍ أخرى تذكر "
             f"'{'، '.join(conflicting)}'")
@@ -3204,7 +3318,7 @@ def _client_assert_clean(doc, lang: str = "ar") -> None:
     blob = "\n".join(parts)
     hits = _client_forbidden_hits(blob, lang)
     if hits:
-        raise RuntimeError(
+        raise ReportGateError(
             "تصدير العميل يحوي مصطلحات ممنوعة تعذّرت تنقيتها (تسريب تِلِمِتري "
             "لجمهور العميل) — رُفض التوليد: " + "؛ ".join(hits[:8]))
 
@@ -4537,7 +4651,7 @@ def render_client_docx(view: dict, path: str) -> str:
     try:
         from docx import Document
     except ImportError as exc:
-        raise RuntimeError(_DOCX_HINT) from exc
+        raise ExportEngineUnavailable(_DOCX_HINT) from exc
 
     _assert_production_clean(view)
     dr = view.get("deep_research") or {}
@@ -4880,6 +4994,64 @@ class PdfBusy(RuntimeError):
     503 `pdf_busy` مع `Retry-After` على المسارين، لا «محرّكٌ غائب» (`_PDF_UNAVAILABLE`)."""
 
 
+# البند ٢٨٤: كلُّ عطلِ PDF كان `RuntimeError` واحداً يقرؤه سطحُ المصنع
+# `pdf_unavailable` («معطَّل على الخادم — أبلغ الإدارة») — رفضُ فحص الأقواس بعد
+# تحويلٍ ناجح بدا للمالك محرّكاً غائباً. ثلاثةُ أنواعٍ (كلُّها `RuntimeError`
+# كي لا ينكسر مستدعٍ قديم) تُترجَم برموزٍ مختلفة عبر `pdf_error_detail`.
+class PdfEngineUnavailable(ExportEngineUnavailable):
+    """محرّكُ تحويل PDF (soffice) غائبٌ على الخادم."""
+
+
+class PdfConversionFailed(RuntimeError):
+    """LibreOffice موجودٌ لكنّ التحويلَ فشل (رمزُ خروج، مهلة، لا ملفَّ ناتج)."""
+
+
+class PdfBracketGateError(ReportGateError):
+    """فحصُ اتجاه الأقواس (WP-5) رفض الـPDF النهائي بعد تحويلٍ ناجح."""
+
+
+def pdf_error_detail(exc: BaseException) -> dict:
+    """جسمُ 503 لعطلِ PDF — رمزٌ مسمّى لكلّ نوع (البند ٢٨٤).
+
+    `pdf_unavailable` لغياب المحرّك أو python-docx **وحده**؛ `pdf_rejected` لرفض
+    بوّابةٍ (`ReportGateError`: فحصُ الأقواس، تناقضُ الحكم، مصطلحٌ محظور) — تفشل
+    **كلَّ مرّة** على المستند نفسه فلا يُقال للمصنع «أعد المحاولة»؛ وكلُّ ما عداهما
+    (فشلُ تحويل LibreOffice أو خطأٌ غير مصنَّف قد يكون عابراً) `pdf_failed`.
+    `message` نصُّ الاستثناء **منقًّى** (`_redact`) — الصفحةُ تعرض ترجمةَ الرمز."""
+    if isinstance(exc, ExportEngineUnavailable):
+        code = "pdf_unavailable"
+    elif isinstance(exc, ReportGateError):
+        code = "pdf_rejected"
+    else:
+        code = "pdf_failed"
+    try:
+        from silk_diagnostics import _redact
+        message = _redact(str(exc))
+    except Exception:  # noqa: BLE001 — التنقيةُ لا تُسقط الطلب
+        message = "<unredactable>"
+    return {"error": code, "message": message}
+
+
+def record_pdf_failure(exc: BaseException, surface: str, context: dict) -> dict:
+    """سجِّل عطلَ PDF للمشغّل وأعِد جسمَه — سطرُ WARNING + صفٌّ في `ops_log`.
+
+    البند ٢٨٤: مسارُ المصنع كان لا يترك أيَّ أثرٍ لعطل PDF (ولا يبلغ
+    `/ops/last-errors`)، ومسارُ المشغّل يسجّل سبباً عامّاً واحداً. المساران
+    يستدعيان هذه الدالةَ نفسَها كي لا ينحرف أحدُهما عن الآخر."""
+    detail = pdf_error_detail(exc)
+    log.warning("%s report.pdf failed %s: %s — %s", surface, context,
+                detail["error"], detail["message"])
+    try:
+        import silk_ops_log
+        silk_ops_log.record_error(
+            "pdf_export_failure", f"فشل إنتاج PDF ({detail['error']}) — {surface}",
+            context={**context, "code": detail["error"],
+                     "type": type(exc).__name__})
+    except Exception:  # noqa: BLE001 — السجلُّ قناةٌ جانبية لا تكسر الطلب
+        pass
+    return detail
+
+
 _PDF_SLOTS: "threading.BoundedSemaphore | None" = None
 _PDF_SLOTS_CAP = 0
 _PDF_SLOTS_LOCK = threading.Lock()
@@ -5062,9 +5234,9 @@ def docx_to_pdf(docx_path: str, pdf_path: "str | None" = None,
     import tempfile
     soffice = _find_soffice()
     if not soffice:
-        raise RuntimeError(_PDF_UNAVAILABLE)
+        raise PdfEngineUnavailable(_PDF_UNAVAILABLE)
     if not os.path.exists(docx_path):
-        raise RuntimeError(_PDF_FAILED)
+        raise PdfConversionFailed(_PDF_FAILED)
     import shutil
     out_dir = os.path.dirname(os.path.abspath(pdf_path or docx_path)) or "."
     profile = tempfile.mkdtemp(prefix="silk_lo_")
@@ -5094,11 +5266,17 @@ def docx_to_pdf(docx_path: str, pdf_path: "str | None" = None,
         except PdfBusy:
             raise                       # مسمّى — لا يُطمَس في «فشل التحويل»
         except Exception as e:  # noqa: BLE001 — أي فشل تحويل = خطأ معلَن نظيف
-            raise RuntimeError(_PDF_FAILED) from e
+            log.warning("soffice conversion raised: %s: %s", type(e).__name__, e)
+            raise PdfConversionFailed(_PDF_FAILED) from e
         produced = os.path.join(
             out_dir, os.path.splitext(os.path.basename(docx_path))[0] + ".pdf")
         if proc.returncode != 0 or not os.path.exists(produced):
-            raise RuntimeError(_PDF_FAILED)
+            # البند ٢٨٤ (+ M-10): رمزُ الخروج وذيلُ stderr كانا يُرمَيان فلا يُعرَف
+            # سببُ الفشل في الإنتاج. السجلُّ للمشغّل؛ العميلُ يرى الرمزَ المسمّى.
+            _err = (proc.stderr or b"").decode("utf-8", "replace").strip()
+            log.warning("soffice conversion failed: rc=%s output=%s stderr=%s",
+                        proc.returncode, os.path.exists(produced), _err[-500:])
+            raise PdfConversionFailed(_PDF_FAILED)
     finally:
         shutil.rmtree(profile, ignore_errors=True)
         if convert_src != docx_path:
@@ -5295,7 +5473,7 @@ def render_academic_docx(view: dict, path: str) -> str:
     try:
         from docx import Document
     except ImportError as exc:
-        raise RuntimeError(_DOCX_HINT) from exc
+        raise ExportEngineUnavailable(_DOCX_HINT) from exc
 
     _assert_production_clean(view)
     dr = view.get("deep_research") or {}
@@ -5536,7 +5714,7 @@ def render_docx(view: dict, path: str) -> str:
     try:
         from docx import Document
     except ImportError as exc:
-        raise RuntimeError(_DOCX_HINT) from exc
+        raise ExportEngineUnavailable(_DOCX_HINT) from exc
 
     _assert_production_clean(view)
     doc = Document()

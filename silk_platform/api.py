@@ -2370,8 +2370,9 @@ def mount(app) -> bool:
         نفس عقيدة §3 الجذرية (`/analyses/{id}/report.pdf`): يُبنى docx القالب
         الموحّد (كل منطق RTL/التطهير فيه) ثم يُحوَّل عبر LibreOffice headless
         (`silk_reports.docx_to_pdf` — الحاوية تشحن soffice + الخط الرسمي)
-        ويُسلَّم الـPDF فقط. غياب/فشل محرّك التحويل = 503 برمز معلن
-        `pdf_unavailable` — لا docx بديل صامت ولا PDF جزئي. نفس فصل الجمهور
+        ويُسلَّم الـPDF فقط. العطلُ = 503 برمزٍ مسمّى (`pdf_error_detail`):
+        `pdf_unavailable` لغياب المحرّك وحده، `pdf_failed` لفشل التحويل،
+        `pdf_rejected` لرفض فحصٍ (الأقواس/المحتوى) — لا docx بديل صامت ولا PDF جزئي. نفس فصل الجمهور
         في نقطة docx أعلاه: نسخة العميل عند وجود `deep_research`.
         """
         row = _tenant_detail(request, repository.studies, study_id, "study")
@@ -2413,10 +2414,16 @@ def mount(app) -> bool:
             shutil.rmtree(_td, ignore_errors=True)
             raise HTTPException(status_code=503, detail=_sr.pdf_busy_detail(),
                                 headers={"Retry-After": str(_sr.PDF_RETRY_AFTER_S)})
-        except RuntimeError as exc:  # soffice/python-docx غائب — فجوة معلنة
+        except RuntimeError as exc:
+            # البند ٢٨٤: كان كلُّ RuntimeError هنا `pdf_unavailable` («معطَّل على
+            # الخادم — أبلغ الإدارة») — ومنه رفضُ فحص الأقواس بعد تحويلٍ ناجح،
+            # بلا أيّ سطرٍ في السجلّ. الآن رمزٌ لكلّ نوع + أثرٌ للمشغّل
+            # (`record_pdf_failure` — الدالةُ نفسُها في مسار المشغّل).
             shutil.rmtree(_td, ignore_errors=True)
-            raise HTTPException(status_code=503, detail={
-                "error": "pdf_unavailable", "message": str(exc)})
+            detail = _sr.record_pdf_failure(
+                exc, "factory", {"study_id": study_id,
+                                 "analysis_id": row.get("analysis_id")})
+            raise HTTPException(status_code=503, detail=detail)
         except Exception:
             shutil.rmtree(_td, ignore_errors=True)
             raise
