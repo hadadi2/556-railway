@@ -284,8 +284,10 @@ def _guard_export_format_contract():
     # (٢) فرع pdf في dlReport: امتداد .pdf + رسالة 503 العربية الصريحة.
     assert 'kind==="pdf"' in html, "dlReport بلا فرع pdf"
     assert '"سِلك_تقرير_"+id+".pdf"' in html, "اسم/امتداد ملف الـPDF خاطئ"
-    assert "محرّك التحويل غير متاح — جرّب Word مؤقتاً" in html, \
+    # البند ٢٨٤: الرسالةُ لا تفترض «المحرّك غائب» — الـ503 قد يكون رفضَ فحص.
+    assert "تعذّر إنتاج PDF — جرّب Word مؤقتاً" in html, \
         "رسالة 503 العربية الصريحة غائبة"
+    assert "محرّك التحويل غير متاح — جرّب Word" not in html
     assert "r.status===503" in html, "فرع pdf لا يعالج 503 صراحةً"
     # (٣) بطاقة الدردشة المصغّرة تُصدِّر PDF لا docx.
     assert 'data-act="pdf"' in html, "بطاقة الدردشة المصغّرة لا تُصدِّر PDF"
@@ -4597,6 +4599,20 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    284: lambda: (
+        _needles("silk_reports.py", "for y, chars in _bracket_segments(page):",
+                 "raise PdfBracketGateError(",
+                 "raise PdfEngineUnavailable(_PDF_UNAVAILABLE)",
+                 "def _pair_segment", "def record_pdf_failure")(),
+        _needles("silk_platform/api.py", "detail = _sr.record_pdf_failure(")(),
+        _needles("api.py", "detail = silk_reports.record_pdf_failure(",
+                 "raise HTTPException(status_code=503, detail=detail)")(),
+        _needles("web/platform.html", "pdf_rejected:", "pdf_failed:")(),
+        _needles(".github/workflows/e2e-live-shape.yml",
+                 "docker exec silk-ci python tools/pdf_smoke.py")(),
+        _needles("tests/test_pdf_bracket_pairing.py",
+                 "def test_real_reports_that_were_refused_now_pass_the_gate")(),
+        _needles("tests/test_lessons_enforcement.py", "(284, ")()),
     283: lambda: (
         _needles("silk_economics.py", 'reverse["sensitivity"] = sensitivity_rows(reverse)',
                  "_inventory_financing(entry, financing_rate_pct,")(),

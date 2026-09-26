@@ -1276,12 +1276,13 @@ function dlReport(kind){var id=S.raw&&S.raw.analysis_id;if(id==null){toast("شغ
   if(S.exportBusy){toast("تنزيلٌ جارٍ — انتظر اكتماله");return}   // منع النقر المزدوج
   _expBusy(true);var _done=function(){_expBusy(false)};
   // PDF — المُسلَّم النهائي للعميل (§3، اتفاق المالك): غير قابل للتحرير.
-  // 503 = محرّك التحويل (LibreOffice) غائب على الخادم — رسالة عربية صريحة
-  // تقترح Word مؤقتاً، لا «HTTP 503» عارية (عائلة البلاغ المبتلَع، البند ٢/١١).
+  // 503 = تعذّر إنتاج الـPDF (محرّكٌ غائب، أو فشلُ تحويل، أو رفضُ فحص — البند
+  // ٢٨٤: لا يُفترض «المحرّك غائب»؛ السببُ الفعليّ بين القوسين) — رسالة عربية
+  // صريحة تقترح Word مؤقتاً، لا «HTTP 503» عارية (عائلة البلاغ المبتلَع، البند ٢/١١).
   if(kind==="pdf"){fetch(base()+"/analyses/"+id+"/report.pdf",{headers:Object.assign({Accept:"application/pdf"},hdrs(false))})
     .then(function(r){
       if(r.status===503)return r.text().then(function(t){var d=null;try{d=JSON.parse(t)}catch(e){}
-        var det=detailText(d,t);throw new Error("محرّك التحويل غير متاح — جرّب Word مؤقتاً"+(det?" ("+det.toString().slice(0,160)+")":""))});
+        var det=detailText(d,t);throw new Error("تعذّر إنتاج PDF — جرّب Word مؤقتاً"+(det?" ("+det.toString().slice(0,160)+")":""))});
       if(!r.ok)return dlFail(r);return r.blob()})
     .then(function(b){if(!b)return;var u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="سِلك_تقرير_"+id+".pdf";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000)})
     .catch(function(e){toast("فشل التنزيل: "+e.message)}).then(_done,_done);return}

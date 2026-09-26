@@ -559,6 +559,46 @@ def test_report_pdf_declared_503_when_converter_unavailable(env, monkeypatch):
     assert "PDF" in detail["message"]
 
 
+@pytest.mark.parametrize("exc_name,code", [
+    ("PdfBracketGateError", "pdf_rejected"),
+    ("PdfConversionFailed", "pdf_failed"),
+])
+def test_report_pdf_names_the_failure_and_leaves_a_trace(env, monkeypatch,
+                                                         caplog, exc_name, code):
+    """البند ٢٨٤ — بلاغ المالك: «توليد ملف PDF معطَّل على الخادم» يتكرّر بينما
+    المحرّكُ سليم؛ الذي رفض الملفَّ فحصُ الأقواس بعد تحويلٍ ناجح. رفضُ الفحص
+    وفشلُ التحويل رمزان غيرُ `pdf_unavailable`، وكلاهما يترك سطراً في السجلّ
+    وصفّاً في `/ops/last-errors` (كان المسارُ صامتاً تماماً)."""
+    import logging
+
+    import silk_ops_log
+    import silk_reports
+    from silk_platform.engine_bridge import _fake_result
+    from silk_storage import save_analysis
+    aid = save_analysis(_fake_result("تمور سكري", "080410"), None)
+    s = _mk_study(env["cl"], env["tok"])
+    _complete_study(env, s["id"], analysis_id=int(aid))
+    exc = getattr(silk_reports, exc_name)
+
+    def _boom(view, path):
+        raise exc("سبب داخلي")
+
+    monkeypatch.setattr(silk_reports, "render_research_pdf", _boom)
+    monkeypatch.setattr(silk_reports, "render_client_pdf", _boom)
+    recorded = []
+    monkeypatch.setattr(silk_ops_log, "record_error",
+                        lambda kind, reason, context=None, path=None:
+                        recorded.append((kind, context)))
+    with caplog.at_level(logging.WARNING):
+        r = env["cl"].get(f"/platform/studies/{s['id']}/report.pdf",
+                          headers=hdr(env["tok"]))
+    assert r.status_code == 503
+    assert r.json()["detail"]["error"] == code
+    assert any(code in rec.getMessage() for rec in caplog.records)
+    assert recorded and recorded[0][0] == "pdf_export_failure"
+    assert recorded[0][1]["code"] == code
+
+
 # ── ٩) المقعد الاختباري خامل بلا env — the fake seam is inert unset ──────────
 def test_fake_engine_seam_inert_without_env(env, monkeypatch):
     import silk_platform.engine_bridge as eb
