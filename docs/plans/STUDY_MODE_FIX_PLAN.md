@@ -93,28 +93,27 @@
 
 قواعد عامة للقوالب: كل فعل اتجاه فراغ `{dir:<key>}` يُختار بإشارة الرقم (لا فعل اتجاه مكتوب صلباً؛ اختبار يمنع ذلك). كل عدد يليه معدود يمر بمولّد العدد والمعدود (§ج). النسخ التي لم ترد حرفياً في المرجع موسومة `[pending]` وتُجمع في `docs/plans/STUDY_TEMPLATE_VARIANTS_REVIEW.md` ولا تُفعَّل قبل الموافقة.
 
-القالب E1 (الملخص التنفيذي، الفقرة الأولى):
+القالب E1 (الملخص التنفيذي، الفقرة الأولى) — بعد مراجعة المالك أ-1…أ-6:
 ```
 id: exec_1
 kind: أ
-slots: market_nisba (صفة النسبة المؤنثة من ملف جديد data/market_nisba_l1.csv (iso3, nisba_f) يُراجع يدوياً؛ countries.csv بلا عمود نسبة: الماليزية، الكويتية…),
-       market (اسم السوق), product_short, v_last:m1, y_last, g_first_last:pct0, y_first,
-       tariff:pct0, supplier_count:count(دولة), top1_partner, saudi_share:pct1, top3_frac
+slots: market_nisba (من data/market_nisba_l1.csv: الماليزية…), market, product_short, v_last:m1, y_last,
+       g_first_last:pct0, y_first, tariff:pct0, supplier_count, top1_partner, saudi_share:pct1, top3_frac, top_n, topn_frac
 text: >
-  تُعد السوق {market_nisba} {market_def}، {ease_clause}. فقد بلغت واردات {market} من هذا المنتج
+  تُعد السوق {market_nisba} {market_def}{ease_clause}. فقد بلغت واردات {market} من هذا المنتج
   {v_last:m1} في عام {y_last}، {growth_clause}، في حين {tariff_clause}، ويتوزع الطلب على
-  {supplier_count:count(دولة)} مورّدة {dominance_clause}. وفي المقابل، {saudi_clause}،
-  وتستحوذ {top3_clause}.
+  {supplier_count:count(دولة مورّدة, gen)} {dominance_clause}. وفي المقابل، {saudi_clause}، {top3_clause}.
 variants:
-  market_def (بالقرار الرباعي × اتجاه السلسلة):
-    entry|conditional × up:   "سوقاً واعدة لـ{product_short}"                       # المرجع
-    entry|conditional × flat: "سوقاً قائمة الحجم لـ{product_short}"                 # [pending]
-    defer × any:              "سوقاً قائمة الحجم لـ{product_short} غير أن مؤشراتها لا تكفي لقرار دخول الآن"   # [pending]
-    no_entry × any:           "سوقاً محدودة الجاذبية لـ{product_short} في الوقت الراهن"   # [pending]
-    any × down:               "سوقاً متراجعة الواردات لـ{product_short}"            # [pending]
-  ease_clause:
-    default: "غير أنها ليست سوقاً سهلة الدخول"                                      # المرجع
-    no_entry: "وليست سوقاً سهلة الدخول"                                            # [pending]
+  market_def (الأولوية: no_entry ← defer ← الاتجاه down ← flat ← up):
+    no_entry:            "سوقاً محدودة الجاذبية لـ{product_short} في الوقت الراهن"   # [pending]
+    defer:               "سوقاً قائمة الحجم لـ{product_short} غير أن مؤشراتها لا تكفي لقرار دخول الآن"   # [pending]
+    down:                "سوقاً متراجعة الواردات لـ{product_short}"            # [pending]
+    flat:                "سوقاً قائمة الحجم لـ{product_short}"                 # [pending]
+    up:                  "سوقاً واعدة لـ{product_short}"                       # المرجع
+  ease_clause (تتبع market_def):
+    up:                  "، غير أنها ليست سوقاً سهلة الدخول"                    # المرجع (مع «واعدة» فقط)
+    no_entry|down|flat:  "، كما أنها ليست سوقاً سهلة الدخول"                    # [pending — جديد]
+    defer:               ""                                                     # تُحذف
   growth_clause:
     up:   "بـ{dir:noun_up} تقارب {g_first_last:pct0} عن عام {y_first}"      # المرجع (زيادة)
     down: "بـ{dir:noun_down} يقارب {g_first_last_abs:pct0} عن عام {y_first}" # [pending] (تراجع)
@@ -123,29 +122,32 @@ variants:
     exempt: "يُعفى المنتج من الرسوم الجمركية"                                    # المرجع
     rate:   "يخضع المنتج لرسم جمركي بنسبة {tariff:pct0}"                         # [pending]
     gap:    "لم يُتحقق من الرسم الجمركي المنطبق بعد"                              # [pending]
-  dominance_clause:
-    hhi_low:  "دون هيمنة أي منها"                                                 # المرجع
-    hhi_mid:  "مع تركّز متوسط لدى أكبرها"                                        # [pending]
-    hhi_high: "مع هيمنة واضحة لـ{top1_partner}"                                    # [pending]
-    no_shares: ""  (تُحذف الجملة الاعتراضية)                                       # [pending]
+  dominance_clause (متسق مع s1_hhi؛ اختبار اتساق الملخص/القسم الأول):
+    hhi_low:      "دون هيمنة أي منها"                                            # المرجع
+    hhi_straddle: "دون أن يتضح مستوى تركّزها من الحصص المتاحة"                   # [pending — جديد] (straddles_1500|straddles_2500)
+    hhi_mid:      "مع تركّز متوسط لدى أكبرها"                                   # [pending]
+    hhi_high:     "مع هيمنة واضحة لـ{top1_partner}"                               # [pending]
+    no_shares:    ""  (تُحذف الجملة الاعتراضية)                                  # [pending]
   saudi_clause:
     absent:  "لا يوجد مورّد سعودي في هذه السوق حالياً"                             # المرجع
     present: "لا تتجاوز حصة المملكة {saudi_share:pct1} من هذه السوق حالياً"        # [pending]
-  top3_clause:
-    n>=3 & near:  "ثلاث دول قريبة جغرافياً على {top3_frac} الواردات تقريباً"   # المرجع
-    n>=3 & far:   "ثلاث دول على {top3_frac} الواردات تقريباً"                     # [pending]
-    n<3:   "{top_n:count(دولة)} على {topn_frac} الواردات تقريباً"                  # [pending]
-    no_shares: "ولم تتوفر حصص الموردين لبيان تركّز الواردات"                      # [pending]
+  top3_clause (تحمل «وتستحوذ» داخلها):
+    n>=3 & near: "وتستحوذ ثلاث دول قريبة جغرافياً على {top3_frac} الواردات تقريباً"   # المرجع
+    n>=3 & far:  "وتستحوذ ثلاث دول على {top3_frac} الواردات تقريباً"                  # [pending]
+    n<3:         "وتستحوذ {top_n:count(دولة, nom)} على {topn_frac} الواردات تقريباً"   # [pending]
+    no_shares:   "ولم تتوفر حصص الموردين لبيان تركّز الواردات"   (تحل محل الجملة كاملة)  # [pending]
 rules: decision من P1-5؛ اتجاه السلسلة من P1-7 (up إذا g>+5%، down إذا g<−5%، وإلا flat)؛
-       hhi_low/mid/high من حدّي P1-9 (أعلى الحد < 1,500 / يعبر أو داخل 1,500–2,500 / أدنى الحد ≥ 2,500).
+       dominance من قاعدة s1_hhi نفسها (below→hhi_low، straddles_*→hhi_straddle، between→hhi_mid، above→hhi_high، لا حصص→no_shares).
 ```
+مولّد العدد والمعدود: `count(n, "معدود [صفة]", case)` — `case∈{nom, acc, gen}`؛ الصفة تتبع المعدود في العدد والجنس والإعراب. اختبار: 1 («دولة مورّدة واحدة»)، 2 («دولتان مورّدتان» رفعاً / «دولتين مورّدتين» جراً)، 5 («خمس دول مورّدة»)، 11 («إحدى عشرة دولة مورّدة»)، 48 («48 دولة مورّدة»)، 100 («100 دولة مورّدة»)، في الرفع والجر. النص المرجعي «48 دولة مورّدة» = `count(48, "دولة مورّدة", gen)`.
+
 قاعدة «قريبة جغرافياً» (قرار المالك: نص المرجع لا يُمس): `near` إذا كانت مسافة العواصم بين السوق وكلٍّ من أكبر ثلاثة موردين ≤ 3,000 كم وفق `data/geodist_l1.csv` (مبني بـ`tools/build_geodist.py`: هافرساين على إحداثيات العواصم من mledoze/countries@c8015eeb + lutangar/cities.json@e6657624 (GeoNames، CC BY 4.0)؛ المصدران والإصدار في رأس الملف؛ `basis=capital|centroid` معلَن)؛ غياب الصف أو `basis=centroid` لأي طرف = `far` (بلا الصفة). حالة المرجع من الملف: MYS–IDN 1,187.6 كم، MYS–SGP 316.5 كم، MYS–VNM 2,038.7 كم → near؛ MYS–ITA 9,706.2 كم. الاختبار `tests/test_geodist_l1.py` (الثلاثة تحت العتبة وروما فوقها + الرأس + هافرساين).
 
 القالب 1.5 (مؤشر التركّز):
 ```
 id: s1_hhi
 kind: أ
-slots: hhi_low:int, hhi_high:int, origin_word (إقليميين/أوروبيين/… من قرب أكبر ثلاثة موردين: pending حتى مصدر المسافات، وإلا «الرئيسيين»)
+slots: hhi_low:int, hhi_high:int, origin_word («الإقليميين» إذا كان أكبر ثلاثة موردين near وفق geodist_l1 (≤ 3,000 كم)، وإلا «الرئيسيين»)
 variants:
   below_1500: >                                                                   # المرجع
     ويُقدَّر مؤشر تركّز الموردين، محسوباً من الحصص المرصودة أعلاه، بما بين {hhi_low:int} و{hhi_high:int}
@@ -187,15 +189,28 @@ slots: y_a, y_b, dv:pct0, dp:pct0, p_a:usd1, p_b:usd1, dq:pct0, q_share_frac, y_
        q_growth_frac, last_yoy:pct0, commodity, local_producers_word
 dirs: {dir:v} من إشارة dv، {dir:p} من إشارة dp، {dir:q} من إشارة dq؛ الصيغ: ارتفع/تراجع، ارتفاع/تراجع، نما/انكمش، صعود/هبوط
 variants:
-  decomposable_with_excluded_last (dv>0, dp>0, dq>0, سنة مستبعدة): >                # المرجع
+  decomposable_with_excluded_last (dv>0, dq>0, سنة مستبعدة): >                     # المرجع
     ويتعين قراءة هذا النمو بحذر، لأنه نمو في القيمة يجمع أثر الكمية وأثر السعر معاً. فبين عامي {y_a} و{y_b}
     {dir:v:ارتفعت|تراجعت} القيمة بنسبة {dv:pct0}، بينما {dir:p:ارتفع|تراجع} متوسط سعر الكيلوغرام المستورد بنسبة {dp:pct0}
     (من {p_a:usd1} إلى {p_b:usd1} دولار)، أي أن الكمية المستوردة {dir:q:ارتفعت|تراجعت} بنحو {dq:pct0} خلال الفترة،
     وتفسّر نحو {q_share_frac} نمو القيمة، ويعود الباقي إلى {dir:p:ارتفاع|تراجع} السعر. أما عام {y_excl} فلا يمكن فصل
     أثر الكمية فيه عن أثر السعر لعدم موثوقية بيانات الوزن{world_price_note}. وعليه، فإن الاستنتاج المؤكد هو أن
-    الكمية المستوردة {dir:q:نمت|انكمشت} بما يقارب {q_growth_frac} في {span:count(سنة)}، لا أن {dir:v:نمو|تراجع} الطلب بلغ
+    الكمية المستوردة {dir:q:نمت|انكمشت} بما يقارب {q_growth_frac} في {span:count(سنة, gen)}، لا أن {dir:last:نمو|تراجع} الطلب بلغ
     {last_yoy:pct0} في عام واحد{local_production_note}.
-  decomposable_full: (النسخة نفسها بلا جملة «أما عام…»؛ النافذة حتى y_last)                       # [pending]
+  decomposable_full (dv>0, dq>0, بلا سنة مستبعدة): >                                             # [pending]
+    ويتعين قراءة هذا النمو بحذر، لأنه نمو في القيمة يجمع أثر الكمية وأثر السعر معاً. فبين عامي {y_a} و{y_b}
+    {dir:v:ارتفعت|تراجعت} القيمة بنسبة {dv:pct0}، بينما {dir:p:ارتفع|تراجع} متوسط سعر الكيلوغرام المستورد بنسبة {dp:pct0}
+    (من {p_a:usd1} إلى {p_b:usd1} دولار)، أي أن الكمية المستوردة {dir:q:ارتفعت|تراجعت} بنحو {dq:pct0} خلال الفترة،
+    وتفسّر نحو {q_share_frac} نمو القيمة، ويعود الباقي إلى {dir:p:ارتفاع|تراجع} السعر{world_price_note}. وعليه، فإن
+    الاستنتاج المؤكد هو أن الكمية المستوردة {dir:q:نمت|انكمشت} بما يقارب {q_growth_frac} في {span:count(سنة, gen)}،
+    لا أن {dir:last:نمو|تراجع} الطلب بلغ {last_yoy:pct0} في عام واحد{local_production_note}.
+  decomposable_down (dv<0, dq<0): >                                                            # [pending — جديد]
+    ويتعين قراءة هذا التراجع بحذر، لأنه تراجع في القيمة يجمع أثر الكمية وأثر السعر معاً. فبين عامي {y_a} و{y_b}
+    تراجعت القيمة بنسبة {dv_abs:pct0}، بينما {dir:p:ارتفع|تراجع} متوسط سعر الكيلوغرام المستورد بنسبة {dp_abs:pct0}
+    (من {p_a:usd1} إلى {p_b:usd1} دولار)، أي أن الكمية المستوردة تراجعت بنحو {dq_abs:pct0} خلال الفترة،
+    وتفسّر نحو {q_share_frac} تراجع القيمة، ويعود الباقي إلى {dir:p:ارتفاع|تراجع} السعر{excl_note}{world_price_note}.
+    وعليه، فإن الاستنتاج المؤكد هو أن الكمية المستوردة انكمشت بما يقارب {q_growth_frac} في {span:count(سنة, gen)}،
+    لا أن {dir:last:نمو|تراجع} الطلب بلغ {last_yoy:pct0} في عام واحد{local_production_note}.
   value_up_price_down (dv>0, dp<0): >                                                          # [pending]
     ويتعين قراءة هذا النمو بحذر، لأنه نمو في القيمة يجمع أثر الكمية وأثر السعر معاً. فبين عامي {y_a} و{y_b}
     ارتفعت القيمة بنسبة {dv:pct0} بينما تراجع متوسط سعر الكيلوغرام المستورد بنسبة {dp_abs:pct0}
@@ -222,8 +237,8 @@ sub-slots:
   excl_note: "، مع استبعاد عام {y_excl} لعدم موثوقية بيانات الوزن" / ""
   q_change_clause: "لم تتغير تقريباً" / "{dir:q:ارتفعت|تراجعت} بنحو {dq_abs:pct0} فقط"
   reason_clause: "لغياب بيانات الوزن" / "لعدم موثوقية بيانات الوزن في أكثر من سنة"
-rules: decomposable إذا وُجدت ≥ 3 سنوات بوزن سليم (P1-7)؛ الإشارات المتعاكسة → value_up_price_down أو value_down_price_up؛
-       نفس الإشارة وdq ≤ 0.2·dv → price_led؛ وإلا decomposable_*؛ q_share_frac وq_growth_frac وspan من silk_study_numbers.
+rules: decomposable إذا وُجدت ≥ 3 سنوات بوزن سليم (P1-7)؛ الإشارات المتعاكسة (dv, dp) → value_up_price_down أو value_down_price_up؛
+       نفس الإشارة و|dq| ≤ 0.2·|dv| → price_led؛ dv>0 & dq>0 → decomposable_with_excluded_last/decomposable_full؛ dv<0 & dq<0 → decomposable_down؛ {dir:last} من إشارة last_yoy؛ q_share_frac وq_growth_frac وspan من silk_study_numbers.
 اختبار الاتجاه المعكوس: (dv=+30%, dp=−10%) → value_up_price_down بلا جملة «تفسّر نحو … ويعود الباقي»؛ (dv=−20%, dp=+8%) → value_down_price_up؛
                        (dv=+43%, dp=+15%) → نص المرجع حرفياً.
 ```
