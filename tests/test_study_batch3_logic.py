@@ -200,3 +200,20 @@ def test_border_price_as_negotiation_reference_is_rejected():
     assert not [v for v in lint(_ref()) if v["rule"] == "border_as_reference"]
     bad = _ref() + "\n\nويُعد متوسط سعر الاستيراد مرجعاً للتفاوض مع الموزع.\n"
     assert any(v["rule"] == "border_as_reference" for v in lint(bad))
+
+
+# ── P3-2 قاموس الحالة ────────────────────────────────────────────────────
+def test_vocab_variant_is_rejected_and_reference_passes():
+    from silk_study_linter import lint
+    assert not [v for v in lint(_ref()) if v["rule"] == "vocab_variant"]
+    bad = _ref().replace("للقهوة المختصة", "للقهوة الفاخرة", 1)
+    assert bad != _ref()
+    assert any(v["rule"] == "vocab_variant" for v in lint(bad))
+
+
+def test_every_banned_vocab_form_has_an_approved_counterpart():
+    import yaml
+    with open(os.path.join(_ROOT, "data", "study_status_vocab.yaml"), encoding="utf-8") as f:
+        d = yaml.safe_load(f)
+    for fam in d.values():
+        assert fam["canonical"] and all(good for good in fam["banned"].values())

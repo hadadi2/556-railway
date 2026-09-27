@@ -42,6 +42,22 @@ LEXICON_EXEMPT = ("## تاسعاً: خطة التنفيذ (90 يوماً)", "## 
 _META_LINE = re.compile(r"^\*\*(?:المصادر|ما لم يتسنّ توثيقه):")
 
 
+def _vocab_banned() -> dict:
+    """P3-2: الصيغ المحظورة ← مقابلها المعتمد من data/study_status_vocab.yaml."""
+    import os
+    import yaml
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "study_status_vocab.yaml")
+    try:
+        with open(p, encoding="utf-8") as f:
+            d = yaml.safe_load(f) or {}
+    except OSError:
+        return {}
+    out: dict = {}
+    for fam in d.values():
+        out.update((fam or {}).get("banned") or {})
+    return out
+
+
 def _templates() -> dict:
     from silk_study_render import load_templates
     return load_templates()
@@ -167,6 +183,10 @@ def lint(md: str, claims: list[dict] | None = None,
                 and any(w in sent for w in ("مرجع", "أساس للتفاوض", "أساساً للتفاوض", "أساس للتسعير"))
                 and not any(w in sent for w in ("لا يصلح", "لا مرجع", "ليس مرجع", "لا يُعد", "لا يُعتمد"))):
             add("border_as_reference", sent.strip()[:80])
+    # (٨-و) P3-2: صيغة مغايرة لمصطلح حالة/شريحة/نطاق معتمد في القاموس.
+    for bad, good in _vocab_banned().items():
+        if re.search(rf"(?<![\u0600-\u06FF]){re.escape(bad)}(?![\u0600-\u06FF])", prose):
+            add("vocab_variant", f"«{bad}» ← «{good}»")
     # (٨-ب) P3-6: قسم الحجة المضادة يحمل شرط انقلاب واحداً على الأقل.
     for head, body in _sections(md):
         if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):
