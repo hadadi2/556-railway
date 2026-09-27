@@ -60,8 +60,9 @@ REVIEW_FILE = os.path.join(ROOT, "docs", "plans", "STUDY_TEMPLATE_VARIANTS_REVIE
 PLACEHOLDER_RE = re.compile(r"\[[^\]]*\]|TODO|placeholder|يُدرج|<[^>]*>", re.I)
 
 
-def pending_variants(path: str = REVIEW_FILE) -> set[str]:
+def pending_variants(path: str | None = None) -> set[str]:
     """نصوص النسخ التي ما زالت `pending` في ملف المراجعة — لا تُحمَّل بلا إذن صريح."""
+    path = path or REVIEW_FILE
     out: set[str] = set()
     if not os.path.exists(path):
         return out
@@ -117,6 +118,7 @@ class Renderer:
         self.ctx = self._context()
         self.llm_slots: list[str] = []
         self.gaps: list[str] = []
+        self._llm_cache: dict[str, str] = {}   # المرور الثاني لا يعيد نداء الفراغ نفسه
 
     # ── السياق ─────────────────────────────────────────────────────────────
     def _context(self) -> dict:
@@ -249,13 +251,48 @@ class Renderer:
             return fmt(self._val(key), spec)
         return str(self._val(expr))
 
+    def _slot_ok(self, txt: str) -> str | None:
+        """فحص حتمي لنص فراغ النموذج (P1-12): نائب، رقم لم يُمرَّر، مصطلح محظور."""
+        if PLACEHOLDER_RE.search(txt):
+            return "عنصر نائب"
+        allowed = {str(v) for v in self.ctx.values() if isinstance(v, (int, float)) and not isinstance(v, bool)}
+        for num in re.findall(r"\d+(?:[.,]\d+)?", txt):
+            if num not in allowed and num.replace(",", "") not in allowed and not any(num == f"{v:g}" for v in
+                    (x for x in self.ctx.values() if isinstance(x, (int, float)) and not isinstance(x, bool))):
+                return f"رقم لم يُمرَّر: {num}"
+        try:
+            from silk_reports import _client_forbidden_hits
+            hits = _client_forbidden_hits(txt, "ar")
+        except Exception:  # noqa: BLE001 — الحارس تحسين لا شرط
+            hits = []
+        return ("مصطلح ممنوع: " + hits[0]) if hits else None
+
     def _llm(self, sid: str) -> str:
+        """فراغ (ب)/(ج) بلا معرفة معتمدة: نداء واحد، فإن فشل الفحص يُعاد **مرة واحدة**
+        بالملاحظة، ثم يُحذف الادعاء ويُعلن فجوةً (لا يُوقف التقرير)."""
         brief = (self.t.get("llm_briefs") or {}).get(sid, sid)
-        txt = self.llm_fill(sid, brief) if self.llm_fill else None
-        if txt:
-            self.llm_slots.append(sid)
-            return f"{LLM_MARK.format(sid=sid)}{txt}"
+        if not self.llm_fill:
+            self.gaps.append(sid)
+            return ""
+        if sid in self._llm_cache:
+            if self._llm_cache[sid]:
+                self.llm_slots.append(sid)
+            else:
+                self.gaps.append(sid)
+            return self._llm_cache[sid]
+        note = ""
+        for _attempt in range(2):
+            txt = self.llm_fill(sid, brief + note)
+            if not txt:
+                break
+            problem = self._slot_ok(txt)
+            if problem is None:
+                self.llm_slots.append(sid)
+                self._llm_cache[sid] = f"{LLM_MARK.format(sid=sid)}{txt}"
+                return self._llm_cache[sid]
+            note = f" — أعد الصياغة: {problem}"
         self.gaps.append(sid)
+        self._llm_cache[sid] = ""
         return ""
 
     def _gate(self, raw: str) -> None:

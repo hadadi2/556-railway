@@ -114,6 +114,28 @@ def test_without_knowledge_deterministic_text_is_at_least_70_percent():
     assert (len(body) - llm_chars) / len(body) >= 0.70
 
 
+def test_llm_slot_is_retried_once_then_dropped_as_gap():
+    """P1-12: نموذج يعيد نائباً دائماً → نداءان لكل فراغ ثم فجوة معلنة بلا نص."""
+    from silk_study_render import Renderer
+    calls = []
+
+    def bad_llm(sid, brief):
+        calls.append(sid)
+        return "[يُدرج لاحقاً]"
+    r = Renderer(_case(), {}, llm_fill=bad_llm)
+    out = r.render()
+    per_slot = {s: calls.count(s) for s in set(calls)}
+    assert per_slot and all(n == 2 for n in per_slot.values()), per_slot
+    assert "[يُدرج" not in out and r.gaps and "s2_survey" in r.gaps
+
+
+def test_llm_slot_with_unpassed_number_is_rejected():
+    from silk_study_render import Renderer
+    r = Renderer(_case(), {}, llm_fill=lambda sid, brief: "تبلغ الحصة 37% وفق تقديرنا.")
+    out = r.render()
+    assert "37%" not in out and r.gaps
+
+
 def test_missing_knowledge_without_llm_declares_gap_not_text():
     from silk_study_render import Renderer
     r = Renderer(_case(), {})
@@ -246,16 +268,23 @@ def test_no_hardcoded_direction_verb_outside_dir_slot_in_sign_dependent_template
     assert not offenders, offenders
 
 
-def test_pending_variant_is_skipped_as_a_gap_unless_explicitly_allowed():
-    """نسخة pending لا تصل العميل: الفقرة تسقط ويُعلن في الحدود أنها بانتظار الاعتماد."""
-    from silk_study_render import Renderer, pending_variants
-    assert pending_variants(), "ملف المراجعة يحمل نسخاً pending للحالة التركيبية"
+def test_pending_variant_is_skipped_as_a_gap_unless_explicitly_allowed(monkeypatch, tmp_path):
+    """نسخة pending لا تصل العميل: الفقرة تسقط ويُعلن في الحدود أنها بانتظار الاعتماد.
+    ملف مراجعة مؤقت يحمل نسخة exec_2.defer بحالة pending — لا اعتماد على حالة الملف الحقيقي."""
+    import silk_study_render as SR
+    import yaml
+    with open(os.path.join(_ROOT, "data", "study_templates_ar.yaml"), encoding="utf-8") as f:
+        t = yaml.safe_load(f)
+    defer_txt = next(b["text"] for b in t["blocks"] if b.get("when") == "decision == defer")
+    review = tmp_path / "review.md"
+    review.write_text("| القالب | المفتاح | النص | الحالة |\n|---|---|---|---|\n"
+                      f"| exec_2 | defer | {defer_txt} | pending |\n", encoding="utf-8")
+    monkeypatch.setattr(SR, "REVIEW_FILE", str(review))
     c = _synthetic_down_concentrated_defer()
-    r = Renderer(c, {})
-    out = r.render()
-    assert "توصي الدراسة بـ**إرجاء**" not in out          # exec_2.defer ما زالت pending
+    out = SR.Renderer(c, {}).render()
+    assert "توصي الدراسة بـ**إرجاء**" not in out
     assert "فقرة قالبها بانتظار اعتماد المالك" in out
-    assert "توصي الدراسة بـ**إرجاء**" in Renderer(c, {}, allow_pending=True).render()
+    assert "توصي الدراسة بـ**إرجاء**" in SR.Renderer(c, {}, allow_pending=True).render()
 
 
 def test_placeholder_leak_is_refused():
