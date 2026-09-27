@@ -57,11 +57,28 @@ def _nisba(iso3: str) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _requirements_from_gaps(gaps: list[str], shelf: list, entities: list) -> list[dict]:
+# P3-3: الجهة القادرة على استكمال كل فجوة — حتمية، لا يخمّنها النموذج.
+GAP_OWNERS = {
+    "سلسلة الواردات السنوية": "UN Comtrade (سحب لاحق)",
+    "حصص الموردين": "UN Comtrade (سحب لاحق)",
+    "الرسم الجمركي المنطبق": "جمارك السوق المستهدفة",
+    "سعر الصرف": "البنك الدولي (سحب لاحق)",
+    "مؤشرات الحوكمة": "البنك الدولي (سحب لاحق)",
+    "مؤشر الأداء اللوجستي": "البنك الدولي (سحب لاحق)",
+    "أسعار الرف": "المنشأة (رصد ميداني)",
+    "مستوردون مؤكدون بالاسم": "المبيعات (أدلة الجهات المعتمدة ومعارض القطاع)",
+}
+
+
+def _gap(label: str) -> dict:
+    return {"label": label, "owner": GAP_OWNERS.get(label)}
+
+
+def _requirements_from_gaps(gaps: list, shelf: list, entities: list) -> list[dict]:
     """متطلبات القرار المرقّمة تُشتق حتمياً من الفجوات (P1-5): تكلفة الوحدة أولاً
     دائماً (رقم المنشأة)، ثم سعر رف الشريحة، ثم مسار الاعتماد، ثم الجهات."""
     reqs = [{"id": 1, "text": "تحديد تكلفة إنتاج الكيلوغرام لدى المنشأة", "owner": "المنشأة"}]
-    if not shelf or "أسعار الرف" in gaps:
+    if not shelf or "أسعار الرف" in [g["label"] if isinstance(g, dict) else g for g in gaps]:
         reqs.append({"id": len(reqs) + 1, "text": "رصد سعر رف فعلي لمنافس واحد على الأقل من الشريحة المستهدفة", "owner": "المبيعات"})
     if len(entities) < 2:
         reqs.append({"id": len(reqs) + 1, "text": "تحديد جهتين أو ثلاث من المستوردين المؤكدين قبل بدء التفاوض", "owner": "المبيعات"})
@@ -239,7 +256,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                      "unit_cost_provided": False,
                      "provisional_threshold_usd": None, "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
-        "claims_reported": _knowledge_claims(hs, iso2), "gaps": gaps,
+        "claims_reported": _knowledge_claims(hs, iso2), "gaps": [_gap(g) for g in gaps],
         "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)
                            for f in (m.get("findings") or []) if isinstance(f, dict) and f.get("source")
                            and f.get("value") is not None}),

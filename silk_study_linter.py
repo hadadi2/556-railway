@@ -24,6 +24,10 @@ BARE_TERMS = ("HHI", "CAGR", "TAM", "SAM", "SOM", "LPI", "MFN", "WGI")
 HHI_FORM = "مؤشر تركّز الموردين"
 HHI_ALTERNATIVES = ("مؤشر تركّز السوق", "مؤشر تركز السوق", "مؤشر هيرفندال",
                     "مؤشر هيرفيندال", "مؤشر التركز")
+# P3-3: جهات مصدرية معروفة — ذِكرها في المتن يوجب حضورها في سطر «المصادر».
+SOURCE_NAMES = ("UN Comtrade", "البنك الدولي", "صندوق النقد الدولي", "JAKIM",
+                "الجمارك الملكية", "وزارة الصحة", "دائرة الإحصاء", "منظمة التجارة العالمية")
+_SOURCES_LINE = re.compile(r"^\*\*المصادر:\*\*(.*)$", re.M)
 # صيغ المعجم الرسمي: كل قسم نثري يحمل واحدة على الأقل.
 LEXICON = ("ويُعد", "وتُعد", "تُعد", "ويُلاحظ", "ويتعين", "يتعين", "غير أن",
            "وبناءً على ذلك", "في حين", "وفي المقابل", "وتشير", "ويستند",
@@ -139,6 +143,13 @@ def lint(md: str, claims: list[dict] | None = None) -> list[dict]:
     # (٧) لا فراغ قالب متسرِّب.
     if _SLOT.search(prose):
         add("slot_leak", _SLOT.search(prose).group(0))
+    # (٨-أ) P3-3: مصدر مذكور في المتن غائب عن قائمة المصادر.
+    sm = _SOURCES_LINE.search(md)
+    if sm:
+        body = md[:sm.start()]
+        for name in SOURCE_NAMES:
+            if name in body and name not in sm.group(1):
+                add("source_missing", name)
     # (٨) P3-1: لا ادعاء «يُفاد» بصيغة تقرير في أي موضع.
     if claims:
         from silk_study_claims import conflicts

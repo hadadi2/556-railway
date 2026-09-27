@@ -130,7 +130,20 @@ _ = {
 }
 
 
-_K_GAP_LABEL = "معلومات خاصة بالمنتج في هذه السوق (تحتاج مصدراً أو ملف معرفة معتمداً)"
+_K_GAP_LABEL = "معلومات خاصة بالمنتج في هذه السوق"
+_K_GAP_OWNER = "ملف معرفة معتمد للمنتج والسوق"
+_DATA_GAP_OWNER = "فريق البحث (سحب لاحق من المصدر)"
+
+
+def gap_text(g) -> str:
+    """P3-3: الفجوة بجهة استكمالها «الفجوة (يستكملها: الجهة)»؛ النص الخام كما هو."""
+    if isinstance(g, dict):
+        return f"{g['label']} (يستكملها: {g['owner']})" if g.get("owner") else g["label"]
+    return str(g)
+
+
+def _gap_label(g) -> str:
+    return g["label"] if isinstance(g, dict) else str(g)
 
 
 class Renderer:
@@ -239,7 +252,7 @@ class Renderer:
         reqs = [q["text"] for q in c["decision"]["requirements"]]
         sh["requirements_inline"] = "؛ ".join([reqs[0]] + ["و" + q for q in reqs[1:]]) if reqs else ""
         sh["sources_inline"] = "؛ ".join(c.get("sources") or []) or "لم يُسنَد رقم إلى مصدر في هذه النسخة"
-        sh["gaps_inline"] = "؛ ".join(c.get("gaps") or []) or "لا فجوات معلنة"
+        sh["gaps_inline"] = "؛ ".join(gap_text(g) for g in c.get("gaps") or []) or "لا فجوات معلنة"
         eq = [r for r in c["shelf_prices"]["rows"] if r.get("equivalent") and r.get("usd_kg")]
         ctx["shelf_min"] = min(r["usd_kg"] for r in eq) if eq else None
         ctx["shelf_max"] = max(r["usd_kg"] for r in eq) if eq else None
@@ -429,15 +442,22 @@ class Renderer:
         """تعبئة مزدوجة: مرورٌ أول يجمع الفجوات، ثم مرور ثانٍ بقائمة الحدود المكتملة."""
         self.missing: list[str] = []
         self._render_once()
-        labels = [GAP_LABELS.get(k) or (_K_GAP_LABEL if k.startswith("k:") else k)
-                  for k in self.missing]
-        extra = [g for g in dict.fromkeys(labels) if g not in (self.case.get("gaps") or [])]
-        if extra or self.gaps:
+        known = {_gap_label(g) for g in self.case.get("gaps") or []}
+        extra = []
+        for k in dict.fromkeys(self.missing):
+            if k.startswith("k:"):
+                extra.append({"label": _K_GAP_LABEL, "owner": _K_GAP_OWNER})
+            else:
+                extra.append({"label": GAP_LABELS.get(k, k), "owner": _DATA_GAP_OWNER})
+        briefs = self.t.get("llm_briefs") or {}
+        extra += [{"label": briefs.get(sid, _K_GAP_LABEL), "owner": _K_GAP_OWNER}
+                  for sid in dict.fromkeys(self.gaps)]
+        seen: set = set()
+        extra = [g for g in extra if g["label"] not in known
+                 and not (g["label"] in seen or seen.add(g["label"]))]
+        if extra:
             base = list(self.case.get("gaps") or []) + extra
-            briefs = self.t.get("llm_briefs") or {}
-            base += [(f"{briefs[sid]} (تحتاج مصدراً أو ملف معرفة معتمداً)" if sid in briefs
-                      else _K_GAP_LABEL) for sid in dict.fromkeys(self.gaps)]
-            self.ctx["gaps_inline"] = "؛ ".join(base) if base else "لا فجوات معلنة"
+            self.ctx["gaps_inline"] = "؛ ".join(gap_text(g) for g in base)
         self.missing, self.gaps, self.llm_slots = [], [], []
         return self._render_once()
 

@@ -45,7 +45,8 @@ def build_claims(case: dict, knowledge: dict | None = None) -> list[dict]:
                          predicate=c.get("predicate")))
     for g in case.get("gaps") or []:
         label, owner = (g.get("label"), g.get("owner")) if isinstance(g, dict) else (g, None)
-        out.append(claim("gap:" + label, "gap", label, owner=owner))
+        out.append({**claim("gap:" + label, "gap", label, owner=owner),
+                    "live": bool(case.get("live"))})
     d = case.get("decision") or {}
     if d.get("landed_low_pct") is not None:
         out.append(claim("landed_share_rule", "estimate_rule",
@@ -62,6 +63,10 @@ _SENT = re.compile(r"(?<=[.؛!؟])\s+|\n+|\s*\|\s*")
 def conflicts(md: str, claims: list[dict]) -> list[dict]:
     """ادعاء «يُفاد» مذكور بصيغة تقرير (مرساة + محمول بلا تحفّظ) في أي جملة/خلية → مخالفة."""
     v: list[dict] = []
+    for c in claims or []:
+        # P3-3: فجوة في حالة حية بلا جهة استكمال — الختام يدّعي ذكرها.
+        if c.get("status") == "gap" and c.get("live") and not c.get("owner"):
+            v.append({"rule": "gap_without_owner", "detail": c["text"]})
     for c in claims or []:
         if c.get("status") != "reported" or not c.get("anchors") or not c.get("predicate"):
             continue

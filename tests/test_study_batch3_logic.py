@@ -54,3 +54,29 @@ def test_live_case_loads_reported_claims_from_approved_knowledge():
     from silk_study_case import build_case
     c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
     assert [x["id"] for x in c["claims_reported"]] == ["chains_require_halal"]
+
+
+# ── P3-3 الفجوات والمصادر ───────────────────────────────────────────────
+def test_live_gaps_carry_owner_and_render_it():
+    from silk_study_case import build_case
+    from silk_study_render import render_study
+    c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Vietnam"})
+    assert c["gaps"] and all(g["owner"] for g in c["gaps"])
+    out = render_study(c, {})
+    assert "(يستكملها: UN Comtrade (سحب لاحق))" in out
+    assert "يستكملها: ملف معرفة معتمد" in out or "يستكملها: فريق البحث" in out
+
+
+def test_gap_without_owner_in_live_case_is_rejected():
+    from silk_study_claims import build_claims, conflicts
+    c = _case()
+    c["live"] = True
+    c["gaps"] = [{"label": "فجوة بلا جهة", "owner": None}]
+    assert any(v["rule"] == "gap_without_owner" for v in conflicts("", build_claims(c)))
+
+
+def test_source_named_in_body_but_missing_from_list_is_rejected():
+    from silk_study_linter import lint
+    bad = _ref().replace("صندوق النقد الدولي (النمو، التضخم)؛ ", "")
+    assert "صندوق النقد الدولي" in bad.split("**المصادر:**")[0]
+    assert any(v["rule"] == "source_missing" for v in lint(bad))
