@@ -111,3 +111,31 @@ def test_shelf_anchor_prefers_rows_of_the_target_tier():
             (60.0, "بن مختص single origin 1 كغ", "USD", 1.0, None)]
     assert _pick_shelf_anchor(rows, "USD")[0][0] == 20.0
     assert _pick_shelf_anchor(rows, "USD", tier="specialty")[0][0] == 60.0
+
+
+# ── P3-6 الحجة المضادة ───────────────────────────────────────────────────
+def test_counter_kind_ranking_is_deterministic():
+    from silk_study_numbers import compute
+    c = _case()
+    assert compute(c)["counter_kind"] == "saudi_absent"
+    c2 = copy.deepcopy(c)
+    c2["suppliers"]["saudi_share_pct"] = 2.0
+    c2["suppliers"]["top"][0]["share_pct"] = 35.0
+    assert compute(c2)["counter_kind"] == "dominant_supplier"
+
+
+def test_counter_section_without_flip_is_rejected_and_reference_passes():
+    from silk_study_linter import lint
+    ref = _ref()
+    assert not [v for v in lint(ref) if v["rule"] == "counter_without_flip"]
+    start = ref.index("## ثامناً")
+    end = ref.index("## تاسعاً")
+    bad = ref[:start] + "## ثامناً: الاعتبارات المضادة للتوصية\n\nلا شيء يُذكر هنا.\n\n" + ref[end:]
+    assert any(v["rule"] == "counter_without_flip" for v in lint(bad))
+
+
+def test_new_counter_variants_are_gated_pending_until_owner_approval():
+    from silk_study_render import pending_variants
+    p = pending_variants()
+    assert any(t.startswith("تتمثل الحجة الأقوى ضد الدخول في استحواذ") for t in p)
+    assert any(t.startswith("وتنقلب هذه الاعتبارات") for t in p)

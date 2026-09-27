@@ -151,6 +151,23 @@ def market_def_key(decision: str, trend: str) -> str:
 
 
 # ── التجميع ───────────────────────────────────────────────────────────────
+DOMINANT_SHARE_PCT = 30.0
+
+
+def counter_kind(n: dict, shape: dict) -> str:
+    """P3-6: أقوى دليل مضاد للدخول بترتيب ثابت — غياب السعودية مع منتجَين إقليميين،
+    ثم هيمنة مورد (≥30%)، ثم تراجع السلسلة، ثم مركز إعادة تصدير، وإلا «none»."""
+    if n.get("saudi_absent") and n.get("producers_two_share") is not None:
+        return "saudi_absent"
+    if (n.get("top1_share") or 0) >= DOMINANT_SHARE_PCT:
+        return "dominant_supplier"
+    if shape.get("trend") == "down":
+        return "declining"
+    if n.get("hub"):
+        return "hub"
+    return "none"
+
+
 def compute(case: dict) -> dict:
     """كل الفراغات الرقمية للقوالب من حالة واحدة."""
     imp = case.get("imports") or {}
@@ -187,6 +204,7 @@ def compute(case: dict) -> dict:
         "req_count": len((case.get("decision") or {}).get("requirements") or []),
         "last_yoy": imp.get("last_yoy_pct") if imp.get("last_yoy_pct") is not None else shape["last_yoy"],
     }
+    n["counter_kind"] = counter_kind(n, shape)
     if dec.get("q_share") is not None:
         n["q_share_frac"] = fraction_word(dec["q_share"])
         n["q_growth_frac"] = fraction_word(abs(dec["dq"]) / 100.0, definite=True)

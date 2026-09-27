@@ -24,6 +24,8 @@ BARE_TERMS = ("HHI", "CAGR", "TAM", "SAM", "SOM", "LPI", "MFN", "WGI")
 HHI_FORM = "مؤشر تركّز الموردين"
 HHI_ALTERNATIVES = ("مؤشر تركّز السوق", "مؤشر تركز السوق", "مؤشر هيرفندال",
                     "مؤشر هيرفيندال", "مؤشر التركز")
+COUNTER_HEADING = "## ثامناً: الاعتبارات المضادة للتوصية"
+FLIP_WORDS = ("تنقلب", "تصبح راجحة", "يكون الإرجاء", "وفي حال")
 # P3-3: جهات مصدرية معروفة — ذِكرها في المتن يوجب حضورها في سطر «المصادر».
 SOURCE_NAMES = ("UN Comtrade", "البنك الدولي", "صندوق النقد الدولي", "JAKIM",
                 "الجمارك الملكية", "وزارة الصحة", "دائرة الإحصاء", "منظمة التجارة العالمية")
@@ -143,6 +145,10 @@ def lint(md: str, claims: list[dict] | None = None) -> list[dict]:
     # (٧) لا فراغ قالب متسرِّب.
     if _SLOT.search(prose):
         add("slot_leak", _SLOT.search(prose).group(0))
+    # (٨-ب) P3-6: قسم الحجة المضادة يحمل شرط انقلاب واحداً على الأقل.
+    for head, body in _sections(md):
+        if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):
+            add("counter_without_flip", head)
     # (٨-أ) P3-3: مصدر مذكور في المتن غائب عن قائمة المصادر.
     sm = _SOURCES_LINE.search(md)
     if sm:
