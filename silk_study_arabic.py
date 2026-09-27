@@ -7,6 +7,14 @@
 """
 from __future__ import annotations
 
+_ORDINALS_M = {1: "الأول", 2: "الثاني", 3: "الثالث", 4: "الرابع", 5: "الخامس",
+               6: "السادس", 7: "السابع", 8: "الثامن", 9: "التاسع", 10: "العاشر"}
+
+
+def ordinal_m(n: int) -> str | None:
+    """العدد الترتيبي المذكّر المعرَّف (١–١٠) — «المتطلب الرابع». خارج المدى = None."""
+    return _ORDINALS_M.get(int(n)) if n is not None else None
+
 import math
 import re
 

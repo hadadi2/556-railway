@@ -42,9 +42,9 @@ def test_writer_prompt_carries_no_calculation_imperative_and_no_leaning_verdict(
 
 def test_requirements_derive_from_gaps():
     from silk_study_case import _requirements_from_gaps
-    r = _requirements_from_gaps(["أسعار الرف"], [], [])
+    r = _requirements_from_gaps(["أسعار الرف"], [], 0)
     assert [q["id"] for q in r] == [1, 2, 3] and "تكلفة إنتاج" in r[0]["text"]
-    r2 = _requirements_from_gaps([], [{"usd_kg": 20}], [{"name": "a"}, {"name": "b"}])
+    r2 = _requirements_from_gaps([], [{"usd_kg": 20}], 2)
     assert len(r2) == 1
 
 

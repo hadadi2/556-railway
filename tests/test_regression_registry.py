@@ -4599,6 +4599,11 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    286: lambda: (
+        _needles("requirements.txt", "PyYAML==6.0.1")(),
+        _needles("tests/test_study_batch4_field.py",
+                 "def test_study_mode_third_party_imports_are_in_production_requirements")(),
+        _needles("tests/test_lessons_enforcement.py", "(286, ")()),
     285: lambda: (
         _needles("silk_study_render.py", "self.review_marks = review_marks")(),
         _needles("tests/test_study_batch2_style.py",

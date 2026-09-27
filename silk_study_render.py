@@ -20,7 +20,7 @@ from typing import Callable
 
 import yaml
 
-from silk_study_arabic import count, direction, fmt, prep
+from silk_study_arabic import count, direction, fmt, ordinal_m, prep
 from silk_study_numbers import compute
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -117,7 +117,8 @@ GAP_LABELS = {
     "segment_word": "الشريحة المستهدفة", "competitor_word": "الشريحة المستهدفة", "threshold": "عتبة التكلفة الواصلة",
     "sst_rule": "ضريبة المبيعات", "sst_authority": "ضريبة المبيعات", "pref_note": "المعاملة التفضيلية",
     "exit_text": "متطلبات التصدير في المملكة", "halal_long": "جهة اعتماد الحلال", "halal_short": "جهة اعتماد الحلال",
-    "quarantine_agent": "مدد التصاريح", "excluded_text": "الجهات المستبعدة", "requirements_inline": "متطلبات القرار",
+    "quarantine_agent": "مدد التصاريح", "excluded_text": "الجهات المستبعدة",
+    "entity_req_ordinal": "متطلب الجهات", "directories_phrase": "أدلة الجهات في السوق", "requirements_inline": "متطلبات القرار",
     "hub_trend_name": "اتجاه حصة مركز إعادة التصدير", "producer1": "المنتجون الإقليميون", "commodity_raw_word": "المادة الخام",
     "market_nisba": "صفة النسبة للسوق (data/market_nisba_l1.csv)", "local_producers_word": "الإنتاج المحلي",
     "نسخة قالب بانتظار اعتماد المالك": "فقرة قالبها بانتظار اعتماد المالك",
@@ -201,6 +202,13 @@ class Renderer:
             "durations_published": c["requirements"]["durations_published"], "quarantine_agent": c["requirements"]["quarantine_agent_word"],
             "exit_text": c["requirements"]["exit_text"],
             "excluded_text": c["entities"]["excluded_text"], "importer_candidates": c["entities"]["importer_candidates"],
+            # P4-4: ترتيب متطلب الجهات من قائمة المتطلبات الفعلية لا رقمٌ مكتوب صلباً.
+            "entity_req_ordinal": next((ordinal_m(r["id"]) for r in (c.get("decision") or {}).get("requirements") or []
+                                        if "جهتين أو ثلاث" in str(r.get("text"))), None),
+            "entity_para": ("none" if (c["entities"].get("importer_candidates") or 0) >= 2
+                            else "with_excluded" if c["entities"].get("excluded_text") else "no_excluded"),
+            "directories_phrase": ("عبر " + " و".join(c["entities"]["directories"])
+                                   if c["entities"].get("directories") else None),
             "unit_cost_provided": c["decision"]["unit_cost_provided"], "threshold": c["decision"]["provisional_threshold_usd"],
             "rule_low": c["decision"]["rule_low_pct"], "rule_high": c["decision"]["rule_high_pct"],
             "landed_low": c["decision"]["landed_low_pct"], "landed_high": c["decision"]["landed_high_pct"],

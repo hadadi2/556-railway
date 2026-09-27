@@ -17,14 +17,17 @@ ROLE_COMPETITOR = "منافس"
 ROLE_CHANNEL = "قناة رصد"
 ROLE_PARTNER = "شريك محتمل"
 
+# كلمات كاملة (لا مقاطع: «import» ليست «important»، «chain» في «supply chain» ليست
+# سلسلة تجزئة). الترتيب: المستورد/الموزع أولاً — «importer & roaster» مرشحٌ لا منافس.
 _ROLE_WORDS = (
-    (ROLE_COMPETITOR, ("roaster", "roastery", "manufacturer", "factory", "producer",
-                       "محمصة", "مصنع", "منتج")),
-    (ROLE_CHANNEL, ("supermarket", "hypermarket", "grocer", "retail", "chain", "store",
-                    "marketplace", "e-commerce", "سلسلة", "متجر", "منصة")),
-    (ROLE_CANDIDATE, ("importer", "import", "distributor", "wholesale", "trading",
-                      "مستورد", "موزع", "جملة", "تجارة")),
+    (ROLE_CANDIDATE, ("importer", "importers", "distributor", "distributors", "wholesaler",
+                      "wholesale", "مستورد", "موزع", "تاجر جملة")),
+    (ROLE_COMPETITOR, ("roaster", "roastery", "roasters", "manufacturer", "factory",
+                       "محمصة", "مصنع")),
+    (ROLE_CHANNEL, ("supermarket", "hypermarket", "grocer", "grocery", "retail chain",
+                    "marketplace", "e-commerce", "سلسلة تجزئة", "متجر", "منصة تجارة")),
 )
+_NOT_CHANNEL = ("supply chain",)
 _TYPE_BY_ROLE = {ROLE_CANDIDATE: "مستورد/موزع", ROLE_COMPETITOR: "منتج محلي",
                  ROLE_CHANNEL: "منفذ تجزئة", ROLE_PARTNER: "جهة تجارية"}
 
@@ -33,10 +36,17 @@ def _text(*parts) -> str:
     return " ".join(str(p or "") for p in parts).lower()
 
 
+def _has_word(text: str, word: str) -> bool:
+    return re.search(rf"(?<![\w؀-ۿ]){re.escape(word)}(?![\w؀-ۿ])",
+                     text) is not None
+
+
 def role_of(lead: dict) -> str:
     t = _text(lead.get("category"), lead.get("kind"), lead.get("name"), lead.get("desc"))
+    for bad in _NOT_CHANNEL:
+        t = t.replace(bad, " ")
     for role, words in _ROLE_WORDS:
-        if any(w in t for w in words):
+        if any(_has_word(t, w) for w in words):
             return role
     return ROLE_PARTNER
 
@@ -69,8 +79,8 @@ def classify(leads, channel_findings, hs: str, product: str, market_iso3: str = 
         ok, _why, status = lead_product_fit(lead, hs, product, market_iso3)
         if not ok:
             continue                       # مقدّم خدمة/فئة أخرى — لا يُذكر أصلاً
-        hit = next((s for s in snips if name.lower() in s["text"]
-                    and any(w in s["text"] for w in own)), None)
+        hit = next((s for s in snips if _has_word(s["text"], name.lower())
+                    and any(_has_word(s["text"], w) for w in own)), None)
         confirmed = status == EVIDENCE_SPECIALIST or hit is not None
         if not confirmed:
             excluded.append(name)
@@ -90,23 +100,29 @@ def classify(leads, channel_findings, hs: str, product: str, market_iso3: str = 
 
 
 # ── P4-3 شروط المنافذ ─────────────────────────────────────────────────────
-_REQ = re.compile(r"(requires?|mandatory|يشترط|تشترط|تستلزم)", re.I)
-_CERT = re.compile(r"(halal|حلال|certificat|شهادة)", re.I)
+# صيغ المحمول التي يفحصها linter (الجنس والعدد): أي منها بلا تحفّظ = تقرير للادعاء.
+OUTLET_PREDICATES = ("يشترط", "تشترط", "يشترطون", "يستلزم", "تستلزم")
+_REQ = r"(?:requires|require|required|mandates|mandatory|يشترط|تشترط|يستلزم|تستلزم)(?![\w\u0600-\u06FF])"
+_CERT = r"(?:halal|حلال|certificate|certification|شهادة)"
+_NEG = re.compile(r"\b(?:not|no|never|unlike|except|without)\b"
+                  r"|(?<![؀-ۿ])(?:لا|لم|غير|دون)(?![؀-ۿ])", re.I)
 
 
 def outlet_claims(channel_findings, outlets: list[str]) -> list[dict]:
-    """مقتطف يذكر منفذاً مسمّى + اشتراطاً + شهادة ⇒ ادعاء «يُفاد» (لا يُقرَّر)."""
+    """مقتطف يقول صراحةً «[المنفذ] يشترط … شهادة» في جملة واحدة متقاربة، بلا نفي ولا
+    مقارنة ⇒ ادعاء «يُفاد» (لا يُقرَّر أبداً). المنافذ = جهات اجتازت حارس المنتج فقط."""
     out: dict[str, dict] = {}
     for s in _snippets(channel_findings):
-        m = _REQ.search(s["text"])
-        if not m or not _CERT.search(s["text"]):
-            continue
-        for name in outlets:
-            if name and name.lower() in s["text"] and f"outlet_req:{name}" not in out:
-                ar = bool(re.search(r"[؀-ۿ]", m.group(1)))
-                out[f"outlet_req:{name}"] = {
-                    "id": f"outlet_req:{name}",
-                    "text": f"{name} يشترط شهادة للتعاقد (مقتطف بحث)",
-                    "anchors": [name], "predicate": m.group(1) if ar else "يشترط",
-                    "source": s["url"]}
+        for sent in re.split(r"(?<=[.!?؛])\s+", s["text"]):
+            for name in outlets:
+                key = f"outlet_req:{name}"
+                if not name or key in out:
+                    continue
+                m = re.search(rf"(?<![\w؀-ۿ]){re.escape(name.lower())}(?![\w؀-ۿ])"
+                              rf"(.{{0,40}}?){_REQ}(.{{0,40}}?){_CERT}", sent, re.I)
+                if not m or _NEG.search(sent[:m.end()]):
+                    continue
+                out[key] = {"id": key, "text": f"{name} يشترط شهادة للتعاقد (مقتطف بحث)",
+                            "anchors": [name], "predicate": "يشترط",
+                            "predicates": list(OUTLET_PREDICATES), "source": s["url"]}
     return list(out.values())

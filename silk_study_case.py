@@ -27,7 +27,8 @@ def _findings(dr: dict, mission: str) -> list[dict]:
         else:
             out.append({"value": getattr(f, "value", None), "source": getattr(f, "source", ""),
                         "note": getattr(f, "note", ""), "data_year": getattr(f, "data_year", None),
-                        "status": getattr(f, "status", ""), "confidence": getattr(f, "confidence", 0)})
+                        "status": getattr(f, "status", ""), "confidence": getattr(f, "confidence", 0),
+                        "retrieved_at": getattr(f, "retrieved_at", None)})
     return out
 
 
@@ -97,6 +98,17 @@ def market_directories(iso3: str) -> list[dict]:
     return [r for r in rows if r.get("iso3") == iso3]
 
 
+def threshold_from(shelf: list, landed_high_pct: int = 45) -> tuple[int | None, bool]:
+    """(العتبة، هل هي مؤقتة). سعرُ رفٍ من الشريحة المستهدفة مرصود ⇒ العتبة منه (أدناه،
+    تحفّظاً) وغير مؤقتة؛ وإلا المؤقتة من أعلى الصفوف المكافئة؛ وإلا فجوة."""
+    tgt = [r["usd_kg"] for r in shelf or [] if r.get("segment_target")
+           and isinstance(r.get("usd_kg"), (int, float))]
+    if tgt:
+        return int(min(tgt) * landed_high_pct // 100), False
+    v = provisional_threshold(shelf, landed_high_pct)
+    return v, v is not None
+
+
 def _gap(label: str, iso3: str = "") -> dict:
     owner = GAP_OWNERS.get(label)
     if label == "مستوردون مؤكدون بالاسم":
@@ -117,20 +129,22 @@ def _merge_claims(*groups) -> list[dict]:
 
 
 def _seg_cfg() -> dict:
-    import yaml
     try:
+        import yaml
         with open(os.path.join(_ROOT, "data", "shelf_segment_keywords.yaml"), encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
-    except OSError:
+    except (OSError, ImportError):
         return {}
 
 
-def shelf_segment(text: str) -> str:
-    """P4-2: شريحة صف الرف بأول مطابقة بالترتيب المعلن؛ وإلا «غير محدد»."""
-    cfg, t = _seg_cfg(), str(text or "").lower()
+def shelf_segment(text: str, hs: str = "0901") -> str:
+    """P4-2: شريحة صف الرف بأول مطابقة (كلمة كاملة) من كلمات فصل HS؛ وإلا «غير محدد»."""
+    cfg = ((_seg_cfg().get("by_hs") or {}).get(str(hs or "")[:4]) or {})
+    t = str(text or "").lower()
     for seg in cfg.get("order") or []:
-        if any(w.lower() in t for w in (cfg.get("segments") or {}).get(seg) or []):
-            return seg
+        for w in (cfg.get("segments") or {}).get(seg) or []:
+            if re.search(rf"(?<![\w\u0600-\u06FF]){re.escape(w.lower())}(?![\w\u0600-\u06FF])", t):
+                return seg
     return "غير محدد"
 
 
@@ -138,13 +152,13 @@ def segment_target(product_segment: str | None) -> str | None:
     return (_seg_cfg().get("target") or {}).get(str(product_segment or ""))
 
 
-def _requirements_from_gaps(gaps: list, shelf: list, entities: list) -> list[dict]:
+def _requirements_from_gaps(gaps: list, shelf: list, candidates: int) -> list[dict]:
     """متطلبات القرار المرقّمة تُشتق حتمياً من الفجوات (P1-5): تكلفة الوحدة أولاً
     دائماً (رقم المنشأة)، ثم سعر رف الشريحة، ثم مسار الاعتماد، ثم الجهات."""
     reqs = [{"id": 1, "text": "تحديد تكلفة إنتاج الكيلوغرام لدى المنشأة", "owner": "المنشأة"}]
     if not shelf or "أسعار الرف" in [g["label"] if isinstance(g, dict) else g for g in gaps]:
         reqs.append({"id": len(reqs) + 1, "text": "رصد سعر رف فعلي لمنافس واحد على الأقل من الشريحة المستهدفة", "owner": "المبيعات"})
-    if len(entities) < 2:
+    if candidates < MIN_ENTITIES:
         reqs.append({"id": len(reqs) + 1, "text": "تحديد جهتين أو ثلاث من المستوردين المؤكدين قبل بدء التفاوض", "owner": "المبيعات"})
     return reqs
 
@@ -268,13 +282,18 @@ def build_case(found: dict, *, product_short: str | None = None,
         txt = f"{v} {note}"
         m = _USD_PER_KG_RE.search(txt)
         if m and "استيراد" not in note and "Comtrade" not in str(f.get("source") or ""):
-            seg = shelf_segment(f"{note} {f.get('source') or ''}")          # P4-2
+            seg = shelf_segment(f"{note} {f.get('source') or ''}", hs)      # P4-2
             date = str(f.get("retrieved_at") or "")[:10]
             src = str(f.get("source") or "") + (f"، {date}" if date else "")
             shelf.append({"product": note[:60] or "منتج مرصود", "segment": seg, "price": m.group(0),
                           "source": src, "usd_kg": float(m.group(1).replace(",", ".")),
-                          "equivalent": seg != "غير مكافئ"})
+                          "segment_target": False, "equivalent": seg != "غير مكافئ"})
     target_seg = segment_target(segment)
+    for r in shelf:
+        # صفوف الشريحة المستهدفة ليست من «نطاق أسعار الرف للمنتجات غير المختصة» — تُعزل
+        # فيُبنى عليها المرجع مباشرة (العتبة غير مؤقتة)، ولا تدخل النطاق.
+        if target_seg and r["segment"] == target_seg:
+            r["segment_target"], r["equivalent"] = True, False
 
     from silk_synthesis import study_decision
     decision = study_decision(dr.get("verdict") or {})
@@ -290,7 +309,9 @@ def build_case(found: dict, *, product_short: str | None = None,
             gaps.append(label)
     if not shelf:
         gaps.append("أسعار الرف")
-    if len(entities) < MIN_ENTITIES:                                        # P4-4
+    # P4-4: العدّ واحد في كل مكان — المرشحون لطلب عرض أسعار وحدهم (لا المنافسون ولا المنافذ).
+    candidates = sum(e["role"] == "مرشح لطلب عرض أسعار" for e in entities)
+    if candidates < MIN_ENTITIES:
         gaps.append("مستوردون مؤكدون بالاسم")
     return {
         "case": f"{hs}_{iso3}", "live": True,
@@ -325,20 +346,21 @@ def build_case(found: dict, *, product_short: str | None = None,
                                    "list_site": None, "official_durations_published": False},
                          "durations_published": False, "quarantine_agent_word": None},
         "entities": {"rows": entities, "excluded_text": excluded_text,
-                     "importer_candidates": sum(e["role"] == "مرشح لطلب عرض أسعار" for e in entities)},
-        "decision": {"type": decision, "requirements": _requirements_from_gaps(gaps, shelf, entities),
+                     "directories": [d["name_ar"] for d in market_directories(iso3)] or None,
+                     "importer_candidates": candidates},
+        "decision": {"type": decision,
+                     "requirements": _requirements_from_gaps(gaps, shelf, candidates),
                      "unit_cost_provided": False,
                      # P3-8: بلا سعر رف من الشريحة — عتبةٌ **مؤقتة** = أعلى سعر مرصود ×
                      # الحد الأعلى لقاعدة التكلفة الواصلة (45%)، مقرّبةً للأدنى؛ قاعدة
                      # تقديرية موسومة، ولا يُبنى عليها إرجاء (القرار من التوليف وحده).
-                     "provisional_threshold_usd": provisional_threshold(shelf),
-                     "threshold_provisional": provisional_threshold(shelf) is not None,
+                     "provisional_threshold_usd": threshold_from(shelf)[0],
+                     "threshold_provisional": threshold_from(shelf)[1],
                      "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
         "claims_reported": _merge_claims(
             _knowledge_claims(hs, iso2),
-            outlet_claims(_chan, [e["name"] for e in entities if e["role"] == "قناة رصد"]
-                          + [lead.get("name") for lead in _leads if lead.get("name")])),   # P4-3
+            outlet_claims(_chan, [e["name"] for e in entities])),   # P4-3: جهات اجتازت الحارس فقط
         "gaps": [_gap(g, iso3) for g in gaps],
         "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)
                            for f in (m.get("findings") or []) if isinstance(f, dict) and f.get("source")

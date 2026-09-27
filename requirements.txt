@@ -28,3 +28,7 @@ pymupdf==1.28.2
 
 # ITC public chart response transport.
 cryptography==50.0.1
+
+# محرك قوالب نمط «دراسة السوق» (silk_study_render / silk_study_case / silk_study_linter)
+# يقرأ data/*.yaml — كان غائباً عن الإنتاج فيسقط التصدير بنمط study صامتاً (مراجعة ذاتية).
+PyYAML==6.0.1

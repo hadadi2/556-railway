@@ -41,8 +41,9 @@ def build_claims(case: dict, knowledge: dict | None = None) -> list[dict]:
     if tar.get("status") and tar.get("status") != "gap":
         out.append(claim("tariff", "documented", "الرسم الجمركي", source=tar.get("source")))
     for c in case.get("claims_reported") or []:
-        out.append(claim(c["id"], "reported", c.get("text", ""), anchors=c.get("anchors") or (),
-                         predicate=c.get("predicate")))
+        out.append({**claim(c["id"], "reported", c.get("text", ""), anchors=c.get("anchors") or (),
+                            predicate=c.get("predicate"), source=c.get("source")),
+                    "predicates": c.get("predicates")})
     for g in case.get("gaps") or []:
         label, owner = (g.get("label"), g.get("owner")) if isinstance(g, dict) else (g, None)
         out.append({**claim("gap:" + label, "gap", label, owner=owner),
@@ -71,8 +72,8 @@ def conflicts(md: str, claims: list[dict]) -> list[dict]:
         if c.get("status") != "reported" or not c.get("anchors") or not c.get("predicate"):
             continue
         # المحمول كلمةً كاملة غير منفية («لا تشترط»/«تشترطها» ليسا تقريراً للادعاء).
-        pred = re.compile(rf"(?<![\u0600-\u06FF])(?<!لا )(?<!لم ){re.escape(c['predicate'])}"
-                          rf"(?![\u0600-\u06FF])")
+        forms = "|".join(re.escape(p) for p in (c.get("predicates") or [c["predicate"]]))
+        pred = re.compile(r"(?<![\u0600-\u06FF])(?<!لا )(?<!لم )(?:" + forms + r")(?![\u0600-\u06FF])")
         for sent in _SENT.split(md):
             if (pred.search(sent) and any(a in sent for a in c["anchors"])
                     and not any(h in sent for h in HEDGES)):

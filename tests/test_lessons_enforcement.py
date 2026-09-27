@@ -2715,6 +2715,8 @@ _SYMBOL_ANCHORS_EXTRA = [
                                                 "_blocking_engine(monkeypatch, 778)"]),
     (285, "tests/test_study_batch2_style.py", ["def test_llm_review_mark_never_reaches_the_client_export"]),
     (285, "silk_study_render.py", ["self.review_marks = review_marks"]),
+    (286, "requirements.txt", ["PyYAML==6.0.1"]),
+    (286, "tests/test_study_batch4_field.py", ["def test_study_mode_third_party_imports_are_in_production_requirements"]),
 ]
 
 
