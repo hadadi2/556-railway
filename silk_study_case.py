@@ -73,7 +73,9 @@ GAP_OWNERS = {
 def provisional_threshold(shelf: list, landed_high_pct: int = 45) -> int | None:
     """P3-8: عتبة مؤقتة = أعلى سعر رف مرصود (دولار/كغ) × الحد الأعلى للتكلفة الواصلة،
     مقرّبةً للأدنى. بلا رف مرصود = فجوة (None)."""
-    vals = [r["usd_kg"] for r in shelf or [] if isinstance(r.get("usd_kg"), (int, float))]
+    # الصفوف المكافئة وحدها — نفسها التي يقرؤها القالب «أعلى سعر مرصود».
+    vals = [r["usd_kg"] for r in shelf or [] if isinstance(r.get("usd_kg"), (int, float))
+            and r.get("equivalent", True)]
     return int(max(vals) * landed_high_pct // 100) if vals else None
 
 
@@ -271,7 +273,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                      # الحد الأعلى لقاعدة التكلفة الواصلة (45%)، مقرّبةً للأدنى؛ قاعدة
                      # تقديرية موسومة، ولا يُبنى عليها إرجاء (القرار من التوليف وحده).
                      "provisional_threshold_usd": provisional_threshold(shelf),
-                     "threshold_provisional": True,
+                     "threshold_provisional": provisional_threshold(shelf) is not None,
                      "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
         "claims_reported": _knowledge_claims(hs, iso2), "gaps": [_gap(g) for g in gaps],

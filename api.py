@@ -2196,7 +2196,8 @@ def create_app():
                              resume_reports, report_style=None,
                              hs_confidence=None, hs_provenance=None,
                              lang="ar", resume_stages=None,
-                             hs_classification=None) -> None:
+                             hs_classification=None,
+                             exporter_type=None) -> None:
         """جسم الخيط الخلفي (async_run=true) — يُغلَّف باستثناء شامل عمداً:
         خيط بايثون غير المُمسوك يفشل صامتاً (لا كسر عملية، لا تحديث حالة)
         فتبقى التشغيلة عالقة على 'running' للأبد — بلاغ التحقيق (P0) يمنع
@@ -2211,7 +2212,7 @@ def create_app():
                     resume_reports, report_style, hs_confidence=hs_confidence,
                     hs_classification=hs_classification,
                     hs_provenance=hs_provenance, lang=lang,
-                    resume_stages=resume_stages)
+                    resume_stages=resume_stages, exporter_type=exporter_type)
             _finish_research_run(analysis_id, result)
         except Exception as e:  # noqa: BLE001 — خيط خلفي: هذا آخر حزام أمان
             log.error("background /research run %s failed: %s", analysis_id, e)
@@ -3018,10 +3019,9 @@ def create_app():
         if product_card_dict is not None and own_price is not None:
             product_card_dict = dict(product_card_dict)
             product_card_dict["own_price"] = own_price
-        _etype = getattr(req, "exporter_type", None)
-        if _etype:
-            product_card_dict = dict(product_card_dict or {})
-            product_card_dict["exporter_type"] = _etype
+        # P3-4: ملف المصدّر قناةٌ مستقلة — لا بطاقة منتج مصطنعة تُحقن في البعثات.
+        _etype = (getattr(req, "exporter_type", None)
+                  or stored_request.get("exporter_type"))
 
         if analysis_id is None and req.persist:
             from silk_storage import create_research_run
@@ -3031,6 +3031,7 @@ def create_app():
                 # لا استنتاج لاحق من اسمٍ عربي/إنجليزي غامض عند الاستئناف.
                 "market_iso3": market_ref.iso3, "hs_code": hs_code,
                 "product_card": product_card_dict, "own_price": own_price,
+                "exporter_type": _etype,
                 "production_cost_per_unit": _prod_cost,
                 "agent_prefs": prefs, "allow_degraded": req.allow_degraded}
             try:
@@ -3090,7 +3091,7 @@ def create_app():
                      # ملخّصُ التصنيف يُمرَّر **كوسيط** لا يُلتقَط من نطاقٍ
                      # خارجيّ: الخيطُ الخلفي دالّةٌ مستقلّة، والالتقاطُ هناك
                      # `NameError` يقع داخل خيطٍ فيُبتلَع سبباً غامضاً.
-                     _hs_classification_summary(hs_classification)),
+                     _hs_classification_summary(hs_classification), _etype),
                 daemon=True)
             _rh.thread = _t
             try:
@@ -3135,7 +3136,7 @@ def create_app():
                     resume_reports, req.report_style, hs_confidence=hs_confidence,
                     hs_provenance=hs_provenance, lang=_req_lang,
                     hs_classification=_hs_classification_summary(hs_classification),
-                    resume_stages=resume_stages)
+                    resume_stages=resume_stages, exporter_type=_etype)
             # R2b (API-5): الحفظُ النهائي **داخل** try — فشلُه كان 500 عارياً يترك
             # الصفّ `running` ويُضيع تقريراً مدفوعاً لم يُحفَظ نقطةَ تفتيش قطّ.
             _stage = "save"

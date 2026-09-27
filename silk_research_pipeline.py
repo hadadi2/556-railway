@@ -152,7 +152,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                                hs_provenance: dict | None = None,
                                hs_classification: dict | None = None,
                                lang: str = "ar",
-                               resume_stages: dict | None = None) -> dict:
+                               resume_stages: dict | None = None,
+                               exporter_type: str | None = None) -> dict:
         """جسم التشغيلة الثقيل — بعثات + محلل + توليف + كاتب/مراجع + بوابة
         جودة. مستخرَج من مسار /research المتزامن السابق **بلا تغيير سلوكي**
         كي يُستدعى إما مباشرة (وضع متزامن) أو من خيط خلفي (async_run=true)
@@ -725,7 +726,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                                                "verdict": verdict},
                              "market": market_ref.name_en, "hs_code": hs_code,
                              "product": product,
-                             "exporter_type": (product_card_dict or {}).get("exporter_type")}
+                             "exporter_type": exporter_type}
                     _case = _bc(_prov)
                     _facts = _aj._isolate(_json.dumps(
                         {"product": product, "market": market_ref.name_en,
@@ -1000,6 +1001,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
         # P1-6…P1-9: أرقام الدراسة الحتمية (السلسلة، التفكيك، حدّا HHI، القرار
         # الرباعي) تُحسب مرّة واحدة وتُخزَّن مع النتيجة — مصدرٌ واحد للتصدير
         # والمراجعة؛ قناة جانبية: أي عطل لا يمسّ التشغيلة.
+        if exporter_type:   # P3-4 — قبل بناء الحالة كي تتفق أرقامها مع التصدير
+            result["deep_research"]["exporter_type"] = exporter_type
         try:
             from silk_study_case import build_case
             from silk_study_numbers import compute
@@ -1008,8 +1011,6 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 k: v for k, v in _sn.items() if isinstance(v, (int, float, str, bool)) or v is None}
         except Exception as e:  # noqa: BLE001 — إضافةٌ لا شرط تشغيل
             log.warning("study_numbers skipped: %s", e)
-        if (product_card_dict or {}).get("exporter_type"):   # P3-4
-            result["deep_research"]["exporter_type"] = product_card_dict["exporter_type"]
         if _study_slots:
             result["deep_research"]["study_slots"] = _study_slots
         if _study_slots_skipped:

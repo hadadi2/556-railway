@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import functools
 import re
 
 _SLOT = re.compile(r"\{[^{}]+\}")
@@ -31,6 +32,9 @@ FLIP_WORDS = ("تنقلب", "تصبح راجحة", "يكون الإرجاء", "�
 # P3-3: جهات مصدرية معروفة — ذِكرها في المتن يوجب حضورها في سطر «المصادر».
 SOURCE_NAMES = ("UN Comtrade", "البنك الدولي", "صندوق النقد الدولي", "JAKIM",
                 "الجمارك الملكية", "وزارة الصحة", "دائرة الإحصاء", "منظمة التجارة العالمية")
+# أسماء بديلة يكتبها سطر المصادر الحي بالإنجليزية (مصادر البعثات).
+SOURCE_ALIASES = {"البنك الدولي": ("World Bank", "WDI"), "صندوق النقد الدولي": ("IMF",),
+                  "UN Comtrade": ("Comtrade",), "منظمة التجارة العالمية": ("WTO",)}
 _SOURCES_LINE = re.compile(r"^\*\*المصادر:\*\*(.*)$", re.M)
 # صيغ المعجم الرسمي: كل قسم نثري يحمل واحدة على الأقل.
 LEXICON = ("ويُعد", "وتُعد", "تُعد", "ويُلاحظ", "ويتعين", "يتعين", "غير أن",
@@ -42,6 +46,7 @@ LEXICON_EXEMPT = ("## تاسعاً: خطة التنفيذ (90 يوماً)", "## 
 _META_LINE = re.compile(r"^\*\*(?:المصادر|ما لم يتسنّ توثيقه):")
 
 
+@functools.lru_cache(maxsize=1)
 def _vocab_banned() -> dict:
     """P3-2: الصيغ المحظورة ← مقابلها المعتمد من data/study_status_vocab.yaml."""
     import os
@@ -196,7 +201,8 @@ def lint(md: str, claims: list[dict] | None = None,
     if sm:
         body = md[:sm.start()]
         for name in SOURCE_NAMES:
-            if name in body and name not in sm.group(1):
+            listed = sm.group(1)
+            if name in body and not any(a in listed for a in (name, *SOURCE_ALIASES.get(name, ()))):
                 add("source_missing", name)
     # (٨) P3-1: لا ادعاء «يُفاد» بصيغة تقرير في أي موضع.
     if claims:

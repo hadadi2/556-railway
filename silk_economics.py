@@ -1511,11 +1511,6 @@ def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> t
     للكيلوغرام (أو اللتر) حين يُعرف الوزن، وإلا أدنى سعرٍ خام. وكلُّ صفٍّ لا
     يدخل المقارنة يُعدّ بسببه كي يُعلَن — لا إسقاطَ صامتاً (مراجعة §58).
     كلُّ صفّ: (السعر، النصّ، مفتاح العملة، كجم، لتر)."""
-    words = _TIER_WORDS.get(str(tier or "").lower())
-    if words:
-        same = [r for r in rows if any(w in str(r[1]).lower() for w in words)]
-        if same:                   # صفوف الشريحة وحدها تتنافس على المرجع
-            rows = same
     groups: dict = {}
     for r in rows:
         groups.setdefault(r[2], []).append(r)
@@ -1533,6 +1528,14 @@ def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> t
         dropped["بعملة أخرى"] = other
     if ccy and groups.get(""):
         dropped["بلا عملة مسمّاة"] = len(groups[""])
+    # P3-8: داخل عملة المرجع نفسها، صفوف الشريحة المستهدفة وحدها تتنافس إن رُصدت،
+    # والمستبعَد منها يُعدّ ويُعلن (لا إسقاط صامتاً).
+    words = _TIER_WORDS.get(str(tier or "").lower())
+    if words:
+        same = [r for r in group if any(w in str(r[1]).lower() for w in words)]
+        if same and len(same) < len(group):
+            dropped["من شريحة أخرى"] = len(group) - len(same)
+            group = same
 
     def per_base(r):
         if r[3]:

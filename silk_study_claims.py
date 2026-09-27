@@ -70,8 +70,11 @@ def conflicts(md: str, claims: list[dict]) -> list[dict]:
     for c in claims or []:
         if c.get("status") != "reported" or not c.get("anchors") or not c.get("predicate"):
             continue
+        # المحمول كلمةً كاملة غير منفية («لا تشترط»/«تشترطها» ليسا تقريراً للادعاء).
+        pred = re.compile(rf"(?<![\u0600-\u06FF])(?<!لا )(?<!لم ){re.escape(c['predicate'])}"
+                          rf"(?![\u0600-\u06FF])")
         for sent in _SENT.split(md):
-            if (c["predicate"] in sent and any(a in sent for a in c["anchors"])
+            if (pred.search(sent) and any(a in sent for a in c["anchors"])
                     and not any(h in sent for h in HEDGES)):
                 v.append({"rule": "claim_status_conflict",
                           "detail": f"{c['id']}: «{sent.strip()[:70]}» يقرّر ما هو «يُفاد»"})

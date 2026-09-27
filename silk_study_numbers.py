@@ -156,7 +156,7 @@ DOMINANT_SHARE_PCT = 30.0
 
 def counter_kind(n: dict, shape: dict) -> str:
     """P3-6: أقوى دليل مضاد للدخول بترتيب ثابت — غياب السعودية مع منتجَين إقليميين،
-    ثم هيمنة مورد (≥30%)، ثم تراجع السلسلة، ثم مركز إعادة تصدير، وإلا «none»."""
+    ثم هيمنة مورد (≥30%)، ثم تراجع السلسلة، ثم مركز إعادة تصدير، وإلا «no_counter»."""
     if n.get("saudi_absent") and n.get("producers_two_share") is not None:
         return "saudi_absent"
     if (n.get("top1_share") or 0) >= DOMINANT_SHARE_PCT:
@@ -165,7 +165,17 @@ def counter_kind(n: dict, shape: dict) -> str:
         return "declining"
     if n.get("hub"):
         return "hub"
-    return "none"
+    return "no_counter"      # لا «none»: القالب يقرأ none قيمةً فارغة
+
+
+def counter_follow(kind: str, decision: str) -> str:
+    """مفتاح فقرة المتابعة في «ثامناً»: فقرات المرجع الأربع خاصة بحجة غياب
+    السعودية؛ غيرها يأخذ متابعةً عامة بحسب اتجاه القرار، ولا متابعة بلا حجة."""
+    if kind == "saudi_absent":
+        return decision
+    if kind == "no_counter":
+        return "none_needed"
+    return "other_go" if decision in ("entry", "conditional") else "other_stop"
 
 
 def compute(case: dict) -> dict:
@@ -205,6 +215,7 @@ def compute(case: dict) -> dict:
         "last_yoy": imp.get("last_yoy_pct") if imp.get("last_yoy_pct") is not None else shape["last_yoy"],
     }
     n["counter_kind"] = counter_kind(n, shape)
+    n["counter_follow"] = counter_follow(n["counter_kind"], decision)
     if dec.get("q_share") is not None:
         n["q_share_frac"] = fraction_word(dec["q_share"])
         n["q_growth_frac"] = fraction_word(abs(dec["dq"]) / 100.0, definite=True)

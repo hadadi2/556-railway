@@ -96,7 +96,7 @@ def test_provisional_threshold_is_flagged_and_does_not_change_decision():
     from silk_synthesis import study_decision
     c = build_case({"deep_research": {"verdict": {"verdict": "CONDITIONAL-GO"}},
                     "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
-    assert c["decision"]["threshold_provisional"] is True
+    assert c["decision"]["threshold_provisional"] is (c["decision"]["provisional_threshold_usd"] is not None)
     assert c["decision"]["type"] == study_decision({"verdict": "CONDITIONAL-GO"})
     from silk_study_claims import build_claims
     c["decision"]["provisional_threshold_usd"] = 15
@@ -217,3 +217,87 @@ def test_every_banned_vocab_form_has_an_approved_counterpart():
         d = yaml.safe_load(f)
     for fam in d.values():
         assert fam["canonical"] and all(good for good in fam["banned"].values())
+
+
+def test_tier_filter_stays_inside_the_local_currency_and_declares_dropped_rows():
+    from silk_economics import _pick_shelf_anchor
+    rows = [(20.0, "بن تقليدي 1 كغ", "MYR", 1.0, None),
+            (9.0, "بن premium 1 كغ", "USD", 1.0, None)]
+    anchor, dropped = _pick_shelf_anchor(rows, "MYR", tier="premium")
+    assert anchor[2] == "MYR" and dropped.get("بعملة أخرى") == 1
+    rows2 = rows + [(70.0, "بن premium 1 كغ", "MYR", 1.0, None)]
+    anchor2, dropped2 = _pick_shelf_anchor(rows2, "MYR", tier="premium")
+    assert anchor2[0] == 70.0 and dropped2.get("من شريحة أخرى") == 1
+
+
+def test_negated_or_inflected_predicate_is_not_a_claim_conflict():
+    from silk_study_claims import build_claims, conflicts
+    cl = build_claims(_case(), _kn())
+    assert not conflicts("السلاسل الكبرى لا تشترط الشهادة.", cl)
+    assert not conflicts("AEON تشترطها بعض الفروع.", cl)
+    assert conflicts("السلاسل الكبرى تشترط الشهادة.", cl)
+
+
+def test_english_source_alias_counts_as_listed():
+    from silk_study_linter import lint
+    md = "## الملخص التنفيذي\n\nوفق البنك الدولي بلغ النمو.\n\n**المصادر:** World Bank PA.NUS.FCRF.\n"
+    assert not [v for v in lint(md) if v["rule"] == "source_missing"]
+
+
+def test_threshold_ignores_non_equivalent_rows():
+    from silk_study_case import provisional_threshold
+    assert provisional_threshold([{"usd_kg": 35.0}, {"usd_kg": 100.0, "equivalent": False}]) == 15
+
+
+def test_counter_no_counter_renders_with_flip_and_follow_ups_match_kind():
+    from silk_study_numbers import compute, counter_follow
+    assert counter_follow("dominant_supplier", "conditional") == "other_go"
+    assert counter_follow("saudi_absent", "conditional") == "conditional"
+    from silk_study_render import Renderer
+    c = _case()
+    c["suppliers"]["saudi_share_pct"] = 2.0
+    for t in c["suppliers"]["top"]:
+        t["kind"] = "producer"
+        t["share_pct"] = min(t["share_pct"], 20.0)
+    n = compute(c)
+    assert n["counter_kind"] in ("no_counter", "declining")
+    r = Renderer(c, _kn(), allow_pending=True)
+    assert r._cond("counter_kind == no_counter") == (n["counter_kind"] == "no_counter")
+
+
+def test_exporter_type_flows_to_result_without_fake_product_card():
+    import tempfile
+    import time
+    from unittest.mock import patch
+    from fastapi.testclient import TestClient
+    from test_study_export_route import _fake_call, _fake_tools, _fake_writer
+    seen_cards = []
+    import silk_research_pipeline as P
+    env = {"ANTHROPIC_API_KEY": "t", "SILK_API_KEY": "s", "SILK_RATE_LIMIT": "100000",
+           "SILK_DATA_DIR": tempfile.mkdtemp()}
+    db = os.path.join(tempfile.mkdtemp(), "silk.db")
+    with patch.dict(os.environ, env), \
+            patch("silk_llm_runtime._call_tools", side_effect=_fake_tools), \
+            patch("silk_synthesis._call", side_effect=_fake_call), \
+            patch("silk_ai_judge._call", side_effect=_fake_writer), \
+            patch("silk_data_layer._cached_get", return_value=None), \
+            patch("silk_data_layer._http_get", side_effect=OSError("no net")), \
+            patch("silk_storage._db_path", return_value=db):
+        import api
+        client = TestClient(api.create_app())
+        hdr = {"X-API-Key": "s"}
+        r = client.post("/research", headers=hdr, json={
+            "product": "قهوة محمصة", "market": "Malaysia", "hs_code": "090121",
+            "persist": True, "async_run": True, "hs_confirmed": True,
+            "exporter_type": "manufacturer"})
+        assert r.status_code == 202, r.text
+        aid = r.json()["analysis_id"]
+        for _ in range(3000):
+            st = client.get(f"/research/{aid}/status", headers=hdr).json()
+            if st.get("status") and st["status"] != "running":
+                break
+            time.sleep(0.01)
+        res = client.get(f"/analyses/{aid}", headers=hdr).json()
+    assert res["deep_research"].get("exporter_type") == "manufacturer"
+    assert not (res.get("product_card") or {}).get("exporter_type")
+    assert P  # الوحدة محمَّلة
