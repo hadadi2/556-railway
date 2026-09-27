@@ -724,7 +724,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                                                "importer_leads": importer_leads,
                                                "verdict": verdict},
                              "market": market_ref.name_en, "hs_code": hs_code,
-                             "product": product}
+                             "product": product,
+                             "exporter_type": (product_card_dict or {}).get("exporter_type")}
                     _case = _bc(_prov)
                     _facts = _aj._isolate(_json.dumps(
                         {"product": product, "market": market_ref.name_en,
@@ -1007,6 +1008,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 k: v for k, v in _sn.items() if isinstance(v, (int, float, str, bool)) or v is None}
         except Exception as e:  # noqa: BLE001 — إضافةٌ لا شرط تشغيل
             log.warning("study_numbers skipped: %s", e)
+        if (product_card_dict or {}).get("exporter_type"):   # P3-4
+            result["deep_research"]["exporter_type"] = product_card_dict["exporter_type"]
         if _study_slots:
             result["deep_research"]["study_slots"] = _study_slots
         if _study_slots_skipped:

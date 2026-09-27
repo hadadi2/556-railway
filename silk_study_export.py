@@ -69,7 +69,8 @@ def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     from silk_quality_gate import study_style_violations   # استشاري: لا يُسقط التصدير
     from silk_study_claims import build_claims
     return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing),
-                "lint": study_style_violations(md, build_claims(case, kn))}
+                "lint": study_style_violations(md, build_claims(case, kn),
+                                               case["product"].get("exporter_type"))}
 
 
 def _add_runs(par, text: str) -> None:

@@ -101,11 +101,17 @@ def _knowledge_claims(hs: str, iso2: str) -> list[dict]:
         return []
 
 
+# P3-4: ملف المصدّر — يحدد أي نفع يجوز نسبته إليه.
+EXPORTER_TYPES = ("agri_producer", "processor_of_imported_input", "manufacturer")
+
+
 def build_case(found: dict, *, product_short: str | None = None,
-               exporter_type: str = "processor_of_imported_input",
+               exporter_type: str | None = None,
                segment: str = "specialty") -> dict:
     dr = found.get("deep_research") or {}
     missions = dr.get("missions") or {}
+    exporter_type = (exporter_type or dr.get("exporter_type") or found.get("exporter_type")
+                     or "processor_of_imported_input")
     from silk_deep_pillars import import_series, top_supplier_shares
     from silk_market_resolver import resolve_market
     mk = found.get("market") or ""

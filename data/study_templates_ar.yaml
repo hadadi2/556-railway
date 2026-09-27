@@ -86,6 +86,13 @@ clauses:
     variants:
       "no": " ويُعد المتطلب الأول متاحاً لدى المنشأة فوراً، ولا يمكن احتساب الجدوى المالية للدخول قبل استكماله."
       "yes": ""
+  raw_cost_clause:
+    # P3-4: ميزة تكلفة المنافسين تُصاغ بحسب ملف المصدّر.
+    select: exporter_type
+    variants:
+      processor_of_imported_input: " دون تكلفة استيراد {commodity_raw_word}"
+      agri_producer: " بميزة القرب الجغرافي من السوق"
+      manufacturer: " بطاقة إنتاجية وقنوات توزيع قائمة"
   hub_counter_clause:
     select:
       - {when: "hub_name != none", use: with_hub}
@@ -243,7 +250,7 @@ blocks:
   - {type: rule}
   # ── ثامناً ───────────────────────────────────────────────────────────
   - {type: heading, text: "## ثامناً: الاعتبارات المضادة للتوصية"}
-  - text: "تتمثل الحجة الأقوى ضد الدخول في الغياب التام لأي مورّد سعودي بين {supplier_count:count(دولة مورّدة, gen)}، وهو ما قد يدل على محاولات سابقة لم تُكلل بالنجاح. ويُعزز ذلك وجود منتجَين إقليميين، هما {producer1} و{producer2}، يستحوذان على {producers_two_frac} السوق دون تكلفة استيراد {commodity_raw_word}{c:hub_counter_clause}، {k:s8_counter_local_taste}."
+  - text: "تتمثل الحجة الأقوى ضد الدخول في الغياب التام لأي مورّد سعودي بين {supplier_count:count(دولة مورّدة, gen)}، وهو ما قد يدل على محاولات سابقة لم تُكلل بالنجاح. ويُعزز ذلك وجود منتجَين إقليميين، هما {producer1} و{producer2}، يستحوذان على {producers_two_frac} السوق{c:raw_cost_clause}{c:hub_counter_clause}، {k:s8_counter_local_taste}."
     when: "counter_kind == saudi_absent"
   - text: "تتمثل الحجة الأقوى ضد الدخول في استحواذ {top1_partner} على {top1_share:pct0} من الواردات، بما يمنح هذا المورد قدرة تسعيرية يصعب على مورّد جديد مجاراتها."
     when: "counter_kind == dominant_supplier"

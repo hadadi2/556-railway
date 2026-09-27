@@ -171,6 +171,7 @@ class Renderer:
         n = compute(c)
         ctx = dict(n)
         ctx.update({
+            "exporter_type": c["product"].get("exporter_type") or "processor_of_imported_input",
             "product_full": c["product"]["name_full"], "product_short": c["product"]["short"],
             "hs": c["product"]["hs"], "origin_ar": c["product"]["origin_ar"], "commodity": c["product"]["commodity"],
             "market": c["market"]["name_ar"], "market_nisba": c["market"]["nisba_f"],

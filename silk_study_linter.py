@@ -70,7 +70,8 @@ def _sections(md: str) -> list[tuple[str, list[str]]]:
     return out
 
 
-def lint(md: str, claims: list[dict] | None = None) -> list[dict]:
+def lint(md: str, claims: list[dict] | None = None,
+         exporter_type: str | None = None) -> list[dict]:
     v: list[dict] = []
     add = lambda rule, detail: v.append({"rule": rule, "detail": detail})  # noqa: E731
     lines = md.splitlines()
@@ -145,6 +146,15 @@ def lint(md: str, claims: list[dict] | None = None) -> list[dict]:
     # (٧) لا فراغ قالب متسرِّب.
     if _SLOT.search(prose):
         add("slot_leak", _SLOT.search(prose).group(0))
+    # (٨-ج) P3-4: لمحوِّل مادة مستوردة، لا يُنسب نفع توجه الشراء المباشر من
+    # الدول المزارعة/المنتجة إلى المصدّر (يفيد المنتجين لا المحوِّل).
+    if exporter_type == "processor_of_imported_input":
+        for sent in re.split(r"(?<=[.؛])\s+|\n+", prose):
+            if (any(w in sent for w in ("الدول المزارعة", "الدول المنتجة"))
+                    and any(w in sent for w in ("يفيد المصدّر", "يفيد المصدر", "لصالح المصدّر",
+                                                "يستفيد المصدّر", "يستفيد منه المصدّر"))
+                    and not any(w in sent for w in ("لا ينعكس", "لا يفيد", "لا يستفيد"))):
+                add("exporter_benefit", sent.strip()[:80])
     # (٨-ب) P3-6: قسم الحجة المضادة يحمل شرط انقلاب واحداً على الأقل.
     for head, body in _sections(md):
         if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):

@@ -139,3 +139,43 @@ def test_new_counter_variants_are_gated_pending_until_owner_approval():
     p = pending_variants()
     assert any(t.startswith("تتمثل الحجة الأقوى ضد الدخول في استحواذ") for t in p)
     assert any(t.startswith("وتنقلب هذه الاعتبارات") for t in p)
+
+
+# ── P3-4 ملف المصدّر ─────────────────────────────────────────────────────
+def test_processor_exporter_credited_with_direct_buying_benefit_is_critical():
+    from silk_study_linter import lint
+    bad = _ref() + "\nيفيد المصدّر توجه الشراء المباشر من الدول المزارعة.\n"
+    rules = [v["rule"] for v in lint(bad, exporter_type="processor_of_imported_input")]
+    assert "exporter_benefit" in rules
+    assert "exporter_benefit" not in [v["rule"] for v in lint(bad, exporter_type="agri_producer")]
+    assert not [v for v in lint(_ref(), exporter_type="processor_of_imported_input")]
+
+
+def test_exporter_type_selects_raw_cost_clause_and_new_types_are_pending():
+    from silk_study_render import render_study
+    out = render_study(_case(), _kn())
+    assert "دون تكلفة استيراد" in out
+    c = _case()
+    c["product"]["exporter_type"] = "agri_producer"
+    out2 = render_study(c, _kn())
+    assert "دون تكلفة استيراد" not in out2 and "بميزة القرب" not in out2   # pending → لا يظهر
+
+
+def test_research_request_rejects_unknown_exporter_type():
+    import tempfile
+    from unittest.mock import patch
+    from fastapi.testclient import TestClient
+    with patch.dict(os.environ, {"SILK_API_KEY": "s", "SILK_DATA_DIR": tempfile.mkdtemp()}):
+        import api
+        r = TestClient(api.create_app()).post("/research", headers={"X-API-Key": "s"}, json={
+            "product": "قهوة", "market": "Malaysia", "hs_code": "090121", "hs_confirmed": True,
+            "exporter_type": "wizard", "persist": False})
+    assert r.status_code == 422 and "exporter_type" in r.text
+
+
+def test_exporter_type_enum_matches_case_module():
+    import api  # noqa: F401
+    from silk_study_case import EXPORTER_TYPES
+    src = open(os.path.join(_ROOT, "api.py"), encoding="utf-8").read()
+    for t in EXPORTER_TYPES:
+        assert f'"{t}"' in src

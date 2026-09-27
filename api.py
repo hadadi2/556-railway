@@ -547,6 +547,7 @@ def create_app():
         from fastapi.responses import JSONResponse
         from fastapi.staticfiles import StaticFiles
         from pydantic import BaseModel, Field
+        from typing import Literal
     except ImportError as exc:  # pragma: no cover - exercised only without dep
         raise RuntimeError(_PIP_HINT) from exc
 
@@ -1983,6 +1984,10 @@ def create_app():
         hs_confirmed: bool = False
         # P1-1: قبول تقرير محدود رغم نقص الحد الأدنى من البيانات (بعد إبلاغ العميل).
         accept_limited: bool = False
+        # P3-4: ملف المصدّر — منتج زراعي / محوِّل لمادة مستوردة / مصنّع. يحدد أي
+        # استنتاج يجوز نسبة نفعه للمصدّر (مراجعة الدراسة). غيابه = الافتراض القائم.
+        exporter_type: Literal["agri_producer", "processor_of_imported_input",
+                               "manufacturer"] | None = None
         # نمط كتابة التقرير (طلب المالك 2026-07-23): "academic" يجعل الكاتب
         # يكتب بسجلٍّ بحثيٍّ علمي (نفس الأقسام/الحكم/قواعد الصدق، النثر وحده
         # يتغيّر). غيابه => الافتراضي من البيئة `SILK_REPORT_STYLE`
@@ -3013,6 +3018,10 @@ def create_app():
         if product_card_dict is not None and own_price is not None:
             product_card_dict = dict(product_card_dict)
             product_card_dict["own_price"] = own_price
+        _etype = getattr(req, "exporter_type", None)
+        if _etype:
+            product_card_dict = dict(product_card_dict or {})
+            product_card_dict["exporter_type"] = _etype
 
         if analysis_id is None and req.persist:
             from silk_storage import create_research_run

@@ -252,6 +252,7 @@
             <div class="mini"><label data-t="cost">تكلفتك / وحدة</label><input class="num" id="cCost" type="number" step="0.01"></div>
             <div class="mini"><label data-t="price">سعرك المستهدف</label><input class="num" id="cPrice" type="number" step="0.01"></div>
             <div class="mini"><label data-t="tier">الفئة</label><select id="cTier"><option value="premium">فاخر</option><option value="standard">قياسي</option><option value="economy">اقتصادي</option></select></div>
+            <div class="mini"><label>نوع المصدّر</label><select id="cExporter"><option value="">غير محدد</option><option value="processor_of_imported_input">محوِّل لمادة خام مستوردة</option><option value="agri_producer">منتج زراعي</option><option value="manufacturer">مصنّع</option></select></div>
             <div class="mini"><label data-t="cap">الطاقة الشهرية</label><input class="num" id="cCap" type="number"></div>
           </div>
           <div class="mini" style="margin-top:10px"><label data-t="certs">الشهادات (مفصولة بفواصل)</label><input id="cCerts" type="text" placeholder="مثال: HALAL, ISO22000, SFDA"></div>
@@ -833,7 +834,8 @@ function startResearch(extra){if(S.busy)return;
     var cost=parseFloat($("#cCost").value),price=parseFloat($("#cPrice").value),cap=parseFloat($("#cCap").value),certs=certList();
     if(!isNaN(cost))b.product_card={cost_per_unit:cost,tier:$("#cTier").value,monthly_capacity:isNaN(cap)?null:cap,shipping_per_unit:null,certifications:certs.length?certs:null};
     else toast("بدون بطاقة المنتج سيغيب عمود الربحية — أكملها الآن؟ دقيقتان");  // تنبيه لا حجب (الموجة ١٠)
-    if(!isNaN(price))b.own_price=price}  // بلاغ حي (الموجة ٩): كان يُقرَأ ولا يُرسَل إطلاقاً
+    if(!isNaN(price))b.own_price=price;
+    if($("#cExporter")&&$("#cExporter").value)b.exporter_type=$("#cExporter").value}  // P3-4  // بلاغ حي (الموجة ٩): كان يُقرَأ ولا يُرسَل إطلاقاً
   for(var k in extra){b[k]=extra[k]}
   post("/research",b).then(function(res){
     if(res&&res.analysis_id&&res.status==="running"){pollResearchStatus(res.analysis_id,lbl);return}
