@@ -1,0 +1,310 @@
+{
+ "case": "malaysia_coffee",
+ "product": {
+  "name_full": "القهوة المحمصة غير منزوعة الكافيين",
+  "short": "القهوة المحمصة",
+  "hs": "090121",
+  "commodity": "البن",
+  "origin_iso3": "SAU",
+  "origin_ar": "المملكة العربية السعودية",
+  "exporter_type": "processor_of_imported_input",
+  "segment": "specialty",
+  "halal_relevant": true,
+  "base_word": "القهوة",
+  "raw_input_word": "بن أخضر"
+ },
+ "market": {
+  "iso3": "MYS",
+  "name_ar": "ماليزيا",
+  "nisba_f": "الماليزية",
+  "capital_port": "ميناء كلانج",
+  "iso2": "MY"
+ },
+ "prepared": {
+  "year": 2026,
+  "month": 9,
+  "collected_on": "2026-09-21"
+ },
+ "imports": {
+  "source": "UN Comtrade",
+  "source_line": "تصريحات الاستيراد الماليزية، قاعدة بيانات UN Comtrade.",
+  "series": [
+   {
+    "year": 2019,
+    "value_musd": 52.4,
+    "kg": 9704000,
+    "complete": true
+   },
+   {
+    "year": 2020,
+    "value_musd": 47.4,
+    "kg": 8600000,
+    "complete": true
+   },
+   {
+    "year": 2021,
+    "value_musd": 51.4,
+    "kg": 9100000,
+    "complete": true
+   },
+   {
+    "year": 2022,
+    "value_musd": 72.1,
+    "kg": 11900000,
+    "complete": true
+   },
+   {
+    "year": 2023,
+    "value_musd": 74.9,
+    "kg": 12080000,
+    "complete": true
+   },
+   {
+    "year": 2024,
+    "value_musd": 89.4,
+    "kg": 100000,
+    "complete": true,
+    "weight_anomaly": true
+   }
+  ],
+  "unit_value_first": 5.4,
+  "unit_value_last_reliable": 6.2,
+  "unit_value_year_excluded": 2024,
+  "last_yoy_pct": 19,
+  "gdp_growth_pct": 5.1,
+  "gdp_source": "صندوق النقد الدولي",
+  "local_producers_word": "محامص محلية"
+ },
+ "suppliers": {
+  "year": 2024,
+  "count": 48,
+  "saudi_share_pct": 0.0,
+  "top": [
+   {
+    "iso3": "IDN",
+    "name_ar": "إندونيسيا",
+    "share_pct": 19,
+    "kind": "producer"
+   },
+   {
+    "iso3": "SGP",
+    "name_ar": "سنغافورة",
+    "share_pct": 16,
+    "kind": "reexport_hub"
+   },
+   {
+    "iso3": "VNM",
+    "name_ar": "فيتنام",
+    "share_pct": 14,
+    "kind": "producer"
+   },
+   {
+    "iso3": "ITA",
+    "name_ar": "إيطاليا",
+    "share_pct": 8,
+    "kind": "roaster"
+   }
+  ],
+  "hub_share_trend": {
+   "iso3": "SGP",
+   "name_ar": "سنغافورة",
+   "y_a": 2023,
+   "share_a": 24,
+   "y_b": 2024,
+   "share_b": 16,
+   "y_c": 2025,
+   "share_c": 18,
+   "c_provisional": true
+  }
+ },
+ "tariff": {
+  "status": "exempt",
+  "rate_pct": 0,
+  "sst_rule": "0% أو 5% أو 10% بحسب البند، اعتباراً من يوليو 2025",
+  "sst_authority": "الجمارك الملكية الماليزية",
+  "preferential_note": "منظمة التعاون الإسلامي",
+  "preferential_status": "مصدّقاً جزئياً"
+ },
+ "fx": {
+  "currency_ar": "الرينجيت",
+  "avg_year": 2025,
+  "avg_rate": 4.28,
+  "range_years": "2023–2025",
+  "range_pct": 6.5,
+  "source": "البنك الدولي",
+  "currency_short": "رينجيت"
+ },
+ "macro": {
+  "year": 2024,
+  "gdp_growth_pct": 5.1,
+  "inflation_pct": 1.8
+ },
+ "governance": {
+  "available": false
+ },
+ "logistics": {
+  "lpi": 3.6,
+  "lpi_year": 2022,
+  "sea_days_word": "أسبوعين إلى ثلاثة"
+ },
+ "demographics": {
+  "muslim_share_pct": 64,
+  "census_authority": "دائرة الإحصاء الماليزية",
+  "census_year": 2020
+ },
+ "shelf_prices": {
+  "fx_rate": 4.28,
+  "fx_year": 2025,
+  "rows": [
+   {
+    "product": "Nescafé Superiore حبوب كاملة",
+    "segment": "بن محمص صافٍ، علامة عالمية",
+    "price": "151.9 رينجيت (نحو 35 دولاراً)",
+    "source": "Zuba Market، 2025",
+    "usd_kg": 35,
+    "equivalent": true
+   },
+   {
+    "product": "Kopi O Grade AA",
+    "segment": "بن محلي محمص بالطريقة التقليدية",
+    "price": "55 رينجيت (نحو 13 دولاراً)",
+    "source": "Lipta Coffee",
+    "usd_kg": 13,
+    "equivalent": true
+   },
+   {
+    "product": "888 Serbuk Kopi Campuran",
+    "segment": "خلطة بن بالسكر والمارجرين، غير مكافئة",
+    "price": "15 إلى 26 رينجيت",
+    "source": "Harimau Fresh، 2024–2026",
+    "usd_kg": null,
+    "equivalent": false
+   }
+  ],
+  "segment_price_observed": false,
+  "target_segment_word": "القهوة المختصة",
+  "target_competitor_word": "المحامص المختصة"
+ },
+ "requirements": {
+  "rows": [
+   {
+    "item": "تسجيل المستورد في نظام FoSIM والإشعار عن كل شحنة قبل الفسح",
+    "authority": "وزارة الصحة الماليزية",
+    "party": "المستورد",
+    "verified_at": "2026-09-23"
+   },
+   {
+    "item": "تصريح استيراد من الحجر الزراعي وفحص عند الوصول",
+    "authority": "دائرة الحجر والفحص الماليزية",
+    "party": "المستورد",
+    "verified_at": "2026-09-23"
+   },
+   {
+    "item": "شهادة صحة نباتية: قد لا تُشترط لمنتج محمّص (مُعالَج)، ويُستوضح ذلك من الحجر الماليزي",
+    "authority": "دائرة الحجر والفحص الماليزية",
+    "party": "المصدّر",
+    "verified_at": null
+   },
+   {
+    "item": "بطاقة غذائية بالملايوية أو الإنجليزية وفق لائحة الأغذية 1985",
+    "authority": "وزارة الصحة الماليزية",
+    "party": "المصدّر",
+    "verified_at": "2026-09-23"
+   }
+  ],
+  "exit_text": "شهادة المنشأ من وزارة التجارة أو الغرفة التجارية، وترخيص المنشأة لدى الهيئة العامة للغذاء والدواء مع الشهادات الصحية عند طلبها، إضافة إلى التسجيل الاختياري في بوابة هيئة تنمية الصادرات السعودية للاستفادة من برامج الدعم",
+  "halal": {
+   "mandatory": false,
+   "authority_short": "JAKIM",
+   "authority_long": "هيئة الحلال الماليزية (JAKIM)",
+   "list_site": "halal.gov.my",
+   "official_durations_published": false
+  },
+  "durations_published": false,
+  "quarantine_agent_word": "وكيل تخليص ماليزي"
+ },
+ "entities": {
+  "rows": [
+   {
+    "name": "De Espresso Coffee",
+    "desc": "مستورد وموزع قهوة محلي",
+    "role": "المرشح الأول لطلب عرض أسعار جملة"
+   },
+   {
+    "name": "Mr. Coffee، Liberty Coffee، Lighthouse Coffee",
+    "desc": "محامص محلية حاصلة على شهادة حلال",
+    "role": "منافسون، ويُحتمل كونهم شركاء تعبئة أو توزيع"
+   },
+   {
+    "name": "Jaya Grocer",
+    "desc": "سلسلة تجزئة متخصصة يُفاد بأنها لا تشترط شهادة JAKIM (يُتحقق)",
+    "role": "رصد أسعار الرف وعرض المنتج"
+   },
+   {
+    "name": "Shopee وLazada",
+    "desc": "منصتا التجارة الإلكترونية الرئيسيتان",
+    "role": "قناة اختبار بعد توفر مستورد مسجّل"
+   }
+  ],
+  "excluded_text": "خمسة تجار أغذية عامين في ولاية سيلانجور",
+  "importer_candidates": 1
+ },
+ "decision": {
+  "type": "conditional",
+  "requirements": [
+   {
+    "id": 1,
+    "text": "تحديد تكلفة إنتاج الكيلوغرام لدى المنشأة",
+    "owner": "المنشأة"
+   },
+   {
+    "id": 2,
+    "text": "رصد سعر رف فعلي لمحمصة ماليزية مختصة واحدة على الأقل، بوصفها المنافس المباشر للشريحة المستهدفة",
+    "owner": "المبيعات"
+   },
+   {
+    "id": 3,
+    "text": "التحقق مما إذا كانت أي جهة سعودية مدرجة ضمن قائمة الجهات الأجنبية المعترف بها لدى هيئة الحلال الماليزية، ومدة الاعتماد عبرها",
+    "owner": "الامتثال"
+   },
+   {
+    "id": 4,
+    "text": "تحديد جهتين أو ثلاث من مستوردي القهوة قبل بدء التفاوض",
+    "owner": "المبيعات"
+   }
+  ],
+  "unit_cost_provided": false,
+  "provisional_threshold_usd": 15,
+  "rule_low_pct": 50,
+  "rule_high_pct": 60,
+  "landed_low_pct": 40,
+  "landed_high_pct": 45
+ },
+ "claims_reported": [
+  {
+   "id": "chains_require_halal",
+   "text": "سلاسل التجزئة الكبرى، مثل AEON وMydin، تشترط هذه الشهادة للتعاقد، في حين لا تشترطها المتاجر المتخصصة مثل Jaya Grocer ولا منصات التجارة الإلكترونية"
+  }
+ ],
+ "gaps": [
+  "أسعار رف المحامص المختصة",
+  "البيانات الببليوغرافية للاستطلاع الأكاديمي",
+  "قائمة مستوردي قهوة مؤكدين بالاسم باستثناء جهة واحدة",
+  "تكلفة الشحن",
+  "مدد التصاريح والاعتماد",
+  "بيانات الموسمية",
+  "مؤشرات الحوكمة",
+  "بيانات الكميات المستوردة لعام 2024"
+ ],
+ "sources": [
+  "قاعدة بيانات UN Comtrade (بيانات الواردات والحصص والتركز، جُمعت في 21 سبتمبر 2026)",
+  "البنك الدولي (سعر الصرف، مؤشر الأداء اللوجستي)",
+  "صندوق النقد الدولي (النمو، التضخم)",
+  "دائرة الإحصاء الماليزية (تعداد 2020، التركيبة الدينية)",
+  "الجمارك الملكية الماليزية (ضريبة المبيعات)",
+  "وزارة الصحة الماليزية (نظام FoSIM، لائحة الأغذية)",
+  "هيئة الحلال الماليزية JAKIM",
+  "استطلاع أكاديمي ماليزي لعادات استهلاك القهوة",
+  "مواقع تجزئة ماليزية لأسعار الرف"
+ ]
+}

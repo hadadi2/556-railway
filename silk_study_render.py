@@ -1,0 +1,350 @@
+"""محرك القوالب اللغوية لنمط «دراسة السوق» — deterministic template engine (P0-T).
+
+> النص الثابت من `data/study_templates_ar.yaml` حرفياً؛ الأرقام من
+> `silk_study_numbers`؛ نصوص المنتج×السوق من `data/product_knowledge/<hs>_<market>.yaml`
+> إن كانت `status: approved`؛ وإلا يُستدعى `llm_fill(slot_id, brief)` (حقن — لا نداء
+> شبكي هنا) ويُوسم الناتج للمراجعة. لا فعل اتجاه ولا رقم مكتوبَين في هذه الوحدة.
+
+صيغة الفراغات داخل القوالب:
+  {name}            قيمة من السياق كما هي        {name:fmt}   صيغة عرض (silk_study_arabic.fmt)
+  {dir:key:أ|ب}      أ إذا كانت إشارة key موجبة وإلا ب   {n:count(معدود صفة, حالة)}
+  لـ{x} / بـ{x} / كـ{x}   حرف جر يُدمج بالكلمة (prep)     {k:para_id}   فقرة/شظية من ملف المعرفة
+  {c:clause}        جملة فرعية مختارة من `clauses` بحسب مفتاح اختيار
+"""
+from __future__ import annotations
+
+import os
+import re
+from typing import Callable
+
+import yaml
+
+from silk_study_arabic import count, direction, fmt, prep
+from silk_study_numbers import compute
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES = os.path.join(ROOT, "data", "study_templates_ar.yaml")
+KNOWLEDGE_DIR = os.path.join(ROOT, "data", "product_knowledge")
+LLM_MARK = "<!-- llm:{sid} -->"
+
+_SLOT = re.compile(r"\{([^{}]+)\}")
+_PREP = re.compile(r"([لبك])ـ\{([^{}]+)\}")
+
+
+class StudyRenderError(ValueError):
+    pass
+
+
+def _masc_nisba(nisba_f: str) -> str:
+    """«الماليزية» → «الماليزي» (صفة النسبة المذكرة من المؤنثة)."""
+    return nisba_f[:-1] if nisba_f.endswith("ة") else nisba_f
+
+
+def load_templates(path: str = TEMPLATES) -> dict:
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def load_knowledge(hs: str, market_code: str) -> dict:
+    """ملف المعرفة `<hs>_<market>.yaml` (رمز السوق ISO2 كما سمّاه المالك، أو ISO3)
+    إن كان `status: approved`؛ غير ذلك = لا معرفة (النموذج يملأ ويُوسم)."""
+    p = os.path.join(KNOWLEDGE_DIR, f"{hs}_{market_code}.yaml")
+    if not os.path.exists(p):
+        return {}
+    with open(p, encoding="utf-8") as f:
+        d = yaml.safe_load(f) or {}
+    return d if d.get("status") == "approved" else {}
+
+
+REVIEW_FILE = os.path.join(ROOT, "docs", "plans", "STUDY_TEMPLATE_VARIANTS_REVIEW.md")
+PLACEHOLDER_RE = re.compile(r"\[[^\]]*\]|TODO|placeholder|يُدرج|<[^>]*>", re.I)
+
+
+def pending_variants(path: str = REVIEW_FILE) -> set[str]:
+    """نصوص النسخ التي ما زالت `pending` في ملف المراجعة — لا تُحمَّل بلا إذن صريح."""
+    out: set[str] = set()
+    if not os.path.exists(path):
+        return out
+    with open(path, encoding="utf-8") as f:
+        for ln in f:
+            if ln.startswith("| ") and "| pending" in ln:
+                cells = [c.strip() for c in ln.strip().strip("|").split(" | ")]
+                if len(cells) >= 3:
+                    out.add(cells[2].replace("\\|", "|"))
+    return out
+
+
+class Renderer:
+    def __init__(self, case: dict, knowledge: dict | None = None,
+                 llm_fill: Callable[[str, str], str | None] | None = None,
+                 templates: dict | None = None, allow_pending: bool = False):
+        self.allow_pending = allow_pending
+        self._pending = set() if allow_pending else pending_variants()
+        self.case = case
+        self.k = (knowledge or {}).get("paragraphs", {})
+        self.llm_fill = llm_fill
+        self.t = templates or load_templates()
+        self.ctx = self._context()
+        self.llm_slots: list[str] = []
+        self.gaps: list[str] = []
+
+    # ── السياق ─────────────────────────────────────────────────────────────
+    def _context(self) -> dict:
+        c = self.case
+        n = compute(c)
+        ctx = dict(n)
+        ctx.update({
+            "product_full": c["product"]["name_full"], "product_short": c["product"]["short"],
+            "hs": c["product"]["hs"], "origin_ar": c["product"]["origin_ar"], "commodity": c["product"]["commodity"],
+            "market": c["market"]["name_ar"], "market_nisba": c["market"]["nisba_f"],
+            "prep_year": c["prepared"]["year"], "prep_month": c["prepared"]["month"],
+            "last_complete_year": max(r["year"] for r in c["imports"]["series"] if r.get("complete")),
+            "gdp_growth": c["imports"].get("gdp_growth_pct"), "gdp_source": c["imports"].get("gdp_source"),
+            "local_producers_word": c["imports"].get("local_producers_word"),
+            "uv_first": c["imports"].get("unit_value_first"), "uv_last": c["imports"].get("unit_value_last_reliable"),
+            "uv_excl_year": c["imports"].get("unit_value_year_excluded"),
+            "sup_year": c["suppliers"]["year"],
+            "tariff_status": c["tariff"]["status"], "tariff": c["tariff"].get("rate_pct"),
+            "sst_rule": c["tariff"].get("sst_rule"), "sst_authority": c["tariff"].get("sst_authority"),
+            "pref_note": c["tariff"].get("preferential_note"), "pref_status": c["tariff"].get("preferential_status"),
+            "fx_cur": c["fx"]["currency_ar"], "fx_avg": c["fx"]["avg_rate"], "fx_year": c["fx"]["avg_year"],
+            "fx_range_years": c["fx"]["range_years"], "fx_range_pct": c["fx"]["range_pct"], "fx_source": c["fx"]["source"],
+            "macro_year": c["macro"]["year"], "macro_gdp": c["macro"]["gdp_growth_pct"], "macro_inf": c["macro"]["inflation_pct"],
+            "gov_available": c["governance"]["available"],
+            "lpi": c["logistics"]["lpi"], "lpi_year": c["logistics"]["lpi_year"], "sea_days": c["logistics"]["sea_days_word"],
+            "port": c["market"]["capital_port"],
+            "muslim_share": c["demographics"]["muslim_share_pct"], "census_auth": c["demographics"]["census_authority"],
+            "census_year": c["demographics"]["census_year"], "halal_relevant": c["product"].get("halal_relevant"),
+            "shelf_fx": c["shelf_prices"]["fx_rate"], "shelf_fx_year": c["shelf_prices"]["fx_year"],
+            "segment_word": c["shelf_prices"]["target_segment_word"], "competitor_word": c["shelf_prices"]["target_competitor_word"],
+            "segment_price_observed": c["shelf_prices"]["segment_price_observed"],
+            "halal_mandatory": c["requirements"]["halal"]["mandatory"], "halal_short": c["requirements"]["halal"]["authority_short"],
+            "halal_long": c["requirements"]["halal"]["authority_long"], "halal_site": c["requirements"]["halal"]["list_site"],
+            "durations_published": c["requirements"]["durations_published"], "quarantine_agent": c["requirements"]["quarantine_agent_word"],
+            "exit_text": c["requirements"]["exit_text"],
+            "excluded_text": c["entities"]["excluded_text"], "importer_candidates": c["entities"]["importer_candidates"],
+            "unit_cost_provided": c["decision"]["unit_cost_provided"], "threshold": c["decision"]["provisional_threshold_usd"],
+            "rule_low": c["decision"]["rule_low_pct"], "rule_high": c["decision"]["rule_high_pct"],
+            "landed_low": c["decision"]["landed_low_pct"], "landed_high": c["decision"]["landed_high_pct"],
+            "hub_name": (n["hub"] or {}).get("name_ar"), "hub_share": (n["hub"] or {}).get("share_pct"),
+            "hub_trend": c["suppliers"].get("hub_share_trend"),
+            "collected_on": c["prepared"]["collected_on"],
+        })
+        sh = ctx
+        sh["shape_g_abs"] = abs(n["shape_g_first_last"])
+        ser = c["imports"]["series"]
+        mn = min(ser, key=lambda r: r["value_musd"]); mx = max(ser, key=lambda r: r["value_musd"])
+        sh["shape_min_year"], sh["shape_min_value"] = mn["year"], mn["value_musd"]
+        sh["shape_max_value"] = mx["value_musd"]
+        sh["decision_word_gen"] = {"defer": "الإرجاء", "no_entry": "عدم الدخول", "entry": "الدخول", "conditional": "الدخول المشروط"}[n["decision"]]
+        sh["shape_dip_sign"] = (n["shape_dip_value"] - n["shape_v_first"]) if n.get("shape_dip_value") is not None else None
+        yrs = [r["year"] for r in c["imports"]["series"]]
+        sh["shape_y_prev"] = yrs[-2] if len(yrs) > 1 else None
+        sh["last_yoy_abs"] = abs(sh["last_yoy"]) if sh.get("last_yoy") is not None else None
+        for key in ("dv", "dp", "dq"):
+            v = n.get(f"dec_{key}")
+            sh[f"dec_{key}_abs"] = abs(v) if v is not None else None
+        sh["dec_reason"] = n.get("dec_reason")
+        if n.get("dec_dq") is not None:
+            dq = n["dec_dq"]
+            sh["q_change_clause"] = ("لم تتغير تقريباً" if abs(dq) < 1 else
+                                     (f"ارتفعت بنحو {int(round(abs(dq)))}% فقط" if dq > 0 else f"تراجعت بنحو {int(round(abs(dq)))}%"))
+        sh["imports_source_line"] = c["imports"]["source_line"]
+        for i, t in enumerate(c["suppliers"]["top"][:4], 1):
+            sh[f"sup{i}_name"], sh[f"sup{i}_share"] = t["name_ar"], t["share_pct"]
+        producers = [t for t in c["suppliers"]["top"] if t.get("kind") == "producer"]
+        sh["producer1"] = producers[0]["name_ar"] if producers else None
+        sh["producer2"] = producers[1]["name_ar"] if len(producers) > 1 else None
+        ht = c["suppliers"].get("hub_share_trend") or {}
+        for kk, vv in ht.items():
+            sh[f"hub_trend_{kk}"] = vv
+        sh["hub_trend_name"] = ht.get("name_ar")
+        sh["uv_dir"] = (c["imports"]["unit_value_last_reliable"] - c["imports"]["unit_value_first"]) if c["imports"].get("unit_value_first") else None
+        sh["fx_cur_short"] = c["fx"].get("currency_short")
+        sh["market_nisba_m"] = c["market"].get("nisba_m") or _masc_nisba(c["market"]["nisba_f"])
+        sh["market_nisba_gdp"] = sh["market_nisba_m"]
+        sh["product_short_bare"] = c["product"].get("base_word") or c["product"]["short"]
+        sh["commodity_raw_word"] = c["product"].get("raw_input_word") or c["product"]["commodity"]
+        sh["macro_gdp_abs"] = abs(sh["macro_gdp"])
+        sh["has_k_world_price"] = "s1_decomp.world_price_note" in self.k
+        reqs = [q["text"] for q in c["decision"]["requirements"]]
+        sh["requirements_inline"] = "؛ ".join([reqs[0]] + ["و" + q for q in reqs[1:]]) if reqs else ""
+        sh["sources_inline"] = "؛ ".join(c["sources"])
+        sh["gaps_inline"] = "؛ ".join(c["gaps"])
+        eq = [r for r in c["shelf_prices"]["rows"] if r.get("equivalent") and r.get("usd_kg")]
+        ctx["shelf_min"] = min(r["usd_kg"] for r in eq) if eq else None
+        ctx["shelf_max"] = max(r["usd_kg"] for r in eq) if eq else None
+        ctx["has_nonequivalent"] = any(not r.get("equivalent") for r in c["shelf_prices"]["rows"])
+        ht = ctx["hub_trend"]
+        if ht:
+            ctx["hub_trend_dir"] = ht["share_b"] - ht["share_a"]
+            ctx["hub_trend_dir_c"] = ht["share_c"] - ht["share_b"] if ht.get("share_c") is not None else None
+            ctx["hub_trend_sig"] = abs(ctx["hub_trend_dir"]) >= 5
+        return ctx
+
+    # ── التعبئة ────────────────────────────────────────────────────────────
+    def _val(self, key: str):
+        if key not in self.ctx:
+            raise StudyRenderError(f"فراغ غير معروف: {key}")
+        v = self.ctx[key]
+        if v is None:
+            raise StudyRenderError(f"قيمة غائبة للفراغ: {key}")
+        return v
+
+    def _slot(self, expr: str) -> str:
+        if expr.startswith("dir:"):
+            _, key, alts = expr.split(":", 2)
+            up, down = alts.split("|", 1)
+            return direction(float(self._val(key)), up, down)
+        if expr.startswith("k:"):
+            sid = expr[2:]
+            if sid in self.k:
+                return str(self.k[sid])
+            return self._llm(sid)
+        if expr.startswith("c:"):
+            return self._clause(expr[2:])
+        m = re.match(r"^(\w+):count\(([^,]+),\s*(\w+)\)$", expr)
+        if m:
+            return count(int(self._val(m.group(1))), m.group(2).strip(), m.group(3))
+        if ":" in expr:
+            key, spec = expr.split(":", 1)
+            return fmt(self._val(key), spec)
+        return str(self._val(expr))
+
+    def _llm(self, sid: str) -> str:
+        brief = (self.t.get("llm_briefs") or {}).get(sid, sid)
+        txt = self.llm_fill(sid, brief) if self.llm_fill else None
+        if txt:
+            self.llm_slots.append(sid)
+            return f"{LLM_MARK.format(sid=sid)}{txt}"
+        self.gaps.append(sid)
+        return ""
+
+    def _gate(self, raw: str) -> None:
+        if raw and raw.strip() in self._pending:
+            raise StudyRenderError(f"نسخة غير معتمدة (pending في ملف المراجعة): {raw[:40]}…")
+
+    def fill(self, text: str) -> str:
+        self._gate(text)
+        text = _PREP.sub(lambda m: prep(m.group(1), self._slot(m.group(2))), text)
+        return _SLOT.sub(lambda m: self._slot(m.group(1)), text)
+
+    def _clause(self, name: str) -> str:
+        spec = self.t["clauses"][name]
+        key = self._select(spec)
+        variants = spec["variants"]
+        if key not in variants:
+            raise StudyRenderError(f"لا نسخة {key!r} للجملة {name}")
+        return self.fill(variants[key] or "")
+
+    def _select(self, spec: dict) -> str:
+        sel = spec["select"]
+        if isinstance(sel, str):
+            v = self.ctx.get(sel)
+            if isinstance(v, bool):
+                return "yes" if v else "no"
+            return str(v)
+        # قاعدة مركبة: قائمة [شرط → مفتاح] بالترتيب؛ الشرط تعبير بسيط على السياق
+        for rule in sel:
+            if self._cond(rule["when"]):
+                return rule["use"]
+        raise StudyRenderError("لا شرط منطبق")
+
+    def _cond(self, expr: str) -> bool:
+        if expr == "else":
+            return True
+        m = re.match(r"^(\w+)\s*(==|!=|>=|<=|>|<)\s*(.+)$", expr)
+        if not m:
+            return bool(self.ctx.get(expr))
+        k, op, raw = m.groups()
+        v = self.ctx.get(k)
+        rhs: object = raw.strip()
+        if rhs in ("true", "false"):
+            rhs = rhs == "true"
+        elif rhs == "none":
+            rhs = None
+        else:
+            try:
+                rhs = float(rhs)
+            except ValueError:
+                rhs = str(rhs).strip("'\"")
+        if op == "==":
+            return v == rhs
+        if op == "!=":
+            return v != rhs
+        if v is None:
+            return False
+        return {">": v > rhs, "<": v < rhs, ">=": v >= rhs, "<=": v <= rhs}[op]
+
+    # ── الجداول ────────────────────────────────────────────────────────────
+    def _table(self, spec: dict) -> str:
+        cols = spec["columns"]
+        rows = self._rows(spec["rows"])
+        out = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
+        for r in rows:
+            out.append("| " + " | ".join(str(x) for x in r) + " |")
+        return "\n".join(out)
+
+    def _rows(self, source: str) -> list[list[str]]:
+        c = self.case
+        if source == "imports_series":
+            return [[str(r["year"]), f"{r['value_musd']:.1f}"] for r in c["imports"]["series"]]
+        if source == "shelf_prices":
+            return [[r["product"], r["segment"], r["price"], r["source"]] for r in c["shelf_prices"]["rows"]]
+        if source == "requirements":
+            return [[r["item"], r["authority"], r["party"], r["verified_at"] or "يُستوضح"] for r in c["requirements"]["rows"]]
+        if source == "entities":
+            return [[r["name"], r["desc"], r["role"]] for r in c["entities"]["rows"]]
+        if source == "plan":
+            return self._plan_rows()
+        raise StudyRenderError(f"مصدر جدول غير معروف: {source}")
+
+    def _plan_rows(self) -> list[list[str]]:
+        rows = []
+        if not self.case["decision"]["unit_cost_provided"]:
+            rows.append(["الأسبوع 1", "إدخال تكلفة إنتاج الكيلوغرام ووزن العبوة", "المتطلب الأول", "المنشأة"])
+        krows = self.k.get("s9_plan_rows") or []
+        early = [r for r in krows if r[0].startswith("الأسبوع")]
+        late = [r for r in krows if not r[0].startswith("الأسبوع")]
+        rows += early
+        rows.append(["الأسابيع 3–4", "إعادة تقييم التوصية على ضوء الأرقام الفعلية", "—", "—"])
+        rows += late
+        rows.append(["الأسابيع 9–12", "متابعة المبيعات الشهرية والتحقق من الموسمية قبل الشحنة الثانية", "—", "المبيعات"])
+        return rows
+
+    # ── التجميع ────────────────────────────────────────────────────────────
+    def render(self) -> str:
+        out: list[str] = []
+        for block in self.t["blocks"]:
+            kind = block.get("type", "para")
+            if "when" in block and not self._cond(block["when"]):
+                continue
+            if kind == "heading":
+                out.append(self.fill(block["text"]))
+            elif kind == "rule":
+                out.append("---")
+            elif kind == "table":
+                out.append(self._table(block))
+            elif kind == "para":
+                txt = block.get("text")
+                if txt is None:
+                    key = self._select(block)
+                    txt = block["variants"][key]
+                if txt is None:
+                    continue
+                s = self.fill(txt).strip()
+                if s:
+                    out.append(s)
+            elif kind == "list":
+                out.append(self.fill(block["text"]))
+            else:
+                raise StudyRenderError(f"نوع كتلة غير معروف: {kind}")
+        md = "\n\n".join(out) + "\n"
+        leak = PLACEHOLDER_RE.search(re.sub(r"<!-- llm:[^>]*-->", "", md))
+        if leak:
+            raise StudyRenderError(f"عنصر نائب في المخرج: {leak.group(0)!r}")
+        return md
+
+
+def render_study(case: dict, knowledge: dict | None = None, llm_fill=None) -> str:
+    return Renderer(case, knowledge, llm_fill).render()
