@@ -24,6 +24,8 @@ BARE_TERMS = ("HHI", "CAGR", "TAM", "SAM", "SOM", "LPI", "MFN", "WGI")
 HHI_FORM = "مؤشر تركّز الموردين"
 HHI_ALTERNATIVES = ("مؤشر تركّز السوق", "مؤشر تركز السوق", "مؤشر هيرفندال",
                     "مؤشر هيرفيندال", "مؤشر التركز")
+ADVANTAGE_CONDITIONS = ("يُعتد", "بعد التحقق", "يستلزم التحقق", "شرط", "مشروط",
+                        "تكلفة", "كميات", "التصنيف")
 COUNTER_HEADING = "## ثامناً: الاعتبارات المضادة للتوصية"
 FLIP_WORDS = ("تنقلب", "تصبح راجحة", "يكون الإرجاء", "وفي حال")
 # P3-3: جهات مصدرية معروفة — ذِكرها في المتن يوجب حضورها في سطر «المصادر».
@@ -155,6 +157,10 @@ def lint(md: str, claims: list[dict] | None = None,
                                                 "يستفيد المصدّر", "يستفيد منه المصدّر"))
                     and not any(w in sent for w in ("لا ينعكس", "لا يفيد", "لا يستفيد"))):
                 add("exporter_benefit", sent.strip()[:80])
+    # (٨-د) P3-5: كل فقرة تعرض «الميزة» تقرنها بشرط جدوى أو توسمها «لا يُعتد بها».
+    for para in re.split(r"\n\s*\n", prose):
+        if "الميزة" in para and not any(w in para for w in ADVANTAGE_CONDITIONS):
+            add("unconditioned_advantage", para.strip()[:80])
     # (٨-ب) P3-6: قسم الحجة المضادة يحمل شرط انقلاب واحداً على الأقل.
     for head, body in _sections(md):
         if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):

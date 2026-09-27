@@ -179,3 +179,16 @@ def test_exporter_type_enum_matches_case_module():
     src = open(os.path.join(_ROOT, "api.py"), encoding="utf-8").read()
     for t in EXPORTER_TYPES:
         assert f'"{t}"' in src
+
+
+# ── P3-5 الميزة مشروطة ───────────────────────────────────────────────────
+def test_unconditioned_advantage_is_rejected_and_reference_passes():
+    from silk_study_linter import lint
+    assert not [v for v in lint(_ref()) if v["rule"] == "unconditioned_advantage"]
+    bad = _ref() + "\n\nالميزة الأبرز للمنتج السعودي هي جودته العالية.\n"
+    assert any(v["rule"] == "unconditioned_advantage" for v in lint(bad))
+
+
+def test_advantage_brief_demands_a_feasibility_condition():
+    from silk_study_render import load_templates
+    assert "شرط جدواها" in load_templates()["llm_briefs"]["s3_advantage"]
