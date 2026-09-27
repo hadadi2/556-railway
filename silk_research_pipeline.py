@@ -717,6 +717,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     import json as _json
                     import silk_ai_judge as _aj
                     from silk_study_case import build_case as _bc
+                    from silk_study_claims import build_claims
                     from silk_study_export import fill_slots
                     from silk_study_numbers import compute as _sn
                     _prov = {"deep_research": {"missions": mission_reports,
@@ -728,7 +729,10 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     _facts = _aj._isolate(_json.dumps(
                         {"product": product, "market": market_ref.name_en,
                          "numbers": {k: v for k, v in _sn(_case).items()
-                                     if isinstance(v, (int, float, str, bool))}},
+                                     if isinstance(v, (int, float, str, bool))},
+                         # P3-1: حالة كل ادعاء — «يُفاد» لا يُكتب مقرَّراً.
+                         "claims": [{k: c[k] for k in ("id", "status", "text")}
+                                    for c in build_claims(_case)]},
                         ensure_ascii=False, default=str))
 
                     def _slot_guard() -> bool:

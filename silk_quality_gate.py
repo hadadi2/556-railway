@@ -7182,11 +7182,11 @@ DIRECTIVE_AUDIT_CHECKS: dict = {
 }
 
 
-def study_style_violations(md: str) -> list[dict]:
+def study_style_violations(md: str, claims: list[dict] | None = None) -> list[dict]:
     """P2-6: linter نمط الدراسة قبل التسليم — مخالفات تُسجَّل ولا تحجب (يُسلَّم دائماً)."""
     try:
         from silk_study_linter import lint
-        v = lint(md)
+        v = lint(md, claims)
     except Exception as e:  # noqa: BLE001 — الفحص تحسين لا شرط تسليم
         log.warning("study linter skipped: %s", e)
         return []

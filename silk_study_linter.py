@@ -64,7 +64,7 @@ def _sections(md: str) -> list[tuple[str, list[str]]]:
     return out
 
 
-def lint(md: str) -> list[dict]:
+def lint(md: str, claims: list[dict] | None = None) -> list[dict]:
     v: list[dict] = []
     add = lambda rule, detail: v.append({"rule": rule, "detail": detail})  # noqa: E731
     lines = md.splitlines()
@@ -139,4 +139,8 @@ def lint(md: str) -> list[dict]:
     # (٧) لا فراغ قالب متسرِّب.
     if _SLOT.search(prose):
         add("slot_leak", _SLOT.search(prose).group(0))
+    # (٨) P3-1: لا ادعاء «يُفاد» بصيغة تقرير في أي موضع.
+    if claims:
+        from silk_study_claims import conflicts
+        v.extend(conflicts(md, claims))
     return v

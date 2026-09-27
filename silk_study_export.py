@@ -67,8 +67,9 @@ def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     r = Renderer(case, kn, llm_fill=llm_fill)
     md = r.render()        # بلا وسم مراجعة (review_marks=False افتراضياً، الدرس 285)
     from silk_quality_gate import study_style_violations   # استشاري: لا يُسقط التصدير
+    from silk_study_claims import build_claims
     return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing),
-                "lint": study_style_violations(md)}
+                "lint": study_style_violations(md, build_claims(case, kn))}
 
 
 def _add_runs(par, text: str) -> None:

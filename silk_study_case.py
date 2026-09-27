@@ -68,6 +68,15 @@ def _requirements_from_gaps(gaps: list[str], shelf: list, entities: list) -> lis
     return reqs
 
 
+def _knowledge_claims(hs: str, iso2: str) -> list[dict]:
+    """P3-1: ادعاءات «يُفاد» المهيكلة من ملف المعرفة المعتمد (إن وُجد)."""
+    try:
+        from silk_study_render import load_knowledge
+        return list(load_knowledge(hs, iso2).get("claims") or [])
+    except Exception:  # noqa: BLE001 — المعرفة إضافة لا شرط
+        return []
+
+
 def build_case(found: dict, *, product_short: str | None = None,
                exporter_type: str = "processor_of_imported_input",
                segment: str = "specialty") -> dict:
@@ -230,7 +239,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                      "unit_cost_provided": False,
                      "provisional_threshold_usd": None, "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
-        "claims_reported": [], "gaps": gaps,
+        "claims_reported": _knowledge_claims(hs, iso2), "gaps": gaps,
         "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)
                            for f in (m.get("findings") or []) if isinstance(f, dict) and f.get("source")
                            and f.get("value") is not None}),
