@@ -145,3 +145,33 @@ def direction(sign_value: float, up: str, down: str, flat: str | None = None) ->
 def ratio_change_pct(a: float, b: float) -> float:
     """نسبة التغير من a إلى b بالمئة (موقّعة)."""
     return (b / a - 1.0) * 100.0
+
+
+_FRACTION_WORDS = {
+    "سدس": 1 / 6, "خمس": 1 / 5, "ربع": 1 / 4, "ثلث": 1 / 3, "خمسي": 2 / 5, "خمسين": 2 / 5,
+    "نصف": 1 / 2, "ثلاثة أخماس": 3 / 5, "ثلاثة الأخماس": 3 / 5, "ثلثي": 2 / 3, "ثلثين": 2 / 3,
+    "ثلاثة أرباع": 3 / 4, "ثلاثة الأرباع": 3 / 4,
+}
+_FRACTION_RE = re.compile(r"(?<![\w\u0600-\u06FF])(?:[وفبلك])?(?:ال)?(ثلاثة (?:ال)?أخماس|ثلاثة (?:ال)?أرباع|خمسي|خمسين|ثلثي|ثلثين|سدس|خمس|ربع|ثلث|نصف)(?![\w\u0600-\u06FF])")
+
+
+def verbal_fractions(text: str) -> list[tuple[str, float]]:
+    """الكسور اللفظية في نص عربي → [(الكلمة، القيمة)] — لفحص الإسناد (P1-6)."""
+    out = []
+    for m in _FRACTION_RE.finditer(text or ""):
+        w = m.group(1)
+        out.append((w, _FRACTION_WORDS[w]))
+    return out
+
+
+def fraction_grounded(value: float, known: set, tol: float = 0.06) -> bool:
+    """كسرٌ لفظي مسند إذا طابق نسبة رقمين معلومين (أو رقماً معلوماً بالمئة)."""
+    ks = [float(k) for k in known if isinstance(k, (int, float))]
+    if any(abs(k / 100.0 - value) <= tol for k in ks if 0 < k <= 100):
+        return True
+    for a in ks:
+        for b in ks:
+            if b and 0 < a / b <= 1 and abs(a / b - value) <= tol:
+                return True
+    return False
+

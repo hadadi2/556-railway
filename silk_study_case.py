@@ -57,6 +57,17 @@ def _nisba(iso3: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _requirements_from_gaps(gaps: list[str], shelf: list, entities: list) -> list[dict]:
+    """متطلبات القرار المرقّمة تُشتق حتمياً من الفجوات (P1-5): تكلفة الوحدة أولاً
+    دائماً (رقم المنشأة)، ثم سعر رف الشريحة، ثم مسار الاعتماد، ثم الجهات."""
+    reqs = [{"id": 1, "text": "تحديد تكلفة إنتاج الكيلوغرام لدى المنشأة", "owner": "المنشأة"}]
+    if not shelf or "أسعار الرف" in gaps:
+        reqs.append({"id": len(reqs) + 1, "text": "رصد سعر رف فعلي لمنافس واحد على الأقل من الشريحة المستهدفة", "owner": "المبيعات"})
+    if len(entities) < 2:
+        reqs.append({"id": len(reqs) + 1, "text": "تحديد جهتين أو ثلاث من المستوردين المؤكدين قبل بدء التفاوض", "owner": "المبيعات"})
+    return reqs
+
+
 def build_case(found: dict, *, product_short: str | None = None,
                exporter_type: str = "processor_of_imported_input",
                segment: str = "specialty") -> dict:
@@ -77,7 +88,7 @@ def build_case(found: dict, *, product_short: str | None = None,
     # ── الواردات ─────────────────────────────────────────────────────────
     imp = import_series(missions)
     series = [{"year": p["year"], "value_musd": round(p["value"] / 1e6, 1), "kg": None,
-               "complete": not p.get("partial")} for p in imp.get("series") or []]
+               "complete": not (p.get("partial") or p.get("provisional"))} for p in imp.get("series") or []]
     # الوزن (إن وُجد) من نقاط «صافي الوزن» بسنة بنيوية
     for f in _findings(dr, "trade_flow"):
         v, note, y = f.get("value"), str(f.get("note") or ""), f.get("data_year")
@@ -166,9 +177,8 @@ def build_case(found: dict, *, product_short: str | None = None,
                           "source": str(f.get("source") or ""), "usd_kg": float(m.group(1).replace(",", ".")),
                           "equivalent": True})
 
-    dec = str(((dr.get("verdict") or {}).get("verdict") or "")).upper()
-    decision = "conditional" if "CONDITIONAL" in dec else ("entry" if dec.startswith("GO") else
-                                                            ("no_entry" if "NO-GO" in dec else "defer"))
+    from silk_synthesis import study_decision
+    decision = study_decision(dr.get("verdict") or {})
     gaps = []
     if not series:
         gaps.append("سلسلة الواردات السنوية")
@@ -216,7 +226,8 @@ def build_case(found: dict, *, product_short: str | None = None,
                                    "list_site": None, "official_durations_published": False},
                          "durations_published": False, "quarantine_agent_word": None},
         "entities": {"rows": entities, "excluded_text": None, "importer_candidates": len(entities)},
-        "decision": {"type": decision, "requirements": [], "unit_cost_provided": False,
+        "decision": {"type": decision, "requirements": _requirements_from_gaps(gaps, shelf, entities),
+                     "unit_cost_provided": False,
                      "provisional_threshold_usd": None, "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
         "claims_reported": [], "gaps": gaps,

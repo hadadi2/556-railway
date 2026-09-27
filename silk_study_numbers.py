@@ -86,7 +86,8 @@ _EMPTY_SHAPE = {k: None for k in ("y_first", "v_first", "y_last", "v_last", "g_f
 
 
 def series_shape(series: list[dict]) -> dict:
-    vals = [(r["year"], r["value_musd"]) for r in (series or []) if r.get("value_musd") is not None]
+    vals = [(r["year"], r["value_musd"]) for r in (series or [])
+            if r.get("value_musd") is not None and r.get("complete", True)]
     if len(vals) < 2:
         return dict(_EMPTY_SHAPE, trend="flat")
     first_y, first_v = vals[0]
@@ -109,7 +110,7 @@ def series_shape(series: list[dict]) -> dict:
 
 def decomposition(series: list[dict]) -> dict:
     """نافذة السنوات ذات الوزن السليم؛ dv/dp/dq؛ حصة الكمية من نمو القيمة؛ النسخة."""
-    ok = [r for r in (series or []) if r.get("kg") and not r.get("weight_anomaly")]
+    ok = [r for r in (series or []) if r.get("kg") and not r.get("weight_anomaly") and r.get("complete", True)]
     excluded = [r["year"] for r in series if r.get("weight_anomaly")]
     if len(ok) < 3:
         return {"variant": "not_decomposable", "reason": "غياب بيانات الوزن" if not ok else "عدم موثوقية بيانات الوزن في أكثر من سنة"}

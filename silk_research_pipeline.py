@@ -942,6 +942,17 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
         # التشغيلات لنفس (المنتج × السوق) — يُحسَب قبل بناء العرض فيمرّ
         # عبر `build_view` إلى بوابة الجودة (`verdict_evidence_direction`
         # المُفشِل). قناة جانبية: أي عطل لا يمسّ التشغيلة.
+        # P1-6…P1-9: أرقام الدراسة الحتمية (السلسلة، التفكيك، حدّا HHI، القرار
+        # الرباعي) تُحسب مرّة واحدة وتُخزَّن مع النتيجة — مصدرٌ واحد للتصدير
+        # والمراجعة؛ قناة جانبية: أي عطل لا يمسّ التشغيلة.
+        try:
+            from silk_study_case import build_case
+            from silk_study_numbers import compute
+            _sn = compute(build_case(result))
+            result["deep_research"]["study_numbers"] = {
+                k: v for k, v in _sn.items() if isinstance(v, (int, float, str, bool)) or v is None}
+        except Exception as e:  # noqa: BLE001 — إضافةٌ لا شرط تشغيل
+            log.warning("study_numbers skipped: %s", e)
         try:
             import silk_consistency
             result["deep_research"]["verdict_consistency"] = (

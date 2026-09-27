@@ -363,7 +363,8 @@ class Renderer:
     def _rows(self, source: str) -> list[list[str]]:
         c = self.case
         if source == "imports_series":
-            return [[str(r["year"]), f"{r['value_musd']:.1f}"] for r in c["imports"]["series"]]
+            return [[str(r["year"]), f"{r['value_musd']:.1f}" + ("" if r.get("complete", True) else " (أولي)")]
+                    for r in c["imports"]["series"]]
         if source == "shelf_prices":
             return [[r["product"], r["segment"], r["price"], r["source"]] for r in c["shelf_prices"]["rows"]]
         if source == "requirements":

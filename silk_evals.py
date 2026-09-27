@@ -207,9 +207,15 @@ def citation_correctness_score(report_text: str,
     report_numbers = _extract_numbers(report_text)
     effective = known | grounded
     violations = sorted({n for n in report_numbers if n not in effective})
-    return {"score": 0 if violations else 100, "violations": violations,
-           "checked": len(report_numbers), "known_pool": len(known),
-           "formula_grounded": sorted(grounded)}
+    # P1-6 (F-15): الكسور اللفظية العربية («ثلاثة أخماس»، «سدس») أرقامٌ أيضاً —
+    # تُرفض ما لم تطابق نسبة رقمين معلومين أو نسبةً مئوية معلومة.
+    from silk_study_arabic import fraction_grounded, verbal_fractions
+    fraction_violations = sorted({w for w, v in verbal_fractions(report_text)
+                                  if not fraction_grounded(v, effective)})
+    return {"score": 0 if (violations or fraction_violations) else 100,
+            "violations": violations, "fraction_violations": fraction_violations,
+            "checked": len(report_numbers), "known_pool": len(known),
+            "formula_grounded": sorted(grounded)}
 
 
 def _judge_prompt(result: dict) -> str:
