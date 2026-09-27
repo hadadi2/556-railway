@@ -161,6 +161,12 @@ def lint(md: str, claims: list[dict] | None = None,
     for para in re.split(r"\n\s*\n", prose):
         if "الميزة" in para and not any(w in para for w in ADVANTAGE_CONDITIONS):
             add("unconditioned_advantage", para.strip()[:80])
+    # (٨-هـ) P3-7: سعر الحدود/الاستيراد لا يُقدَّم مرجعاً للتسعير أو التفاوض.
+    for sent in re.split(r"(?<=[.؛])\s+|\n+", prose):
+        if (any(w in sent for w in ("سعر الحدود", "سعر استيراد", "سعر الاستيراد", "قيمة الوحدة"))
+                and any(w in sent for w in ("مرجع", "أساس للتفاوض", "أساساً للتفاوض", "أساس للتسعير"))
+                and not any(w in sent for w in ("لا يصلح", "لا مرجع", "ليس مرجع", "لا يُعد", "لا يُعتمد"))):
+            add("border_as_reference", sent.strip()[:80])
     # (٨-ب) P3-6: قسم الحجة المضادة يحمل شرط انقلاب واحداً على الأقل.
     for head, body in _sections(md):
         if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):

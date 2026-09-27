@@ -333,6 +333,7 @@ def _indicative(note: str, derivation: str) -> str:
 
 # ── ١) وكيل حجم السوق · market size (TAM/SAM/SOM + نمو) ─────────────────────
 
+DIFFERENTIATED_TIERS = ("premium", "specialty")
 _TIER_FACTORS = {"premium": 0.2, "mid": 0.5, "standard": 0.5,
                  "mass": 0.8, "economy": 0.8}
 
@@ -481,7 +482,12 @@ class MarketSizeAgent(ResearchAgent):
         mass_factor = {"kg": 1., "كجم": 1., "كيلوغرام": 1., "tonne": 1000., "ton": 1000., "طن": 1000., "g": .001}.get(capacity_unit)
         capacity_kg = float(cap) * mass_factor if cap and mass_factor else None
         uv = _border_unit_value(hs, iso3, year)
-        if capacity_kg and uv and tam is not None:
+        # P3-7 (F-12): سعر الحدود متوسط عام للبند كله، لا مرجع تسعير لمنتج متمايز —
+        # لا SOM منه لشريحة فاخرة/مختصة؛ فجوة معلنة بدل رقم مضلِّل.
+        if str(tier or "").lower() in DIFFERENTIATED_TIERS:
+            gaps.append("som_usd: يتطلب سعر رف الشريحة — سعر الحدود متوسط عام "
+                        "لا يصلح مرجعاً لمنتج متمايز")
+        elif capacity_kg and uv and tam is not None:
             som = round(min(tam * _TIER_FACTORS.get(tier, 1.0),
                             capacity_kg * 12 * uv))
             F.append(_f("som_usd", som, [_src("UN Comtrade")], unit="USD",
@@ -964,7 +970,8 @@ class PricingAgent(ResearchAgent):
                         modeled=True,
                         formula=f"الهامش = (قيمة الوحدة الحدودية {uv:.2f} − "
                                 f"تكلفتك {cost} − شحن {ship}) ÷ قيمة الوحدة",
-                        note="مُقدَّر عند متوسط سعر الحدود — ليس سعر بيع تجزئة"))
+                        note="مُقدَّر عند متوسط سعر الحدود — متوسط عام لا مرجع "
+                             "تسعير، وليس سعر بيع تجزئة"))
         else:
             gaps.append("margin_at_border_pct: يتطلب سعر المصنع للكيلوغرام "
                         "المُدخَل + قيمة وحدة حدودية مرصودة")

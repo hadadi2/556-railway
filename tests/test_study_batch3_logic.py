@@ -192,3 +192,11 @@ def test_unconditioned_advantage_is_rejected_and_reference_passes():
 def test_advantage_brief_demands_a_feasibility_condition():
     from silk_study_render import load_templates
     assert "شرط جدواها" in load_templates()["llm_briefs"]["s3_advantage"]
+
+
+# ── P3-7 سعر الحدود ──────────────────────────────────────────────────────
+def test_border_price_as_negotiation_reference_is_rejected():
+    from silk_study_linter import lint
+    assert not [v for v in lint(_ref()) if v["rule"] == "border_as_reference"]
+    bad = _ref() + "\n\nويُعد متوسط سعر الاستيراد مرجعاً للتفاوض مع الموزع.\n"
+    assert any(v["rule"] == "border_as_reference" for v in lint(bad))

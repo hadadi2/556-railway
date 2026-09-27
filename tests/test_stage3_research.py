@@ -177,8 +177,16 @@ def test_market_size_tam_growth_from_store_and_disclosed_models():
     v2 = {f["metric"]: f for f in out2["findings"] if f["value"] is not None}
     assert v2["sam_usd"]["value"] == round(6.0e7 * 0.2)
     assert v2["sam_usd"]["modeled"] and "SAM" in v2["sam_usd"]["formula"]
-    assert v2["som_usd"]["value"] == 1000 * 12 * 3           # طاقة × سعر حدودي 3$
-    assert v2["som_usd"]["modeled"] and "SOM" in v2["som_usd"]["formula"]
+    # P3-7: شريحة فاخرة — لا SOM من سعر الحدود (متوسط عام)؛ فجوة معلنة.
+    assert "som_usd" not in v2
+    assert any("som_usd" in g and "سعر رف الشريحة" in g for g in out2["gaps"])
+    task3 = dict(TASK, product_card={"tier": "standard", "monthly_capacity": 1000,
+                                     "unit": "kg", "cost_per_unit": 2.0})
+    with block_network():
+        out3 = _out(R.MarketSizeAgent, task3)
+    v3 = {f["metric"]: f for f in out3["findings"] if f["value"] is not None}
+    assert v3["som_usd"]["value"] == 1000 * 12 * 3           # طاقة × سعر حدودي 3$
+    assert v3["som_usd"]["modeled"] and "SOM" in v3["som_usd"]["formula"]
 
 
 # ── وكيل المنافسة — طبقتان: دول (مرصودة) وشركات (فجوة معلنة بلا مفاتيح) ─────
