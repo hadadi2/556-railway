@@ -70,6 +70,13 @@ GAP_OWNERS = {
 }
 
 
+def provisional_threshold(shelf: list, landed_high_pct: int = 45) -> int | None:
+    """P3-8: عتبة مؤقتة = أعلى سعر رف مرصود (دولار/كغ) × الحد الأعلى للتكلفة الواصلة،
+    مقرّبةً للأدنى. بلا رف مرصود = فجوة (None)."""
+    vals = [r["usd_kg"] for r in shelf or [] if isinstance(r.get("usd_kg"), (int, float))]
+    return int(max(vals) * landed_high_pct // 100) if vals else None
+
+
 def _gap(label: str) -> dict:
     return {"label": label, "owner": GAP_OWNERS.get(label)}
 
@@ -254,7 +261,12 @@ def build_case(found: dict, *, product_short: str | None = None,
         "entities": {"rows": entities, "excluded_text": None, "importer_candidates": len(entities)},
         "decision": {"type": decision, "requirements": _requirements_from_gaps(gaps, shelf, entities),
                      "unit_cost_provided": False,
-                     "provisional_threshold_usd": None, "rule_low_pct": 50, "rule_high_pct": 60,
+                     # P3-8: بلا سعر رف من الشريحة — عتبةٌ **مؤقتة** = أعلى سعر مرصود ×
+                     # الحد الأعلى لقاعدة التكلفة الواصلة (45%)، مقرّبةً للأدنى؛ قاعدة
+                     # تقديرية موسومة، ولا يُبنى عليها إرجاء (القرار من التوليف وحده).
+                     "provisional_threshold_usd": provisional_threshold(shelf),
+                     "threshold_provisional": True,
+                     "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
         "claims_reported": _knowledge_claims(hs, iso2), "gaps": [_gap(g) for g in gaps],
         "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)

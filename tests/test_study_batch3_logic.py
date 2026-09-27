@@ -80,3 +80,34 @@ def test_source_named_in_body_but_missing_from_list_is_rejected():
     bad = _ref().replace("صندوق النقد الدولي (النمو، التضخم)؛ ", "")
     assert "صندوق النقد الدولي" in bad.split("**المصادر:**")[0]
     assert any(v["rule"] == "source_missing" for v in lint(bad))
+
+
+# ── P3-8 مرجع الرف بالشريحة والعتبة المؤقتة ─────────────────────────────
+def test_reference_case_yields_15_usd_provisional_threshold():
+    from silk_study_case import provisional_threshold
+    c = _case()
+    shelf = [{"usd_kg": 35.0}, {"usd_kg": 13.0}, {"usd_kg": 6.0}]   # صفوف المرجع
+    assert provisional_threshold(shelf) == c["decision"]["provisional_threshold_usd"] == 15
+    assert provisional_threshold([]) is None
+
+
+def test_provisional_threshold_is_flagged_and_does_not_change_decision():
+    from silk_study_case import build_case
+    from silk_synthesis import study_decision
+    c = build_case({"deep_research": {"verdict": {"verdict": "CONDITIONAL-GO"}},
+                    "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
+    assert c["decision"]["threshold_provisional"] is True
+    assert c["decision"]["type"] == study_decision({"verdict": "CONDITIONAL-GO"})
+    from silk_study_claims import build_claims
+    c["decision"]["provisional_threshold_usd"] = 15
+    rules = {x["id"]: x["status"] for x in build_claims(c)}
+    assert rules["provisional_threshold"] == "estimate_rule"
+    assert rules["landed_share_rule"] == "estimate_rule"
+
+
+def test_shelf_anchor_prefers_rows_of_the_target_tier():
+    from silk_economics import _pick_shelf_anchor
+    rows = [(20.0, "بن تجاري 1 كغ", "USD", 1.0, None),
+            (60.0, "بن مختص single origin 1 كغ", "USD", 1.0, None)]
+    assert _pick_shelf_anchor(rows, "USD")[0][0] == 20.0
+    assert _pick_shelf_anchor(rows, "USD", tier="specialty")[0][0] == 60.0
