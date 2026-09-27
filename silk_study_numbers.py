@@ -81,8 +81,14 @@ def _round100(x: float) -> int:
 
 
 # ── السلسلة والتفكيك ──────────────────────────────────────────────────────
+_EMPTY_SHAPE = {k: None for k in ("y_first", "v_first", "y_last", "v_last", "g_first_last", "trend",
+                                  "monotone", "dip_year", "dip_value", "jump_year", "peak_year", "last_yoy")}
+
+
 def series_shape(series: list[dict]) -> dict:
-    vals = [(r["year"], r["value_musd"]) for r in series]
+    vals = [(r["year"], r["value_musd"]) for r in (series or []) if r.get("value_musd") is not None]
+    if len(vals) < 2:
+        return dict(_EMPTY_SHAPE, trend="flat")
     first_y, first_v = vals[0]
     last_y, last_v = vals[-1]
     g = ratio_change_pct(first_v, last_v)
@@ -103,7 +109,7 @@ def series_shape(series: list[dict]) -> dict:
 
 def decomposition(series: list[dict]) -> dict:
     """نافذة السنوات ذات الوزن السليم؛ dv/dp/dq؛ حصة الكمية من نمو القيمة؛ النسخة."""
-    ok = [r for r in series if r.get("kg") and not r.get("weight_anomaly")]
+    ok = [r for r in (series or []) if r.get("kg") and not r.get("weight_anomaly")]
     excluded = [r["year"] for r in series if r.get("weight_anomaly")]
     if len(ok) < 3:
         return {"variant": "not_decomposable", "reason": "غياب بيانات الوزن" if not ok else "عدم موثوقية بيانات الوزن في أكثر من سنة"}
@@ -146,36 +152,39 @@ def market_def_key(decision: str, trend: str) -> str:
 # ── التجميع ───────────────────────────────────────────────────────────────
 def compute(case: dict) -> dict:
     """كل الفراغات الرقمية للقوالب من حالة واحدة."""
-    imp = case["imports"]
-    shape = series_shape(imp["series"])
-    dec = decomposition(imp["series"])
-    sup = case["suppliers"]
-    shares = [t["share_pct"] for t in sup["top"]]
-    lo, hi = hhi_bounds(shares)
-    top3 = sup["top"][:3]
-    top3_sum = sum(t["share_pct"] for t in top3)
+    imp = case.get("imports") or {}
+    shape = series_shape(imp.get("series") or [])
+    dec = decomposition(imp.get("series") or [])
+    sup = case.get("suppliers") or {}
+    top_all = sup.get("top") or []
+    shares = [t["share_pct"] for t in top_all if t.get("share_pct") is not None]
+    lo, hi = hhi_bounds(shares) if shares else (None, None)
+    top3 = top_all[:3]
+    top3_sum = sum(t["share_pct"] for t in top3) if top3 else None
     geo = _geodist()
-    near = len(top3) >= 3 and all(is_near(case["market"]["iso3"], t["iso3"], geo) for t in top3)
-    hub = next((t for t in sup["top"] if t.get("kind") == "reexport_hub"), None)
-    producers = [t for t in sup["top"] if t.get("kind") == "producer"]
-    decision = case["decision"]["type"]
+    near = len(top3) >= 3 and all(is_near(case["market"].get("iso3") or "", t.get("iso3") or "", geo) for t in top3)
+    hub = next((t for t in top_all if t.get("kind") == "reexport_hub"), None)
+    producers = [t for t in top_all if t.get("kind") == "producer"]
+    decision = (case.get("decision") or {}).get("type") or "defer"
     n = {
         **{f"shape_{k}": v for k, v in shape.items()},
         **{f"dec_{k}": v for k, v in dec.items()},
-        "supplier_count": sup["count"],
+        "supplier_count": sup.get("count"),
         "saudi_share": sup.get("saudi_share_pct") or 0.0,
         "saudi_absent": not sup.get("saudi_share_pct"),
-        "top_n": len(top3), "top3_share": top3_sum, "top3_frac": fraction_word(top3_sum / 100.0),
+        "top_n": len(top3), "top3_share": top3_sum,
+        "top3_frac": fraction_word(top3_sum / 100.0) if top3_sum is not None else None,
         "top3_near": near,
-        "hhi_lo": lo, "hhi_hi": hi, "hhi_lo_100": _round100(lo), "hhi_hi_100": _round100(hi),
-        "hhi_band": hhi_band(_round100(lo), _round100(hi)),
-        "top1_partner": sup["top"][0]["name_ar"], "top1_share": sup["top"][0]["share_pct"],
+        "hhi_lo": lo, "hhi_hi": hi,
+        "hhi_lo_100": _round100(lo) if lo is not None else None, "hhi_hi_100": _round100(hi) if hi is not None else None,
+        "hhi_band": hhi_band(_round100(lo), _round100(hi)) if lo is not None else "not_computed",
+        "top1_partner": top_all[0]["name_ar"] if top_all else None, "top1_share": top_all[0]["share_pct"] if top_all else None,
         "origin_word": "الإقليميين" if near else "الرئيسيين",
         "hub": hub, "producers_two_share": sum(t["share_pct"] for t in producers[:2]) if len(producers) >= 2 else None,
         "decision": decision, "decision_word": DECISION_WORDS[decision],
         "market_def": market_def_key(decision, shape["trend"]),
-        "req_count": len(case["decision"]["requirements"]),
-        "last_yoy": imp.get("last_yoy_pct", shape["last_yoy"]),
+        "req_count": len((case.get("decision") or {}).get("requirements") or []),
+        "last_yoy": imp.get("last_yoy_pct") if imp.get("last_yoy_pct") is not None else shape["last_yoy"],
     }
     if dec.get("q_share") is not None:
         n["q_share_frac"] = fraction_word(dec["q_share"])

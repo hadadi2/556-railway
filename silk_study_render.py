@@ -74,6 +74,36 @@ def pending_variants(path: str = REVIEW_FILE) -> set[str]:
     return out
 
 
+# تسميات الفجوات عند سقوط فقرة لغياب فراغها (P1-3 أ: فجوة بيانات → بند في الحدود).
+GAP_LABELS = {
+    "imports_series": "سلسلة الواردات السنوية", "shelf_prices": "أسعار الرف", "requirements": "المتطلبات الإلزامية في السوق", "entities": "الجهات المرصودة", "plan": "خطة التنفيذ",
+    "shape_v_last": "سلسلة الواردات السنوية", "shape_v_first": "سلسلة الواردات السنوية",
+    "dec_y_a": "بيانات الكميات المستوردة (الوزن)", "q_share_frac": "بيانات الكميات المستوردة (الوزن)",
+    "supplier_count": "عدد الدول المورّدة", "top3_frac": "حصص الموردين", "sup1_name": "حصص الموردين",
+    "hhi_lo_100": "مؤشر تركّز الموردين", "tariff": "الرسم الجمركي المنطبق",
+    "gdp_growth": "نمو الناتج المحلي الإجمالي", "gdp_source": "نمو الناتج المحلي الإجمالي",
+    "uv_first": "متوسط سعر الاستيراد عند الحدود", "uv_last": "متوسط سعر الاستيراد عند الحدود",
+    "fx_avg": "سعر الصرف", "fx_cur": "سعر الصرف", "fx_range_pct": "تقلب سعر الصرف", "fx_range_years": "تقلب سعر الصرف",
+    "macro_gdp": "مؤشرات الاقتصاد الكلي", "macro_inf": "معدل التضخم", "macro_year": "مؤشرات الاقتصاد الكلي",
+    "lpi": "مؤشر الأداء اللوجستي", "port": "ميناء الدخول", "sea_days": "مدة الشحن البحري",
+    "muslim_share": "التركيبة الدينية", "census_auth": "التركيبة الدينية",
+    "shelf_min": "أسعار الرف", "shelf_max": "أسعار الرف", "shelf_fx": "سعر الصرف", "fx_cur_short": "سعر الصرف",
+    "segment_word": "الشريحة المستهدفة", "competitor_word": "الشريحة المستهدفة", "threshold": "عتبة التكلفة الواصلة",
+    "sst_rule": "ضريبة المبيعات", "sst_authority": "ضريبة المبيعات", "pref_note": "المعاملة التفضيلية",
+    "exit_text": "متطلبات التصدير في المملكة", "halal_long": "جهة اعتماد الحلال", "halal_short": "جهة اعتماد الحلال",
+    "quarantine_agent": "مدد التصاريح", "excluded_text": "الجهات المستبعدة", "requirements_inline": "متطلبات القرار",
+    "hub_trend_name": "اتجاه حصة مركز إعادة التصدير", "producer1": "المنتجون الإقليميون", "commodity_raw_word": "المادة الخام",
+    "market_nisba": "صفة النسبة للسوق (data/market_nisba_l1.csv)", "local_producers_word": "الإنتاج المحلي",
+    "نسخة قالب بانتظار اعتماد المالك": "فقرة قالبها بانتظار اعتماد المالك",
+    "last_complete_year": "أحدث سنة بيانات مكتملة", "shape_g_first_last": "سلسلة الواردات السنوية",
+    "market_nisba_m": "صفة النسبة للسوق (data/market_nisba_l1.csv)", "sources_inline": "قائمة المصادر",
+    "shape_y_first": "سلسلة الواردات السنوية", "last_yoy_abs": "نمو الواردات السنوي", "sup_year": "حصص الموردين",
+    "hub_frac": "حصة مركز إعادة التصدير", "producers_two_frac": "حصص المنتجين الإقليميين",
+}
+_ = {
+}
+
+
 class Renderer:
     def __init__(self, case: dict, knowledge: dict | None = None,
                  llm_fill: Callable[[str, str], str | None] | None = None,
@@ -98,12 +128,12 @@ class Renderer:
             "hs": c["product"]["hs"], "origin_ar": c["product"]["origin_ar"], "commodity": c["product"]["commodity"],
             "market": c["market"]["name_ar"], "market_nisba": c["market"]["nisba_f"],
             "prep_year": c["prepared"]["year"], "prep_month": c["prepared"]["month"],
-            "last_complete_year": max(r["year"] for r in c["imports"]["series"] if r.get("complete")),
+            "last_complete_year": max((r["year"] for r in (c["imports"].get("series") or []) if r.get("complete")), default=None),
             "gdp_growth": c["imports"].get("gdp_growth_pct"), "gdp_source": c["imports"].get("gdp_source"),
             "local_producers_word": c["imports"].get("local_producers_word"),
             "uv_first": c["imports"].get("unit_value_first"), "uv_last": c["imports"].get("unit_value_last_reliable"),
             "uv_excl_year": c["imports"].get("unit_value_year_excluded"),
-            "sup_year": c["suppliers"]["year"],
+            "sup_year": (c.get("suppliers") or {}).get("year"),
             "tariff_status": c["tariff"]["status"], "tariff": c["tariff"].get("rate_pct"),
             "sst_rule": c["tariff"].get("sst_rule"), "sst_authority": c["tariff"].get("sst_authority"),
             "pref_note": c["tariff"].get("preferential_note"), "pref_status": c["tariff"].get("preferential_status"),
@@ -131,11 +161,14 @@ class Renderer:
             "collected_on": c["prepared"]["collected_on"],
         })
         sh = ctx
-        sh["shape_g_abs"] = abs(n["shape_g_first_last"])
+        sh["shape_g_abs"] = abs(n["shape_g_first_last"]) if n.get("shape_g_first_last") is not None else None
         ser = c["imports"]["series"]
-        mn = min(ser, key=lambda r: r["value_musd"]); mx = max(ser, key=lambda r: r["value_musd"])
-        sh["shape_min_year"], sh["shape_min_value"] = mn["year"], mn["value_musd"]
-        sh["shape_max_value"] = mx["value_musd"]
+        if ser:
+            mn = min(ser, key=lambda r: r["value_musd"]); mx = max(ser, key=lambda r: r["value_musd"])
+            sh["shape_min_year"], sh["shape_min_value"] = mn["year"], mn["value_musd"]
+            sh["shape_max_value"] = mx["value_musd"]
+        else:
+            sh["shape_min_year"] = sh["shape_min_value"] = sh["shape_max_value"] = None
         sh["decision_word_gen"] = {"defer": "الإرجاء", "no_entry": "عدم الدخول", "entry": "الدخول", "conditional": "الدخول المشروط"}[n["decision"]]
         sh["shape_dip_sign"] = (n["shape_dip_value"] - n["shape_v_first"]) if n.get("shape_dip_value") is not None else None
         yrs = [r["year"] for r in c["imports"]["series"]]
@@ -149,7 +182,8 @@ class Renderer:
             dq = n["dec_dq"]
             sh["q_change_clause"] = ("لم تتغير تقريباً" if abs(dq) < 1 else
                                      (f"ارتفعت بنحو {int(round(abs(dq)))}% فقط" if dq > 0 else f"تراجعت بنحو {int(round(abs(dq)))}%"))
-        sh["imports_source_line"] = c["imports"]["source_line"]
+        sh["imports_source_line"] = c["imports"].get("source_line")
+        sh["imports_source"] = c["imports"].get("source")
         for i, t in enumerate(c["suppliers"]["top"][:4], 1):
             sh[f"sup{i}_name"], sh[f"sup{i}_share"] = t["name_ar"], t["share_pct"]
         producers = [t for t in c["suppliers"]["top"] if t.get("kind") == "producer"]
@@ -159,22 +193,26 @@ class Renderer:
         for kk, vv in ht.items():
             sh[f"hub_trend_{kk}"] = vv
         sh["hub_trend_name"] = ht.get("name_ar")
-        sh["uv_dir"] = (c["imports"]["unit_value_last_reliable"] - c["imports"]["unit_value_first"]) if c["imports"].get("unit_value_first") else None
+        sh["uv_dir"] = ((c["imports"]["unit_value_last_reliable"] - c["imports"]["unit_value_first"])
+                        if c["imports"].get("unit_value_first") and c["imports"].get("unit_value_last_reliable") else None)
         sh["fx_cur_short"] = c["fx"].get("currency_short")
-        sh["market_nisba_m"] = c["market"].get("nisba_m") or _masc_nisba(c["market"]["nisba_f"])
+        sh["market_nisba_m"] = c["market"].get("nisba_m") or (_masc_nisba(c["market"]["nisba_f"]) if c["market"].get("nisba_f") else None)
         sh["market_nisba_gdp"] = sh["market_nisba_m"]
         sh["product_short_bare"] = c["product"].get("base_word") or c["product"]["short"]
         sh["commodity_raw_word"] = c["product"].get("raw_input_word") or c["product"]["commodity"]
-        sh["macro_gdp_abs"] = abs(sh["macro_gdp"])
+        sh["macro_gdp_abs"] = abs(sh["macro_gdp"]) if sh.get("macro_gdp") is not None else None
         sh["has_k_world_price"] = "s1_decomp.world_price_note" in self.k
         reqs = [q["text"] for q in c["decision"]["requirements"]]
         sh["requirements_inline"] = "؛ ".join([reqs[0]] + ["و" + q for q in reqs[1:]]) if reqs else ""
-        sh["sources_inline"] = "؛ ".join(c["sources"])
-        sh["gaps_inline"] = "؛ ".join(c["gaps"])
+        sh["sources_inline"] = "؛ ".join(c.get("sources") or []) or "لم يُسنَد رقم إلى مصدر في هذه النسخة"
+        sh["gaps_inline"] = "؛ ".join(c.get("gaps") or []) or "لا فجوات معلنة"
         eq = [r for r in c["shelf_prices"]["rows"] if r.get("equivalent") and r.get("usd_kg")]
         ctx["shelf_min"] = min(r["usd_kg"] for r in eq) if eq else None
         ctx["shelf_max"] = max(r["usd_kg"] for r in eq) if eq else None
         ctx["has_nonequivalent"] = any(not r.get("equivalent") for r in c["shelf_prices"]["rows"])
+        ctx["has_shelf_rows"] = bool(c["shelf_prices"]["rows"])
+        ctx["has_requirement_rows"] = bool((c.get("requirements") or {}).get("rows"))
+        ctx["has_entity_rows"] = bool((c.get("entities") or {}).get("rows"))
         ht = ctx["hub_trend"]
         if ht:
             ctx["hub_trend_dir"] = ht["share_b"] - ht["share_a"]
@@ -314,36 +352,66 @@ class Renderer:
 
     # ── التجميع ────────────────────────────────────────────────────────────
     def render(self) -> str:
+        """تعبئة مزدوجة: مرورٌ أول يجمع الفجوات، ثم مرور ثانٍ بقائمة الحدود المكتملة."""
+        self.missing: list[str] = []
+        self._render_once()
+        labels = [GAP_LABELS.get(k, k) for k in self.missing]
+        extra = [g for g in dict.fromkeys(labels) if g not in (self.case.get("gaps") or [])]
+        if extra or self.gaps:
+            base = list(self.case.get("gaps") or []) + extra
+            base += [f"فقرة «{sid}» (تحتاج مصدراً أو ملف معرفة معتمداً)" for sid in self.gaps if sid not in base]
+            self.ctx["gaps_inline"] = "؛ ".join(base) if base else "لا فجوات معلنة"
+        self.missing, self.gaps, self.llm_slots = [], [], []
+        return self._render_once()
+
+    def _render_once(self) -> str:
         out: list[str] = []
         for block in self.t["blocks"]:
-            kind = block.get("type", "para")
-            if "when" in block and not self._cond(block["when"]):
-                continue
-            if kind == "heading":
-                out.append(self.fill(block["text"]))
-            elif kind == "rule":
-                out.append("---")
-            elif kind == "table":
-                out.append(self._table(block))
-            elif kind == "para":
-                txt = block.get("text")
-                if txt is None:
-                    key = self._select(block)
-                    txt = block["variants"][key]
-                if txt is None:
-                    continue
-                s = self.fill(txt).strip()
-                if s:
-                    out.append(s)
-            elif kind == "list":
-                out.append(self.fill(block["text"]))
-            else:
-                raise StudyRenderError(f"نوع كتلة غير معروف: {kind}")
+            try:
+                piece = self._block(block)
+            except StudyRenderError as e:
+                msg = str(e)
+                if msg.startswith("قيمة غائبة للفراغ: ") or msg.startswith("فراغ غير معروف: "):
+                    self.missing.append(msg.split(": ", 1)[1])
+                    continue                       # الفقرة تسقط والفجوة تُعلن
+                if msg.startswith("نسخة غير معتمدة"):
+                    self.missing.append("نسخة قالب بانتظار اعتماد المالك")
+                    continue                       # لا نص غير معتمد يصل العميل
+                raise
+            if piece:
+                out.append(piece)
         md = "\n\n".join(out) + "\n"
         leak = PLACEHOLDER_RE.search(re.sub(r"<!-- llm:[^>]*-->", "", md))
         if leak:
             raise StudyRenderError(f"عنصر نائب في المخرج: {leak.group(0)!r}")
         return md
+
+    def _block(self, block: dict) -> str | None:
+        if True:
+            kind = block.get("type", "para")
+            if "when" in block and not self._cond(block["when"]):
+                return None
+            if kind == "heading":
+                return self.fill(block["text"])
+            if kind == "rule":
+                return "---"
+            if kind == "table":
+                rows = self._rows(block["rows"])
+                if not rows:
+                    self.missing.append(block["rows"])
+                    return None
+                return self._table(block)
+            if kind == "para":
+                txt = block.get("text")
+                if txt is None:
+                    key = self._select(block)
+                    txt = block["variants"][key]
+                if txt is None:
+                    return None
+                return self.fill(txt).strip() or None
+            if kind == "list":
+                return self.fill(block["text"])
+            raise StudyRenderError(f"نوع كتلة غير معروف: {kind}")
 
 
 def render_study(case: dict, knowledge: dict | None = None, llm_fill=None) -> str:

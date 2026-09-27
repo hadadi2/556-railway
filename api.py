@@ -3717,11 +3717,6 @@ def create_app():
         # HF4.2: علِّم النموذجَ بالجمهور — سطرُ إفصاح التنقية للمدقّق فقط.
         view["internal"] = internal
         is_research = bool(view.get("deep_research"))
-        if is_research and not internal:
-            _block_client_export_if_gate_failed(
-                view, analysis_id, found, "docx", request)
-        if is_research and internal:
-            _attach_override_history(view, analysis_id)
         # القالب الأكاديمي (قرار المالك 2026-07-22): ?style=academic يبدّل
         # ترتيب/نبرة تقرير العميل فقط — نفس النموذج القانوني ونفس بوابة
         # التسليم أعلاه ونفس مُطهِّرات العميل؛ صفر نداء كلود إضافي.
@@ -3729,12 +3724,24 @@ def create_app():
         style = (str(request.query_params.get("style") or "").lower()
                  or str((view.get("deep_research") or {})
                         .get("report_style") or "").lower())
+        # نمط «دراسة السوق» (P1-3): لا حجب — فجوة البيانات بندٌ في «ما لم يتسنّ
+        # توثيقه» ومحرك القوالب يحمل حراسه (نائب/مصطلح ممنوع) بنفسه.
+        if is_research and not internal and style != "study":
+            _block_client_export_if_gate_failed(
+                view, analysis_id, found, "docx", request)
+        if is_research and internal:
+            _attach_override_history(view, analysis_id)
         # البند #8 (تدقيق v2 الموجة ٣): مجلّد مؤقّت **واحد** يُنظَّف بعد إرسال
         # الردّ (BackgroundTask) — كان كلّ طلب يُنشئ mkdtemp لا يُحذَف أبداً
         # (FileResponse يبثّ الملف لا مجلّده)، فيتراكم على قرص النشر حتى الدوران.
         _td = tempfile.mkdtemp()
         try:
-            if is_research and not internal and style == "academic":
+            if is_research and not internal and style == "study":
+                # نمط «دراسة السوق» (P0-T): محرك القوالب الحتمي، لا كاتب نموذج.
+                from silk_study_export import study_docx
+                path, _meta = study_docx(found, os.path.join(_td, "report.docx"))
+                fname = f"silk_study_{analysis_id}.docx"
+            elif is_research and not internal and style == "academic":
                 from silk_reports import render_academic_docx
                 path = render_academic_docx(
                     view, os.path.join(_td, "report.docx"))
@@ -3803,18 +3810,24 @@ def create_app():
         # HF4.2: علِّم النموذجَ بالجمهور — سطرُ إفصاح التنقية للمدقّق فقط.
         view["internal"] = internal
         is_research = bool(view.get("deep_research"))
-        if is_research and not internal:
+        style = (str(request.query_params.get("style") or "").lower()
+                 or str((view.get("deep_research") or {})
+                        .get("report_style") or "").lower())
+        if is_research and not internal and style != "study":
             _block_client_export_if_gate_failed(
                 view, analysis_id, found, "pdf", request)
         if is_research and internal:
             _attach_override_history(view, analysis_id)
         _td = tempfile.mkdtemp()   # البند #8: يُنظَّف بعد الإرسال (background)
         out = os.path.join(_td, "report.pdf")
-        style = (str(request.query_params.get("style") or "").lower()
-                 or str((view.get("deep_research") or {})
-                        .get("report_style") or "").lower())
         try:
-            if is_research and not internal and style == "academic":
+            if is_research and not internal and style == "study":
+                from silk_study_export import study_docx
+                from silk_reports import docx_to_pdf
+                _dx, _meta = study_docx(found, os.path.join(_td, "report.docx"))
+                path = docx_to_pdf(_dx, out)
+                fname = f"silk_study_{analysis_id}.pdf"
+            elif is_research and not internal and style == "academic":
                 from silk_reports import render_academic_pdf
                 path = render_academic_pdf(view, out)
                 fname = f"silk_academic_report_{analysis_id}.pdf"
@@ -3867,8 +3880,13 @@ def create_app():
         from silk_render import build_view
         from silk_reports import render_markdown
         from fastapi.responses import PlainTextResponse
+        _style = str(request.query_params.get("style") or "").lower()
         try:
-            text = render_markdown(build_view(found))
+            if _style == "study" and found.get("deep_research"):
+                from silk_study_export import study_markdown
+                text, _meta = study_markdown(found)
+            else:
+                text = render_markdown(build_view(found))
         except RuntimeError as e:
             # نفس عقد report.docx (البند أعلاه): تناقض حكمٍ أو تسريبٌ يستحيل
             # تنقيته يُفشِل التوليد داخلياً — 501 نظيف لا 500 غير مُدار.

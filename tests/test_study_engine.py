@@ -246,12 +246,16 @@ def test_no_hardcoded_direction_verb_outside_dir_slot_in_sign_dependent_template
     assert not offenders, offenders
 
 
-def test_pending_variant_is_refused_unless_explicitly_allowed():
-    from silk_study_render import Renderer, StudyRenderError, pending_variants
+def test_pending_variant_is_skipped_as_a_gap_unless_explicitly_allowed():
+    """نسخة pending لا تصل العميل: الفقرة تسقط ويُعلن في الحدود أنها بانتظار الاعتماد."""
+    from silk_study_render import Renderer, pending_variants
     assert pending_variants(), "ملف المراجعة يحمل نسخاً pending للحالة التركيبية"
     c = _synthetic_down_concentrated_defer()
-    with pytest.raises(StudyRenderError):
-        Renderer(c, {}).render()
+    r = Renderer(c, {})
+    out = r.render()
+    assert "توصي الدراسة بـ**إرجاء**" not in out          # exec_2.defer ما زالت pending
+    assert "فقرة قالبها بانتظار اعتماد المالك" in out
+    assert "توصي الدراسة بـ**إرجاء**" in Renderer(c, {}, allow_pending=True).render()
 
 
 def test_placeholder_leak_is_refused():
