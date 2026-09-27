@@ -35,6 +35,10 @@ os.environ.setdefault("SILK_RATE_LIMIT", "0")
 # مموّهان، صفر كلفة فعلية). في الإنتاج افتراضه مفعّل (`api._early_halt_enabled`)
 # واختبارات الموجة ٨ تضبط `SILK_EARLY_HALT=1` صراحةً لقياس الإيقاف نفسه.
 os.environ.setdefault("SILK_EARLY_HALT", "0")
+# P1-1: فحص الجاهزية قبل الحجز يجلب كومتريد/التعرفة قبل أي نداء — الشبكة مقطوعة
+# هرمتياً فكل تشغيلة كانت ستُرفَض 409؛ يُطفأ افتراضياً هنا ويُشغَّل صراحةً في
+# tests/test_study_batch1_delivery.py وحده.
+os.environ.setdefault("SILK_PREFLIGHT", "0")
 
 # دفتر الاستخدام الدولاري (الموجة p6): الاختبارات الهرمتية التي لا تضبط
 # SILK_USAGE_DB كانت تحجز 3$ لكل /research في **دفتر الجهاز الحقيقي**

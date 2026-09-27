@@ -853,6 +853,11 @@ function startResearch(extra){if(S.busy)return;
     if(d&&d.error==="hs_ambiguous"){return showHsCandidates(d,function(){startResearch({})})}
     // رمز HS غير محسوم (بوّابة صلبة 422): وجّه المستخدم للتصنيف/الاختيار اليدوي.
     if(d&&d.error==="unresolved_hs"){S.hs=null;S.hsConfirmed=false;return ensureHs(function(){startResearch({})})}
+    // P1-1 (409): البيانات لا تكفي — لم يُستهلك رصيد؛ يختار المستخدم تقريراً محدوداً أو الإلغاء.
+    if(d&&d.error==="insufficient_data_preflight"){
+      var miss=(d.missing||[]).join("، ");
+      if(window.confirm("البيانات المتاحة لا تكفي لدراسة كاملة ولم يُستهلك أي رصيد.\nالناقص: "+miss+"\n\nمتابعة بتقرير محدود (تُعلن الفجوات في «ما لم يتسنّ توثيقه»)؟")){return startResearch({accept_limited:true})}
+      return toast("أُلغي البحث — لم يُستهلك رصيد")}
     toast("فشل البحث العميق: "+e.message)})}
 $("#researchBtn").addEventListener("click",function(){runDeepResearch()});
 /* بحوثي السابقة (ITEM ١، بلاغ حي التكلفة): كانت localStorage محضة — لكل

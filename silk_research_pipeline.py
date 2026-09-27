@@ -215,6 +215,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                            for u in usage.values())
                 return tin, tout, float(_cost_fn(usage)["total_usd"])
 
+            _cost_by_stage_acc: dict = {}   # P1-2: كلفة كل مرحلة بالدولار
+
             def _stage_mark(name: str) -> None:
                 """نهاية المرحلة السابقة/بداية `name`: يحفظ علامة الزمن (نفس
                 القاموس الذي يغذّي data_economics.stage_seconds كما كان)، ويُصدر
@@ -234,6 +236,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 d_cost = round(cost - _last_mark["cost"], 4)
                 _stage_marks[name] = now
                 _stage_seconds_acc[prev] = dur
+                _cost_by_stage_acc[prev] = d_cost      # P1-2
                 log.info("stage_transition analysis_id=%s stage=%s duration_s=%.1f "
                          "tokens_in=%d tokens_out=%d cost_usd=%.4f next=%s",
                          analysis_id, prev, dur, d_in, d_out, d_cost, name)
@@ -265,15 +268,25 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     return False
                 _, _, actual = _usage_totals()
                 hit: list[str] = []
-                raw = os.environ.get("SILK_RESEARCH_MAX_USD", "").strip()
-                if raw:
-                    try:
-                        cap = float(raw)
-                        if cap > 0 and actual > cap:
-                            hit.append(f"SILK_RESEARCH_MAX_USD={raw}")
-                    except ValueError:
-                        log.warning("SILK_RESEARCH_MAX_USD=%r ignored (not a number)",
-                                    raw)
+                # P1-2 (F-04): سقفٌ للتشغيلة **افتراضياً** 4.0$ (كان «غير مضبوط =
+                # معطّل»)؛ الصفر تعطيلٌ صريح لا سهو.
+                raw = os.environ.get("SILK_RESEARCH_MAX_USD", "").strip() or "4.0"
+                try:
+                    cap = float(raw)
+                    if cap > 0 and actual > cap:
+                        hit.append(f"SILK_RESEARCH_MAX_USD={raw}")
+                except ValueError:
+                    log.warning("SILK_RESEARCH_MAX_USD=%r ignored (not a number)",
+                                raw)
+                # P1-4 (F-07): مهلةٌ كلّية للتشغيلة — SILK_RESEARCH_MAX_MINUTES
+                # (افتراضياً 35، تُعدَّل بعد القياس الحي): بلوغُها يُوقف المراحل
+                # الباقية معلَناً ويُسلَّم ما اكتمل، لا خيطٌ بلا سقف.
+                try:
+                    _max_min = float(os.environ.get("SILK_RESEARCH_MAX_MINUTES", "35"))
+                except ValueError:
+                    _max_min = 35.0
+                if _max_min > 0 and (_mono.monotonic() - _scrape_t0) > _max_min * 60:
+                    hit.append(f"SILK_RESEARCH_MAX_MINUTES={_max_min:g}")
                 daily = silk_usage.daily_usd_cap()
                 if daily is not None:
                     projected = (silk_usage.usd_spent_on(_reserve_day)
@@ -769,6 +782,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
         # نداء بمفتاح بعثته) — يُعاد استعمال estimate_cost_usd نفسه لكل بعثة
         # لا حساب تسعير موازٍ. تشغيلات سابقة لهذه الإضافة تعرض {} — فجوة
         # معلنة صريحة (تشغيلة قديمة بلا هذا الوسم)، لا اختلاق رقم.
+        economics["cost_usd_by_stage"] = dict(_cost_by_stage_acc)   # P1-2
         economics["cost_usd_by_mission"] = {
             mkey: estimate_cost_usd(mu)["total_usd"]
             for mkey, mu in (economics.get("mission_usage") or {}).items()}

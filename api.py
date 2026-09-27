@@ -454,6 +454,11 @@ def _apply_production_cost(card: dict | None, cost) -> dict | None:
     return out
 
 
+def _preflight_enabled() -> bool:
+    """P1-1: فحص الجاهزية قبل الحجز — SILK_PREFLIGHT=0 يعطّله (مسار الاختبارات الهرمتية القديمة)."""
+    return os.environ.get("SILK_PREFLIGHT", "1").strip().lower() not in ("0", "false", "no", "off")
+
+
 def _early_halt_enabled() -> bool:
     """علم الإيقاف المبكر (هدف الدراسة الاحترافية، البند ٨) — افتراضه مفعّل.
 
@@ -1976,6 +1981,8 @@ def create_app():
         # الرمز تُرجِع 422 حين لا تشمل صفةُ الرمز صفةَ المنتج المميّزة؛ إرسالُ
         # hs_confirmed=true بعد مراجعة المستخدم يُكمِل التشغيلة على مسؤوليته.
         hs_confirmed: bool = False
+        # P1-1: قبول تقرير محدود رغم نقص الحد الأدنى من البيانات (بعد إبلاغ العميل).
+        accept_limited: bool = False
         # نمط كتابة التقرير (طلب المالك 2026-07-23): "academic" يجعل الكاتب
         # يكتب بسجلٍّ بحثيٍّ علمي (نفس الأقسام/الحكم/قواعد الصدق، النثر وحده
         # يتغيّر). غيابه => الافتراضي من البيئة `SILK_REPORT_STYLE`
@@ -2933,6 +2940,18 @@ def create_app():
                                        _adm=None):
         """ذيلُ `_research_impl` بعد قبول التشغيلة في السقف — الحجزُ الدولاري،
         صفُّ التشغيلة، ثم التشغيل (خلفياً أو متزامناً) تحت سجلّ `silk_research_runtime`."""
+        # P1-1 (F-03): فحص كفاية البيانات **قبل** الحجز الدولاري وقبل أي نداء
+        # مدفوع — النقص يُعاد للعميل بقائمته ولا يُستهلك رصيد؛ `accept_limited`
+        # يُكمل بتقرير محدود على مسؤوليته. الاستئناف لا يُعاد فحصه (بعثاته محفوظة).
+        if req.resume is None and not getattr(req, "accept_limited", False) and _preflight_enabled():
+            from silk_study_readiness import preflight
+            _pf = preflight(hs_code or "", market_ref)
+            if not _pf["ok"]:
+                raise HTTPException(status_code=409, detail={
+                    "error": "insufficient_data_preflight",
+                    "message": "البيانات المتاحة لا تكفي لدراسة كاملة؛ لم يُستهلك أي رصيد. "
+                               "يمكنك المتابعة بتقرير محدود (accept_limited=true) أو الإلغاء.",
+                    "missing": _pf["missing"], "checked": _pf["checked"]})
         _expected_usd = _expected_run_usd()   # مراجعة §58 #11: قراءة محروسة
         if not silk_usage.try_reserve_usd(_expected_usd):
             # ITEM 5ب: رفض حجز بحالة السقف — نص خادمي بحت، لا محتوى كلود.
