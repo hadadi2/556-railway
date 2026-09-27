@@ -8,8 +8,12 @@
 """
 from __future__ import annotations
 
+import csv
+import os
 import datetime as _dt
 import re
+
+_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 _USD_PER_KG_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:دولار|USD|\$)\s*/?\s*(?:كجم|كغ|kg)", re.I)
 
@@ -79,8 +83,59 @@ def provisional_threshold(shelf: list, landed_high_pct: int = 45) -> int | None:
     return int(max(vals) * landed_high_pct // 100) if vals else None
 
 
-def _gap(label: str) -> dict:
-    return {"label": label, "owner": GAP_OWNERS.get(label)}
+MIN_ENTITIES = 2      # P4-4: أقل من جهتين مؤكدتين ⇒ فجوة بجهة استكمال محددة
+
+
+def market_directories(iso3: str) -> list[dict]:
+    """جهات البحث الرسمية عن مستوردين في السوق (data/market_directories_l1.csv)."""
+    p = os.path.join(_ROOT, "data", "market_directories_l1.csv")
+    try:
+        with open(p, encoding="utf-8") as f:
+            rows = list(csv.DictReader(ln for ln in f if not ln.startswith("#")))
+    except OSError:
+        return []
+    return [r for r in rows if r.get("iso3") == iso3]
+
+
+def _gap(label: str, iso3: str = "") -> dict:
+    owner = GAP_OWNERS.get(label)
+    if label == "مستوردون مؤكدون بالاسم":
+        dirs = [d["name_ar"] for d in market_directories(iso3)]
+        owner = ("المبيعات عبر " + " و".join(dirs)) if dirs else \
+            "المبيعات عبر غرفة التجارة في السوق المستهدفة"
+    return {"label": label, "owner": owner}
+
+
+def _merge_claims(*groups) -> list[dict]:
+    seen, out = set(), []
+    for g in groups:
+        for c in g or []:
+            if c.get("id") not in seen:
+                seen.add(c.get("id"))
+                out.append(c)
+    return out
+
+
+def _seg_cfg() -> dict:
+    import yaml
+    try:
+        with open(os.path.join(_ROOT, "data", "shelf_segment_keywords.yaml"), encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except OSError:
+        return {}
+
+
+def shelf_segment(text: str) -> str:
+    """P4-2: شريحة صف الرف بأول مطابقة بالترتيب المعلن؛ وإلا «غير محدد»."""
+    cfg, t = _seg_cfg(), str(text or "").lower()
+    for seg in cfg.get("order") or []:
+        if any(w.lower() in t for w in (cfg.get("segments") or {}).get(seg) or []):
+            return seg
+    return "غير محدد"
+
+
+def segment_target(product_segment: str | None) -> str | None:
+    return (_seg_cfg().get("target") or {}).get(str(product_segment or ""))
 
 
 def _requirements_from_gaps(gaps: list, shelf: list, entities: list) -> list[dict]:
@@ -202,21 +257,24 @@ def build_case(found: dict, *, product_short: str | None = None,
         pass
 
     # ── الجهات وأسعار الرف ────────────────────────────────────────────────
-    entities = []
-    for lead in ((dr.get("importer_leads") or {}).get("leads") or [])[:6]:
-        n = str(lead.get("name") or "").strip()
-        if n:
-            entities.append({"name": n, "desc": str(lead.get("kind") or lead.get("desc") or "جهة مرصودة"),
-                             "role": "مرشح لطلب عرض أسعار (يُتحقق من تعامله بالمنتج)"})
+    # P4-1: جهات مهيكلة مؤكَّدة بالمنتج + سطر استبعاد معلَّل (silk_study_entities).
+    from silk_study_entities import classify, outlet_claims
+    _leads = (dr.get("importer_leads") or {}).get("leads") or []
+    _chan = _findings(dr, "channels_importers")
+    entities, excluded_text = classify(_leads, _chan, hs, product, iso3)
     shelf = []
     for f in _findings(dr, "pricing_scout"):
         v, note = f.get("value"), str(f.get("note") or "")
         txt = f"{v} {note}"
         m = _USD_PER_KG_RE.search(txt)
         if m and "استيراد" not in note and "Comtrade" not in str(f.get("source") or ""):
-            shelf.append({"product": note[:60] or "منتج مرصود", "segment": "غير محدد", "price": m.group(0),
-                          "source": str(f.get("source") or ""), "usd_kg": float(m.group(1).replace(",", ".")),
-                          "equivalent": True})
+            seg = shelf_segment(f"{note} {f.get('source') or ''}")          # P4-2
+            date = str(f.get("retrieved_at") or "")[:10]
+            src = str(f.get("source") or "") + (f"، {date}" if date else "")
+            shelf.append({"product": note[:60] or "منتج مرصود", "segment": seg, "price": m.group(0),
+                          "source": src, "usd_kg": float(m.group(1).replace(",", ".")),
+                          "equivalent": seg != "غير مكافئ"})
+    target_seg = segment_target(segment)
 
     from silk_synthesis import study_decision
     decision = study_decision(dr.get("verdict") or {})
@@ -232,7 +290,7 @@ def build_case(found: dict, *, product_short: str | None = None,
             gaps.append(label)
     if not shelf:
         gaps.append("أسعار الرف")
-    if not entities:
+    if len(entities) < MIN_ENTITIES:                                        # P4-4
         gaps.append("مستوردون مؤكدون بالاسم")
     return {
         "case": f"{hs}_{iso3}", "live": True,
@@ -261,12 +319,13 @@ def build_case(found: dict, *, product_short: str | None = None,
         "logistics": {"lpi": lpi["value"] if lpi else None, "lpi_year": lpi["year"] if lpi else None, "sea_days_word": None},
         "demographics": {"muslim_share_pct": None, "census_authority": None, "census_year": None},
         "shelf_prices": {"fx_rate": fx["value"] if fx else None, "fx_year": fx["year"] if fx else None, "rows": shelf,
-                         "segment_price_observed": False, "target_segment_word": None, "target_competitor_word": None},
+                         "segment_price_observed": any(r["segment"] == target_seg for r in shelf), "target_segment_word": None, "target_competitor_word": None},
         "requirements": {"rows": req_rows, "exit_text": None,
                          "halal": {"mandatory": halal_mandatory, "authority_short": None, "authority_long": None,
                                    "list_site": None, "official_durations_published": False},
                          "durations_published": False, "quarantine_agent_word": None},
-        "entities": {"rows": entities, "excluded_text": None, "importer_candidates": len(entities)},
+        "entities": {"rows": entities, "excluded_text": excluded_text,
+                     "importer_candidates": sum(e["role"] == "مرشح لطلب عرض أسعار" for e in entities)},
         "decision": {"type": decision, "requirements": _requirements_from_gaps(gaps, shelf, entities),
                      "unit_cost_provided": False,
                      # P3-8: بلا سعر رف من الشريحة — عتبةٌ **مؤقتة** = أعلى سعر مرصود ×
@@ -276,7 +335,11 @@ def build_case(found: dict, *, product_short: str | None = None,
                      "threshold_provisional": provisional_threshold(shelf) is not None,
                      "rule_low_pct": 50, "rule_high_pct": 60,
                      "landed_low_pct": 40, "landed_high_pct": 45},
-        "claims_reported": _knowledge_claims(hs, iso2), "gaps": [_gap(g) for g in gaps],
+        "claims_reported": _merge_claims(
+            _knowledge_claims(hs, iso2),
+            outlet_claims(_chan, [e["name"] for e in entities if e["role"] == "قناة رصد"]
+                          + [lead.get("name") for lead in _leads if lead.get("name")])),   # P4-3
+        "gaps": [_gap(g, iso3) for g in gaps],
         "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)
                            for f in (m.get("findings") or []) if isinstance(f, dict) and f.get("source")
                            and f.get("value") is not None}),
