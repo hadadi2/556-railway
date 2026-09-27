@@ -3200,7 +3200,17 @@ def _client_forbidden_for(lang: str = "ar") -> list:
     base = _CLIENT_FORBIDDEN_PATTERNS_EN if ln == "en" else _CLIENT_FORBIDDEN_PATTERNS
     from silk_style_contract import client_forbidden_terms
     return list(base) + [(r["label"], r["regex"])
-                         for r in client_forbidden_terms() if ln in r["langs"]]
+                         for r in client_forbidden_terms() if ln in r["langs"]] \
+        + list(_CLIENT_PLACEHOLDER_PATTERNS)
+
+
+# P6-1 (F-18): عناصر نائبة تصل العميل = فشل توليد سُلِّم — تُرفَض بأي لغة:
+# أقواس مربعة، «يُدرج»، TODO، placeholder، وقوسا زاوية (<…>) خارج وسوم HTML.
+_CLIENT_PLACEHOLDER_PATTERNS = (
+    ("placeholder_bracket", re.compile(r"\[[^\]\n]{0,80}\]")),
+    ("placeholder_word", re.compile(r"\bTODO\b|\bplaceholder\b|يُدرج\s+لاحق|يُدرج\b", re.I)),
+    ("placeholder_angle", re.compile(r"<(?!/?(?:b|i|br|p|u|sup|sub)\b)[^<>\n]{1,60}>")),
+)
 
 
 def _client_file_replacements(lang: str = "ar") -> dict:

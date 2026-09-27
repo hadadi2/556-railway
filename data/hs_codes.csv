@@ -31,7 +31,7 @@ hs_code,name_en,name_ar,keywords
 080111,Coconut desiccated,جوز هند مجفف,"جوز هند,coconut"
 120220,Groundnuts (peanuts),فول سوداني,"فول سوداني,فستق عبيد,peanut,peanuts,groundnut"
 090111,Coffee not roasted not decaf,بن غير محمص,"بن,قهوة,قهوة خضراء,green coffee,coffee beans,coffee"
-090121,Coffee roasted not decaf,بن محمص,"بن محمص,قهوة محمصة,roasted coffee,coffee"
+090121,Coffee roasted not decaf,بن محمص,"بن محمص,قهوة محمصة,قهوة محمصة غير منزوعة الكافيين,roasted coffee,coffee"
 090122,Coffee roasted decaf,بن محمص منزوع الكافيين,"بن منزوع الكافيين,decaf coffee"
 210111,Coffee extracts instant,قهوة سريعة التحضير,"قهوة سريعة,نسكافيه,instant coffee,coffee extract"
 090210,Green tea small packages,شاي أخضر,"شاي أخضر,green tea,tea"
