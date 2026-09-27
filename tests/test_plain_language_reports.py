@@ -25,7 +25,7 @@ def test_the_owners_actual_sentence_becomes_readable():
     out = R._client_sanitize(_REAL)
     assert "HHI" not in out
     assert "مؤشر يقيس تركّز السوق بين المورّدين" not in out   # الشرح المقحوم زال
-    assert "مؤشر تركّز السوق" in out                          # المعنى حلّ محلّه
+    assert "مؤشر تركّز الموردين" in out                        # المعنى حلّ محلّه
     assert "2350" in out                                      # الرقم لم يُمَسّ
 
 
@@ -146,7 +146,7 @@ def test_no_doubled_meaning_when_writer_already_named_it_in_arabic():
     assert "HHI" not in out and "2100" in out
     # وحين لا يسمّيه الكاتب، يظهر المعنى كاملاً
     solo = R._client_sanitize("صفّ المورّدين معتدل (HHI≈2100).")
-    assert "مؤشر تركّز السوق" in solo
+    assert "مؤشر تركّز الموردين" in solo
 
 
 def test_client_glossary_is_not_circular():
@@ -154,7 +154,7 @@ def test_client_glossary_is_not_circular():
     entry = {"term": "HHI",
              "gloss": "مؤشر يقيس تركّز السوق بين المورّدين: فوق 2500 تركّز مرتفع"}
     client = R._client_sanitize(R._glossary_line(entry, plain=True))
-    assert client.startswith("مؤشر تركّز السوق:")
+    assert client.startswith("مؤشر تركّز الموردين:")
     assert "مؤشر يقيس تركّز السوق" not in client, "تعريف دائري"
     # نسخة المدقّق تبقى بالمصطلح وتعريفه الكامل
     auditor = R._glossary_line(entry, plain=False)

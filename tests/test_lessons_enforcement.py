@@ -2713,6 +2713,8 @@ _SYMBOL_ANCHORS_EXTRA = [
     (230, "tests/e2e/platform_flow.cjs", ["factory_manual_hs_persisted"]),
     (231, "tests/test_platform_study_runtime.py", ["def test_a_stray_active_run_row_is_superseded_on_relaunch",
                                                 "_blocking_engine(monkeypatch, 778)"]),
+    (285, "tests/test_study_batch2_style.py", ["def test_llm_review_mark_never_reaches_the_client_export"]),
+    (285, "silk_study_export.py", ['re.sub(r"<!-- llm:[^>]*-->", ""']),
 ]
 
 

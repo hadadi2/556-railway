@@ -3,7 +3,9 @@
 `?style=study` على مسارات التصدير: الحالة من `silk_study_case.build_case` (نتيجة
 `/research` المخزَّنة)، والمعرفة من `data/product_knowledge/<hs>_<iso2>.yaml` إن كانت
 approved، والنص من `silk_study_render`. Word عبر python-docx بهوية سِلك RTL نفسها
-(`_apply_rtl`/`_add_table`)، وPDF عبر `docx_to_pdf` الموجود. لا نداء نموذج هنا.
+(`_apply_rtl`/`_add_table`)، وPDF عبر `docx_to_pdf` الموجود. لا نداء نموذج هنا:
+فراغات (ب)/(ج) تُملأ مرّة واحدة داخل خط `/research` (`fill_slots`، ضمن حارس
+الميزانية) وتُخزَّن في `deep_research.study_slots`؛ التصدير يقرأ المخزَّن فقط.
 """
 from __future__ import annotations
 
@@ -17,14 +19,37 @@ def study_case(found: dict) -> dict:
     return build_case(found)
 
 
+def _stored_fill(found: dict):
+    """llm_fill يقرأ الفراغات المخزَّنة فقط — غيابها فجوة معلنة، لا نداء."""
+    slots = ((found.get("deep_research") or {}).get("study_slots") or {})
+    return (lambda sid, _brief: slots.get(sid)) if slots else None
+
+
+def fill_slots(found: dict, call) -> dict:
+    """يملأ فراغات (ب)/(ج) الناقصة بنداء `call(sid, prompt)` ويعيد {sid: نص}
+    لما اجتاز فحص المحرك فقط (P2-3/P2-4). يُستدعى من خط `/research` وحده."""
+    from silk_study_render import LLM_MARK, Renderer, load_knowledge
+    case = found.get("study_case") or study_case(found)
+    kn = load_knowledge(case["product"]["hs"], case["market"].get("iso2") or "")
+    r = Renderer(case, kn, llm_fill=call)
+    r.render()
+    return {sid: txt[len(LLM_MARK.format(sid=sid)):]
+            for sid, txt in r._llm_cache.items() if txt}
+
+
 def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     """(نص Markdown، تقرير التعبئة {gaps, llm_slots, missing})."""
     from silk_study_render import Renderer, load_knowledge
     case = found.get("study_case") or study_case(found)
+    llm_fill = llm_fill or _stored_fill(found)
     kn = load_knowledge(case["product"]["hs"], case["market"].get("iso2") or "")
     r = Renderer(case, kn, llm_fill=llm_fill)
-    md = r.render()
-    return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing)}
+    # وسم المراجعة `<!-- llm:… -->` داخلي: الفراغات مسرودة في meta["llm_slots"]،
+    # ولا يصل الوسم وجه العميل (كان يظهر حرفياً في md/docx/pdf).
+    md = re.sub(r"<!-- llm:[^>]*-->", "", r.render())
+    from silk_quality_gate import study_style_violations
+    return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing),
+                "lint": study_style_violations(md)}
 
 
 def _add_runs(par, text: str) -> None:

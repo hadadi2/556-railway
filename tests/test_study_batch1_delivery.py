@@ -51,6 +51,7 @@ def test_preflight_refuses_before_any_reservation_or_model_call():
         import silk_usage
         client = TestClient(api.create_app())
         hdr = {"X-API-Key": "s"}
+        spent0 = silk_usage.usd_spent_today()   # دفترٌ قد يشاركه اختبارٌ سابق
         r = client.post("/research", headers=hdr, json={
             "product": "قهوة محمصة", "market": "Malaysia", "hs_code": "090121",
             "persist": True, "async_run": True, "hs_confirmed": True})
@@ -59,7 +60,7 @@ def test_preflight_refuses_before_any_reservation_or_model_call():
         assert d["error"] == "insufficient_data_preflight"
         assert "سلسلة واردات لثلاث سنوات على الأقل" in d["missing"]
         assert not tools_calls                        # صفر نداء نموذج
-        assert silk_usage.usd_spent_today() == 0.0    # صفر حجز/خصم
+        assert silk_usage.usd_spent_today() == spent0  # صفر حجز/خصم
         # accept_limited → يُقبل ويُشغَّل
         r2 = client.post("/research", headers=hdr, json={
             "product": "قهوة محمصة", "market": "Malaysia", "hs_code": "090121",

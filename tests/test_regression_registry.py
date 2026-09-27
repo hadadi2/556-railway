@@ -4599,6 +4599,11 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    285: lambda: (
+        _needles("silk_study_export.py", 're.sub(r"<!-- llm:[^>]*-->", ""')(),
+        _needles("tests/test_study_batch2_style.py",
+                 "def test_llm_review_mark_never_reaches_the_client_export")(),
+        _needles("tests/test_lessons_enforcement.py", "(285, ")()),
     284: lambda: (
         _needles("silk_reports.py", "for y, chars in _bracket_segments(page):",
                  "raise PdfBracketGateError(",

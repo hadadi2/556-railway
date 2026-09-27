@@ -953,6 +953,44 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 k: v for k, v in _sn.items() if isinstance(v, (int, float, str, bool)) or v is None}
         except Exception as e:  # noqa: BLE001 — إضافةٌ لا شرط تشغيل
             log.warning("study_numbers skipped: %s", e)
+        # P2-3/P2-4: فراغات (ب)/(ج) لنمط الدراسة — نداء قصير لكل فراغ بلا معرفة
+        # معتمدة، بعقد الفراغ ونموذجه، **داخل حارس الميزانية**؛ الكلفة تُسجَّل
+        # مرحلةً مستقلة وتُضاف للدفتر اليومي (المصالحة سبقت). التصدير يقرأ المخزَّن.
+        # لا فراغات إلا فوق تقرير كاتبٍ اكتمل: فشل المحلل/الإيقاف المبكر لا
+        # يفتح نداءً مدفوعاً جديداً بعده (حراس p6/الموجة ٨).
+        _slots_due = bool(ai_ok and not early_halted
+                          and os.environ.get("SILK_STUDY_SLOTS", "1") != "0"
+                          and (result["deep_research"].get("report") or {}).get("report"))
+        _slots_ok = _slots_due and _budget_ok("study_slots")
+        if _slots_due and not _slots_ok:
+            # الحارس يُقرأ بعد بناء budget_status — فالتخطّي يُعلن هنا صراحةً.
+            result["deep_research"]["study_slots_skipped"] = list(
+                _stage_budget.get("caps_hit") or ["halted_before=" + str(_stage_budget.get("halted_before"))])
+        if _slots_ok:
+            try:
+                import json as _json
+                import silk_ai_judge as _aj
+                from silk_study_export import fill_slots
+                _t0_cost = _usage_totals()[2]
+                _facts = _aj._isolate(_json.dumps(
+                    {"product": product, "market": str(market_ref),
+                     "numbers": result["deep_research"].get("study_numbers") or {}},
+                    ensure_ascii=False, default=str))
+                result["deep_research"]["study_slots"] = fill_slots(
+                    result, lambda sid, prompt: _aj._call(prompt, _facts, max_tokens=500))
+                _d = round(_usage_totals()[2] - _t0_cost, 4)
+                if _d > 0:
+                    silk_usage.record_usd(_d)
+                    economics["cost_usd_estimate"] = round(
+                        float(economics.get("cost_usd_estimate") or 0) + _d, 4)
+                economics.setdefault("cost_usd_by_stage", {})["study_slots"] = _d
+            except Exception as e:  # noqa: BLE001 — الفراغ الناقص فجوة معلنة
+                log.warning("study_slots skipped: %s", e)
+        try:   # P2-6: مخالفات الأسلوب تُخزَّن مع النتيجة للمراجعة، لا تحجب
+            from silk_study_export import study_markdown
+            result["deep_research"]["study_lint"] = study_markdown(result)[1]["lint"]
+        except Exception as e:  # noqa: BLE001
+            log.warning("study_lint skipped: %s", e)
         try:
             import silk_consistency
             result["deep_research"]["verdict_consistency"] = (

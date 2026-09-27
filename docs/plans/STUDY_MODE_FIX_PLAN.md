@@ -274,6 +274,8 @@ P1-12 إعادة توليد الفراغ المعيب (تعديل المالك �
 
 ## الدفعة ٢ — الأسلوب — 7 بنود
 
+> **الحالة (2026-09-27): مكتملة — hermetic only.** P2-1/P2-5 في `46a1e50`؛ P2-2 اختبار ترويسة؛ P2-3 `data/study_style_exemplars.json` لكل فراغ يملؤه النموذج؛ P2-4 `silk_style_contract.STUDY_SLOT_CONTRACT`؛ الفراغات تُملأ في خط `/research` (مرحلة `study_slots` داخل `_budget_ok`) وتُخزَّن في `deep_research.study_slots`؛ P2-6 `silk_study_linter.py` عبر `silk_quality_gate.study_style_violations` (غير حاجب، يُخزَّن `study_lint`)؛ P2-7 `PLAIN_TERMS["HHI"]` = «مؤشر تركّز الموردين». الاختبارات: `tests/test_study_batch2_style.py`.
+
 P2-1 أقسام النمط `study` الأحد عشر من ملف القوالب ومحرك التعبئة (F-23). ملفات: `data/study_templates_ar.yaml` (العناوين الحرفية والترتيب)، `silk_study_render.py`، `silk_reports.py` (تصدير النمط بلا دمج)، `api.py` (`?style=study`)، `web/index.html`. لا تعديل على `_REPORT_SECTIONS` (نمط decision يبقى). القبول: docx/pdf/md بالعناوين الأحد عشر والتسميات العريضة حرفياً. الاختبار: هرمتي على المصدّرات الثلاثة (docx عبر python-docx، pdf عبر pdftotext).
 P2-2 الترويسة الحتمية (F-23). ملفات: `silk_reports.py`. التغيير: منتج+HS، منشأ، سوق، تاريخ الإعداد، أحدث سنة مكتملة (من P1-8). الاختبار: مقارنة نصية.
 P2-3 نماذج لفراغات (ب)/(ج) فقط (F-22). ملفات: `data/study_style_exemplars.json` (لكل فراغ: الجملة المرجعية المقابلة وصيغ المعجم المسموحة)، `silk_study_render.py` (تمريرها مع تعليمة «جملة أو جملتان، بصيغ المعجم فقط، دون أي رقم لم يُمرَّر»). لا نماذج لأقسام كاملة. القبول: كل فراغ يستلم نموذجه. الاختبار: التقاط البرومبت.

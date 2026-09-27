@@ -25,6 +25,7 @@ from silk_study_numbers import compute
 ROOT = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES = os.path.join(ROOT, "data", "study_templates_ar.yaml")
 KNOWLEDGE_DIR = os.path.join(ROOT, "data", "product_knowledge")
+EXEMPLARS = os.path.join(ROOT, "data", "study_style_exemplars.json")
 LLM_MARK = "<!-- llm:{sid} -->"
 
 _SLOT = re.compile(r"\{([^{}]+)\}")
@@ -58,6 +59,16 @@ def load_knowledge(hs: str, market_code: str) -> dict:
 
 REVIEW_FILE = os.path.join(ROOT, "docs", "plans", "STUDY_TEMPLATE_VARIANTS_REVIEW.md")
 PLACEHOLDER_RE = re.compile(r"\[[^\]]*\]|TODO|placeholder|يُدرج|<[^>]*>", re.I)
+
+
+def load_exemplars(path: str = EXEMPLARS) -> dict:
+    """نماذج الأسلوب لفراغات (ب)/(ج) — P2-3. غياب الملف = بلا نماذج (لا فشل)."""
+    import json
+    try:
+        with open(path, encoding="utf-8") as f:
+            return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    except (OSError, ValueError):
+        return {}
 
 
 def pending_variants(path: str | None = None) -> set[str]:
@@ -270,7 +281,9 @@ class Renderer:
     def _llm(self, sid: str) -> str:
         """فراغ (ب)/(ج) بلا معرفة معتمدة: نداء واحد، فإن فشل الفحص يُعاد **مرة واحدة**
         بالملاحظة، ثم يُحذف الادعاء ويُعلن فجوةً (لا يُوقف التقرير)."""
-        brief = (self.t.get("llm_briefs") or {}).get(sid, sid)
+        from silk_style_contract import study_slot_prompt
+        brief = study_slot_prompt((self.t.get("llm_briefs") or {}).get(sid, sid),
+                                  load_exemplars().get(sid))
         if not self.llm_fill:
             self.gaps.append(sid)
             return ""
