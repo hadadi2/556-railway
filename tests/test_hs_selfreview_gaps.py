@@ -102,7 +102,7 @@ def test_the_classification_contract_reaches_the_result():
     # الخيطُ الخلفي دالّةٌ مستقلّة، فالالتقاطُ هناك `NameError` يقع **داخل
     # خيط** فيُبتلَع سبباً غامضاً («background run failed») بعد أن تكون
     # التشغيلةُ أُنفِقت. رُصِد حياً في كنس الثغرات.
-    assert "hs_classification=None) -> None:" in src, (
+    assert "                             hs_classification=None," in src, (
         "الخيطُ الخلفي لا يستقبل الملخّصَ وسيطاً")
     i = src.index("target=_research_background")
     assert "_hs_classification_summary(hs_classification)" in src[i:i + 700], (

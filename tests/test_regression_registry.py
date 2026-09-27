@@ -4722,7 +4722,7 @@ _LESSONS = {
         _needles("tests/test_lessons_enforcement.py", "(273, ")()),
     272: lambda: (
         _needles("silk_economics.py", "def _pick_shelf_anchor",
-                 "_pick_shelf_anchor(norm_rows, local_ccy)",
+                 "_pick_shelf_anchor(norm_rows, local_ccy,",
                  "def market_currency",
                  "market_ccy or market_currency(market_iso3)",
                  "market_ccy=local_ccy",
