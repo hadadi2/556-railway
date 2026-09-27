@@ -25,16 +25,37 @@ def _stored_fill(found: dict):
     return (lambda sid, _brief: slots.get(sid)) if slots else None
 
 
-def fill_slots(found: dict, call) -> dict:
-    """يملأ فراغات (ب)/(ج) الناقصة بنداء `call(sid, prompt)` ويعيد {sid: نص}
-    لما اجتاز فحص المحرك فقط (P2-3/P2-4). يُستدعى من خط `/research` وحده."""
-    from silk_study_render import LLM_MARK, Renderer, load_knowledge
+def fill_slots(found: dict, call, guard=None, max_calls: int | None = None) -> dict:
+    """يملأ فراغات (ب)/(ج) الناقصة بنداء `call(sid, prompt)` ويعيد {sid: نص} لما
+    اجتاز فحص المحرك (P2-3/P2-4). يُستدعى من خط `/research` وحده.
+    `guard()` يُسأل **قبل كل نداء** (سقف التكلفة/المهلة/الإلغاء)؛ `max_calls` سقفٌ
+    صلب لعدد النداءات (SILK_STUDY_SLOTS_MAX_CALLS، افتراضياً عدد الموجزات × محاولتين).
+    ما نجح قبل أي عطل يُعاد ولا يضيع (الكلفة دُفعت)."""
+    import os as _os
+    from silk_study_render import Renderer, load_knowledge, load_templates
+    if max_calls is None:
+        default = 2 * len(load_templates().get("llm_briefs") or {})
+        try:
+            max_calls = int(_os.environ.get("SILK_STUDY_SLOTS_MAX_CALLS", str(default)))
+        except ValueError:
+            max_calls = default
+    n = {"calls": 0}
+
+    def gated(sid, prompt):
+        if n["calls"] >= max_calls or (guard is not None and not guard()):
+            return None
+        n["calls"] += 1
+        return call(sid, prompt)
     case = found.get("study_case") or study_case(found)
     kn = load_knowledge(case["product"]["hs"], case["market"].get("iso2") or "")
-    r = Renderer(case, kn, llm_fill=call)
-    r.render()
-    return {sid: txt[len(LLM_MARK.format(sid=sid)):]
-            for sid, txt in r._llm_cache.items() if txt}
+    r = Renderer(case, kn, llm_fill=gated)
+    try:
+        r.render()
+    except Exception as e:  # noqa: BLE001 — ما دُفع ثمنه لا يُرمى
+        import logging
+        logging.getLogger(__name__).warning("fill_slots render failed after %d calls: %s",
+                                            n["calls"], e)
+    return {sid: txt for sid, txt in r._llm_cache.items() if txt}
 
 
 def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
@@ -44,10 +65,8 @@ def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     llm_fill = llm_fill or _stored_fill(found)
     kn = load_knowledge(case["product"]["hs"], case["market"].get("iso2") or "")
     r = Renderer(case, kn, llm_fill=llm_fill)
-    # وسم المراجعة `<!-- llm:… -->` داخلي: الفراغات مسرودة في meta["llm_slots"]،
-    # ولا يصل الوسم وجه العميل (كان يظهر حرفياً في md/docx/pdf).
-    md = re.sub(r"<!-- llm:[^>]*-->", "", r.render())
-    from silk_quality_gate import study_style_violations
+    md = r.render()        # بلا وسم مراجعة (review_marks=False افتراضياً، الدرس 285)
+    from silk_quality_gate import study_style_violations   # استشاري: لا يُسقط التصدير
     return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing),
                 "lint": study_style_violations(md)}
 

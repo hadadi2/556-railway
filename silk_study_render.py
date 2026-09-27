@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 
+import functools
 import os
 import re
 from typing import Callable
@@ -41,9 +42,16 @@ def _masc_nisba(nisba_f: str) -> str:
     return nisba_f[:-1] if nisba_f.endswith("ة") else nisba_f
 
 
-def load_templates(path: str = TEMPLATES) -> dict:
+@functools.lru_cache(maxsize=8)
+def _templates_cached(path: str) -> dict:
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def load_templates(path: str = TEMPLATES) -> dict:
+    """نسخة مستقلة من قوالب مكاشة — مستدعٍ يعدّلها لا يسمّم غيره."""
+    import copy
+    return copy.deepcopy(_templates_cached(path))
 
 
 def load_knowledge(hs: str, market_code: str) -> dict:
@@ -62,6 +70,12 @@ PLACEHOLDER_RE = re.compile(r"\[[^\]]*\]|TODO|placeholder|يُدرج|<[^>]*>", r
 
 
 def load_exemplars(path: str = EXEMPLARS) -> dict:
+    import copy
+    return copy.deepcopy(_exemplars_cached(path))
+
+
+@functools.lru_cache(maxsize=8)
+def _exemplars_cached(path: str) -> dict:
     """نماذج الأسلوب لفراغات (ب)/(ج) — P2-3. غياب الملف = بلا نماذج (لا فشل)."""
     import json
     try:
@@ -116,10 +130,17 @@ _ = {
 }
 
 
+_K_GAP_LABEL = "معلومات خاصة بالمنتج في هذه السوق (تحتاج مصدراً أو ملف معرفة معتمداً)"
+
+
 class Renderer:
     def __init__(self, case: dict, knowledge: dict | None = None,
                  llm_fill: Callable[[str, str], str | None] | None = None,
-                 templates: dict | None = None, allow_pending: bool = False):
+                 templates: dict | None = None, allow_pending: bool = False,
+                 review_marks: bool = False):
+        # وسم `<!-- llm:… -->` للمراجعة الداخلية فقط وبطلب صريح؛ الافتراضي نصٌّ
+        # نظيف يصلح للعميل (الدرس 285: الوسم لا يُنزع لاحقاً، لا يُضاف أصلاً).
+        self.review_marks = review_marks
         self.allow_pending = allow_pending
         self._pending = set() if allow_pending else pending_variants()
         self.case = case
@@ -281,32 +302,34 @@ class Renderer:
     def _llm(self, sid: str) -> str:
         """فراغ (ب)/(ج) بلا معرفة معتمدة: نداء واحد، فإن فشل الفحص يُعاد **مرة واحدة**
         بالملاحظة، ثم يُحذف الادعاء ويُعلن فجوةً (لا يُوقف التقرير)."""
-        from silk_style_contract import study_slot_prompt
-        brief = study_slot_prompt((self.t.get("llm_briefs") or {}).get(sid, sid),
-                                  load_exemplars().get(sid))
+        briefs = self.t.get("llm_briefs") or {}
+        if sid not in briefs:
+            # شظية كلمة/عبارة داخل جملة (بلا موجز): لا تُرسل للنموذج، ولا تُترك
+            # فارغة فتنكسر الجملة — الفقرة كلها تسقط وتُعلن فجوةً بتسمية مقروءة.
+            raise StudyRenderError(f"قيمة غائبة للفراغ: k:{sid}")
         if not self.llm_fill:
             self.gaps.append(sid)
             return ""
-        if sid in self._llm_cache:
-            if self._llm_cache[sid]:
-                self.llm_slots.append(sid)
-            else:
-                self.gaps.append(sid)
-            return self._llm_cache[sid]
-        note = ""
-        for _attempt in range(2):
-            txt = self.llm_fill(sid, brief + note)
-            if not txt:
-                break
-            problem = self._slot_ok(txt)
-            if problem is None:
-                self.llm_slots.append(sid)
-                self._llm_cache[sid] = f"{LLM_MARK.format(sid=sid)}{txt}"
-                return self._llm_cache[sid]
-            note = f" — أعد الصياغة: {problem}"
-        self.gaps.append(sid)
-        self._llm_cache[sid] = ""
-        return ""
+        if sid not in self._llm_cache:
+            from silk_style_contract import study_slot_prompt
+            brief = study_slot_prompt(briefs[sid], load_exemplars().get(sid))
+            self._llm_cache[sid] = ""
+            note = ""
+            for _attempt in range(2):
+                txt = self.llm_fill(sid, brief + note)
+                if not txt:
+                    break
+                problem = self._slot_ok(txt)
+                if problem is None:
+                    self._llm_cache[sid] = txt
+                    break
+                note = f" — أعد الصياغة: {problem}"
+        txt = self._llm_cache[sid]
+        if not txt:
+            self.gaps.append(sid)
+            return ""
+        self.llm_slots.append(sid)
+        return f"{LLM_MARK.format(sid=sid)}{txt}" if self.review_marks else txt
 
     def _gate(self, raw: str) -> None:
         if raw and raw.strip() in self._pending:
@@ -406,11 +429,14 @@ class Renderer:
         """تعبئة مزدوجة: مرورٌ أول يجمع الفجوات، ثم مرور ثانٍ بقائمة الحدود المكتملة."""
         self.missing: list[str] = []
         self._render_once()
-        labels = [GAP_LABELS.get(k, k) for k in self.missing]
+        labels = [GAP_LABELS.get(k) or (_K_GAP_LABEL if k.startswith("k:") else k)
+                  for k in self.missing]
         extra = [g for g in dict.fromkeys(labels) if g not in (self.case.get("gaps") or [])]
         if extra or self.gaps:
             base = list(self.case.get("gaps") or []) + extra
-            base += [f"فقرة «{sid}» (تحتاج مصدراً أو ملف معرفة معتمداً)" for sid in self.gaps if sid not in base]
+            briefs = self.t.get("llm_briefs") or {}
+            base += [(f"{briefs[sid]} (تحتاج مصدراً أو ملف معرفة معتمداً)" if sid in briefs
+                      else _K_GAP_LABEL) for sid in dict.fromkeys(self.gaps)]
             self.ctx["gaps_inline"] = "؛ ".join(base) if base else "لا فجوات معلنة"
         self.missing, self.gaps, self.llm_slots = [], [], []
         return self._render_once()
@@ -465,5 +491,6 @@ class Renderer:
             raise StudyRenderError(f"نوع كتلة غير معروف: {kind}")
 
 
-def render_study(case: dict, knowledge: dict | None = None, llm_fill=None) -> str:
-    return Renderer(case, knowledge, llm_fill).render()
+def render_study(case: dict, knowledge: dict | None = None, llm_fill=None,
+                 review_marks: bool = False) -> str:
+    return Renderer(case, knowledge, llm_fill, review_marks=review_marks).render()

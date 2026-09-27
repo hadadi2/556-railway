@@ -6114,7 +6114,7 @@ def _docx_glossary(doc, dr: dict, sanitize=None, lang: str = "ar") -> None:
 
 def _glossary_line(entry: dict, plain: bool) -> str:
     """سطر مسرد واحد. على سطح العميل: الاسم العربي + تعريف قصير — فالتعريف
-    التقني يصير دائرياً بعد الاستبدال («مؤشر تركّز السوق: مؤشر يقيس تركّز
+    التقني يصير دائرياً بعد الاستبدال («مؤشر تركّز الموردين: مؤشر يقيس تركّز
     السوق…»). نسخة المدقّق تبقى بالمصطلح وتعريفه الكامل."""
     from silk_style_contract import (KEEP_WITH_SHORT_DESC, PLAIN_GLOSS,
                                      PLAIN_TERMS)

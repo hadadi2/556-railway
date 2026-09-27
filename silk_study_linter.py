@@ -11,7 +11,11 @@ import re
 
 _SLOT = re.compile(r"\{[^{}]+\}")
 _LIST = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+")
-_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
+# السنة سنةٌ فقط بسياقها: «عام/لعام/في/خلال/بحلول/حتى/منذ/سنة» أو قوس قبلها، أو «م» بعدها —
+# (مؤشر تركّز 2090 ليس سنة). حدود رقمية لا \b (لا يعمل بين رقم وحرف عربي).
+_YEAR = re.compile(r"(?:(?<!\S)(?:عام|لعام|سنة|في|خلال|بحلول|حتى|منذ|موسم)\s+|\()"
+                   r"((?:19|20)\d{2})(?!\d)"
+                   r"|(?<!\d)((?:19|20)\d{2})\s?م(?![\u0600-\u06FF])")
 _LAST_YEAR = re.compile(r"أحدث سنة بيانات تجارية مكتملة:\**\s*((?:19|20)\d{2})")
 _TRADE_WORDS = ("واردات", "حصة", "الواردات")
 # مصطلحات لا تظهر عارية في نص العميل (تُستبدل بمعناها).
@@ -127,7 +131,7 @@ def lint(md: str) -> list[dict]:
         last = int(m.group(1))
         body = "\n".join(ln for ln in prose.splitlines() if not _META_LINE.match(ln))
         for sent in re.split(r"(?<=[.؛])\s+|\n+", body):
-            years = [int(y) for y in _YEAR.findall(sent)]
+            years = [int(a or b) for a, b in _YEAR.findall(sent)]
             if (any(y > last for y in years) and any(w in sent for w in _TRADE_WORDS)
                     and "أولي" not in sent):
                 add("provisional_unmarked", sent.strip()[:80])

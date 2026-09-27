@@ -181,16 +181,30 @@ def test_hhi_single_form_everywhere():
 _SLOT_TXT = "ويُلاحظ أن الطلب يتركز في المدن الكبرى."
 
 
-def _run(env_extra: dict):
+def _run(env_extra: dict, over_budget_after_writer: bool = False):
     import tempfile
     import time
     from unittest.mock import patch
     from fastapi.testclient import TestClient
     from test_study_export_route import _fake_call, _fake_tools
 
+    state = {"writer_done": False, "slot_calls": 0}
+
     def writer_or_slot(system, user, max_tokens=1600, model=None, timeout=None, **kw):
         from silk_style_contract import STUDY_SLOT_CONTRACT
-        return _SLOT_TXT if STUDY_SLOT_CONTRACT in system else "## 1. الخلاصة التنفيذية\nتقرير."
+        if STUDY_SLOT_CONTRACT in system:
+            state["slot_calls"] += 1
+            return _SLOT_TXT
+        state["writer_done"] = True
+        return "## 1. الخلاصة التنفيذية\nتقرير."
+    import silk_pricing
+    real_cost = silk_pricing.estimate_cost_usd
+
+    def cost(usage):   # السقف يُخرق **بعد** الكاتب فقط → يصل الحارسُ مرحلةَ الفراغات
+        out = dict(real_cost(usage))
+        if over_budget_after_writer and state["writer_done"]:
+            out["total_usd"] = 999.0
+        return out
     env = {"ANTHROPIC_API_KEY": "t", "SILK_API_KEY": "s", "SILK_RATE_LIMIT": "100000",
            "SILK_DATA_DIR": tempfile.mkdtemp(), "SILK_STUDY_SLOTS": "1", **env_extra}
     db = os.path.join(tempfile.mkdtemp(), "silk.db")
@@ -200,7 +214,8 @@ def _run(env_extra: dict):
             patch("silk_ai_judge._call", side_effect=writer_or_slot), \
             patch("silk_data_layer._cached_get", return_value=None), \
             patch("silk_data_layer._http_get", side_effect=OSError("no net")), \
-            patch("silk_storage._db_path", return_value=db):
+            patch("silk_storage._db_path", return_value=db), \
+            patch("silk_pricing.estimate_cost_usd", side_effect=cost):
         import api
         client = TestClient(api.create_app())
         hdr = {"X-API-Key": "s"}
@@ -214,7 +229,9 @@ def _run(env_extra: dict):
             if st.get("status") and st["status"] != "running":
                 break
             time.sleep(0.01)
-        return client.get(f"/analyses/{aid}", headers=hdr).json()
+        res = client.get(f"/analyses/{aid}", headers=hdr).json()
+        res["_slot_calls"] = state["slot_calls"]
+        return res
 
 
 def test_pipeline_fills_and_stores_slots_with_stage_cost():
@@ -226,8 +243,17 @@ def test_pipeline_fills_and_stores_slots_with_stage_cost():
 
 
 def test_pipeline_skips_slots_when_run_budget_is_exhausted():
-    res = _run({"SILK_RESEARCH_MAX_MINUTES": "0.000001"})   # حارس الميزانية نفسه
-    assert not res["deep_research"].get("study_slots")
+    """الكاتب يكتمل ثم يُخرق السقف: الحارس قبل أول نداء فراغ يمنعه ويُعلن التخطّي."""
+    res = _run({}, over_budget_after_writer=True)
+    dr = res["deep_research"]
+    assert dr.get("report", {}).get("report")          # بلغنا المرحلة فعلاً
+    assert res["_slot_calls"] == 0 and not dr.get("study_slots")
+    assert dr.get("study_slots_skipped")                # معلن لا صامت
+
+
+def test_pipeline_slot_calls_are_capped():
+    res = _run({"SILK_STUDY_SLOTS_MAX_CALLS": "3"})
+    assert res["_slot_calls"] == 3 and len(res["deep_research"]["study_slots"]) == 3
 
 
 def test_llm_review_mark_never_reaches_the_client_export():
@@ -243,3 +269,69 @@ def test_llm_review_mark_never_reaches_the_client_export():
 def test_slots_switch_off_makes_no_slot_calls():
     res = _run({"SILK_STUDY_SLOTS": "0"})
     assert not res["deep_research"].get("study_slots")
+
+
+def test_fragment_slots_never_reach_the_model():
+    from silk_study_render import Renderer, load_templates
+    seen = []
+    Renderer(_case(), {}, llm_fill=lambda sid, p: seen.append(sid)).render()
+    assert seen and set(seen) <= set(load_templates()["llm_briefs"])
+
+
+def test_fill_slots_keeps_paid_text_when_render_fails_later():
+    import silk_study_render as R
+    from unittest.mock import patch
+    from silk_study_export import fill_slots
+    c = _case()
+    c["market"]["iso2"] = "XX"
+    real = R.Renderer._render_once
+    state = {"n": 0}
+
+    def boom(self):
+        state["n"] += 1
+        if state["n"] == 2:
+            raise R.StudyRenderError("عطل لاحق")
+        return real(self)
+    with patch.object(R.Renderer, "_render_once", boom):
+        out = fill_slots({"study_case": c}, lambda sid, p: _SLOT_TXT)
+    assert out and set(out.values()) == {_SLOT_TXT}
+
+
+def test_fill_slots_guard_is_asked_before_every_call():
+    from silk_study_export import fill_slots
+    c = _case()
+    c["market"]["iso2"] = "XX"
+    asks, calls = [], []
+
+    def guard():
+        asks.append(1)
+        return len(calls) < 2
+    fill_slots({"study_case": c}, lambda sid, p: calls.append(sid) or _SLOT_TXT, guard=guard)
+    assert len(calls) == 2 and len(asks) >= 3
+
+
+def test_linter_year_needs_year_context():
+    from silk_study_linter import lint
+    head = "**أحدث سنة بيانات تجارية مكتملة:** 2024\n\n"
+    rule = lambda t: [v for v in lint(head + t) if v["rule"] == "provisional_unmarked"]  # noqa: E731
+    assert not rule("ويبلغ مؤشر تركّز الموردين 2090 وتستحوذ الهند على حصة 40%.")
+    assert rule("ارتفعت الواردات في 2025م.")
+    assert rule("بلغت الواردات 90 مليون دولار في عام 2025.")
+    assert rule("بلغت الواردات 90 مليون دولار خلال 2025.")
+    assert rule("الواردات (2025) مرتفعة.") and rule("الواردات 2025 م مرتفعة.")
+    assert not rule("الواردات يكفي 2025 حصة.")          # «في» داخل كلمة ليست سياق سنة
+
+
+def test_fragment_gap_drops_its_paragraph_and_names_no_internal_id():
+    from silk_study_render import Renderer
+    c = _case()
+    out = Renderer(c, {}, llm_fill=lambda sid, p: _SLOT_TXT).render()
+    assert "عند  " not in out and "، ." not in out and " ، " not in out
+    assert "s1_border" not in out and "k:" not in out
+
+
+def test_templates_loader_returns_independent_copies():
+    from silk_study_render import load_templates
+    t = load_templates()
+    t["llm_briefs"]["x"] = "y"
+    assert "x" not in load_templates()["llm_briefs"]

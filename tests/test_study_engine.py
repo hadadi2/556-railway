@@ -106,7 +106,7 @@ def test_without_knowledge_deterministic_text_is_at_least_70_percent():
     def fake_llm(sid, brief):
         marks.append(sid)
         return "جملة نموذج مؤقتة للمراجعة."
-    r = Renderer(_case(), {}, llm_fill=fake_llm)
+    r = Renderer(_case(), {}, llm_fill=fake_llm, review_marks=True)
     out = r.render()
     assert marks and all(LLM_MARK.format(sid=s) in out for s in marks)
     llm_chars = len("جملة نموذج مؤقتة للمراجعة.") * len(marks)

@@ -4600,7 +4600,7 @@ _LESSONS = {
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
     285: lambda: (
-        _needles("silk_study_export.py", 're.sub(r"<!-- llm:[^>]*-->", ""')(),
+        _needles("silk_study_render.py", "self.review_marks = review_marks")(),
         _needles("tests/test_study_batch2_style.py",
                  "def test_llm_review_mark_never_reaches_the_client_export")(),
         _needles("tests/test_lessons_enforcement.py", "(285, ")()),

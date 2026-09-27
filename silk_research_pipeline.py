@@ -226,7 +226,9 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 # قبل النداء المدفوع التالي، بعد أن حُفظت نقاطُ المرحلة السابقة.
                 # العلامة الختامية «end» ليست نقطة تفتيش (§58 #2): لا نداء مدفوع
                 # بعدها، وإلغاءٌ وصل أثناء الكاتب كان سيُتلف تقريراً اكتمل ودُفع ثمنه.
-                if name != "end":
+                # «study_slots» كذلك: تبدأ بعد تقريرٍ مدفوع لم تُحفظ نقطته بعد؛
+                # الإلغاء فيها يوقف نداءاتها (حارسها) ولا يُتلف التقرير.
+                if name not in ("end", "study_slots"):
                     silk_context.check_cancelled(name)
                 now = _mono.monotonic()
                 tin, tout, cost = _usage_totals()
@@ -700,6 +702,53 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     on_stage=lambda s: silk_context.snapshot_research_progress(
                         analysis_id, s)) if ai_ok else
                     {"report": None, "review_cycles": 0, "unresolved_notes": []})
+            # P2-3/P2-4: فراغات (ب)/(ج) لنمط الدراسة — مرحلةٌ مدفوعة **قبل «end»**:
+            # كلفتها تدخل `actual` قبل المصالحة وعلى يوم الحجز نفسه (الدرس ١٨٨)،
+            # وتظهر في cost_usd_by_stage["study_slots"]. الحارس يُسأل قبل **كل**
+            # نداء (السقف/المهلة/الإلغاء)، وعدد النداءات مسقوف. لا فراغات إلا فوق
+            # تقرير كاتبٍ اكتمل؛ SILK_STUDY_SLOTS=0 يعطّلها. التصدير يقرأ المخزَّن.
+            _study_slots: dict = {}
+            _study_slots_skipped: list = []
+            if (ai_ok and not early_halted
+                    and os.environ.get("SILK_STUDY_SLOTS", "1") != "0"
+                    and (report_out or {}).get("report")):
+                _stage_mark("study_slots")
+                try:
+                    import json as _json
+                    import silk_ai_judge as _aj
+                    from silk_study_case import build_case as _bc
+                    from silk_study_export import fill_slots
+                    from silk_study_numbers import compute as _sn
+                    _prov = {"deep_research": {"missions": mission_reports,
+                                               "importer_leads": importer_leads,
+                                               "verdict": verdict},
+                             "market": market_ref.name_en, "hs_code": hs_code,
+                             "product": product}
+                    _case = _bc(_prov)
+                    _facts = _aj._isolate(_json.dumps(
+                        {"product": product, "market": market_ref.name_en,
+                         "numbers": {k: v for k, v in _sn(_case).items()
+                                     if isinstance(v, (int, float, str, bool))}},
+                        ensure_ascii=False, default=str))
+
+                    def _slot_guard() -> bool:
+                        # لا رفع هنا: إلغاءٌ بعد اكتمال الكاتب يوقف الفراغات ويُسلَّم
+                        # التقرير المدفوع (نفس منطق استثناء «end»، §58 #2).
+                        return (not silk_context.cancel_requested()
+                                and _budget_ok("study_slots"))
+                    _study_slots = fill_slots(
+                        {"study_case": _case},
+                        lambda sid, prompt: _aj._call(prompt, _facts, max_tokens=500),
+                        guard=_slot_guard)
+                except Exception as e:  # noqa: BLE001 — الفراغ الناقص فجوة معلنة
+                    log.warning("study_slots skipped: %s", e)
+                if _stage_budget["halted_before"] == "study_slots":
+                    # تقريرٌ اكتمل ليس «تشغيلة موقوفة»: التخطّي يُعلن في
+                    # study_slots_skipped، وحالة الميزانية تُعاد لا تُعلَّم مستنفدة.
+                    _study_slots_skipped = list(_stage_budget.get("caps_hit") or [])
+                    _stage_budget.update(halted_before=None, caps_hit=[])
+                elif silk_context.cancel_requested():
+                    _study_slots_skipped = ["cancelled"]
             _stage_mark("end")  # E3: نهاية الكاتب/المراجع
             economics = dict(silk_context.data_counter() or {})
             economics["tail_degraded"] = tail_over_budget
@@ -708,12 +757,13 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
             # E3 (SPEC-v2): زمن الجدار لكل مرحلة + أكبر ثلاثة مصارف — يُطبَع في
             # data_economics كي يقيس المالك أين تذهب الدقائق (البعثات متوازية،
             # الذيل متسلسل)، وهدف < ١٠ دقائق يُقاس عليه.
-            _order = ["missions", "analyst", "synthesis", "enrich", "writer",
-                      "end"]
+            _order = [s_ for s_ in ("missions", "analyst", "synthesis", "enrich",
+                                    "writer", "study_slots", "end")
+                      if s_ in _stage_marks]   # مرحلةٌ غائبة لا تُسقط زمن سابقتها
             _labels = {"missions": "البعثات (متوازية)", "analyst": "المحلل الشامل",
                        "synthesis": "التوليف/الحكم",
                        "enrich": "إكمال بيانات المستوردين",
-                       "writer": "الكاتب+المراجع"}
+                       "writer": "الكاتب+المراجع", "study_slots": "فقرات الدراسة"}
             _ss = {}
             for _i in range(len(_order) - 1):
                 a, b = _order[_i], _order[_i + 1]
@@ -824,7 +874,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
             budget_status["message"] = (
                 "أُوقفت التشغيلة قبل مرحلة "
                 + {"synthesis": "حكم الذكاء الاصطناعي", "writer": "كتابة التقرير",
-                   "analyst": "التحليل الشامل"}.get(
+                   "analyst": "التحليل الشامل", "study_slots": "فقرات الدراسة"}.get(
                     _stage_budget["halted_before"], _stage_budget["halted_before"])
                 + " لبلوغ سقف الإنفاق المحدَّد. ما اكتمل محفوظ ولا يُعاد دفعه؛ "
                 "يمكن استكمال التشغيلة بعد رفع السقف.")
@@ -953,39 +1003,10 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 k: v for k, v in _sn.items() if isinstance(v, (int, float, str, bool)) or v is None}
         except Exception as e:  # noqa: BLE001 — إضافةٌ لا شرط تشغيل
             log.warning("study_numbers skipped: %s", e)
-        # P2-3/P2-4: فراغات (ب)/(ج) لنمط الدراسة — نداء قصير لكل فراغ بلا معرفة
-        # معتمدة، بعقد الفراغ ونموذجه، **داخل حارس الميزانية**؛ الكلفة تُسجَّل
-        # مرحلةً مستقلة وتُضاف للدفتر اليومي (المصالحة سبقت). التصدير يقرأ المخزَّن.
-        # لا فراغات إلا فوق تقرير كاتبٍ اكتمل: فشل المحلل/الإيقاف المبكر لا
-        # يفتح نداءً مدفوعاً جديداً بعده (حراس p6/الموجة ٨).
-        _slots_due = bool(ai_ok and not early_halted
-                          and os.environ.get("SILK_STUDY_SLOTS", "1") != "0"
-                          and (result["deep_research"].get("report") or {}).get("report"))
-        _slots_ok = _slots_due and _budget_ok("study_slots")
-        if _slots_due and not _slots_ok:
-            # الحارس يُقرأ بعد بناء budget_status — فالتخطّي يُعلن هنا صراحةً.
-            result["deep_research"]["study_slots_skipped"] = list(
-                _stage_budget.get("caps_hit") or ["halted_before=" + str(_stage_budget.get("halted_before"))])
-        if _slots_ok:
-            try:
-                import json as _json
-                import silk_ai_judge as _aj
-                from silk_study_export import fill_slots
-                _t0_cost = _usage_totals()[2]
-                _facts = _aj._isolate(_json.dumps(
-                    {"product": product, "market": str(market_ref),
-                     "numbers": result["deep_research"].get("study_numbers") or {}},
-                    ensure_ascii=False, default=str))
-                result["deep_research"]["study_slots"] = fill_slots(
-                    result, lambda sid, prompt: _aj._call(prompt, _facts, max_tokens=500))
-                _d = round(_usage_totals()[2] - _t0_cost, 4)
-                if _d > 0:
-                    silk_usage.record_usd(_d)
-                    economics["cost_usd_estimate"] = round(
-                        float(economics.get("cost_usd_estimate") or 0) + _d, 4)
-                economics.setdefault("cost_usd_by_stage", {})["study_slots"] = _d
-            except Exception as e:  # noqa: BLE001 — الفراغ الناقص فجوة معلنة
-                log.warning("study_slots skipped: %s", e)
+        if _study_slots:
+            result["deep_research"]["study_slots"] = _study_slots
+        if _study_slots_skipped:
+            result["deep_research"]["study_slots_skipped"] = _study_slots_skipped
         try:   # P2-6: مخالفات الأسلوب تُخزَّن مع النتيجة للمراجعة، لا تحجب
             from silk_study_export import study_markdown
             result["deep_research"]["study_lint"] = study_markdown(result)[1]["lint"]
