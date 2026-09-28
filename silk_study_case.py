@@ -273,7 +273,9 @@ def build_case(found: dict, *, product_short: str | None = None,
 
     # ── الواردات ─────────────────────────────────────────────────────────
     imp = import_series(missions)
-    series = [{"year": p["year"], "value_musd": round(p["value"] / 1e6, 1), "kg": None,
+    # مراجعة (١٤): القيمة الخام تُحفظ بجانب المقرَّبة — النسب تُحسب منها لا من 0.1 مليون.
+    series = [{"year": p["year"], "value_musd": round(p["value"] / 1e6, 1),
+               "value_usd": float(p["value"]), "kg": None,
                "complete": not (p.get("partial") or p.get("provisional"))} for p in imp.get("series") or []]
     # الوزن (إن وُجد) من نقاط «صافي الوزن» بسنة بنيوية
     for f in _findings(dr, "trade_flow"):
@@ -284,7 +286,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                     p["kg"] = float(v)
     for p in series:
         if p["kg"] and p["kg"] > 0:
-            p["unit_value"] = p["value_musd"] * 1e6 / p["kg"]
+            p["unit_value"] = p["value_usd"] / p["kg"]
     uvs = [p for p in series if p.get("unit_value")]
     if len(uvs) >= 2:
         med = sorted(p["unit_value"] for p in uvs)[len(uvs) // 2]
@@ -412,7 +414,7 @@ def build_case(found: dict, *, product_short: str | None = None,
     if candidates < MIN_ENTITIES:
         gaps.append("مستوردون مؤكدون بالاسم")
     return {
-        "case": f"{hs}_{iso3}", "live": True,
+        "case": f"{hs}_{iso3}", "live": not os.environ.get("SILK_HERMETIC"),
         "product": {"name_full": product, "short": product_short or product, "hs": hs, "commodity": product,
                     "origin_iso3": "SAU", "origin_ar": "المملكة العربية السعودية", "exporter_type": exporter_type,
                     "segment": segment, "halal_relevant": None, "base_word": product_short or product,

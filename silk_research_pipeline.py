@@ -715,6 +715,10 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     and os.environ.get("SILK_STUDY_SLOTS", "1") != "0"
                     and (report_out or {}).get("report")):
                 _stage_mark("study_slots")
+                # مراجعة (٧): التقرير المدفوع نقطةُ تفتيش **قبل** الذيل — تعطّلُ
+                # الذيل أو انقطاع العملية أثناءه لا يُضيع نص الكاتب.
+                _stage_checkpoint(analysis_id, "report", dict(report_out),
+                                  market_iso3=market_ref.iso3)
                 try:
                     import json as _json
                     import silk_ai_judge as _aj

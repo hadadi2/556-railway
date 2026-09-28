@@ -224,12 +224,25 @@ def test_every_banned_vocab_form_has_an_approved_counterpart():
 def test_tier_filter_stays_inside_the_local_currency_and_declares_dropped_rows():
     from silk_economics import _pick_shelf_anchor
     rows = [(20.0, "بن تقليدي 1 كغ", "MYR", 1.0, None),
-            (9.0, "بن premium 1 كغ", "USD", 1.0, None)]
-    anchor, dropped = _pick_shelf_anchor(rows, "MYR", tier="premium")
+            (9.0, "بن specialty 1 كغ", "USD", 1.0, None)]
+    anchor, dropped = _pick_shelf_anchor(rows, "MYR", tier="specialty")
     assert anchor[2] == "MYR" and dropped.get("بعملة أخرى") == 1
-    rows2 = rows + [(70.0, "بن premium 1 كغ", "MYR", 1.0, None)]
-    anchor2, dropped2 = _pick_shelf_anchor(rows2, "MYR", tier="premium")
+    rows2 = rows + [(70.0, "بن specialty 1 كغ", "MYR", 1.0, None)]
+    anchor2, dropped2 = _pick_shelf_anchor(rows2, "MYR", tier="specialty")
     assert anchor2[0] == 70.0 and dropped2.get("من شريحة أخرى") == 1
+
+
+def test_premium_default_tier_does_not_narrow_and_words_match_whole():
+    """مراجعة (١٣): «premium» (افتراضي الواجهة) لا يصفّي؛ «مختص» لا تُطابق «مختصر»."""
+    from silk_economics import _pick_shelf_anchor
+    rows = [(20.0, "بن تقليدي 1 كغ", "MYR", 1.0, None),
+            (70.0, "بن premium 1 كغ", "MYR", 1.0, None)]
+    anchor, dropped = _pick_shelf_anchor(rows, "MYR", tier="premium")
+    assert anchor[0] == 20.0 and "من شريحة أخرى" not in dropped
+    rows2 = [(20.0, "بن مختصر 1 كغ", "MYR", 1.0, None),
+             (70.0, "بن مختص 1 كغ", "MYR", 1.0, None)]
+    anchor2, _ = _pick_shelf_anchor(rows2, "MYR", tier="specialty")
+    assert anchor2[0] == 70.0
 
 
 def test_negated_or_inflected_predicate_is_not_a_claim_conflict():

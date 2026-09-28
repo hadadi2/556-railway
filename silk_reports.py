@@ -3208,8 +3208,11 @@ def _client_forbidden_for(lang: str = "ar") -> list:
 # أقواس مربعة، «يُدرج»، TODO، placeholder، وقوسا زاوية (<…>) خارج وسوم HTML.
 _CLIENT_PLACEHOLDER_PATTERNS = (
     ("placeholder_bracket", re.compile(r"\[[^\]\n]{0,80}\]")),
-    ("placeholder_word", re.compile(r"\bTODO\b|\bplaceholder\b|يُدرج\s+لاحق|يُدرج\b", re.I)),
-    ("placeholder_angle", re.compile(r"<(?!/?(?:b|i|br|p|u|sup|sub)\b)[^<>\n]{1,60}>")),
+    # مراجعة (١٢): «يُدرج» فعلٌ عربي سليم في نصوص التقارير الأخرى («يُدرج المنتج في
+    # القائمة») — يُرفض فقط بصيغة النائب («يُدرج لاحقاً/هنا»). وقوسا الزاوية يلزمهما
+    # حرفٌ غير فراغ في الطرفين، فلا تُطابَق المقارنات «نمو < 5% و > 3».
+    ("placeholder_word", re.compile(r"\bTODO\b|\bplaceholder\b|يُدرج\s+(?:لاحق|هنا)", re.I)),
+    ("placeholder_angle", re.compile(r"<(?!/?(?:b|i|br|p|u|sup|sub)\b)[^\s<>](?:[^<>\n]{0,58}[^\s<>])?>")),
 )
 
 

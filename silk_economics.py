@@ -1495,10 +1495,16 @@ IMPORT_ANOMALY_FACTOR = 5.0
 
 
 # P3-8: كلمات الشريحة في نص صف الرف — المرجع من الشريحة نفسها إن رُصد.
+# مراجعة (١٣): «premium» هي قيمة الواجهة الافتراضية — تصفيتها كانت تضيّق المرجع لكل
+# عميل لم يختر شريحة؛ الشريحة الصريحة «specialty» وحدها تُصفّي، وبكلمات كاملة.
 _TIER_WORDS = {
-    "specialty": ("مختص", "specialty", "single origin", "مختصة"),
-    "premium": ("فاخر", "premium", "ممتاز", "gourmet"),
+    "specialty": ("مختص", "مختصة", "specialty", "single origin"),
 }
+
+
+def _has_tier_word(text: str, words) -> bool:
+    return any(_re.search(rf"(?<![\w\u0600-\u06FF]){_re.escape(w)}(?![\w\u0600-\u06FF])", text)
+               for w in words)
 
 
 def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> tuple:
@@ -1532,7 +1538,7 @@ def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> t
     # والمستبعَد منها يُعدّ ويُعلن (لا إسقاط صامتاً).
     words = _TIER_WORDS.get(str(tier or "").lower())
     if words:
-        same = [r for r in group if any(w in str(r[1]).lower() for w in words)]
+        same = [r for r in group if _has_tier_word(str(r[1]).lower(), words)]
         if same and len(same) < len(group):
             dropped["من شريحة أخرى"] = len(group) - len(same)
             group = same

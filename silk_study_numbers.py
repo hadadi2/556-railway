@@ -85,27 +85,33 @@ _EMPTY_SHAPE = {k: None for k in ("y_first", "v_first", "y_last", "v_last", "g_f
                                   "monotone", "dip_year", "dip_value", "jump_year", "peak_year", "last_yoy")}
 
 
+def _raw_musd(r: dict) -> float:
+    """مراجعة (١٤): القيمة الخام بالمليون (لا المقرَّبة لعُشر) — للنسب وحدها."""
+    return r["value_usd"] / 1e6 if r.get("value_usd") is not None else r["value_musd"]
+
+
 def series_shape(series: list[dict]) -> dict:
-    vals = [(r["year"], r["value_musd"]) for r in (series or [])
-            if r.get("value_musd") is not None and r.get("complete", True)]
+    rows = [r for r in (series or []) if r.get("value_musd") is not None and r.get("complete", True)]
+    vals = [(r["year"], r["value_musd"]) for r in rows]
+    raw = [_raw_musd(r) for r in rows]
     if len(vals) < 2:
         return dict(_EMPTY_SHAPE, trend="flat")
     first_y, first_v = vals[0]
     last_y, last_v = vals[-1]
-    g = ratio_change_pct(first_v, last_v)
+    g = ratio_change_pct(raw[0], raw[-1])
     trend = "up" if g > 5 else ("down" if g < -5 else "flat")
     monotone = all(vals[i][1] <= vals[i + 1][1] for i in range(len(vals) - 1)) if trend == "up" else \
         all(vals[i][1] >= vals[i + 1][1] for i in range(len(vals) - 1)) if trend == "down" else False
     dips = [(y, v) for (y, v) in vals[1:] if v < first_v]
     dip = min(dips, key=lambda t: t[1]) if dips else None
-    jumps = [(vals[i + 1][0], vals[i + 1][1] / vals[i][1] - 1) for i in range(len(vals) - 1)]
+    jumps = [(vals[i + 1][0], raw[i + 1] / raw[i] - 1) for i in range(len(vals) - 1) if raw[i]]
     jump = max(jumps, key=lambda t: t[1]) if jumps else None
     peak = max(vals, key=lambda t: t[1])
     return {"y_first": first_y, "v_first": first_v, "y_last": last_y, "v_last": last_v,
             "g_first_last": g, "trend": trend, "monotone": monotone,
             "dip_year": dip[0] if dip else None, "dip_value": dip[1] if dip else None,
             "jump_year": jump[0] if jump else None, "peak_year": peak[0],
-            "last_yoy": ratio_change_pct(vals[-2][1], last_v) if len(vals) > 1 else None}
+            "last_yoy": ratio_change_pct(raw[-2], raw[-1]) if len(vals) > 1 else None}
 
 
 def decomposition(series: list[dict]) -> dict:
@@ -115,9 +121,9 @@ def decomposition(series: list[dict]) -> dict:
     if len(ok) < 3:
         return {"variant": "not_decomposable", "reason": "غياب بيانات الوزن" if not ok else "عدم موثوقية بيانات الوزن في أكثر من سنة"}
     a, b = ok[0], ok[-1]
-    p_a = a["value_musd"] * 1e6 / a["kg"]
-    p_b = b["value_musd"] * 1e6 / b["kg"]
-    dv = ratio_change_pct(a["value_musd"], b["value_musd"])
+    p_a = _raw_musd(a) * 1e6 / a["kg"]
+    p_b = _raw_musd(b) * 1e6 / b["kg"]
+    dv = ratio_change_pct(_raw_musd(a), _raw_musd(b))
     dp = ratio_change_pct(p_a, p_b)
     dq = ratio_change_pct(a["kg"], b["kg"])
     q_share = dq / dv if dv else None
