@@ -305,8 +305,9 @@ class Renderer:
             return fmt(self._val(key), spec)
         return str(self._val(expr))
 
-    def _slot_ok(self, txt: str) -> str | None:
-        """فحص حتمي لنص فراغ النموذج (P1-12): نائب، رقم لم يُمرَّر، مصطلح محظور."""
+    def _slot_ok(self, txt: str, sid: str | None = None) -> str | None:
+        """فحص حتمي لنص فراغ النموذج (P1-12، P5-1): نائب، رقم لم يُمرَّر، ثم قواعد linter
+        الجُمَلية (محظور، مصطلح مغاير/عارٍ، تعارض ادعاء، نفع المصدّر، سعر الحدود، الميزة)."""
         if PLACEHOLDER_RE.search(txt):
             return "عنصر نائب"
         allowed = {str(v) for v in self.ctx.values() if isinstance(v, (int, float)) and not isinstance(v, bool)}
@@ -314,12 +315,11 @@ class Renderer:
             if num not in allowed and num.replace(",", "") not in allowed and not any(num == f"{v:g}" for v in
                     (x for x in self.ctx.values() if isinstance(x, (int, float)) and not isinstance(x, bool))):
                 return f"رقم لم يُمرَّر: {num}"
-        try:
-            from silk_reports import _client_forbidden_hits
-            hits = _client_forbidden_hits(txt, "ar")
-        except Exception:  # noqa: BLE001 — الحارس تحسين لا شرط
-            hits = []
-        return ("مصطلح ممنوع: " + hits[0]) if hits else None
+        # P5-1: فحوص الأسلوب والاتساق نفسها التي يطبّقها linter على الدراسة كاملة.
+        from silk_study_claims import build_claims
+        from silk_study_linter import slot_violations
+        v = slot_violations(txt, build_claims(self.case), self.ctx.get("exporter_type"), sid)
+        return f"{v[0]['rule']}: {v[0]['detail']}" if v else None
 
     def _llm(self, sid: str) -> str:
         """فراغ (ب)/(ج) بلا معرفة معتمدة: نداء واحد، فإن فشل الفحص يُعاد **مرة واحدة**
@@ -341,7 +341,7 @@ class Renderer:
                 txt = self.llm_fill(sid, brief + note)
                 if not txt:
                     break
-                problem = self._slot_ok(txt)
+                problem = self._slot_ok(txt, sid)
                 if problem is None:
                     self._llm_cache[sid] = txt
                     break

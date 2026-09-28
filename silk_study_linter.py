@@ -132,21 +132,8 @@ def lint(md: str, claims: list[dict] | None = None,
         if t not in seen:
             add("table_missing", " | ".join(t))
 
-    # (٤) المحظورات والمصطلحات العارية والصيغة الموحدة لمؤشر التركّز.
     prose = "\n".join(ln for ln in lines if not ln.startswith("|"))
-    try:
-        from silk_reports import _client_forbidden_hits
-        for h in _client_forbidden_hits(prose, "ar"):
-            add("forbidden", h)
-    except Exception:  # noqa: BLE001 — الحارس تحسين لا شرط
-        pass
-    for t in BARE_TERMS:
-        if re.search(rf"(?<![A-Za-z]){t}(?![A-Za-z])", prose):
-            add("bare_term", t)
-    for alt in HHI_ALTERNATIVES:
-        if alt in prose:
-            add("hhi_form", f"«{alt}» بدل «{HHI_FORM}»")
-
+    _prose_rules(prose, md, claims, exporter_type, add)
     # (٥) كل قسم نثري يحمل صيغة واحدة على الأقل من المعجم.
     for head, body in _sections(md):
         text = " ".join(b for b in body if b.strip() and not b.startswith("|"))
@@ -169,29 +156,6 @@ def lint(md: str, claims: list[dict] | None = None,
     # (٧) لا فراغ قالب متسرِّب.
     if _SLOT.search(prose):
         add("slot_leak", _SLOT.search(prose).group(0))
-    # (٨-ج) P3-4: لمحوِّل مادة مستوردة، لا يُنسب نفع توجه الشراء المباشر من
-    # الدول المزارعة/المنتجة إلى المصدّر (يفيد المنتجين لا المحوِّل).
-    if exporter_type == "processor_of_imported_input":
-        for sent in re.split(r"(?<=[.؛])\s+|\n+", prose):
-            if (any(w in sent for w in ("الدول المزارعة", "الدول المنتجة"))
-                    and any(w in sent for w in ("يفيد المصدّر", "يفيد المصدر", "لصالح المصدّر",
-                                                "يستفيد المصدّر", "يستفيد منه المصدّر"))
-                    and not any(w in sent for w in ("لا ينعكس", "لا يفيد", "لا يستفيد"))):
-                add("exporter_benefit", sent.strip()[:80])
-    # (٨-د) P3-5: كل فقرة تعرض «الميزة» تقرنها بشرط جدوى أو توسمها «لا يُعتد بها».
-    for para in re.split(r"\n\s*\n", prose):
-        if "الميزة" in para and not any(w in para for w in ADVANTAGE_CONDITIONS):
-            add("unconditioned_advantage", para.strip()[:80])
-    # (٨-هـ) P3-7: سعر الحدود/الاستيراد لا يُقدَّم مرجعاً للتسعير أو التفاوض.
-    for sent in re.split(r"(?<=[.؛])\s+|\n+", prose):
-        if (any(w in sent for w in ("سعر الحدود", "سعر استيراد", "سعر الاستيراد", "قيمة الوحدة"))
-                and any(w in sent for w in ("مرجع", "أساس للتفاوض", "أساساً للتفاوض", "أساس للتسعير"))
-                and not any(w in sent for w in ("لا يصلح", "لا مرجع", "ليس مرجع", "لا يُعد", "لا يُعتمد"))):
-            add("border_as_reference", sent.strip()[:80])
-    # (٨-و) P3-2: صيغة مغايرة لمصطلح حالة/شريحة/نطاق معتمد في القاموس.
-    for bad, good in _vocab_banned().items():
-        if re.search(rf"(?<![\u0600-\u06FF]){re.escape(bad)}(?![\u0600-\u06FF])", prose):
-            add("vocab_variant", f"«{bad}» ← «{good}»")
     # (٨-ب) P3-6: قسم الحجة المضادة يحمل شرط انقلاب واحداً على الأقل.
     for head, body in _sections(md):
         if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):
@@ -204,8 +168,61 @@ def lint(md: str, claims: list[dict] | None = None,
             listed = sm.group(1)
             if name in body and not any(a in listed for a in (name, *SOURCE_ALIASES.get(name, ()))):
                 add("source_missing", name)
+    return v
+
+
+def _prose_rules(prose: str, full: str, claims, exporter_type, add, advantage: bool = True) -> None:
+    """القواعد الجُمَلية المشتركة بين linter الدراسة كاملةً وفحص نص فراغ واحد (P5-1)."""
+    extend = lambda xs: [add(x["rule"], x["detail"]) for x in xs]  # noqa: E731
+    # (٤) المحظورات والمصطلحات العارية والصيغة الموحدة لمؤشر التركّز.
+    try:
+        from silk_reports import _client_forbidden_hits
+        for h in _client_forbidden_hits(prose, "ar"):
+            add("forbidden", h)
+    except Exception:  # noqa: BLE001 — الحارس تحسين لا شرط
+        pass
+    for t in BARE_TERMS:
+        if re.search(rf"(?<![A-Za-z]){t}(?![A-Za-z])", prose):
+            add("bare_term", t)
+    for alt in HHI_ALTERNATIVES:
+        if alt in prose:
+            add("hhi_form", f"«{alt}» بدل «{HHI_FORM}»")
+
+    # (٨-ج) P3-4: لمحوِّل مادة مستوردة، لا يُنسب نفع توجه الشراء المباشر من
+    # الدول المزارعة/المنتجة إلى المصدّر (يفيد المنتجين لا المحوِّل).
+    if exporter_type == "processor_of_imported_input":
+        for sent in re.split(r"(?<=[.؛])\s+|\n+", prose):
+            if (any(w in sent for w in ("الدول المزارعة", "الدول المنتجة"))
+                    and any(w in sent for w in ("يفيد المصدّر", "يفيد المصدر", "لصالح المصدّر",
+                                                "يستفيد المصدّر", "يستفيد منه المصدّر"))
+                    and not any(w in sent for w in ("لا ينعكس", "لا يفيد", "لا يستفيد"))):
+                add("exporter_benefit", sent.strip()[:80])
+    # (٨-د) P3-5: كل فقرة تعرض «الميزة» تقرنها بشرط جدوى أو توسمها «لا يُعتد بها».
+    for para in (re.split(r"\n\s*\n", prose) if advantage else []):
+        if "الميزة" in para and not any(w in para for w in ADVANTAGE_CONDITIONS):
+            add("unconditioned_advantage", para.strip()[:80])
+    # (٨-هـ) P3-7: سعر الحدود/الاستيراد لا يُقدَّم مرجعاً للتسعير أو التفاوض.
+    for sent in re.split(r"(?<=[.؛])\s+|\n+", prose):
+        if (any(w in sent for w in ("سعر الحدود", "سعر استيراد", "سعر الاستيراد", "قيمة الوحدة"))
+                and any(w in sent for w in ("مرجع", "أساس للتفاوض", "أساساً للتفاوض", "أساس للتسعير"))
+                and not any(w in sent for w in ("لا يصلح", "لا مرجع", "ليس مرجع", "لا يُعد", "لا يُعتمد"))):
+            add("border_as_reference", sent.strip()[:80])
+    # (٨-و) P3-2: صيغة مغايرة لمصطلح حالة/شريحة/نطاق معتمد في القاموس.
+    for bad, good in _vocab_banned().items():
+        if re.search(rf"(?<![\u0600-\u06FF]){re.escape(bad)}(?![\u0600-\u06FF])", prose):
+            add("vocab_variant", f"«{bad}» ← «{good}»")
     # (٨) P3-1: لا ادعاء «يُفاد» بصيغة تقرير في أي موضع.
     if claims:
         from silk_study_claims import conflicts
-        v.extend(conflicts(md, claims))
+        extend(conflicts(full, claims))
+
+
+def slot_violations(text: str, claims: list[dict] | None = None,
+                    exporter_type: str | None = None, sid: str | None = None) -> list[dict]:
+    """P5-1: فحوص نص فراغ (ب)/(ج) واحد — المحظور، المصطلحات، المعجم، الاتساق مع سجل
+    الادعاءات، نفع المصدّر، سعر الحدود؛ و«الميزة المشروطة» لفراغ الميزة وحده."""
+    v: list[dict] = []
+    add = lambda rule, detail: v.append({"rule": rule, "detail": detail})  # noqa: E731
+    _prose_rules(str(text or ""), str(text or ""), claims, exporter_type, add,
+                 advantage=(sid == "s3_advantage"))
     return v
