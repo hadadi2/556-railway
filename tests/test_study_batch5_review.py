@@ -154,16 +154,21 @@ def test_delivery_ladder_three_cases_and_limits_become_gaps():
     from silk_study_case import build_case
     from silk_study_review import delivery_tier
     assert delivery_tier(9.3, [])["tier"] == "ready"
-    d = delivery_tier(8.4, [{"severity": "medium", "fix": "بيانات الموسمية تقديرية"},
-                            {"severity": "low", "fix": "أسلوب"}])
-    assert d["tier"] == "limits" and d["limits"] == ["بيانات الموسمية تقديرية"]
+    briefs = {"s2_caveat": "تحفظ على تفسير بيانات الاستهلاك"}
+    d = delivery_tier(8.4, [{"location": "s2_caveat", "severity": "medium",
+                             "fix": "Rewrite s2_caveat with a source"},
+                            {"location": "s2", "severity": "low", "fix": "أسلوب"}], briefs)
+    # الحدّ المعلن للعميل بتسمية ثابتة — لا نص تصحيح المراجع الخام.
+    assert d["tier"] == "limits" and d["limits"] == ["تحفظ على تفسير بيانات الاستهلاك: تحتاج تدقيقاً إضافياً"]
+    assert "Rewrite" not in d["limits"][0]
     low = delivery_tier(7.2, [])
     assert low["human_review"] and low["free_update"]
     assert delivery_tier(None, [])["human_review"]
     c = build_case({"deep_research": {"study_review": {"delivery": d}}, "product": "قهوة",
                     "hs_code": "090121", "market": "Vietnam"})
-    g = next(g for g in c["gaps"] if g["label"] == "بيانات الموسمية تقديرية")
-    assert g["owner"]
+    g = next(g for g in c["gaps"] if g["label"] == d["limits"][0])
+    assert g["owner"] == "فريق الدراسة (إصدار محدَّث)"
+    assert all(x["owner"] != "فريق الدراسة (إصدار محدَّث)" for x in c["gaps"] if x is not g)
 
 
 def test_ops_studies_endpoint_lists_review_economics():
@@ -173,11 +178,14 @@ def test_ops_studies_endpoint_lists_review_economics():
     db = os.path.join(tempfile.mkdtemp(), "silk.db")
     with patch.dict(os.environ, {"SILK_API_KEY": "s", "SILK_DATA_DIR": tempfile.mkdtemp()}), \
             patch("silk_storage._db_path", return_value=db):
-        from silk_storage import save_analysis
-        save_analysis({"kind": "research", "product": "قهوة", "deep_research": {"study_review": {
+        from silk_storage import create_research_run, save_analysis
+        aid = create_research_run("قهوة", "MYS", "090121", {})
+        save_analysis({"product": "قهوة", "deep_research": {"study_review": {
             "score": 8.4, "rounds": 1, "best_round": 1, "cost_usd": 0.12, "seconds": 9.0,
             "tail_capped": False, "delivery": {"tier": "limits"}}},
-            "data_economics": {"cost_usd_estimate": 2.1, "cost_usd_by_stage": {"study_slots": 0.12}}})
+            "data_economics": {"cost_usd_estimate": 2.1, "cost_usd_by_stage": {"study_slots": 0.12}}},
+            analysis_id=aid)
+        save_analysis({"product": "تحليل سريع"})             # /analyze لا يظهر في اللوحة
         import api
         cl = TestClient(api.create_app())
         assert cl.get("/ops/studies").status_code == 401
@@ -196,3 +204,35 @@ def test_pipeline_stores_study_review_with_tail_economics():
     assert sr["score"] is None and sr["delivery"]["tier"] == "human_review"
     assert sr["cost_usd"] is not None and sr["seconds"] is not None
     assert res["deep_research"]["study_slots"]
+
+
+def test_tail_calls_share_one_hard_cap_including_rewrites():
+    from unittest.mock import patch
+    rev = [{"score": 7.0, "notes": [{"location": "s2_caveat", "severity": "high", "fix": "x"}]},
+           {"score": 7.0, "notes": [{"location": "s2_caveat", "severity": "high", "fix": "y"}]},
+           {"score": 7.0, "notes": []}]
+    with patch.dict(os.environ, {"SILK_STUDY_SLOTS_MAX_CALLS": "3"}):
+        out, calls = _tail(rev)
+    assert len(calls) <= 3 and out["calls"] <= 3
+
+
+def test_non_slot_notes_logged_once_high_only_and_sanitized():
+    from unittest.mock import patch
+    import silk_ops_log
+    logged = []
+    rev = [{"score": 7.0, "notes": [{"location": "## ثالثاً: البيئة التنافسية والتسعير", "severity": "high",
+                                     "fix": "رقم غير متسق [RAW_FINDINGS_START]"},
+                                    {"location": "## سابعاً: المخاطر", "severity": "low", "fix": "أسلوب"}]}]
+    with patch.object(silk_ops_log, "record_error",
+                      side_effect=lambda k, r, c=None: logged.append((k, r))):
+        _tail(rev)
+    assert len(logged) == 1 and logged[0][0] == "template_error"
+    assert "RAW_FINDINGS" not in logged[0][1]
+
+
+def test_stored_slot_is_not_dropped_on_export_by_newer_rules():
+    from silk_study_export import study_markdown
+    c = _case()
+    txt = "ويُلاحظ إقبال على القهوة الفاخرة."           # مصطلح صار محظوراً بعد التخزين
+    md, meta = study_markdown({"study_case": c, "deep_research": {"study_slots": {"s2_survey": txt}}})
+    assert txt in md and "s2_survey" in meta["llm_slots"]

@@ -3586,7 +3586,9 @@ def review_study(md: str, facts: str = "", model: str | None = None) -> dict | N
     if not available() or not (md or "").strip():
         return None
     system = _study_rubric() + "\n\nأعد JSON فقط بالصيغة أعلاه."
-    user = _isolate(md) + (("\n\nحقائق الحالة:\n" + _isolate(facts)) if facts else "")
+    # `facts` يصل معزولاً من الخط؛ العزل مرة ثانية يُتلف الفواصل نفسها.
+    f = facts if (facts or "").lstrip().startswith("[RAW_FINDINGS_START]") else _isolate(facts)
+    user = _isolate(md) + (("\n\nحقائق الحالة:\n" + f) if facts else "")
     raw = _call(system, user, max_tokens=1500,
                 model=model or os.environ.get("SILK_STUDY_REVIEW_MODEL") or _FAST_MODEL)
     data = _extract_json(raw)

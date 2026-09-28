@@ -763,7 +763,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                         _aj.review_study, guard=_slot_guard, facts=_facts)
                     _study_slots = _tail["slots"]
                     _study_review = {k: _tail.get(k) for k in (
-                        "score", "notes", "rounds", "best_round", "versions", "delivery")}
+                        "score", "notes", "rounds", "best_round", "versions", "delivery", "calls")}
                     _study_review.update(
                         tail_capped=bool(_tail.get("tail_capped") or _tail_state["capped"]),
                         cost_usd=round(_usage_totals()[2] - _tail_t0, 4),

@@ -3496,17 +3496,17 @@ def create_app():
 
     @app.get("/ops/studies")
     def ops_studies(request: Request, n: int = 20):
-        """P5-5: لوحة داخلية لاقتصاديات «دراسة السوق» — آخر n تحليلات بحثية تحمل
+        """P5-5: لوحة داخلية لاقتصاديات «دراسة السوق» — آخر n تشغيلات بحثية تحمل
         `study_review`: الدرجة، الجولات، كلفة الذيل وزمنه، سلّم التسليم. محروسة
         كبقية سطوح المشغّل؛ لا نص دراسة ولا ملاحظات مراجع خام في الرد."""
         _require_key(request)
         _rate_limit(request)
-        from silk_storage import get_analysis, list_analyses
+        from silk_storage import recent_research_blobs
+        n = max(1, min(int(n), 100))
         out = []
-        for row in list_analyses(limit=max(1, min(int(n), 100)) * 3):
-            full = get_analysis(row["id"]) or {}
-            dr = full.get("deep_research") or {}
-            sr = dr.get("study_review")
+        for row in recent_research_blobs(n):
+            full = row["result"]
+            sr = (full.get("deep_research") or {}).get("study_review")
             if not sr:
                 continue
             eco = full.get("data_economics") or {}
@@ -3518,8 +3518,6 @@ def create_app():
                         "delivery": (sr.get("delivery") or {}).get("tier"),
                         "run_cost_usd": eco.get("cost_usd_estimate"),
                         "cost_usd_by_stage": eco.get("cost_usd_by_stage")})
-            if len(out) >= n:
-                break
         return _json({"studies": out})
 
     @app.get("/ops/backup")

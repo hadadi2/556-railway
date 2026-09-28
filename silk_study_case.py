@@ -111,7 +111,7 @@ def threshold_from(shelf: list, landed_high_pct: int = 45) -> tuple[int | None, 
 
 
 def _gap(label: str, iso3: str = "") -> dict:
-    owner = GAP_OWNERS.get(label) or REVIEW_LIMIT_OWNER
+    owner = GAP_OWNERS.get(label)
     if label == "مستوردون مؤكدون بالاسم":
         dirs = [d["name_ar"] for d in market_directories(iso3)]
         owner = ("المبيعات عبر " + " و".join(dirs)) if dirs else \
@@ -313,8 +313,8 @@ def build_case(found: dict, *, product_short: str | None = None,
     # P4-4: العدّ واحد في كل مكان — المرشحون لطلب عرض أسعار وحدهم (لا المنافسون ولا المنافذ).
     candidates = sum(e["role"] == "مرشح لطلب عرض أسعار" for e in entities)
     # P5-6: ملاحظات المراجع المتوسطة لإصدارٍ درجته 8–9 تُعلن حدوداً للدراسة.
-    for lim in ((dr.get("study_review") or {}).get("delivery") or {}).get("limits") or []:
-        gaps.append(lim)
+    review_limits = [str(x) for x in (((dr.get("study_review") or {}).get("delivery") or {})
+                                      .get("limits") or [])]
     if candidates < MIN_ENTITIES:
         gaps.append("مستوردون مؤكدون بالاسم")
     return {
@@ -365,7 +365,8 @@ def build_case(found: dict, *, product_short: str | None = None,
         "claims_reported": _merge_claims(
             _knowledge_claims(hs, iso2),
             outlet_claims(_chan, [e["name"] for e in entities])),   # P4-3: جهات اجتازت الحارس فقط
-        "gaps": [_gap(g, iso3) for g in gaps],
+        "gaps": [_gap(g, iso3) for g in gaps]
+                + [{"label": lim, "owner": REVIEW_LIMIT_OWNER} for lim in review_limits],
         "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)
                            for f in (m.get("findings") or []) if isinstance(f, dict) and f.get("source")
                            and f.get("value") is not None}),

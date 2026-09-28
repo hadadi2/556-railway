@@ -62,9 +62,11 @@ def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     """(نص Markdown، تقرير التعبئة {gaps, llm_slots, missing})."""
     from silk_study_render import Renderer, load_knowledge
     case = found.get("study_case") or study_case(found)
-    llm_fill = llm_fill or _stored_fill(found)
     kn = load_knowledge(case["product"]["hs"], case["market"].get("iso2") or "")
-    r = Renderer(case, kn, llm_fill=llm_fill)
+    stored = llm_fill is None
+    llm_fill = llm_fill or _stored_fill(found)
+    # الفراغات المخزَّنة اجتازت الفحوص عند ملئها؛ لا يُعاد فحصها بقواعد لاحقة فتُسقط.
+    r = Renderer(case, kn, llm_fill=llm_fill, recheck=not stored)
     md = r.render()        # بلا وسم مراجعة (review_marks=False افتراضياً، الدرس 285)
     from silk_quality_gate import study_style_violations   # استشاري: لا يُسقط التصدير
     from silk_study_claims import build_claims

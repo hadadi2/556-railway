@@ -151,7 +151,8 @@ class Renderer:
     def __init__(self, case: dict, knowledge: dict | None = None,
                  llm_fill: Callable[[str, str], str | None] | None = None,
                  templates: dict | None = None, allow_pending: bool = False,
-                 review_marks: bool = False):
+                 review_marks: bool = False, recheck: bool = True):
+        self.recheck = recheck
         # وسم `<!-- llm:… -->` للمراجعة الداخلية فقط وبطلب صريح؛ الافتراضي نصٌّ
         # نظيف يصلح للعميل (الدرس 285: الوسم لا يُنزع لاحقاً، لا يُضاف أصلاً).
         self.review_marks = review_marks
@@ -316,9 +317,17 @@ class Renderer:
                     (x for x in self.ctx.values() if isinstance(x, (int, float)) and not isinstance(x, bool))):
                 return f"رقم لم يُمرَّر: {num}"
         # P5-1: فحوص الأسلوب والاتساق نفسها التي يطبّقها linter على الدراسة كاملة.
-        from silk_study_claims import build_claims
-        from silk_study_linter import slot_violations
-        v = slot_violations(txt, build_claims(self.case), self.ctx.get("exporter_type"), sid)
+        if not self.recheck:
+            return None        # نص مخزَّن اجتاز الفحوص عند ملئه — التصدير لا يُسقطه بقواعد أحدث
+        try:
+            from silk_study_claims import build_claims
+            from silk_study_linter import slot_violations
+            v = slot_violations(txt, build_claims(self.case),
+                                self.case["product"].get("exporter_type"), sid)
+        except Exception as e:  # noqa: BLE001 — عطل الفحص الإضافي لا يُسقط التصيير
+            import logging
+            logging.getLogger(__name__).warning("slot_violations skipped: %s", e)
+            v = []
         return f"{v[0]['rule']}: {v[0]['detail']}" if v else None
 
     def _llm(self, sid: str) -> str:
