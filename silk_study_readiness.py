@@ -21,29 +21,42 @@ def _timeout_s() -> float:
         return 8.0
 
 
+class Unverified(RuntimeError):
+    """تعذّر الجلب (شبكة/حد معدل) — ليس «لا بيانات»؛ يُعلَن مؤقتاً لا نقصاً."""
+
+
 def _imports_years(hs: str, market) -> int:
     from silk_data_layer import comtrade_trade
     import datetime as _dt
     y0 = _dt.date.today().year - 1
-    n = 0
+    n, failed = 0, 0
     for y in range(y0, y0 - 4, -1):
         try:
-            dp = comtrade_trade(hs, market.m49, y)
+            recs = comtrade_trade(hs, market.m49, y)
         except Exception:  # noqa: BLE001 — فجوة لا انهيار
-            dp = None
-        v = getattr(dp, "value", None) if dp is not None else None
-        if isinstance(v, (int, float)) and v > 0:
+            recs = None
+        if recs is None:              # None = تعذّر الجلب؛ [] = لا سجل فعلاً
+            failed += 1
+        # comtrade_trade تعيد list[dict] (سجلات كومتريد) لا DataPoint — كان
+        # getattr(.., "value") يعطي None دائماً فيُرفض كل طلب بـ409 (بلاغ حي).
+        total = sum(float(r.get("primaryValue") or 0) for r in recs or []
+                    if isinstance(r, dict))
+        if total > 0:
             n += 1
+    if n < MIN_YEARS and failed and n + failed >= MIN_YEARS:
+        raise Unverified("comtrade")  # قد تكفي لو نجح الجلب — لا نحكم بالنقص
     return n
 
 
 def _shares_present(hs: str, market) -> bool:
-    from silk_data_layer_v2 import market_competitors
+    from silk_data_layer_v2 import market_competitors_status
     import datetime as _dt
     try:
-        rows = market_competitors(hs, market.m49, _dt.date.today().year - 1) or []
-    except Exception:  # noqa: BLE001
-        return False
+        rows, fetch_failed = market_competitors_status(hs, market.m49, _dt.date.today().year - 1)
+    except Exception as e:  # noqa: BLE001
+        raise Unverified("competitors") from e
+    if fetch_failed and not rows:
+        raise Unverified("competitors")
     return any(isinstance(getattr(r, "value", None), dict) for r in rows)
 
 
@@ -51,27 +64,39 @@ def _tariff_present(hs: str, market) -> bool:
     from silk_tariffs_agent import tariff_with_fallback
     try:
         dp = tariff_with_fallback(hs, market.iso3)
-    except Exception:  # noqa: BLE001
-        return False
+    except Exception as e:  # noqa: BLE001
+        raise Unverified("tariff") from e
+    if getattr(dp, "value", None) is None and getattr(dp, "status", "") == "fetch_failed":
+        raise Unverified("tariff")
     return getattr(dp, "value", None) is not None
 
 
 def preflight(hs: str, market) -> dict:
-    """{ok, missing:[…], checked:{…}} — تُقيَّم الثلاثة بالتوازي تحت المهلة."""
+    """{ok, missing:[…], unverified:[…], checked:{…}} — الثلاثة بالتوازي تحت مهلة واحدة.
+    `unverified` ⊂ `missing`: تعذّر الجلب أو انقضت المهلة — لا يُعرض نقصَ بيانات."""
     checks = {
         "سلسلة واردات لثلاث سنوات على الأقل": lambda: _imports_years(hs, market) >= MIN_YEARS,
         "حصص الموردين": lambda: _shares_present(hs, market),
         "الرسم الجمركي المنطبق": lambda: _tariff_present(hs, market),
     }
-    missing, checked = [], {}
-    with ThreadPoolExecutor(max_workers=3) as ex:
+    import time as _time
+    missing, unverified, checked = [], [], {}
+    ex = ThreadPoolExecutor(max_workers=3)
+    try:
         futs = {k: ex.submit(fn) for k, fn in checks.items()}
+        deadline = _time.monotonic() + _timeout_s()      # مهلة واحدة للفحص كله
         for k, fut in futs.items():
             try:
-                ok = bool(fut.result(timeout=_timeout_s()))
-            except (_Timeout, Exception):  # noqa: BLE001 — المهلة/الفشل = ناقص
+                ok = bool(fut.result(timeout=max(0.0, deadline - _time.monotonic())))
+            except (_Timeout, Unverified):
                 ok = False
+                unverified.append(k)
+            except Exception:  # noqa: BLE001 — عطل غير متوقع = غير مُتحقق لا نقص
+                ok = False
+                unverified.append(k)
             checked[k] = ok
             if not ok:
                 missing.append(k)
-    return {"ok": not missing, "missing": missing, "checked": checked}
+    finally:
+        ex.shutdown(wait=False)       # لا انتظار لعامل متعثّر بعد المهلة
+    return {"ok": not missing, "missing": missing, "unverified": unverified, "checked": checked}

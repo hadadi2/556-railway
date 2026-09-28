@@ -2953,11 +2953,23 @@ def create_app():
             from silk_study_readiness import preflight
             _pf = preflight(hs_code or "", market_ref)
             if not _pf["ok"]:
+                _miss_txt = "، ".join(_pf["missing"])
+                if set(_pf["missing"]) <= set(_pf.get("unverified") or []):
+                    # تعذّر التحقق (شبكة/حد معدل) ≠ نقص بيانات — لا يُعرض نقصاً.
+                    raise HTTPException(status_code=503, detail={
+                        "error": "preflight_unavailable",
+                        "reason": "تعذّر التحقق من كفاية البيانات مؤقتاً (مصادر عامة لا تستجيب)؛ "
+                                  "لم يُستهلك أي رصيد. أعد المحاولة بعد دقائق.",
+                        "missing": _pf["missing"], "checked": _pf["checked"]})
                 raise HTTPException(status_code=409, detail={
                     "error": "insufficient_data_preflight",
                     "message": "البيانات المتاحة لا تكفي لدراسة كاملة؛ لم يُستهلك أي رصيد. "
                                "يمكنك المتابعة بتقرير محدود (accept_limited=true) أو الإلغاء.",
-                    "missing": _pf["missing"], "checked": _pf["checked"]})
+                    # نص المصنع (المنصّة لا تملك خيار «تقرير محدود»): السبب بلا تعليمة API.
+                    "reason": f"البيانات العامة المتاحة لا تكفي لدراسة كاملة (الناقص: {_miss_txt})؛ "
+                              "لم تُخصم الدراسة. جرّب سوقاً أو بنداً آخر.",
+                    "missing": _pf["missing"], "unverified": _pf.get("unverified") or [],
+                    "checked": _pf["checked"]})
         _expected_usd = _expected_run_usd()   # مراجعة §58 #11: قراءة محروسة
         if not silk_usage.try_reserve_usd(_expected_usd):
             # ITEM 5ب: رفض حجز بحالة السقف — نص خادمي بحت، لا محتوى كلود.

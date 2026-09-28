@@ -859,6 +859,8 @@ function startResearch(extra){if(S.busy)return;
     if(d&&d.error==="hs_ambiguous"){return showHsCandidates(d,function(){startResearch({})})}
     // رمز HS غير محسوم (بوّابة صلبة 422): وجّه المستخدم للتصنيف/الاختيار اليدوي.
     if(d&&d.error==="unresolved_hs"){S.hs=null;S.hsConfirmed=false;return ensureHs(function(){startResearch({})})}
+    // 503: تعذّر التحقق مؤقتاً — ليس نقص بيانات؛ لا يُعرض خيار «تقرير محدود».
+    if(d&&d.error==="preflight_unavailable"){return toast(d.reason||"تعذّر التحقق مؤقتاً — أعد المحاولة")}
     // P1-1 (409): البيانات لا تكفي — لم يُستهلك رصيد؛ يختار المستخدم تقريراً محدوداً أو الإلغاء.
     if(d&&d.error==="insufficient_data_preflight"){
       var miss=(d.missing||[]).join("، ");
