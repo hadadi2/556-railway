@@ -23,6 +23,8 @@
 الاستعمال · usage:
     python3 tools/golden_set.py archive    # يكتب/يحدّث خط الأساس evals/golden_set/
     python3 tools/golden_set.py compare    # يقارن التوليد الحالي بخط الأساس (exit 1 عند تغيّر حكم)
+    python3 tools/golden_set.py study malaysia_coffee   # P6-5: يصيّر حالة «دراسة السوق» ويتحقق
+                                                        # من تأكيدات البند 8 (exit 1 عند أي إخفاق)
 
 المكتبات: stdlib + وحدات الريبو فقط — هرمتي بالكامل، لا شبكة.
 """
@@ -243,12 +245,36 @@ def compare() -> int:
     return 1 if blocking else 0
 
 
+def study_check(case: str, md: str | None = None) -> list[str]:
+    """P6-5: إخفاقات تأكيدات البند 8 لحالة دراسة ذهبية — [] = نجاح. `md` اختياري
+    (لفحص نص معدَّل)؛ وإلا يُصيَّر الـfixture بمعرفته المعتمدة حتمياً (صفر شبكة)."""
+    path = os.path.join(BASELINE_DIR, f"{case}.json")
+    with open(path, encoding="utf-8") as f:
+        spec = json.load(f)
+    if md is None:
+        from silk_study_render import load_knowledge, render_study
+        root = os.path.dirname(BASELINE_DIR.rstrip(os.sep).rsplit(os.sep, 1)[0])
+        with open(os.path.join(root, spec["case_fixture"]), encoding="utf-8") as f:
+            fixture = json.load(f)
+        md = render_study(fixture, load_knowledge(*spec["knowledge"]))
+    fails = []
+    for c in spec["checks"]:
+        ok = (c["pattern"] in md) if c["kind"] == "phrase" else bool(re.search(c["pattern"], md))
+        if not ok:
+            fails.append(f"{c['id']}: {c['why']}")
+    return fails
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "compare"
     if cmd == "archive":
         archive()
     elif cmd == "compare":
         sys.exit(compare())
+    elif cmd == "study":
+        _fails = study_check(sys.argv[2] if len(sys.argv) > 2 else "malaysia_coffee")
+        print("\n".join(_fails) or "كل تأكيدات البند 8 ناجحة")
+        sys.exit(1 if _fails else 0)
     else:
         print(__doc__)
         sys.exit(2)

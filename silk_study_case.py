@@ -135,6 +135,19 @@ def reexport_hubs() -> set[str]:
         return set()
 
 
+def _used_sources(dr: dict, missions: dict, fx, lpi, wgi, gdp) -> list[str]:
+    """P6-6: مصادر النقاط المستعملة فعلاً — نتائج البعثات (قواميس أو كائنات) ذات القيمة،
+    **ومصادر المؤشرات التي يذكرها المتن بالاسم** (سعر الصرف/LPI/الحوكمة ← البنك الدولي،
+    النمو ← مصدره). كان المتن يذكر «البنك الدولي» وقائمة المصادر خالية منه."""
+    out = {str(f.get("source")) for k in missions for f in _findings(dr, k)
+           if f.get("source") and f.get("value") is not None}
+    if any(x is not None for x in (fx, lpi, wgi)):
+        out.add("البنك الدولي")
+    if gdp:
+        out.add("صندوق النقد الدولي" if "IMF" in str(gdp.get("source")) else str(gdp.get("source")))
+    return sorted(x for x in out if x and x != "None")
+
+
 def _gap(label: str, iso3: str = "") -> dict:
     owner = GAP_OWNERS.get(label)
     if label == "مستوردون مؤكدون بالاسم":
@@ -399,7 +412,5 @@ def build_case(found: dict, *, product_short: str | None = None,
             outlet_claims(_chan, [e["name"] for e in entities])),   # P4-3: جهات اجتازت الحارس فقط
         "gaps": [_gap(g, iso3) for g in gaps]
                 + [{"label": lim, "owner": REVIEW_LIMIT_OWNER} for lim in review_limits],
-        "sources": sorted({str(f.get("source")) for m in missions.values() if isinstance(m, dict)
-                           for f in (m.get("findings") or []) if isinstance(f, dict) and f.get("source")
-                           and f.get("value") is not None}),
+        "sources": _used_sources(dr, missions, fx, lpi, wgi, gdp),
     }

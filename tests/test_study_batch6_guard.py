@@ -82,3 +82,83 @@ def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows():
     assert kinds.get("SGP") == "reexport_hub" and kinds.get("IDN") == "producer"
     from silk_study_numbers import compute
     assert compute(c)["hub"]["iso3"] == "SGP"
+
+
+# ── P6-5 ───────────────────────────────────────────────────────────────
+def test_golden_malaysia_item8_checks_pass_on_engine_output():
+    from tools.golden_set import study_check
+    assert study_check("malaysia_coffee") == []
+
+
+def test_golden_check_fails_when_a_source_is_removed():
+    from tools.golden_set import study_check
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "samples", "golden_malaysia_coffee_study.md"), encoding="utf-8") as f:
+        ref = f.read()
+    assert study_check("malaysia_coffee", ref) == []
+    fails = study_check("malaysia_coffee", ref.replace("وفق تقديرات صندوق النقد الدولي", "تقريباً"))
+    assert fails and fails[0].startswith("gdp_imf")
+
+
+def test_golden_file_has_nineteen_checks_and_context_tags():
+    import json
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "evals", "golden_set", "malaysia_coffee.json"), encoding="utf-8") as f:
+        spec = json.load(f)
+    assert len(spec["checks"]) == 19
+    assert {t["tag"] for t in spec["context_tags"]} == {"سياقي", "قاعدة تقديرية"}
+
+
+# ── P6-6 حالتان مختلفتان جذرياً ──────────────────────────────────────────
+# فئات حرجة لا تُقبل في أي حالة (الأخرى — جدول/قسم ناقص — فجوات بيانات معلنة).
+CRITICAL = {"slot_leak", "heading_missing", "heading_not_literal", "heading_order", "forbidden",
+            "claim_status_conflict", "source_missing", "provisional_unmarked", "bare_term",
+            "hhi_form", "exporter_benefit", "border_as_reference", "list_outside_table"}
+
+
+def test_non_food_no_halal_case_polymers_turkey_renders_without_critical_violations():
+    from tools.canonical_turkey_polymers import turkey_polymers_research_blob
+    from silk_study_case import build_case
+    from silk_study_linter import lint
+    from silk_study_render import render_study
+    c = build_case(turkey_polymers_research_blob(), exporter_type="manufacturer", segment=None)
+    assert c["market"]["iso3"] == "TUR" and c["product"]["hs"].startswith("39")
+    md = render_study(c, {})
+    bad = [v for v in lint(md, exporter_type="manufacturer") if v["rule"] in CRITICAL]
+    assert not bad, bad
+    assert "حلال" not in md.split("## رابعاً")[1].split("## خامساً")[0] or "لا يُلزم" in md
+
+
+def test_defer_and_no_entry_cases_render_without_critical_violations():
+    import json
+    from silk_study_linter import lint
+    from silk_study_render import load_knowledge, render_study
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "evals", "golden_set", "malaysia_coffee_fixture.json"), encoding="utf-8") as f:
+        base = json.load(f)
+    for dec in ("defer", "no_entry"):
+        c = json.loads(json.dumps(base))
+        c["decision"]["type"] = dec
+        md = render_study(c, load_knowledge("090121", "MY"))
+        bad = [v for v in lint(md) if v["rule"] in CRITICAL]
+        assert not bad, (dec, bad)
+        assert ("إرجاء" if dec == "defer" else "عدم") in md
+
+
+def test_study_pdf_export_uses_the_pdf_gate(tmp_path):
+    import json
+    import silk_reports
+    from silk_study_export import study_docx
+    from tests.pdf_gate import pdf_gate
+    pdf_gate("تحويل دراسة السوق")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "evals", "golden_set", "malaysia_coffee_fixture.json"), encoding="utf-8") as f:
+        case = json.load(f)
+    docx, _ = study_docx({"study_case": case}, str(tmp_path / "s.docx"))
+    try:
+        pdf = silk_reports.docx_to_pdf(docx, str(tmp_path / "s.pdf"))
+    except RuntimeError as exc:
+        from tests.pdf_gate import pdf_engine_broken
+        pdf_engine_broken(str(exc))
+    with open(pdf, "rb") as fh:
+        assert fh.read(5) == b"%PDF-"

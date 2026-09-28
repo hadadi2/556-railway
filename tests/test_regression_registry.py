@@ -4599,6 +4599,12 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    287: lambda: (
+        _needles("silk_study_case.py", "def reexport_hubs", "def _used_sources")(),
+        _needles("data/reexport_hubs_l1.csv", "SGP,")(),
+        _needles("tests/test_study_batch6_guard.py",
+                 "def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows")(),
+        _needles("tests/test_lessons_enforcement.py", "(287, ")()),
     286: lambda: (
         _needles("requirements.txt", "PyYAML==6.0.1")(),
         _needles("tests/test_study_batch4_field.py",

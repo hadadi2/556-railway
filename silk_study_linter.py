@@ -30,6 +30,7 @@ ADVANTAGE_CONDITIONS = ("يُعتد", "بعد التحقق", "يستلزم ال�
 COUNTER_HEADING = "## ثامناً: الاعتبارات المضادة للتوصية"
 FLIP_WORDS = ("تنقلب", "تصبح راجحة", "يكون الإرجاء", "وفي حال")
 # P3-3: جهات مصدرية معروفة — ذِكرها في المتن يوجب حضورها في سطر «المصادر».
+_GAP_WORDS = ("لم تُدرج", "تعذر", "تعذّر", "يستكملها", "لم يُتحقق", "لم تُوثق")
 SOURCE_NAMES = ("UN Comtrade", "البنك الدولي", "صندوق النقد الدولي", "JAKIM",
                 "الجمارك الملكية", "وزارة الصحة", "دائرة الإحصاء", "منظمة التجارة العالمية")
 # أسماء بديلة يكتبها سطر المصادر الحي بالإنجليزية (مصادر البعثات).
@@ -163,7 +164,9 @@ def lint(md: str, claims: list[dict] | None = None,
     # (٨-أ) P3-3: مصدر مذكور في المتن غائب عن قائمة المصادر.
     sm = _SOURCES_LINE.search(md)
     if sm:
-        body = md[:sm.start()]
+        # جملة تعلن تعذّر الجلب/الغياب ليست استشهاداً بالمصدر فلا توجب ذكره في القائمة.
+        body = " ".join(x for x in re.split(r"(?<=[.؛])\s+|\n+", md[:sm.start()])
+                        if not any(w in x for w in _GAP_WORDS))
         for name in SOURCE_NAMES:
             listed = sm.group(1)
             if name in body and not any(a in listed for a in (name, *SOURCE_ALIASES.get(name, ()))):
