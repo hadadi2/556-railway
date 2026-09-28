@@ -1495,10 +1495,20 @@ IMPORT_ANOMALY_FACTOR = 5.0
 
 
 # P3-8: كلمات الشريحة في نص صف الرف — المرجع من الشريحة نفسها إن رُصد.
+# مراجعة (١٣): «premium» هي قيمة الواجهة الافتراضية — تصفيتها كانت تضيّق المرجع لكل
+# عميل لم يختر شريحة؛ الشريحة الصريحة «specialty» وحدها تُصفّي، وبكلمات كاملة.
 _TIER_WORDS = {
-    "specialty": ("مختص", "specialty", "single origin", "مختصة"),
-    "premium": ("فاخر", "premium", "ممتاز", "gourmet"),
+    "specialty": ("مختص", "مختصة", "specialty", "single origin"),
 }
+
+
+def _has_tier_word(text: str, words) -> bool:
+    # السوابق العربية المتصلة (ال/بال/وال/لل/و/ب) مسموحة: «القهوة المختصة» تطابق.
+    pre = r"(?:وال|بال|فال|كال|لل|ال|و|ب)?"
+    ar = _re.compile(r"[\u0600-\u06FF]")
+    edge = r"[\w\u0600-\u06FF]"
+    return any(_re.search("(?<!" + edge + ")" + (pre if ar.match(w) else "")
+                          + _re.escape(w) + "(?!" + edge + ")", text) for w in words)
 
 
 def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> tuple:
@@ -1532,7 +1542,7 @@ def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> t
     # والمستبعَد منها يُعدّ ويُعلن (لا إسقاط صامتاً).
     words = _TIER_WORDS.get(str(tier or "").lower())
     if words:
-        same = [r for r in group if any(w in str(r[1]).lower() for w in words)]
+        same = [r for r in group if _has_tier_word(str(r[1]).lower(), words)]
         if same and len(same) < len(group):
             dropped["من شريحة أخرى"] = len(group) - len(same)
             group = same

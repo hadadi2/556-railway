@@ -20,6 +20,14 @@ import time
 import weakref
 
 import silk_i18n
+from silk_study_render import StudyRenderError as _StudyRenderError
+
+# مراجعة (٩): سببٌ ثابت للعميل حين يرفض محرك الدراسة المحتوى — لا نص الاستثناء.
+_STUDY_RENDER_422 = {
+    "error": "study_render_rejected",
+    "message": "تعذّر إخراج الدراسة بصيغتها النهائية لنقص في بعض فقراتها؛ "
+               "لم يُستهلك أي رصيد إضافي. أعد المحاولة لاحقاً أو اطلب التقرير العادي.",
+}
 
 log = logging.getLogger(__name__)
 
@@ -2953,11 +2961,23 @@ def create_app():
             from silk_study_readiness import preflight
             _pf = preflight(hs_code or "", market_ref)
             if not _pf["ok"]:
+                _miss_txt = "، ".join(_pf["missing"])
+                if set(_pf["missing"]) <= set(_pf.get("unverified") or []):
+                    # تعذّر التحقق (شبكة/حد معدل) ≠ نقص بيانات — لا يُعرض نقصاً.
+                    raise HTTPException(status_code=503, detail={
+                        "error": "preflight_unavailable",
+                        "reason": "تعذّر التحقق من كفاية البيانات مؤقتاً (مصادر عامة لا تستجيب)؛ "
+                                  "لم يُستهلك أي رصيد. أعد المحاولة بعد دقائق.",
+                        "missing": _pf["missing"], "checked": _pf["checked"]})
                 raise HTTPException(status_code=409, detail={
                     "error": "insufficient_data_preflight",
                     "message": "البيانات المتاحة لا تكفي لدراسة كاملة؛ لم يُستهلك أي رصيد. "
                                "يمكنك المتابعة بتقرير محدود (accept_limited=true) أو الإلغاء.",
-                    "missing": _pf["missing"], "checked": _pf["checked"]})
+                    # نص المصنع (المنصّة لا تملك خيار «تقرير محدود»): السبب بلا تعليمة API.
+                    "reason": f"البيانات العامة المتاحة لا تكفي لدراسة كاملة (الناقص: {_miss_txt})؛ "
+                              "لم تُخصم الدراسة. جرّب سوقاً أو بنداً آخر.",
+                    "missing": _pf["missing"], "unverified": _pf.get("unverified") or [],
+                    "checked": _pf["checked"]})
         _expected_usd = _expected_run_usd()   # مراجعة §58 #11: قراءة محروسة
         if not silk_usage.try_reserve_usd(_expected_usd):
             # ITEM 5ب: رفض حجز بحالة السقف — نص خادمي بحت، لا محتوى كلود.
@@ -3809,6 +3829,12 @@ def create_app():
                 path = render_docx(
                     view, os.path.join(_td, "report.docx"))
                 fname = f"silk_report_{analysis_id}.docx"
+        except _StudyRenderError:
+            # مراجعة (٩): رفض محرك الدراسة (نائب/مصطلح ممنوع) ليس عطلاً — 422
+            # مسمّى بلا نص الاستثناء، والمجلد المؤقت يُنظَّف.
+            import shutil as _sh
+            _sh.rmtree(_td, ignore_errors=True)
+            raise HTTPException(status_code=422, detail=_STUDY_RENDER_422)
         except silk_reports.ClientArtifactGateError as exc:
             # صيد الفجوات ٣ (G-04 على السطح الجذري — عائلة «الإصلاح على مسار
             # واحد نصف إصلاح»): رفضُ جودةٍ من بوابة نصّ المُنتَج كان يُقدَّم
@@ -3892,6 +3918,12 @@ def create_app():
             else:
                 path = render_research_pdf(view, out)
                 fname = f"silk_report_{analysis_id}.pdf"
+        except _StudyRenderError:
+            # مراجعة (٩): رفض محرك الدراسة (نائب/مصطلح ممنوع) ليس عطلاً — 422
+            # مسمّى بلا نص الاستثناء، والمجلد المؤقت يُنظَّف.
+            import shutil as _sh
+            _sh.rmtree(_td, ignore_errors=True)
+            raise HTTPException(status_code=422, detail=_STUDY_RENDER_422)
         except silk_reports.ClientArtifactGateError as exc:
             # صيد الفجوات ٣ (G-04 جذرياً): رفضُ جودةٍ ≠ عطلُ soffice — 409
             # منظّم كما على سطح المصنع، لا 503 بنص خام.
@@ -3942,6 +3974,8 @@ def create_app():
                 text, _meta = study_markdown(found)
             else:
                 text = render_markdown(build_view(found))
+        except _StudyRenderError:
+            raise HTTPException(status_code=422, detail=_STUDY_RENDER_422)
         except RuntimeError as e:
             # نفس عقد report.docx (البند أعلاه): تناقض حكمٍ أو تسريبٌ يستحيل
             # تنقيته يُفشِل التوليد داخلياً — 501 نظيف لا 500 غير مُدار.

@@ -58,6 +58,30 @@ def fill_slots(found: dict, call, guard=None, max_calls: int | None = None) -> d
     return {sid: txt for sid, txt in r._llm_cache.items() if txt}
 
 
+def _notices(found: dict, case: dict) -> str:
+    """مراجعة (١٠): حراس `build_view` نفسها على مسار الدراسة — لافتة التشغيل البرهاني،
+    لافتة التدهور (النص القائم في silk_reports)، وإفصاح رمز HS غير المؤكَّد (نص §3.2
+    القائم). حارس الإنتاج يرفض أثراً برهانياً في تشغيلة غير موسومة."""
+    import os
+    import silk_reports as R
+    test_run = bool(os.environ.get("SILK_HERMETIC"))
+    view = {"test_run": test_run, "degraded": bool(found.get("degraded")),
+            "degraded_reason": found.get("degraded_reason") or ""}
+    R._assert_production_clean({**view, "case": case})
+    out = []
+    if test_run:
+        out.append("⚠ تشغيل برهاني ببدائل موسومة، ليس تقريراً إنتاجياً")
+    banner = R._degraded_banner_text(view)
+    if banner:
+        out.append(banner)
+    if (found.get("hs_confirmation") or {}).get("confirmed") is False:
+        hs6 = str(case.get("product", {}).get("hs") or found.get("hs_code") or "")
+        out.append(f"هذه الأرقام تصف الرمز {hs6} (فئة مجاورة غير مؤكَّدة لمواصفة "
+                   "المنتج)؛ لا تُنقل إلى فئة المنتج الفعلية، ولا تُبنى عليها "
+                   "خلاصة حجم أو حصة أو تركّز.")
+    return "".join(f"**{x}**\n\n" for x in out)
+
+
 def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     """(نص Markdown، تقرير التعبئة {gaps, llm_slots, missing})."""
     from silk_study_render import Renderer, load_knowledge
@@ -68,6 +92,7 @@ def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     # الفراغات المخزَّنة اجتازت الفحوص عند ملئها؛ لا يُعاد فحصها بقواعد لاحقة فتُسقط.
     r = Renderer(case, kn, llm_fill=llm_fill, recheck=not stored)
     md = r.render()        # بلا وسم مراجعة (review_marks=False افتراضياً، الدرس 285)
+    md = _notices(found, case) + md
     from silk_quality_gate import study_style_violations   # استشاري: لا يُسقط التصدير
     from silk_study_claims import build_claims
     return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing),
@@ -121,7 +146,9 @@ def markdown_to_docx(md: str, path: str, lang: str = "ar") -> str:
             _add_runs(p, ln.strip())
         i += 1
     R._apply_rtl(doc)
-    blob = "\n".join(p.text for p in doc.paragraphs)
+    # الفقرات **والخلايا**: عمود «المصدر» في جدول الرف كان خارج الفحص.
+    blob = "\n".join([p.text for p in doc.paragraphs]
+                     + [c.text for t in doc.tables for row in t.rows for c in row.cells])
     hits = R._client_forbidden_hits(blob, lang)
     if hits:
         raise R.ReportGateError("تصدير الدراسة يحوي مصطلحاً ممنوعاً: " + "؛ ".join(hits[:5]))

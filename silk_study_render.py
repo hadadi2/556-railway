@@ -67,6 +67,13 @@ def load_knowledge(hs: str, market_code: str) -> dict:
 
 REVIEW_FILE = os.path.join(ROOT, "docs", "plans", "STUDY_TEMPLATE_VARIANTS_REVIEW.md")
 PLACEHOLDER_RE = re.compile(r"\[[^\]]*\]|TODO|placeholder|يُدرج|<[^>]*>", re.I)
+_BRACKETS = str.maketrans({"[": "(", "]": ")", "<": "(", ">": ")"})
+
+
+def _data_text(v) -> str:
+    """مراجعة (٩): نص مشتق من البيانات (اسم جهة، منتج رف، مصدر) لا يحمل أقواس النائب —
+    «Foo [Sdn Bhd]» يُحيَّد إلى أقواس عادية، فلا يُسقط الحارس دراسةً كاملة بسبب اسم."""
+    return str(v).translate(_BRACKETS)
 
 
 def load_exemplars(path: str = EXEMPLARS) -> dict:
@@ -120,7 +127,7 @@ GAP_LABELS = {
     "quarantine_agent": "مدد التصاريح", "excluded_text": "الجهات المستبعدة",
     "entity_req_ordinal": "متطلب الجهات", "directories_phrase": "أدلة الجهات في السوق", "requirements_inline": "متطلبات القرار",
     "hub_trend_name": "اتجاه حصة مركز إعادة التصدير", "producer1": "المنتجون الإقليميون", "commodity_raw_word": "المادة الخام",
-    "market_nisba": "صفة النسبة للسوق (data/market_nisba_l1.csv)", "local_producers_word": "الإنتاج المحلي",
+    "market_nisba": "صفة النسبة للسوق", "local_producers_word": "الإنتاج المحلي",
     "نسخة قالب بانتظار اعتماد المالك": "فقرة قالبها بانتظار اعتماد المالك",
     "last_complete_year": "أحدث سنة بيانات مكتملة", "shape_g_first_last": "سلسلة الواردات السنوية",
     "market_nisba_m": "صفة النسبة للسوق (data/market_nisba_l1.csv)", "sources_inline": "قائمة المصادر",
@@ -134,6 +141,29 @@ _ = {
 _K_GAP_LABEL = "معلومات خاصة بالمنتج في هذه السوق"
 _K_GAP_OWNER = "ملف معرفة معتمد للمنتج والسوق"
 _DATA_GAP_OWNER = "فريق البحث (سحب لاحق من المصدر)"
+
+
+# مراجعة (١١): مفتاحٌ بلا تسمية صريحة يُسمّى بعائلته، والاحتياط الأخير تسمية عامة —
+# لا مفتاح خام ولا مسار ملف يصل العميل.
+_GAP_PREFIXES = (
+    ("shape_", "سلسلة الواردات السنوية"), ("imports_", "سلسلة الواردات السنوية"),
+    ("last_yoy", "سلسلة الواردات السنوية"), ("dec_", "بيانات الكميات المستوردة (الوزن)"),
+    ("q_", "بيانات الكميات المستوردة (الوزن)"), ("sup", "حصص الموردين"), ("top", "حصص الموردين"),
+    ("saudi_", "حصص الموردين"), ("hhi_", "مؤشر تركّز الموردين"),
+    ("hub_", "اتجاه حصة مركز إعادة التصدير"), ("fx_", "سعر الصرف"), ("shelf_", "أسعار الرف"),
+    ("uv_", "متوسط سعر الاستيراد عند الحدود"), ("macro_", "مؤشرات الاقتصاد الكلي"),
+    ("lpi", "مؤشر الأداء اللوجستي"), ("market_nisba", "صفة النسبة للسوق"),
+    ("landed_", "عتبة التكلفة الواصلة"), ("rule_", "عتبة التكلفة الواصلة"),
+    ("census_", "التركيبة الدينية"), ("halal_", "جهة اعتماد الحلال"), ("pref_", "المعاملة التفضيلية"),
+    ("producer", "المنتجون الإقليميون"), ("req_", "المتطلبات الإلزامية في السوق"),
+)
+GAP_FALLBACK = "بعض بيانات السوق"
+
+
+def gap_label_for(key: str) -> str:
+    if key in GAP_LABELS:
+        return GAP_LABELS[key]
+    return next((lab for pre, lab in _GAP_PREFIXES if key.startswith(pre)), GAP_FALLBACK)
 
 
 def gap_text(g) -> str:
@@ -259,6 +289,10 @@ class Renderer:
         sh["commodity_raw_word"] = c["product"].get("raw_input_word") or c["product"]["commodity"]
         sh["macro_gdp_abs"] = abs(sh["macro_gdp"]) if sh.get("macro_gdp") is not None else None
         sh["has_k_world_price"] = "s1_decomp.world_price_note" in self.k
+        sh["has_k_gov_stability"] = "s7_gov.stability" in self.k
+        g, inf = sh.get("macro_gdp"), sh.get("macro_inf")
+        sh["inflation_band"] = ("low" if (g is not None and inf is not None and g > 0 and inf <= 3.5)
+                                else "high")
         reqs = [q["text"] for q in c["decision"]["requirements"]]
         sh["requirements_inline"] = "؛ ".join([reqs[0]] + ["و" + q for q in reqs[1:]]) if reqs else ""
         sh["sources_inline"] = "؛ ".join(c.get("sources") or []) or "لم يُسنَد رقم إلى مصدر في هذه النسخة"
@@ -304,7 +338,7 @@ class Renderer:
         if ":" in expr:
             key, spec = expr.split(":", 1)
             return fmt(self._val(key), spec)
-        return str(self._val(expr))
+        return _data_text(self._val(expr))
 
     def _slot_ok(self, txt: str, sid: str | None = None) -> str | None:
         """فحص حتمي لنص فراغ النموذج (P1-12، P5-1): نائب، رقم لم يُمرَّر، ثم قواعد linter
@@ -424,7 +458,7 @@ class Renderer:
         rows = self._rows(spec["rows"])
         out = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
         for r in rows:
-            out.append("| " + " | ".join(str(x) for x in r) + " |")
+            out.append("| " + " | ".join(_data_text(x) for x in r) + " |")
         return "\n".join(out)
 
     def _rows(self, source: str) -> list[list[str]]:
@@ -466,7 +500,7 @@ class Renderer:
             if k.startswith("k:"):
                 extra.append({"label": _K_GAP_LABEL, "owner": _K_GAP_OWNER})
             else:
-                extra.append({"label": GAP_LABELS.get(k, k), "owner": _DATA_GAP_OWNER})
+                extra.append({"label": gap_label_for(k), "owner": _DATA_GAP_OWNER})
         briefs = self.t.get("llm_briefs") or {}
         extra += [{"label": briefs.get(sid, _K_GAP_LABEL), "owner": _K_GAP_OWNER}
                   for sid in dict.fromkeys(self.gaps)]

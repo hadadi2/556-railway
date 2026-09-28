@@ -21,15 +21,26 @@ _USD_PER_KG_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:دولار|USD|\$)\s*/?\s*(
 
 def _findings(dr: dict, mission: str) -> list[dict]:
     m = (dr.get("missions") or {}).get(mission) or {}
-    out = []
+    out, seen = [], set()
     for f in (m.get("findings") if isinstance(m, dict) else getattr(m, "findings", None)) or []:
         if isinstance(f, dict):
-            out.append(f)
+            d = f
         else:
-            out.append({"value": getattr(f, "value", None), "source": getattr(f, "source", ""),
-                        "note": getattr(f, "note", ""), "data_year": getattr(f, "data_year", None),
-                        "status": getattr(f, "status", ""), "confidence": getattr(f, "confidence", 0),
-                        "retrieved_at": getattr(f, "retrieved_at", None)})
+            d = {"value": getattr(f, "value", None), "source": getattr(f, "source", ""),
+                 "note": getattr(f, "note", ""), "data_year": getattr(f, "data_year", None),
+                 "status": getattr(f, "status", ""), "confidence": getattr(f, "confidence", 0),
+                 "retrieved_at": getattr(f, "retrieved_at", None),
+                 "raw_evidence": getattr(f, "raw_evidence", ())}
+        # البعثات الحية تعيد ادعاءً نصياً وأرقامُه المطبوعة في raw_evidence (لقطات
+        # الأدوات) — تُقرأ أولاً كما يفعل silk_deep_pillars._metric_findings، وإلا
+        # بقيت التعرفة/LPI/النمو/الوزن فجوات في كل دراسة حية.
+        for row in d.get("raw_evidence") or ():
+            if isinstance(row, dict) and row.get("source") and row.get("status") in (None, "", "ok"):
+                key = (row.get("source"), row.get("note"), repr(row.get("value")), row.get("data_year"))
+                if key not in seen:
+                    seen.add(key)
+                    out.append(row)
+        out.append(d)
     return out
 
 
@@ -141,6 +152,21 @@ _SOURCE_AR = {"World Bank": "البنك الدولي", "IMF": "صندوق الن
               "International Monetary Fund": "صندوق النقد الدولي"}
 
 
+def public_source(src: str) -> str:
+    """اسم مصدر يصلح للعميل: لا اسم مزوّد داخلي (Serper/GDELT… — عقد المالك،
+    silk_reports._CLIENT_VENDOR_RE). «Web Search (Serper) — example.com» ← النطاق،
+    وإلا «بحث الويب». الأسماء العمومية (UN Comtrade، البنك الدولي) كما هي."""
+    s = str(src or "").strip()
+    try:
+        from silk_reports import _CLIENT_VENDOR_RE
+    except Exception:  # noqa: BLE001
+        return s
+    if not _CLIENT_VENDOR_RE.search(s):
+        return s
+    tail = s.split(" — ", 1)[1].strip() if " — " in s else ""
+    return tail if tail and not _CLIENT_VENDOR_RE.search(tail) else "بحث الويب"
+
+
 def _used_sources(dr: dict, missions: dict, fx, lpi, wgi, gdp) -> list[str]:
     """P6-6: مصادر النقاط المستعملة فعلاً — نتائج البعثات (قواميس أو كائنات) ذات القيمة،
     **ومصادر المؤشرات التي يذكرها المتن بالاسم** (سعر الصرف/LPI/الحوكمة ← البنك الدولي،
@@ -150,7 +176,7 @@ def _used_sources(dr: dict, missions: dict, fx, lpi, wgi, gdp) -> list[str]:
             if k.lower() in src.lower():
                 return v
         return src
-    out = {norm(str(f.get("source"))) for k in missions for f in _findings(dr, k)
+    out = {public_source(norm(str(f.get("source")))) for k in missions for f in _findings(dr, k)
            if f.get("source") and f.get("value") is not None}
     # مصادر المؤشرات التي يذكرها المتن — بمصدرها الفعلي لا بافتراض «البنك الدولي».
     for ind in (fx, lpi, wgi, gdp):
@@ -247,7 +273,9 @@ def build_case(found: dict, *, product_short: str | None = None,
 
     # ── الواردات ─────────────────────────────────────────────────────────
     imp = import_series(missions)
-    series = [{"year": p["year"], "value_musd": round(p["value"] / 1e6, 1), "kg": None,
+    # مراجعة (١٤): القيمة الخام تُحفظ بجانب المقرَّبة — النسب تُحسب منها لا من 0.1 مليون.
+    series = [{"year": p["year"], "value_musd": round(p["value"] / 1e6, 1),
+               "value_usd": float(p["value"]), "kg": None,
                "complete": not (p.get("partial") or p.get("provisional"))} for p in imp.get("series") or []]
     # الوزن (إن وُجد) من نقاط «صافي الوزن» بسنة بنيوية
     for f in _findings(dr, "trade_flow"):
@@ -258,7 +286,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                     p["kg"] = float(v)
     for p in series:
         if p["kg"] and p["kg"] > 0:
-            p["unit_value"] = p["value_musd"] * 1e6 / p["kg"]
+            p["unit_value"] = p["value_usd"] / p["kg"]
     uvs = [p for p in series if p.get("unit_value")]
     if len(uvs) >= 2:
         med = sorted(p["unit_value"] for p in uvs)[len(uvs) // 2]
@@ -281,18 +309,28 @@ def build_case(found: dict, *, product_short: str | None = None,
                     # لا «منتج» مُفترَض: التصنيف يحتاج دليلاً؛ غيره None (لا اختلاق).
                     "kind": r.get("kind") or ("reexport_hub" if (getattr(pref, "iso3", "") or "")
                                               in _hubs else None)})
-    saudi = next((r["share"] for r in rows if r.get("saudi")), 0.0)
+    saudi = next((r["share"] for r in rows if r.get("saudi")), None)
     sup_count = None
     for f in _findings(dr, "competitors"):
         v = f.get("value")
         if isinstance(v, dict) and v.get("supplier_count"):
             sup_count = int(v["supplier_count"])
             break
+    if saudi is None and rows:
+        # الغياب يُقرَّر فقط حين تغطي الصفوف كل الموردين (عددهم أو مجموع الحصص)؛
+        # وإلا فالسعودية قد تكون خارج أول عشرة — الحصة مجهولة (None) لا صفر.
+        covered = sum(float(r.get("share") or 0) for r in rows)
+        if (sup_count is not None and len(rows) >= sup_count) or covered >= 99.5:
+            saudi = 0.0
 
     # ── التعرفة ──────────────────────────────────────────────────────────
     tariff = {"status": "gap", "rate_pct": None}
     for f in _findings(dr, "tariffs_agreements"):
         v = f.get("value")
+        note = f"{f.get('note') or ''} {f.get('source') or ''}".lower()
+        # رقم «تعرفة» فقط — لا سعر صرف أو حصة في البعثة نفسها (raw_evidence يحملها معاً).
+        if not any(w in note for w in ("تعرف", "رسم جمركي", "رسوم جمركية", "tariff", "mfn", "wits", "duty")):
+            continue
         if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= float(v) <= 100:
             tariff = {"status": "exempt" if float(v) == 0 else "rate", "rate_pct": float(v)}
             break
@@ -343,7 +381,7 @@ def build_case(found: dict, *, product_short: str | None = None,
         if m and "استيراد" not in note and "Comtrade" not in str(f.get("source") or ""):
             seg = shelf_segment(f"{note} {f.get('source') or ''}", hs)      # P4-2
             date = str(f.get("retrieved_at") or "")[:10]
-            src = str(f.get("source") or "") + (f"، {date}" if date else "")
+            src = public_source(str(f.get("source") or "")) + (f"، {date}" if date else "")
             shelf.append({"product": note[:60] or "منتج مرصود", "segment": seg, "price": m.group(0),
                           "source": src, "usd_kg": float(m.group(1).replace(",", ".")),
                           "segment_target": False, "equivalent": seg != "غير مكافئ"})
@@ -376,7 +414,7 @@ def build_case(found: dict, *, product_short: str | None = None,
     if candidates < MIN_ENTITIES:
         gaps.append("مستوردون مؤكدون بالاسم")
     return {
-        "case": f"{hs}_{iso3}", "live": True,
+        "case": f"{hs}_{iso3}", "live": not os.environ.get("SILK_HERMETIC"),
         "product": {"name_full": product, "short": product_short or product, "hs": hs, "commodity": product,
                     "origin_iso3": "SAU", "origin_ar": "المملكة العربية السعودية", "exporter_type": exporter_type,
                     "segment": segment, "halal_relevant": None, "base_word": product_short or product,
