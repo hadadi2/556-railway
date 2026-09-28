@@ -134,11 +134,11 @@ def test_counter_section_without_flip_is_rejected_and_reference_passes():
     assert any(v["rule"] == "counter_without_flip" for v in lint(bad))
 
 
-def test_new_counter_variants_are_gated_pending_until_owner_approval():
+def test_batch3_4_variants_are_approved_by_owner():
+    """اعتمدها المالك 2026-09-28 — لا نسخة معلّقة في ملف المراجعة (بوابة pending نفسها
+    يحميها اختبار المحرك بملف مراجعة مؤقت)."""
     from silk_study_render import pending_variants
-    p = pending_variants()
-    assert any(t.startswith("تتمثل الحجة الأقوى ضد الدخول في استحواذ") for t in p)
-    assert any(t.startswith("وتنقلب هذه الاعتبارات") for t in p)
+    assert pending_variants() == set()
 
 
 # ── P3-4 ملف المصدّر ─────────────────────────────────────────────────────
@@ -151,14 +151,14 @@ def test_processor_exporter_credited_with_direct_buying_benefit_is_critical():
     assert not [v for v in lint(_ref(), exporter_type="processor_of_imported_input")]
 
 
-def test_exporter_type_selects_raw_cost_clause_and_new_types_are_pending():
+def test_exporter_type_selects_raw_cost_clause():
     from silk_study_render import render_study
     out = render_study(_case(), _kn())
     assert "دون تكلفة استيراد" in out
     c = _case()
     c["product"]["exporter_type"] = "agri_producer"
     out2 = render_study(c, _kn())
-    assert "دون تكلفة استيراد" not in out2 and "بميزة القرب" not in out2   # pending → لا يظهر
+    assert "دون تكلفة استيراد" not in out2 and "بميزة القرب الجغرافي من السوق" in out2
 
 
 def test_research_request_rejects_unknown_exporter_type():
@@ -301,3 +301,15 @@ def test_exporter_type_flows_to_result_without_fake_product_card():
     assert res["deep_research"].get("exporter_type") == "manufacturer"
     assert not (res.get("product_card") or {}).get("exporter_type")
     assert P  # الوحدة محمَّلة
+
+
+def test_approved_counter_variants_render_with_a_flip_condition():
+    from tools.canonical_turkey_polymers import turkey_polymers_research_blob
+    from silk_study_case import build_case
+    from silk_study_linter import lint
+    from silk_study_render import render_study
+    c = build_case(turkey_polymers_research_blob(), exporter_type="manufacturer", segment=None)
+    md = render_study(c, {})
+    sec = md.split("## ثامناً")[1].split("## تاسعاً")[0]
+    assert "تتمثل الحجة الأقوى" in sec or "لم تُرصد" in sec
+    assert not [v for v in lint(md, exporter_type="manufacturer") if v["rule"] == "counter_without_flip"]
