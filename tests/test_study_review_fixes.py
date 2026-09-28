@@ -41,3 +41,28 @@ def test_docx_guard_checks_table_cells_too(tmp_path):
     md = "## الملخص التنفيذي\n\nنص.\n\n| المنتج | المصدر |\n|---|---|\n| بن | Serper |\n"
     with pytest.raises(R.ReportGateError):
         markdown_to_docx(md, str(tmp_path / "x.docx"))
+
+
+# ── (٣) أرقام البعثات الحية في raw_evidence ────────────────────────────────
+def test_live_claim_findings_expose_typed_numbers_from_raw_evidence():
+    from silk_study_case import _findings, build_case
+    claim = {"value": "التعرفة صفر وفق WITS", "source": "LLMAgent", "confidence": 0.8,
+             "raw_evidence": [{"value": 0.0, "source": "WITS", "note": "تعرفة MFN 090121 (2024)",
+                               "confidence": 0.9, "data_year": 2024, "status": "ok"},
+                              {"value": 4.4, "source": "World Bank", "note": "PA.NUS.FCRF (2025)",
+                               "confidence": 0.95, "data_year": 2025}]}
+    dr = {"missions": {"tariffs_agreements": {"findings": [claim]}}}
+    vals = [f.get("value") for f in _findings(dr, "tariffs_agreements")]
+    assert 0.0 in vals and 4.4 in vals and "التعرفة صفر وفق WITS" in vals
+
+
+def test_live_tariff_is_read_from_raw_evidence_and_not_confused_with_fx():
+    from silk_study_case import build_case
+    claim = {"value": "التعرفة صفر", "source": "LLMAgent", "confidence": 0.8,
+             "raw_evidence": [{"value": 4.4, "source": "World Bank", "note": "PA.NUS.FCRF (2025)",
+                               "confidence": 0.95, "data_year": 2025},
+                              {"value": 0.0, "source": "WITS", "note": "تعرفة MFN 090121 (2024)",
+                               "confidence": 0.9, "data_year": 2024}]}
+    c = build_case({"deep_research": {"missions": {"tariffs_agreements": {"findings": [claim]}}},
+                    "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
+    assert c["tariff"]["status"] == "exempt" and c["tariff"]["rate_pct"] == 0.0

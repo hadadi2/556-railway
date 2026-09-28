@@ -21,15 +21,26 @@ _USD_PER_KG_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:دولار|USD|\$)\s*/?\s*(
 
 def _findings(dr: dict, mission: str) -> list[dict]:
     m = (dr.get("missions") or {}).get(mission) or {}
-    out = []
+    out, seen = [], set()
     for f in (m.get("findings") if isinstance(m, dict) else getattr(m, "findings", None)) or []:
         if isinstance(f, dict):
-            out.append(f)
+            d = f
         else:
-            out.append({"value": getattr(f, "value", None), "source": getattr(f, "source", ""),
-                        "note": getattr(f, "note", ""), "data_year": getattr(f, "data_year", None),
-                        "status": getattr(f, "status", ""), "confidence": getattr(f, "confidence", 0),
-                        "retrieved_at": getattr(f, "retrieved_at", None)})
+            d = {"value": getattr(f, "value", None), "source": getattr(f, "source", ""),
+                 "note": getattr(f, "note", ""), "data_year": getattr(f, "data_year", None),
+                 "status": getattr(f, "status", ""), "confidence": getattr(f, "confidence", 0),
+                 "retrieved_at": getattr(f, "retrieved_at", None),
+                 "raw_evidence": getattr(f, "raw_evidence", ())}
+        # البعثات الحية تعيد ادعاءً نصياً وأرقامُه المطبوعة في raw_evidence (لقطات
+        # الأدوات) — تُقرأ أولاً كما يفعل silk_deep_pillars._metric_findings، وإلا
+        # بقيت التعرفة/LPI/النمو/الوزن فجوات في كل دراسة حية.
+        for row in d.get("raw_evidence") or ():
+            if isinstance(row, dict) and row.get("source") and row.get("status") in (None, "", "ok"):
+                key = (row.get("source"), row.get("note"), repr(row.get("value")), row.get("data_year"))
+                if key not in seen:
+                    seen.add(key)
+                    out.append(row)
+        out.append(d)
     return out
 
 
@@ -308,6 +319,10 @@ def build_case(found: dict, *, product_short: str | None = None,
     tariff = {"status": "gap", "rate_pct": None}
     for f in _findings(dr, "tariffs_agreements"):
         v = f.get("value")
+        note = f"{f.get('note') or ''} {f.get('source') or ''}".lower()
+        # رقم «تعرفة» فقط — لا سعر صرف أو حصة في البعثة نفسها (raw_evidence يحملها معاً).
+        if not any(w in note for w in ("تعرف", "رسم جمركي", "رسوم جمركية", "tariff", "mfn", "wits", "duty")):
+            continue
         if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= float(v) <= 100:
             tariff = {"status": "exempt" if float(v) == 0 else "rate", "rate_pct": float(v)}
             break
