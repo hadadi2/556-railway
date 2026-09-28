@@ -632,6 +632,8 @@ function pollResearchStatus(analysisId,lbl){
     if(st.status==="completed"){
       getJSON("/analyses/"+analysisId).then(function(res){
         S.raw=res;S.view=res.view||null;S.busy=false;S.lastFailedResearchId=null;$("#researchBtn").textContent=lbl;sync();
+        // P5-6: تنبيه داخلي للمشغّل فقط (لا يصل تقرير العميل) — دراسة درجتها دون 8.
+        var _sr=((res.deep_research||{}).study_review||{});if(_sr.delivery&&_sr.delivery.human_review)toast("دراسة السوق تحتاج مراجعة بشرية (درجة المراجع "+(_sr.score==null?"غير متاحة":_sr.score)+") — يُتاح إصدار محدَّث مجاني للعميل");
         pushHist(analysisId);renderBoard();nav("board")})
       .catch(function(e){S.busy=false;$("#researchBtn").textContent=lbl;sync();toast("اكتمل البحث لكن تعذّرت قراءة النتيجة: "+e.message)});
       return}
@@ -841,6 +843,8 @@ function startResearch(extra){if(S.busy)return;
     if(res&&res.analysis_id&&res.status==="running"){pollResearchStatus(res.analysis_id,lbl);return}
     // توافق رجعي: رد متزامن كامل (لو عُطِّل async_run مستقبلاً من الخادم).
     S.raw=res;S.view=res.view||null;S.busy=false;S.lastFailedResearchId=null;$("#researchBtn").textContent=lbl;sync();
+    // P5-6: تنبيه داخلي للمشغّل فقط (لا يصل تقرير العميل) — دراسة درجتها دون 8.
+    var _sr=((res.deep_research||{}).study_review||{});if(_sr.delivery&&_sr.delivery.human_review)toast("دراسة السوق تحتاج مراجعة بشرية (درجة المراجع "+(_sr.score==null?"غير متاحة":_sr.score)+") — يُتاح إصدار محدَّث مجاني للعميل");
     pushHist(res&&res.analysis_id||null);renderBoard();nav("board")})
   .catch(function(e){S.busy=false;$("#researchBtn").textContent=lbl;sync();
     var d=e&&e.__detail;

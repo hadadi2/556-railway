@@ -710,6 +710,7 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
             # تقرير كاتبٍ اكتمل؛ SILK_STUDY_SLOTS=0 يعطّلها. التصدير يقرأ المخزَّن.
             _study_slots: dict = {}
             _study_slots_skipped: list = []
+            _study_review: dict = {}
             if (ai_ok and not early_halted
                     and os.environ.get("SILK_STUDY_SLOTS", "1") != "0"
                     and (report_out or {}).get("report")):
@@ -719,8 +720,9 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                     import silk_ai_judge as _aj
                     from silk_study_case import build_case as _bc
                     from silk_study_claims import build_claims
-                    from silk_study_export import fill_slots
                     from silk_study_numbers import compute as _sn
+                    from silk_study_render import load_knowledge as _lk
+                    from silk_study_review import run_study_tail
                     _prov = {"deep_research": {"missions": mission_reports,
                                                "importer_leads": importer_leads,
                                                "verdict": verdict},
@@ -737,15 +739,35 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                                     for c in build_claims(_case)]},
                         ensure_ascii=False, default=str))
 
+                    # P5-5: سقف ذيل الدراسة (ملء + مراجعة) — SILK_STUDY_TAIL_MAX_USD
+                    # (افتراضياً 1$، 0 تعطيل صريح)، فوق حارس التشغيلة والإلغاء.
+                    try:
+                        _tail_cap = float(os.environ.get("SILK_STUDY_TAIL_MAX_USD", "1.0"))
+                    except ValueError:
+                        _tail_cap = 1.0
+                    _tail_t0 = _usage_totals()[2]
+                    _tail_state = {"capped": False}
+
                     def _slot_guard() -> bool:
                         # لا رفع هنا: إلغاءٌ بعد اكتمال الكاتب يوقف الفراغات ويُسلَّم
                         # التقرير المدفوع (نفس منطق استثناء «end»، §58 #2).
+                        if _tail_cap > 0 and _usage_totals()[2] - _tail_t0 > _tail_cap:
+                            _tail_state["capped"] = True
+                            return False
                         return (not silk_context.cancel_requested()
                                 and _budget_ok("study_slots"))
-                    _study_slots = fill_slots(
-                        {"study_case": _case},
+                    _tail_started = _mono.monotonic()
+                    _tail = run_study_tail(
+                        _case, _lk(_case["product"]["hs"], _case["market"].get("iso2") or ""),
                         lambda sid, prompt: _aj._call(prompt, _facts, max_tokens=500),
-                        guard=_slot_guard)
+                        _aj.review_study, guard=_slot_guard, facts=_facts)
+                    _study_slots = _tail["slots"]
+                    _study_review = {k: _tail.get(k) for k in (
+                        "score", "notes", "rounds", "best_round", "versions", "delivery")}
+                    _study_review.update(
+                        tail_capped=bool(_tail.get("tail_capped") or _tail_state["capped"]),
+                        cost_usd=round(_usage_totals()[2] - _tail_t0, 4),
+                        seconds=round(_mono.monotonic() - _tail_started, 1))
                 except Exception as e:  # noqa: BLE001 — الفراغ الناقص فجوة معلنة
                     log.warning("study_slots skipped: %s", e)
                 if _stage_budget["halted_before"] == "study_slots":
@@ -1015,6 +1037,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
             result["deep_research"]["study_slots"] = _study_slots
         if _study_slots_skipped:
             result["deep_research"]["study_slots_skipped"] = _study_slots_skipped
+        if _study_review:
+            result["deep_research"]["study_review"] = _study_review
         try:   # P2-6: مخالفات الأسلوب تُخزَّن مع النتيجة للمراجعة، لا تحجب
             from silk_study_export import study_markdown
             result["deep_research"]["study_lint"] = study_markdown(result)[1]["lint"]

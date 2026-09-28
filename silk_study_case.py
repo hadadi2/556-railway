@@ -84,6 +84,7 @@ def provisional_threshold(shelf: list, landed_high_pct: int = 45) -> int | None:
     return int(max(vals) * landed_high_pct // 100) if vals else None
 
 
+REVIEW_LIMIT_OWNER = "فريق الدراسة (إصدار محدَّث)"   # P5-6: حدود أعلنها المراجع
 MIN_ENTITIES = 2      # P4-4: أقل من جهتين مؤكدتين ⇒ فجوة بجهة استكمال محددة
 
 
@@ -110,7 +111,7 @@ def threshold_from(shelf: list, landed_high_pct: int = 45) -> tuple[int | None, 
 
 
 def _gap(label: str, iso3: str = "") -> dict:
-    owner = GAP_OWNERS.get(label)
+    owner = GAP_OWNERS.get(label) or REVIEW_LIMIT_OWNER
     if label == "مستوردون مؤكدون بالاسم":
         dirs = [d["name_ar"] for d in market_directories(iso3)]
         owner = ("المبيعات عبر " + " و".join(dirs)) if dirs else \
@@ -311,6 +312,9 @@ def build_case(found: dict, *, product_short: str | None = None,
         gaps.append("أسعار الرف")
     # P4-4: العدّ واحد في كل مكان — المرشحون لطلب عرض أسعار وحدهم (لا المنافسون ولا المنافذ).
     candidates = sum(e["role"] == "مرشح لطلب عرض أسعار" for e in entities)
+    # P5-6: ملاحظات المراجع المتوسطة لإصدارٍ درجته 8–9 تُعلن حدوداً للدراسة.
+    for lim in ((dr.get("study_review") or {}).get("delivery") or {}).get("limits") or []:
+        gaps.append(lim)
     if candidates < MIN_ENTITIES:
         gaps.append("مستوردون مؤكدون بالاسم")
     return {

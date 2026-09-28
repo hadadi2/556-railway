@@ -3494,6 +3494,34 @@ def create_app():
         import silk_ops_log
         return _json({"errors": silk_ops_log.last_errors(n)})
 
+    @app.get("/ops/studies")
+    def ops_studies(request: Request, n: int = 20):
+        """P5-5: لوحة داخلية لاقتصاديات «دراسة السوق» — آخر n تحليلات بحثية تحمل
+        `study_review`: الدرجة، الجولات، كلفة الذيل وزمنه، سلّم التسليم. محروسة
+        كبقية سطوح المشغّل؛ لا نص دراسة ولا ملاحظات مراجع خام في الرد."""
+        _require_key(request)
+        _rate_limit(request)
+        from silk_storage import get_analysis, list_analyses
+        out = []
+        for row in list_analyses(limit=max(1, min(int(n), 100)) * 3):
+            full = get_analysis(row["id"]) or {}
+            dr = full.get("deep_research") or {}
+            sr = dr.get("study_review")
+            if not sr:
+                continue
+            eco = full.get("data_economics") or {}
+            out.append({"id": row["id"], "product": row.get("product"),
+                        "market": row.get("market_name"), "score": sr.get("score"),
+                        "rounds": sr.get("rounds"), "best_round": sr.get("best_round"),
+                        "tail_cost_usd": sr.get("cost_usd"), "tail_seconds": sr.get("seconds"),
+                        "tail_capped": sr.get("tail_capped"),
+                        "delivery": (sr.get("delivery") or {}).get("tier"),
+                        "run_cost_usd": eco.get("cost_usd_estimate"),
+                        "cost_usd_by_stage": eco.get("cost_usd_by_stage")})
+            if len(out) >= n:
+                break
+        return _json({"studies": out})
+
     @app.get("/ops/backup")
     def ops_backup(request: Request):
         """شغّل نسخاً احتياطياً الآن وأعِد المانيفست — سطح مشغّل محروس.

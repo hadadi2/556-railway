@@ -3565,3 +3565,42 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     print("AI judge available (ANTHROPIC_API_KEY set)?", available())
     print("(الحكم عبر silk_synthesis.synthesize — verdicts via synthesis now)")
+
+
+# ── P5-2 مراجع «دراسة السوق» المستقل ─────────────────────────────────────────
+STUDY_REVIEW_SEVERITIES = ("critical", "high", "medium", "low")
+
+
+def _study_rubric() -> str:
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "STUDY_REVIEW_RUBRIC.md")
+    try:
+        with open(p, encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return "قيّم الدراسة من 10 وأعد JSON: {\"score\": n, \"notes\": []}"
+
+
+def review_study(md: str, facts: str = "", model: str | None = None) -> dict | None:
+    """درجة /10 وملاحظات {location, severity, fix} بمعيار مكتوب، بنموذج غير نموذج الكاتب
+    (`SILK_STUDY_REVIEW_MODEL`، افتراضياً السريع). الفشل/JSON غير صالح = None — لا درجة مختلقة."""
+    if not available() or not (md or "").strip():
+        return None
+    system = _study_rubric() + "\n\nأعد JSON فقط بالصيغة أعلاه."
+    user = _isolate(md) + (("\n\nحقائق الحالة:\n" + _isolate(facts)) if facts else "")
+    raw = _call(system, user, max_tokens=1500,
+                model=model or os.environ.get("SILK_STUDY_REVIEW_MODEL") or _FAST_MODEL)
+    data = _extract_json(raw)
+    if not isinstance(data, dict):
+        return None
+    try:
+        score = float(data.get("score"))
+    except (TypeError, ValueError):
+        return None
+    if not 0 <= score <= 10:
+        return None
+    notes = []
+    for n in data.get("notes") or []:
+        if isinstance(n, dict) and n.get("severity") in STUDY_REVIEW_SEVERITIES:
+            notes.append({"location": str(n.get("location") or "").strip(),
+                          "severity": n["severity"], "fix": str(n.get("fix") or "")[:600]})
+    return {"score": round(score, 1), "notes": notes}
