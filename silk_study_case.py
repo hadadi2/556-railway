@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import csv
+import functools
 import os
 import datetime as _dt
 import re
@@ -126,25 +127,35 @@ def verified_label(verified_at, today) -> str | None:
     return f"{v} (يُعاد التحقق)" if (today - d).days > STALE_DAYS else v
 
 
-def reexport_hubs() -> set[str]:
+@functools.lru_cache(maxsize=1)
+def reexport_hubs() -> frozenset[str]:
     p = os.path.join(_ROOT, "data", "reexport_hubs_l1.csv")
     try:
         with open(p, encoding="utf-8") as f:
-            return {r["iso3"] for r in csv.DictReader(ln for ln in f if not ln.startswith("#"))}
+            return frozenset(r["iso3"] for r in csv.DictReader(ln for ln in f if not ln.startswith("#")))
     except OSError:
-        return set()
+        return frozenset()
+
+
+_SOURCE_AR = {"World Bank": "البنك الدولي", "IMF": "صندوق النقد الدولي",
+              "International Monetary Fund": "صندوق النقد الدولي"}
 
 
 def _used_sources(dr: dict, missions: dict, fx, lpi, wgi, gdp) -> list[str]:
     """P6-6: مصادر النقاط المستعملة فعلاً — نتائج البعثات (قواميس أو كائنات) ذات القيمة،
     **ومصادر المؤشرات التي يذكرها المتن بالاسم** (سعر الصرف/LPI/الحوكمة ← البنك الدولي،
     النمو ← مصدره). كان المتن يذكر «البنك الدولي» وقائمة المصادر خالية منه."""
-    out = {str(f.get("source")) for k in missions for f in _findings(dr, k)
+    def norm(src: str) -> str:
+        for k, v in _SOURCE_AR.items():
+            if k.lower() in src.lower():
+                return v
+        return src
+    out = {norm(str(f.get("source"))) for k in missions for f in _findings(dr, k)
            if f.get("source") and f.get("value") is not None}
-    if any(x is not None for x in (fx, lpi, wgi)):
-        out.add("البنك الدولي")
-    if gdp:
-        out.add("صندوق النقد الدولي" if "IMF" in str(gdp.get("source")) else str(gdp.get("source")))
+    # مصادر المؤشرات التي يذكرها المتن — بمصدرها الفعلي لا بافتراض «البنك الدولي».
+    for ind in (fx, lpi, wgi, gdp):
+        if ind and ind.get("source"):
+            out.add(norm(str(ind["source"])))
     return sorted(x for x in out if x and x != "None")
 
 
@@ -261,13 +272,15 @@ def build_case(found: dict, *, product_short: str | None = None,
     rows, _sup_src = top_supplier_shares(missions)
     sup_year = (_sup_src or {}).get("year") if isinstance(_sup_src, dict) else None
     top = []
+    _hubs = reexport_hubs()
     for r in rows[:4]:
         pref, _ = resolve_market(r["partner"])
         top.append({"iso3": getattr(pref, "iso3", "") or "", "name_ar": getattr(pref, "name_ar", None) or r["partner"],
                     "share_pct": r["share"],
                     # P6-4: مركز إعادة تصدير من جدول مرجعي مسنَد؛ `kind` من البيانات يتقدّم.
+                    # لا «منتج» مُفترَض: التصنيف يحتاج دليلاً؛ غيره None (لا اختلاق).
                     "kind": r.get("kind") or ("reexport_hub" if (getattr(pref, "iso3", "") or "")
-                                              in reexport_hubs() else "producer")})
+                                              in _hubs else None)})
     saudi = next((r["share"] for r in rows if r.get("saudi")), 0.0)
     sup_count = None
     for f in _findings(dr, "competitors"):
@@ -292,7 +305,7 @@ def build_case(found: dict, *, product_short: str | None = None,
     wgi = _indicator(dr, ("PV.EST", "الاستقرار السياسي"), -3, 3)
 
     # ── المتطلبات (المرجع الثابت) ──────────────────────────────────────────
-    req_rows, sst_rule, halal_mandatory = [], None, None
+    req_rows, sst_rule, sst_authority, halal_mandatory = [], None, None, None
     try:
         from silk_requirements_agent import _checklist_rows, hs_category, is_animal_origin
         entry_rows, _elig, _exit = _checklist_rows(iso3, hs_category(hs).lower(), is_animal_origin(hs), hs)
@@ -302,15 +315,15 @@ def build_case(found: dict, *, product_short: str | None = None,
             if "ضريبة" in item:
                 m = re.search(r"بمعدّل\s+(.+?)\s+—", item)
                 sst_rule = m.group(1) if m else None
+                # P6-3: الجهة التي يُحدَّد المعدل من جدولها (القالب: «يتعين تحديد
+                # المعدل المنطبق من جدول {sst_authority}») — لا معدل يُخمَّن.
+                sst_authority = str(r.get("authority") or "").split(" — ")[0] or None
                 continue
             if "حلال" in item:
                 halal_mandatory = status == "legal_mandatory"
                 continue
             party = "المستورد" if "المستورد" in item else "المصدّر"
             auth = str(r.get("authority") or "").split(" — ")[0]
-            if "ضريبة" in item and not re.search(r"\d+(?:[.,]\d+)?\s*%", item):
-                # P6-3: ضريبة بلا معدل مثبت — لا رقم يُخمَّن؛ الجهة التي يُحدَّد منها.
-                item = f"{item} (يُحدَّد المعدل من جدول {auth})" if auth else item
             req_rows.append({"item": item, "authority": auth, "party": party,
                              "verified_at": verified_label(r.get("verified_at"), today)})
     except Exception:  # noqa: BLE001 — غياب المرجع = فجوة معلنة لا انهيار
@@ -379,7 +392,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                     "gdp_source": "صندوق النقد الدولي" if gdp and "IMF" in gdp["source"] else (gdp["source"] if gdp else None),
                     "local_producers_word": None},
         "suppliers": {"year": sup_year, "count": sup_count, "saudi_share_pct": saudi, "top": top, "hub_share_trend": None},
-        "tariff": {**tariff, "sst_rule": sst_rule, "sst_authority": None, "preferential_note": None, "preferential_status": None},
+        "tariff": {**tariff, "sst_rule": sst_rule, "sst_authority": sst_authority, "preferential_note": None, "preferential_status": None},
         "fx": {"currency_ar": None, "currency_short": None, "avg_year": fx["year"] if fx else None,
                "avg_rate": fx["value"] if fx else None, "range_years": None, "range_pct": None,
                "source": "البنك الدولي"},

@@ -28,6 +28,7 @@ def test_permanent_failure_is_logged_not_silent():
     import silk_data_layer as D
     import silk_ops_log
     logged = []
+    D._PUBLIC_FAIL_LOGGED.clear()
     with patch.object(D, "_world_bank_for_year", return_value=_dp(None, "x fetch failed for MYS")) as m, \
             patch.object(silk_ops_log, "record_error", side_effect=lambda k, r, c=None: logged.append(k)):
         dp = D.world_bank("MYS", "PA.NUS.FCRF", None)
@@ -59,14 +60,13 @@ def test_stale_verification_is_flagged_and_fresh_kept():
     assert verified_label("", today) is None
 
 
-def test_live_case_requirement_rows_carry_verification_and_tax_wording():
+def test_live_case_requirement_rows_carry_verification_and_tax_authority():
     from silk_study_case import build_case
     c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
     rows = c["requirements"]["rows"]
     assert rows and all(r["verified_at"] is None or r["verified_at"].startswith("20") for r in rows)
-    for r in rows:
-        if "ضريبة" in r["item"] and "%" not in r["item"]:
-            assert "يُحدَّد المعدل من جدول" in r["item"]
+    # الضريبة بلا معدل مثبت: الجهة التي يُحدَّد من جدولها المعدل تصل القالب (لا تسقط الفقرة).
+    assert c["tariff"]["sst_authority"] and "الجمارك" in c["tariff"]["sst_authority"]
 
 
 # ── P6-4 ───────────────────────────────────────────────────────────────
@@ -79,13 +79,15 @@ def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows():
     with patch.object(silk_deep_pillars, "top_supplier_shares", return_value=(rows, {"year": 2024})):
         c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
     kinds = {t["iso3"]: t["kind"] for t in c["suppliers"]["top"]}
-    assert kinds.get("SGP") == "reexport_hub" and kinds.get("IDN") == "producer"
+    assert kinds.get("SGP") == "reexport_hub" and kinds.get("IDN") is None   # لا «منتج» مُفترَض
     from silk_study_numbers import compute
     assert compute(c)["hub"]["iso3"] == "SGP"
 
 
 # ── P6-5 ───────────────────────────────────────────────────────────────
-def test_golden_malaysia_item8_checks_pass_on_engine_output():
+def test_golden_malaysia_item8_checks_pass_on_frozen_fixture_render():
+    """يصيّر الـfixture المجمَّد (الحقول مثبّتة يدوياً) — المسار الحي تحميه اختبارات
+    build_case في الدفعات ٣–٦ لا هذا الاختبار."""
     from tools.golden_set import study_check
     assert study_check("malaysia_coffee") == []
 
@@ -162,3 +164,57 @@ def test_study_pdf_export_uses_the_pdf_gate(tmp_path):
         pdf_engine_broken(str(exc))
     with open(pdf, "rb") as fh:
         assert fh.read(5) == b"%PDF-"
+
+
+def test_fallback_transient_failure_is_retried_and_logged():
+    import silk_data_layer as D
+    seq = [_dp(None, "LP.LPI.OVRL.XQ: no value returned for MYS"), _dp(None, "x fetch failed for MYS")] * 3
+    D._PUBLIC_FAIL_LOGGED.clear()
+    with patch.object(D, "_world_bank_for_year", side_effect=seq) as m, \
+            patch("silk_ops_log.record_error"):
+        dp = D.world_bank("MYS", "LP.LPI.OVRL.XQ", 2023)
+    assert m.call_count == 6 and dp.status == "fetch_failed"
+
+
+def test_open_circuit_is_not_retried():
+    import silk_data_layer as D
+    with patch.object(D, "_world_bank_for_year", return_value=_dp(None, "PV.EST fetch failed for MYS: CircuitOpen")) as m:
+        D.world_bank("MYS", "PV.EST", None)
+    assert m.call_count == 1
+
+
+def test_one_ops_row_per_market_per_day():
+    import silk_data_layer as D
+    D._PUBLIC_FAIL_LOGGED.clear()
+    logged = []
+    with patch.object(D, "_world_bank_for_year", return_value=_dp(None, "x fetch failed for MYS")), \
+            patch("silk_ops_log.record_error", side_effect=lambda k, r, c=None: logged.append(k)):
+        for ind in ("PV.EST", "RL.EST", "RQ.EST", "PA.NUS.FCRF"):
+            D.world_bank("MYS", ind, None)
+    assert logged == ["data_pipeline_error"]
+
+
+def test_wgi_mission_finding_keeps_unit_url_status():
+    import silk_data_layer as D
+    import silk_missions as M
+    ok = _dp(0.3, "PV.EST (2023)")
+    with patch.object(D, "_world_bank_for_year", return_value=ok):
+        out = M._wgi_governance_datapoints("MYS")
+    pv = next(d for d in out if "PV.EST" in d.note)
+    assert pv.unit and pv.url and pv.status == "ok" and pv.data_year == 2023
+
+
+def test_sources_are_normalized_and_attributed_to_the_real_source():
+    from silk_study_case import _used_sources
+    fx = {"value": 4.2, "year": 2025, "source": "Bank Negara Malaysia"}
+    gdp = {"value": 4.1, "year": 2025, "source": "IMF WEO"}
+    dr = {"missions": {"m": {"findings": [{"value": 1, "source": "World Bank"}]}}}
+    out = _used_sources(dr, dr["missions"], fx, None, None, gdp)
+    assert out == sorted({"البنك الدولي", "Bank Negara Malaysia", "صندوق النقد الدولي"})
+
+
+def test_mixed_sentence_citation_is_still_checked():
+    from silk_study_linter import lint
+    md = ("## الملخص التنفيذي\n\nبلغ سعر الصرف 4.4 وفق البنك الدولي، وتعذّر جلب مؤشر الحوكمة.\n\n"
+          "**المصادر:** UN Comtrade.\n")
+    assert any(v["rule"] == "source_missing" for v in lint(md))

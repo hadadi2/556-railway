@@ -909,7 +909,15 @@ def _is_public_indicator(indicator: str) -> bool:
 
 
 def _transient(dp: DataPoint) -> bool:
-    return dp.value is None and (dp.status == "fetch_failed" or "fetch failed" in (dp.note or ""))
+    """تعثّرٌ قابل للإعادة — لا «لا قيمة منشورة»، ولا قاطع دائرة مفتوح (لا نداء أصلاً،
+    و`_http_get` نفسه يعيد على 429/5xx فالإعادة هنا للفشل المعلن من طبقة التخزين)."""
+    note = dp.note or ""
+    if "Circuit" in note:
+        return False
+    return dp.value is None and (dp.status == "fetch_failed" or "fetch failed" in note)
+
+
+_PUBLIC_FAIL_LOGGED: set = set()   # (iso3, يوم) — صفٌّ واحد لكل سوق يومياً لا فيضان
 
 
 def _public_indicator(iso3: str, indicator: str, year: int | None) -> DataPoint:
@@ -929,14 +937,20 @@ def _public_indicator(iso3: str, indicator: str, year: int | None) -> DataPoint:
                        url=dp.url or f"https://data.worldbank.org/indicator/{indicator}",
                        retrieval_method=dp.retrieval_method or "api")
     if _transient(dp):
-        try:
-            import silk_ops_log
-            silk_ops_log.record_error(
-                "data_pipeline_error",
-                f"تعذّر جلب {indicator} لـ{iso3} بعد {PUBLIC_INDICATOR_ATTEMPTS} محاولات",
-                {"indicator": indicator, "iso3": iso3})
-        except Exception as e:  # noqa: BLE001 — السجل قناة جانبية
-            log.warning("ops log skipped: %s", e)
+        key = (iso3, _today())
+        if key not in _PUBLIC_FAIL_LOGGED:
+            # صفٌّ واحد لكل سوق يومياً — انقطاع البنك الدولي لا يُغرق حلقة الـ200 صف
+            # التي يعتمدها المشغّل لأعطال التصدير والكاتب.
+            _PUBLIC_FAIL_LOGGED.add(key)
+            try:
+                import silk_ops_log
+                silk_ops_log.record_error(
+                    "data_pipeline_error",
+                    f"تعذّر جلب مؤشرات البنك الدولي العامة لـ{iso3} بعد "
+                    f"{PUBLIC_INDICATOR_ATTEMPTS} محاولات (أولها {indicator})",
+                    {"indicator": indicator, "iso3": iso3})
+            except Exception as e:  # noqa: BLE001 — السجل قناة جانبية
+                log.warning("ops log skipped: %s", e)
         return replace(dp, status="fetch_failed")
     return dp
 
@@ -946,6 +960,8 @@ def _world_bank_resolved(iso3: str, indicator: str, year: int | None) -> DataPoi
     if dp.value is not None or year is None:
         return dp
     fallback = _world_bank_for_year(iso3, indicator, None)
+    if fallback.value is None and _transient(fallback):
+        return fallback        # تعثّر الاحتياط يُعاد ويُسجَّل، لا يُخفى خلف «لا قيمة للسنة»
     if fallback.value is not None:
         return DataPoint(
             value=fallback.value, source=fallback.source,

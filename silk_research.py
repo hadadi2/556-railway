@@ -1013,7 +1013,7 @@ class RiskAgent(ResearchAgent):
                 from silk_data_layer import world_bank
                 dp = world_bank(iso3, ind)
                 if dp.value is not None:
-                    F.append(_f(metric, dp.value, [_dp_src(dp)],
+                    F.append(_f(metric, dp.value, [_dp_src(dp)], unit=dp.unit or None,
                                 note=f"{label} — {dp.note}"))
                 else:
                     gaps.append(f"{metric}: {label} غير متاح (مخزن بارد + "
@@ -1303,7 +1303,7 @@ class LogisticsAgent(ResearchAgent):
             else:
                 dp = world_bank(iso3, ind)
                 if dp.value is not None:
-                    F.append(_f(metric, dp.value, [_dp_src(dp)],
+                    F.append(_f(metric, dp.value, [_dp_src(dp)], unit=dp.unit or None,
                                 note=f"{label} — {dp.note}"))
                 else:
                     gaps.append(f"{metric}: {label} غير متاح (مخزن بارد + "

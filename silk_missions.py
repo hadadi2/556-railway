@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+from dataclasses import replace as _dc_replace
 import json
 import logging
 import os
@@ -541,11 +542,11 @@ def _wgi_governance_datapoints(iso3: str) -> list:
             dp = DataPoint(None, "World Bank", 0.0,
                            f"{ind} تعذّر: {type(e).__name__}")
         if dp.value is not None:
-            out.append(DataPoint(dp.value, dp.source, dp.confidence,
-                                 f"[risk] {label} — {ind} ({dp.note})"))
+            # P6-2: الوحدة والرابط والحالة وسنة البيانات تُحمل كما هي (replace لا إعادة بناء).
+            out.append(_dc_replace(dp, note=f"[risk] {label} — {ind} ({dp.note})"))
         else:
-            out.append(DataPoint(None, dp.source or "World Bank", 0.0,
-                                 f"[risk] {label} غير متاح — {ind} ({dp.note})"))
+            out.append(_dc_replace(dp, source=dp.source or "World Bank", confidence=0.0,
+                                   note=f"[risk] {label} غير متاح — {ind} ({dp.note})"))
     return out
 
 

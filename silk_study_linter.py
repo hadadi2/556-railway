@@ -165,7 +165,8 @@ def lint(md: str, claims: list[dict] | None = None,
     sm = _SOURCES_LINE.search(md)
     if sm:
         # جملة تعلن تعذّر الجلب/الغياب ليست استشهاداً بالمصدر فلا توجب ذكره في القائمة.
-        body = " ".join(x for x in re.split(r"(?<=[.؛])\s+|\n+", md[:sm.start()])
+        # على مستوى الشِّبه جملة («،» أيضاً): استشهادٌ حقيقي في جملة مختلطة يبقى مفحوصاً.
+        body = " ".join(x for x in re.split(r"(?<=[.؛،])\s+|\n+", md[:sm.start()])
                         if not any(w in x for w in _GAP_WORDS))
         for name in SOURCE_NAMES:
             listed = sm.group(1)
