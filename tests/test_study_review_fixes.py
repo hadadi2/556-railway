@@ -82,3 +82,14 @@ def test_saudi_outside_top_rows_is_unknown_not_absent():
     with patch.object(silk_deep_pillars, "top_supplier_shares", return_value=(full, {"year": 2024})):
         c2 = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
     assert c2["suppliers"]["saudi_share_pct"] == 0.0 and compute(c2)["saudi_absent"] is True
+
+
+# ── (٥) لا «سوق مستقرة» ولا «لا ضغط» بلا دليل ──────────────────────────────
+def test_no_unbacked_stability_or_inflation_claims():
+    from silk_study_render import render_study
+    c = _case()
+    c["market"]["iso2"] = "XX"                      # بلا ملف معرفة
+    c["macro"]["inflation_pct"] = 12.0
+    out = render_study(c, {}, )
+    assert "سوقاً مستقرة" not in out
+    assert "لا تُظهر ضغطاً على القوة الشرائية" not in out

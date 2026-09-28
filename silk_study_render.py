@@ -259,6 +259,10 @@ class Renderer:
         sh["commodity_raw_word"] = c["product"].get("raw_input_word") or c["product"]["commodity"]
         sh["macro_gdp_abs"] = abs(sh["macro_gdp"]) if sh.get("macro_gdp") is not None else None
         sh["has_k_world_price"] = "s1_decomp.world_price_note" in self.k
+        sh["has_k_gov_stability"] = "s7_gov.stability" in self.k
+        g, inf = sh.get("macro_gdp"), sh.get("macro_inf")
+        sh["inflation_band"] = ("low" if (g is not None and inf is not None and g > 0 and inf <= 3.5)
+                                else "high")
         reqs = [q["text"] for q in c["decision"]["requirements"]]
         sh["requirements_inline"] = "؛ ".join([reqs[0]] + ["و" + q for q in reqs[1:]]) if reqs else ""
         sh["sources_inline"] = "؛ ".join(c.get("sources") or []) or "لم يُسنَد رقم إلى مصدر في هذه النسخة"
