@@ -141,6 +141,21 @@ _SOURCE_AR = {"World Bank": "البنك الدولي", "IMF": "صندوق الن
               "International Monetary Fund": "صندوق النقد الدولي"}
 
 
+def public_source(src: str) -> str:
+    """اسم مصدر يصلح للعميل: لا اسم مزوّد داخلي (Serper/GDELT… — عقد المالك،
+    silk_reports._CLIENT_VENDOR_RE). «Web Search (Serper) — example.com» ← النطاق،
+    وإلا «بحث الويب». الأسماء العمومية (UN Comtrade، البنك الدولي) كما هي."""
+    s = str(src or "").strip()
+    try:
+        from silk_reports import _CLIENT_VENDOR_RE
+    except Exception:  # noqa: BLE001
+        return s
+    if not _CLIENT_VENDOR_RE.search(s):
+        return s
+    tail = s.split(" — ", 1)[1].strip() if " — " in s else ""
+    return tail if tail and not _CLIENT_VENDOR_RE.search(tail) else "بحث الويب"
+
+
 def _used_sources(dr: dict, missions: dict, fx, lpi, wgi, gdp) -> list[str]:
     """P6-6: مصادر النقاط المستعملة فعلاً — نتائج البعثات (قواميس أو كائنات) ذات القيمة،
     **ومصادر المؤشرات التي يذكرها المتن بالاسم** (سعر الصرف/LPI/الحوكمة ← البنك الدولي،
@@ -150,7 +165,7 @@ def _used_sources(dr: dict, missions: dict, fx, lpi, wgi, gdp) -> list[str]:
             if k.lower() in src.lower():
                 return v
         return src
-    out = {norm(str(f.get("source"))) for k in missions for f in _findings(dr, k)
+    out = {public_source(norm(str(f.get("source")))) for k in missions for f in _findings(dr, k)
            if f.get("source") and f.get("value") is not None}
     # مصادر المؤشرات التي يذكرها المتن — بمصدرها الفعلي لا بافتراض «البنك الدولي».
     for ind in (fx, lpi, wgi, gdp):
@@ -343,7 +358,7 @@ def build_case(found: dict, *, product_short: str | None = None,
         if m and "استيراد" not in note and "Comtrade" not in str(f.get("source") or ""):
             seg = shelf_segment(f"{note} {f.get('source') or ''}", hs)      # P4-2
             date = str(f.get("retrieved_at") or "")[:10]
-            src = str(f.get("source") or "") + (f"، {date}" if date else "")
+            src = public_source(str(f.get("source") or "")) + (f"، {date}" if date else "")
             shelf.append({"product": note[:60] or "منتج مرصود", "segment": seg, "price": m.group(0),
                           "source": src, "usd_kg": float(m.group(1).replace(",", ".")),
                           "segment_target": False, "equivalent": seg != "غير مكافئ"})

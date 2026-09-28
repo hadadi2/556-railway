@@ -121,7 +121,9 @@ def markdown_to_docx(md: str, path: str, lang: str = "ar") -> str:
             _add_runs(p, ln.strip())
         i += 1
     R._apply_rtl(doc)
-    blob = "\n".join(p.text for p in doc.paragraphs)
+    # الفقرات **والخلايا**: عمود «المصدر» في جدول الرف كان خارج الفحص.
+    blob = "\n".join([p.text for p in doc.paragraphs]
+                     + [c.text for t in doc.tables for row in t.rows for c in row.cells])
     hits = R._client_forbidden_hits(blob, lang)
     if hits:
         raise R.ReportGateError("تصدير الدراسة يحوي مصطلحاً ممنوعاً: " + "؛ ".join(hits[:5]))
