@@ -243,6 +243,9 @@ def test_premium_default_tier_does_not_narrow_and_words_match_whole():
              (70.0, "بن مختص 1 كغ", "MYR", 1.0, None)]
     anchor2, _ = _pick_shelf_anchor(rows2, "MYR", tier="specialty")
     assert anchor2[0] == 70.0
+    rows3 = [(20.0, "بن تجاري 1 كغ", "MYR", 1.0, None),
+             (70.0, "القهوة المختصة 1 كغ", "MYR", 1.0, None)]
+    assert _pick_shelf_anchor(rows3, "MYR", tier="specialty")[0][0] == 70.0
 
 
 def test_negated_or_inflected_predicate_is_not_a_claim_conflict():

@@ -1503,8 +1503,10 @@ _TIER_WORDS = {
 
 
 def _has_tier_word(text: str, words) -> bool:
-    return any(_re.search(rf"(?<![\w\u0600-\u06FF]){_re.escape(w)}(?![\w\u0600-\u06FF])", text)
-               for w in words)
+    # السوابق العربية المتصلة (ال/بال/وال/لل/و/ب) مسموحة: «القهوة المختصة» تطابق.
+    pre = r"(?:وال|بال|فال|كال|لل|ال|و|ب)?"
+    return any(_re.search(rf"(?<![\w\u0600-\u06FF]){pre if _re.match(r'[\u0600-\u06FF]', w) else ''}"
+                          rf"{_re.escape(w)}(?![\w\u0600-\u06FF])", text) for w in words)
 
 
 def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> tuple:
