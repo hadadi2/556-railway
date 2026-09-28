@@ -1494,7 +1494,14 @@ def market_currency(iso3: object) -> str:
 IMPORT_ANOMALY_FACTOR = 5.0
 
 
-def _pick_shelf_anchor(rows: list, local_ccy: str) -> tuple:
+# P3-8: كلمات الشريحة في نص صف الرف — المرجع من الشريحة نفسها إن رُصد.
+_TIER_WORDS = {
+    "specialty": ("مختص", "specialty", "single origin", "مختصة"),
+    "premium": ("فاخر", "premium", "ممتاز", "gourmet"),
+}
+
+
+def _pick_shelf_anchor(rows: list, local_ccy: str, tier: str | None = None) -> tuple:
     """(الصفّ المختار، أسبابُ الاستبعاد {سبب: عدد}) — **بعد** التطبيع.
 
     الدرس ٢٧٢: كان `min` يجري على سعر العبوة الخام وعبر العملات، فيفوز «$4»
@@ -1521,6 +1528,14 @@ def _pick_shelf_anchor(rows: list, local_ccy: str) -> tuple:
         dropped["بعملة أخرى"] = other
     if ccy and groups.get(""):
         dropped["بلا عملة مسمّاة"] = len(groups[""])
+    # P3-8: داخل عملة المرجع نفسها، صفوف الشريحة المستهدفة وحدها تتنافس إن رُصدت،
+    # والمستبعَد منها يُعدّ ويُعلن (لا إسقاط صامتاً).
+    words = _TIER_WORDS.get(str(tier or "").lower())
+    if words:
+        same = [r for r in group if any(w in str(r[1]).lower() for w in words)]
+        if same and len(same) < len(group):
+            dropped["من شريحة أخرى"] = len(group) - len(same)
+            group = same
 
     def per_base(r):
         if r[3]:
@@ -1724,7 +1739,8 @@ def economics_view(dr: dict, product_card: dict | None = None,
                 key = f"~{cur}"
             norm_rows.append((v, n, key, kg, litre))
         (lowest, src_note, _c, pack_kg, pack_litre), dropped = \
-            _pick_shelf_anchor(norm_rows, local_ccy)
+            _pick_shelf_anchor(norm_rows, local_ccy,
+                               tier=(product_card or {}).get("tier"))
         if dropped:
             gaps.append(
                 "استُبعد من اختيار السعر المرجعي: " + "، ".join(

@@ -157,3 +157,25 @@ def synthesize(reports: list, *, product: str, market: str,
             if _err:
                 verdict["ai_error"] = {"source": "provider", **dict(_err)}
     return verdict
+
+
+# ── P1-5 (F-19): القرار الرباعي لنمط «دراسة السوق» ────────────────────────
+STUDY_DECISIONS = ("entry", "conditional", "defer", "no_entry")
+
+
+def study_decision(verdict) -> str:
+    """حكم التوليف (GO/CONDITIONAL-GO/WATCH/NO-GO أو قاموسه) → قرار الدراسة الرباعي:
+    entry / conditional / defer / no_entry. لا نص قرار في العقد: القرار يُمرَّر للقالب
+    مدخلاً، والقالب يختار صياغته المعتمدة. المجهول/الفارغ = defer (لا دخول بلا حكم)."""
+    v = verdict.get("verdict") if isinstance(verdict, dict) else verdict
+    v = str(v or "").strip().upper()
+    if not v:
+        return "defer"
+    if "CONDITIONAL" in v:
+        return "conditional"
+    if v.startswith("NO-GO") or v.startswith("NO_GO") or "NO-GO" in v:
+        return "no_entry"
+    if v.startswith("GO"):
+        return "entry"
+    return "defer"      # WATCH وما يشبهه
+

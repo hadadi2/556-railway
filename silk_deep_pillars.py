@@ -366,6 +366,20 @@ def _is_partial_year(year: object) -> bool:
         return False
 
 
+def is_provisional_year(year: object, today=None) -> bool:
+    """P1-8 (F-13): السنةُ السابقة مباشرةً **أولية** حتى منتصف السنة التالية —
+    تصريحات كومتريد لها لا تكتمل عادةً قبل مرور ستة أشهر على نهايتها. القاعدة
+    حتمية ومعلَنة (لا حقل `isReported` متاح في الاستجابة المخزَّنة)؛ تُوسَم الأرقام
+    «أولي» ولا تُخلط في جملة مع سنة مكتملة."""
+    import datetime as _dt
+    today = today or _dt.date.today()
+    try:
+        y = int(year)
+    except (TypeError, ValueError):
+        return False
+    return y == today.year - 1 and today.month <= 6
+
+
 def _scaled_hhi(value: "float | None") -> "float | None":
     """HHI بمقياسٍ واحد 0–10000 — نفسُ التطبيع الذي يفعله `silk_economics`."""
     if value is None:
@@ -821,6 +835,7 @@ def import_series(missions: dict) -> dict:
     # يدخل النموّ (مقارنةُ سنةٍ ناقصة بسنةٍ كاملة تُظهر انكماشاً زائفاً).
     for p in series:
         p["partial"] = _is_partial_year(p["year"])
+        p["provisional"] = is_provisional_year(p["year"])   # P1-8
     full = [p for p in series if not p["partial"]]
     years_missing = sorted(y for y in missing if y not in best)
     growth = cagr = None

@@ -7180,3 +7180,18 @@ DIRECTIVE_AUDIT_CHECKS: dict = {
         "بلا محرّك قرارٍ حتميّ (ENGINE_AUDIT D-01، الموجة D)", "غير مغطّى"),
     "20-لا صياغات محظورة": ("style_* (القائمة القائمة)", "قائم"),
 }
+
+
+def study_style_violations(md: str, claims: list[dict] | None = None,
+                           exporter_type: str | None = None) -> list[dict]:
+    """P2-6: linter نمط الدراسة قبل التسليم — مخالفات تُسجَّل ولا تحجب (يُسلَّم دائماً)."""
+    try:
+        from silk_study_linter import lint
+        v = lint(md, claims, exporter_type)
+    except Exception as e:  # noqa: BLE001 — الفحص تحسين لا شرط تسليم
+        log.warning("study linter skipped: %s", e)
+        return []
+    if v:
+        log.warning("study style violations: %d (%s)", len(v),
+                    ", ".join(sorted({x["rule"] for x in v})))
+    return v

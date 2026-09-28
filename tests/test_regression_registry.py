@@ -4599,6 +4599,22 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    287: lambda: (
+        _needles("silk_study_case.py", "def reexport_hubs", "def _used_sources")(),
+        _needles("data/reexport_hubs_l1.csv", "SGP,")(),
+        _needles("tests/test_study_batch6_guard.py",
+                 "def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows")(),
+        _needles("tests/test_lessons_enforcement.py", "(287, ")()),
+    286: lambda: (
+        _needles("requirements.txt", "PyYAML==6.0.1")(),
+        _needles("tests/test_study_batch4_field.py",
+                 "def test_study_mode_third_party_imports_are_in_production_requirements")(),
+        _needles("tests/test_lessons_enforcement.py", "(286, ")()),
+    285: lambda: (
+        _needles("silk_study_render.py", "self.review_marks = review_marks")(),
+        _needles("tests/test_study_batch2_style.py",
+                 "def test_llm_review_mark_never_reaches_the_client_export")(),
+        _needles("tests/test_lessons_enforcement.py", "(285, ")()),
     284: lambda: (
         _needles("silk_reports.py", "for y, chars in _bracket_segments(page):",
                  "raise PdfBracketGateError(",
@@ -4717,7 +4733,7 @@ _LESSONS = {
         _needles("tests/test_lessons_enforcement.py", "(273, ")()),
     272: lambda: (
         _needles("silk_economics.py", "def _pick_shelf_anchor",
-                 "_pick_shelf_anchor(norm_rows, local_ccy)",
+                 "_pick_shelf_anchor(norm_rows, local_ccy,",
                  "def market_currency",
                  "market_ccy or market_currency(market_iso3)",
                  "market_ccy=local_ccy",

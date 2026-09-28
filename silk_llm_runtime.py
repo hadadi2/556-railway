@@ -254,6 +254,9 @@ def competition_summary_findings(hs: str, market, year: "int | None" = None,
     import time as _time
     _t0 = _time.monotonic()
     comps = market_competitors(hs, market.m49, y)
+    # P1-10 (F-08): نقطةُ فشلٍ معلنة (`value=None`, fetch_failed) قائمةٌ غير فارغة —
+    # كانت تُسقِط احتياطَ المرآة ثم تنهار على `.get` بصمت. تُستبعَد قبل الحكم.
+    comps = [c for c in (comps or []) if isinstance(getattr(c, "value", None), dict)]
     mirrored = False
     # `deadline_s` (مسار الإلحاق الحتمي حصراً — الأداة تمرّر None فتحتفظ
     # بسلوكها حرفياً): شبكةٌ ساقطة تجعل نداء المرآة الاحتياطي محاولةً عقيمة
@@ -266,7 +269,8 @@ def competition_summary_findings(hs: str, market, year: "int | None" = None,
         # — أسواق كثيرة لا تُبلِغ إطلاقاً رغم أن شركاءها التجاريين
         # يُبلِغون عن تصديرهم إليها. احتياط فقط، لا استبدال للاستعلام
         # المباشر.
-        comps = market_competitors_mirror(hs, market.m49, y)
+        comps = [c for c in (market_competitors_mirror(hs, market.m49, y) or [])
+                 if isinstance(getattr(c, "value", None), dict)]
         mirrored = bool(comps)
     if not comps:
         return [DataPoint(

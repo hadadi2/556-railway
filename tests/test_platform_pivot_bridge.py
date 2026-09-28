@@ -488,7 +488,7 @@ def test_report_pdf_409_before_completion(env):
     assert r.json()["detail"]["error"] == "no_report_yet"
 
 
-def test_report_pdf_real_conversion_end_to_end(env):
+def test_report_pdf_real_conversion_end_to_end(env, request):
     """المسار الحقيقي كاملاً: حفظ نتيجة عبر silk_storage الحقيقي (قاعدة مؤقتة)
     ← build_view ← render_docx ← docx_to_pdf — الجسم يبدأ بـ%PDF فعلاً.
 
@@ -520,7 +520,12 @@ def test_report_pdf_real_conversion_end_to_end(env):
     s = _mk_study(env["cl"], env["tok"])
     _complete_study(env, s["id"], analysis_id=int(aid))
     import tempfile
-    tmp_root = tempfile.gettempdir()
+    # جذرٌ مؤقت خاص بهذا الاختبار: تشغيلتا سويت متزامنتان تتشاركان /tmp فكان
+    # فرقُ المجلدات يلتقط مجلدات الأخرى «تسرّباً» (فشلٌ متقطّع غير حقيقي).
+    _prev_tmp = tempfile.tempdir
+    tmp_root = tempfile.mkdtemp(prefix="pdfleak_")
+    tempfile.tempdir = tmp_root
+    request.addfinalizer(lambda: setattr(tempfile, "tempdir", _prev_tmp))
 
     def _silk_tmp():
         return {d for d in os.listdir(tmp_root)

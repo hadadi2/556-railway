@@ -616,7 +616,7 @@ TERMS: dict[str, dict[str, str]] = {
                                 "en": "Serviceable market"},
     "market_size_obtainable": {"ar": "الحصة الواقعية المتوقّعة",
                                "en": "Obtainable share"},
-    "market_concentration": {"ar": "مؤشر تركّز السوق",
+    "market_concentration": {"ar": "مؤشر تركّز الموردين",
                              "en": "Market concentration index"},
     "growth_cagr": {"ar": "متوسط النمو السنوي", "en": "Average annual growth"},
     "landed_cost": {"ar": "التكلفة الواصلة", "en": "Landed cost"},

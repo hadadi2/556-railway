@@ -251,7 +251,8 @@
           <div class="fourcol">
             <div class="mini"><label data-t="cost">تكلفتك / وحدة</label><input class="num" id="cCost" type="number" step="0.01"></div>
             <div class="mini"><label data-t="price">سعرك المستهدف</label><input class="num" id="cPrice" type="number" step="0.01"></div>
-            <div class="mini"><label data-t="tier">الفئة</label><select id="cTier"><option value="premium">فاخر</option><option value="standard">قياسي</option><option value="economy">اقتصادي</option></select></div>
+            <div class="mini"><label data-t="tier">الفئة</label><select id="cTier"><option value="premium">فاخر</option><option value="specialty">مختص</option><option value="standard">قياسي</option><option value="economy">اقتصادي</option></select></div>
+            <div class="mini"><label>نوع المصدّر</label><select id="cExporter"><option value="">غير محدد</option><option value="processor_of_imported_input">محوِّل لمادة خام مستوردة</option><option value="agri_producer">منتج زراعي</option><option value="manufacturer">مصنّع</option></select></div>
             <div class="mini"><label data-t="cap">الطاقة الشهرية</label><input class="num" id="cCap" type="number"></div>
           </div>
           <div class="mini" style="margin-top:10px"><label data-t="certs">الشهادات (مفصولة بفواصل)</label><input id="cCerts" type="text" placeholder="مثال: HALAL, ISO22000, SFDA"></div>
@@ -631,6 +632,8 @@ function pollResearchStatus(analysisId,lbl){
     if(st.status==="completed"){
       getJSON("/analyses/"+analysisId).then(function(res){
         S.raw=res;S.view=res.view||null;S.busy=false;S.lastFailedResearchId=null;$("#researchBtn").textContent=lbl;sync();
+        // P5-6: تنبيه داخلي للمشغّل فقط (لا يصل تقرير العميل) — دراسة درجتها دون 8.
+        var _sr=((res.deep_research||{}).study_review||{});if(_sr.delivery&&_sr.delivery.human_review)toast("دراسة السوق تحتاج مراجعة بشرية (درجة المراجع "+(_sr.score==null?"غير متاحة":_sr.score)+") — يُتاح إصدار محدَّث مجاني للعميل");
         pushHist(analysisId);renderBoard();nav("board")})
       .catch(function(e){S.busy=false;$("#researchBtn").textContent=lbl;sync();toast("اكتمل البحث لكن تعذّرت قراءة النتيجة: "+e.message)});
       return}
@@ -833,12 +836,15 @@ function startResearch(extra){if(S.busy)return;
     var cost=parseFloat($("#cCost").value),price=parseFloat($("#cPrice").value),cap=parseFloat($("#cCap").value),certs=certList();
     if(!isNaN(cost))b.product_card={cost_per_unit:cost,tier:$("#cTier").value,monthly_capacity:isNaN(cap)?null:cap,shipping_per_unit:null,certifications:certs.length?certs:null};
     else toast("بدون بطاقة المنتج سيغيب عمود الربحية — أكملها الآن؟ دقيقتان");  // تنبيه لا حجب (الموجة ١٠)
-    if(!isNaN(price))b.own_price=price}  // بلاغ حي (الموجة ٩): كان يُقرَأ ولا يُرسَل إطلاقاً
+    if(!isNaN(price))b.own_price=price;
+    if($("#cExporter")&&$("#cExporter").value)b.exporter_type=$("#cExporter").value}  // P3-4  // بلاغ حي (الموجة ٩): كان يُقرَأ ولا يُرسَل إطلاقاً
   for(var k in extra){b[k]=extra[k]}
   post("/research",b).then(function(res){
     if(res&&res.analysis_id&&res.status==="running"){pollResearchStatus(res.analysis_id,lbl);return}
     // توافق رجعي: رد متزامن كامل (لو عُطِّل async_run مستقبلاً من الخادم).
     S.raw=res;S.view=res.view||null;S.busy=false;S.lastFailedResearchId=null;$("#researchBtn").textContent=lbl;sync();
+    // P5-6: تنبيه داخلي للمشغّل فقط (لا يصل تقرير العميل) — دراسة درجتها دون 8.
+    var _sr=((res.deep_research||{}).study_review||{});if(_sr.delivery&&_sr.delivery.human_review)toast("دراسة السوق تحتاج مراجعة بشرية (درجة المراجع "+(_sr.score==null?"غير متاحة":_sr.score)+") — يُتاح إصدار محدَّث مجاني للعميل");
     pushHist(res&&res.analysis_id||null);renderBoard();nav("board")})
   .catch(function(e){S.busy=false;$("#researchBtn").textContent=lbl;sync();
     var d=e&&e.__detail;
@@ -853,6 +859,11 @@ function startResearch(extra){if(S.busy)return;
     if(d&&d.error==="hs_ambiguous"){return showHsCandidates(d,function(){startResearch({})})}
     // رمز HS غير محسوم (بوّابة صلبة 422): وجّه المستخدم للتصنيف/الاختيار اليدوي.
     if(d&&d.error==="unresolved_hs"){S.hs=null;S.hsConfirmed=false;return ensureHs(function(){startResearch({})})}
+    // P1-1 (409): البيانات لا تكفي — لم يُستهلك رصيد؛ يختار المستخدم تقريراً محدوداً أو الإلغاء.
+    if(d&&d.error==="insufficient_data_preflight"){
+      var miss=(d.missing||[]).join("، ");
+      if(window.confirm("البيانات المتاحة لا تكفي لدراسة كاملة ولم يُستهلك أي رصيد.\nالناقص: "+miss+"\n\nمتابعة بتقرير محدود (تُعلن الفجوات في «ما لم يتسنّ توثيقه»)؟")){return startResearch({accept_limited:true})}
+      return toast("أُلغي البحث — لم يُستهلك رصيد")}
     toast("فشل البحث العميق: "+e.message)})}
 $("#researchBtn").addEventListener("click",function(){runDeepResearch()});
 /* بحوثي السابقة (ITEM ١، بلاغ حي التكلفة): كانت localStorage محضة — لكل

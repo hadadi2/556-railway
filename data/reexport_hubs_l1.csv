@@ -1,0 +1,11 @@
+# reexport_hubs_l1 — اقتصادات إعادة تصدير/مراكز عبور تجاري (entrepôt) لوسم الموردين في نمط الدراسة (P6-4).
+# المصدر: تصنيف «اقتصادات إعادة التصدير الرئيسية» في تقارير منظمة التجارة العالمية
+# (World Trade Statistical Review — re-exports tables) ومؤتمر الأمم المتحدة للتجارة والتنمية؛
+# مرجع عام على مستوى الدولة لا تصنيفٌ للبند: حصة «مركز» تعني أن المنشأ الفعلي غيره محتملاً.
+# لا يُضاف صفٌّ بلا مرجع منشور؛ `kind` قادم من البيانات نفسها يتقدّم على هذا الجدول.
+iso3,name_ar,source
+SGP,سنغافورة,WTO World Trade Statistical Review (re-exports)
+HKG,هونغ كونغ,WTO World Trade Statistical Review (re-exports)
+ARE,الإمارات العربية المتحدة,WTO World Trade Statistical Review (re-exports)
+NLD,هولندا,WTO World Trade Statistical Review (re-exports)
+BEL,بلجيكا,WTO World Trade Statistical Review (re-exports)

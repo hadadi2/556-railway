@@ -2713,6 +2713,13 @@ _SYMBOL_ANCHORS_EXTRA = [
     (230, "tests/e2e/platform_flow.cjs", ["factory_manual_hs_persisted"]),
     (231, "tests/test_platform_study_runtime.py", ["def test_a_stray_active_run_row_is_superseded_on_relaunch",
                                                 "_blocking_engine(monkeypatch, 778)"]),
+    (285, "tests/test_study_batch2_style.py", ["def test_llm_review_mark_never_reaches_the_client_export"]),
+    (285, "silk_study_render.py", ["self.review_marks = review_marks"]),
+    (286, "requirements.txt", ["PyYAML==6.0.1"]),
+    (287, "silk_study_case.py", ["def reexport_hubs", "def _used_sources"]),
+    (287, "tests/test_study_batch6_guard.py", ["def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows",
+                                              "def test_non_food_no_halal_case_polymers_turkey_renders_without_critical_violations"]),
+    (286, "tests/test_study_batch4_field.py", ["def test_study_mode_third_party_imports_are_in_production_requirements"]),
 ]
 
 

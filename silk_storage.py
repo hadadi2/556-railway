@@ -956,6 +956,29 @@ def list_analyses(path: str | None = None,
     return out
 
 
+def recent_research_blobs(limit: int = 20, path: str | None = None) -> list[dict]:
+    """P5-5: أحدث تشغيلات `/research` (kind='research' في SQL نفسه) مع نتيجتها —
+    للوحة `/ops/studies`؛ استعلام واحد لا N+1، ومقصور على `limit` صفاً."""
+    path = path or _db_path()
+    if not os.path.exists(path):
+        return []
+    init_db(path)
+    with _open(path) as conn:
+        rows = conn.execute(
+            "SELECT id, product, market_name, json_blob FROM analyses "
+            "WHERE kind = 'research' ORDER BY id DESC LIMIT ?",
+            (max(1, int(limit)),)).fetchall()
+    out = []
+    for r in rows:
+        try:
+            blob = json.loads(r["json_blob"] or "{}")
+        except ValueError:
+            blob = {}
+        out.append({"id": r["id"], "product": r["product"], "market_name": r["market_name"],
+                    "result": blob})
+    return out
+
+
 def get_analysis(analysis_id: int, path: str | None = None) -> dict | None:
     """أعد تحليلًا كاملًا — fetch one full analysis dict, or None if absent.
 

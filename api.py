@@ -454,6 +454,11 @@ def _apply_production_cost(card: dict | None, cost) -> dict | None:
     return out
 
 
+def _preflight_enabled() -> bool:
+    """P1-1: فحص الجاهزية قبل الحجز — SILK_PREFLIGHT=0 يعطّله (مسار الاختبارات الهرمتية القديمة)."""
+    return os.environ.get("SILK_PREFLIGHT", "1").strip().lower() not in ("0", "false", "no", "off")
+
+
 def _early_halt_enabled() -> bool:
     """علم الإيقاف المبكر (هدف الدراسة الاحترافية، البند ٨) — افتراضه مفعّل.
 
@@ -542,6 +547,7 @@ def create_app():
         from fastapi.responses import JSONResponse
         from fastapi.staticfiles import StaticFiles
         from pydantic import BaseModel, Field
+        from typing import Literal
     except ImportError as exc:  # pragma: no cover - exercised only without dep
         raise RuntimeError(_PIP_HINT) from exc
 
@@ -1976,6 +1982,12 @@ def create_app():
         # الرمز تُرجِع 422 حين لا تشمل صفةُ الرمز صفةَ المنتج المميّزة؛ إرسالُ
         # hs_confirmed=true بعد مراجعة المستخدم يُكمِل التشغيلة على مسؤوليته.
         hs_confirmed: bool = False
+        # P1-1: قبول تقرير محدود رغم نقص الحد الأدنى من البيانات (بعد إبلاغ العميل).
+        accept_limited: bool = False
+        # P3-4: ملف المصدّر — منتج زراعي / محوِّل لمادة مستوردة / مصنّع. يحدد أي
+        # استنتاج يجوز نسبة نفعه للمصدّر (مراجعة الدراسة). غيابه = الافتراض القائم.
+        exporter_type: Literal["agri_producer", "processor_of_imported_input",
+                               "manufacturer"] | None = None
         # نمط كتابة التقرير (طلب المالك 2026-07-23): "academic" يجعل الكاتب
         # يكتب بسجلٍّ بحثيٍّ علمي (نفس الأقسام/الحكم/قواعد الصدق، النثر وحده
         # يتغيّر). غيابه => الافتراضي من البيئة `SILK_REPORT_STYLE`
@@ -2184,7 +2196,8 @@ def create_app():
                              resume_reports, report_style=None,
                              hs_confidence=None, hs_provenance=None,
                              lang="ar", resume_stages=None,
-                             hs_classification=None) -> None:
+                             hs_classification=None,
+                             exporter_type=None) -> None:
         """جسم الخيط الخلفي (async_run=true) — يُغلَّف باستثناء شامل عمداً:
         خيط بايثون غير المُمسوك يفشل صامتاً (لا كسر عملية، لا تحديث حالة)
         فتبقى التشغيلة عالقة على 'running' للأبد — بلاغ التحقيق (P0) يمنع
@@ -2199,7 +2212,7 @@ def create_app():
                     resume_reports, report_style, hs_confidence=hs_confidence,
                     hs_classification=hs_classification,
                     hs_provenance=hs_provenance, lang=lang,
-                    resume_stages=resume_stages)
+                    resume_stages=resume_stages, exporter_type=exporter_type)
             _finish_research_run(analysis_id, result)
         except Exception as e:  # noqa: BLE001 — خيط خلفي: هذا آخر حزام أمان
             log.error("background /research run %s failed: %s", analysis_id, e)
@@ -2933,6 +2946,18 @@ def create_app():
                                        _adm=None):
         """ذيلُ `_research_impl` بعد قبول التشغيلة في السقف — الحجزُ الدولاري،
         صفُّ التشغيلة، ثم التشغيل (خلفياً أو متزامناً) تحت سجلّ `silk_research_runtime`."""
+        # P1-1 (F-03): فحص كفاية البيانات **قبل** الحجز الدولاري وقبل أي نداء
+        # مدفوع — النقص يُعاد للعميل بقائمته ولا يُستهلك رصيد؛ `accept_limited`
+        # يُكمل بتقرير محدود على مسؤوليته. الاستئناف لا يُعاد فحصه (بعثاته محفوظة).
+        if req.resume is None and not getattr(req, "accept_limited", False) and _preflight_enabled():
+            from silk_study_readiness import preflight
+            _pf = preflight(hs_code or "", market_ref)
+            if not _pf["ok"]:
+                raise HTTPException(status_code=409, detail={
+                    "error": "insufficient_data_preflight",
+                    "message": "البيانات المتاحة لا تكفي لدراسة كاملة؛ لم يُستهلك أي رصيد. "
+                               "يمكنك المتابعة بتقرير محدود (accept_limited=true) أو الإلغاء.",
+                    "missing": _pf["missing"], "checked": _pf["checked"]})
         _expected_usd = _expected_run_usd()   # مراجعة §58 #11: قراءة محروسة
         if not silk_usage.try_reserve_usd(_expected_usd):
             # ITEM 5ب: رفض حجز بحالة السقف — نص خادمي بحت، لا محتوى كلود.
@@ -2994,6 +3019,9 @@ def create_app():
         if product_card_dict is not None and own_price is not None:
             product_card_dict = dict(product_card_dict)
             product_card_dict["own_price"] = own_price
+        # P3-4: ملف المصدّر قناةٌ مستقلة — لا بطاقة منتج مصطنعة تُحقن في البعثات.
+        _etype = (getattr(req, "exporter_type", None)
+                  or stored_request.get("exporter_type"))
 
         if analysis_id is None and req.persist:
             from silk_storage import create_research_run
@@ -3003,6 +3031,7 @@ def create_app():
                 # لا استنتاج لاحق من اسمٍ عربي/إنجليزي غامض عند الاستئناف.
                 "market_iso3": market_ref.iso3, "hs_code": hs_code,
                 "product_card": product_card_dict, "own_price": own_price,
+                "exporter_type": _etype,
                 "production_cost_per_unit": _prod_cost,
                 "agent_prefs": prefs, "allow_degraded": req.allow_degraded}
             try:
@@ -3062,7 +3091,7 @@ def create_app():
                      # ملخّصُ التصنيف يُمرَّر **كوسيط** لا يُلتقَط من نطاقٍ
                      # خارجيّ: الخيطُ الخلفي دالّةٌ مستقلّة، والالتقاطُ هناك
                      # `NameError` يقع داخل خيطٍ فيُبتلَع سبباً غامضاً.
-                     _hs_classification_summary(hs_classification)),
+                     _hs_classification_summary(hs_classification), _etype),
                 daemon=True)
             _rh.thread = _t
             try:
@@ -3107,7 +3136,7 @@ def create_app():
                     resume_reports, req.report_style, hs_confidence=hs_confidence,
                     hs_provenance=hs_provenance, lang=_req_lang,
                     hs_classification=_hs_classification_summary(hs_classification),
-                    resume_stages=resume_stages)
+                    resume_stages=resume_stages, exporter_type=_etype)
             # R2b (API-5): الحفظُ النهائي **داخل** try — فشلُه كان 500 عارياً يترك
             # الصفّ `running` ويُضيع تقريراً مدفوعاً لم يُحفَظ نقطةَ تفتيش قطّ.
             _stage = "save"
@@ -3465,6 +3494,32 @@ def create_app():
         import silk_ops_log
         return _json({"errors": silk_ops_log.last_errors(n)})
 
+    @app.get("/ops/studies")
+    def ops_studies(request: Request, n: int = 20):
+        """P5-5: لوحة داخلية لاقتصاديات «دراسة السوق» — آخر n تشغيلات بحثية تحمل
+        `study_review`: الدرجة، الجولات، كلفة الذيل وزمنه، سلّم التسليم. محروسة
+        كبقية سطوح المشغّل؛ لا نص دراسة ولا ملاحظات مراجع خام في الرد."""
+        _require_key(request)
+        _rate_limit(request)
+        from silk_storage import recent_research_blobs
+        n = max(1, min(int(n), 100))
+        out = []
+        for row in recent_research_blobs(n):
+            full = row["result"]
+            sr = (full.get("deep_research") or {}).get("study_review")
+            if not sr:
+                continue
+            eco = full.get("data_economics") or {}
+            out.append({"id": row["id"], "product": row.get("product"),
+                        "market": row.get("market_name"), "score": sr.get("score"),
+                        "rounds": sr.get("rounds"), "best_round": sr.get("best_round"),
+                        "tail_cost_usd": sr.get("cost_usd"), "tail_seconds": sr.get("seconds"),
+                        "tail_capped": sr.get("tail_capped"),
+                        "delivery": (sr.get("delivery") or {}).get("tier"),
+                        "run_cost_usd": eco.get("cost_usd_estimate"),
+                        "cost_usd_by_stage": eco.get("cost_usd_by_stage")})
+        return _json({"studies": out})
+
     @app.get("/ops/backup")
     def ops_backup(request: Request):
         """شغّل نسخاً احتياطياً الآن وأعِد المانيفست — سطح مشغّل محروس.
@@ -3717,11 +3772,6 @@ def create_app():
         # HF4.2: علِّم النموذجَ بالجمهور — سطرُ إفصاح التنقية للمدقّق فقط.
         view["internal"] = internal
         is_research = bool(view.get("deep_research"))
-        if is_research and not internal:
-            _block_client_export_if_gate_failed(
-                view, analysis_id, found, "docx", request)
-        if is_research and internal:
-            _attach_override_history(view, analysis_id)
         # القالب الأكاديمي (قرار المالك 2026-07-22): ?style=academic يبدّل
         # ترتيب/نبرة تقرير العميل فقط — نفس النموذج القانوني ونفس بوابة
         # التسليم أعلاه ونفس مُطهِّرات العميل؛ صفر نداء كلود إضافي.
@@ -3729,12 +3779,24 @@ def create_app():
         style = (str(request.query_params.get("style") or "").lower()
                  or str((view.get("deep_research") or {})
                         .get("report_style") or "").lower())
+        # نمط «دراسة السوق» (P1-3): لا حجب — فجوة البيانات بندٌ في «ما لم يتسنّ
+        # توثيقه» ومحرك القوالب يحمل حراسه (نائب/مصطلح ممنوع) بنفسه.
+        if is_research and not internal and style != "study":
+            _block_client_export_if_gate_failed(
+                view, analysis_id, found, "docx", request)
+        if is_research and internal:
+            _attach_override_history(view, analysis_id)
         # البند #8 (تدقيق v2 الموجة ٣): مجلّد مؤقّت **واحد** يُنظَّف بعد إرسال
         # الردّ (BackgroundTask) — كان كلّ طلب يُنشئ mkdtemp لا يُحذَف أبداً
         # (FileResponse يبثّ الملف لا مجلّده)، فيتراكم على قرص النشر حتى الدوران.
         _td = tempfile.mkdtemp()
         try:
-            if is_research and not internal and style == "academic":
+            if is_research and not internal and style == "study":
+                # نمط «دراسة السوق» (P0-T): محرك القوالب الحتمي، لا كاتب نموذج.
+                from silk_study_export import study_docx
+                path, _meta = study_docx(found, os.path.join(_td, "report.docx"))
+                fname = f"silk_study_{analysis_id}.docx"
+            elif is_research and not internal and style == "academic":
                 from silk_reports import render_academic_docx
                 path = render_academic_docx(
                     view, os.path.join(_td, "report.docx"))
@@ -3803,18 +3865,24 @@ def create_app():
         # HF4.2: علِّم النموذجَ بالجمهور — سطرُ إفصاح التنقية للمدقّق فقط.
         view["internal"] = internal
         is_research = bool(view.get("deep_research"))
-        if is_research and not internal:
+        style = (str(request.query_params.get("style") or "").lower()
+                 or str((view.get("deep_research") or {})
+                        .get("report_style") or "").lower())
+        if is_research and not internal and style != "study":
             _block_client_export_if_gate_failed(
                 view, analysis_id, found, "pdf", request)
         if is_research and internal:
             _attach_override_history(view, analysis_id)
         _td = tempfile.mkdtemp()   # البند #8: يُنظَّف بعد الإرسال (background)
         out = os.path.join(_td, "report.pdf")
-        style = (str(request.query_params.get("style") or "").lower()
-                 or str((view.get("deep_research") or {})
-                        .get("report_style") or "").lower())
         try:
-            if is_research and not internal and style == "academic":
+            if is_research and not internal and style == "study":
+                from silk_study_export import study_docx
+                from silk_reports import docx_to_pdf
+                _dx, _meta = study_docx(found, os.path.join(_td, "report.docx"))
+                path = docx_to_pdf(_dx, out)
+                fname = f"silk_study_{analysis_id}.pdf"
+            elif is_research and not internal and style == "academic":
                 from silk_reports import render_academic_pdf
                 path = render_academic_pdf(view, out)
                 fname = f"silk_academic_report_{analysis_id}.pdf"
@@ -3867,8 +3935,13 @@ def create_app():
         from silk_render import build_view
         from silk_reports import render_markdown
         from fastapi.responses import PlainTextResponse
+        _style = str(request.query_params.get("style") or "").lower()
         try:
-            text = render_markdown(build_view(found))
+            if _style == "study" and found.get("deep_research"):
+                from silk_study_export import study_markdown
+                text, _meta = study_markdown(found)
+            else:
+                text = render_markdown(build_view(found))
         except RuntimeError as e:
             # نفس عقد report.docx (البند أعلاه): تناقض حكمٍ أو تسريبٌ يستحيل
             # تنقيته يُفشِل التوليد داخلياً — 501 نظيف لا 500 غير مُدار.
