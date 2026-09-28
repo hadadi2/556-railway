@@ -46,7 +46,9 @@ def test_preflight_refuses_before_any_reservation_or_model_call():
             patch("silk_ai_judge._call", side_effect=_fake_writer), \
             patch("silk_data_layer._cached_get", return_value=None), \
             patch("silk_data_layer._http_get", side_effect=OSError("no net")), \
+            patch("silk_data_layer.comtrade_trade", return_value=[]), \
             patch("silk_storage._db_path", return_value=db):
+        # نقصٌ فعلي ([] = لا سجل) ⇒ 409؛ تعذّر الجلب (None) ⇒ 503 ويُختبر منفصلاً.
         import api
         import silk_usage
         client = TestClient(api.create_app())
