@@ -10,7 +10,7 @@ import functools
 import logging
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import requests
 
@@ -891,6 +891,57 @@ def world_bank(iso3: str, indicator: str, year: int | None = None) -> DataPoint:
     if year is not None and _is_lpi_indicator(indicator) \
             and year not in _LPI_EDITIONS:
         year = _snap_lpi_year(year)
+    if _is_public_indicator(indicator):
+        return _public_indicator(iso3, indicator, year)
+    return _world_bank_resolved(iso3, indicator, year)
+
+
+# P6-2 (F-25/F-26): المؤشرات العامة التي تُبنى عليها الدراسة إلزامية — تعثّرُ الجلب
+# (حد معدل/شبكة/فشل تخزين معلن) يُعاد حتى 3 محاولات بتراجع؛ الفشل الدائم خطأ خط
+# بيانات مسجَّل في silk_ops_log لا فجوة صامتة. «لا قيمة منشورة» ليس تعثّراً فلا يُعاد.
+_PUBLIC_INDICATORS = {"PV.EST": "مؤشر (−2.5 إلى 2.5)", "RL.EST": "مؤشر (−2.5 إلى 2.5)",
+                      "RQ.EST": "مؤشر (−2.5 إلى 2.5)", "PA.NUS.FCRF": "وحدة عملة محلية لكل دولار"}
+PUBLIC_INDICATOR_ATTEMPTS = 3
+
+
+def _is_public_indicator(indicator: str) -> bool:
+    return indicator in _PUBLIC_INDICATORS or _is_lpi_indicator(indicator)
+
+
+def _transient(dp: DataPoint) -> bool:
+    return dp.value is None and (dp.status == "fetch_failed" or "fetch failed" in (dp.note or ""))
+
+
+def _public_indicator(iso3: str, indicator: str, year: int | None) -> DataPoint:
+    import time
+    dp = None
+    for attempt in range(PUBLIC_INDICATOR_ATTEMPTS):
+        dp = _world_bank_resolved(iso3, indicator, year)
+        if not _transient(dp):
+            break
+        if attempt < PUBLIC_INDICATOR_ATTEMPTS - 1:
+            # SILK_INDICATOR_RETRY_BACKOFF=0 يلغي الانتظار (الاختبارات الهرمتية بشبكة مقطوعة).
+            if os.environ.get("SILK_INDICATOR_RETRY_BACKOFF", "1") != "0":
+                time.sleep(_backoff_delay(attempt))
+    if dp.value is not None:
+        return replace(dp, status=dp.status or "ok",
+                       unit=dp.unit or _PUBLIC_INDICATORS.get(indicator, "نقاط (1 إلى 5)"),
+                       url=dp.url or f"https://data.worldbank.org/indicator/{indicator}",
+                       retrieval_method=dp.retrieval_method or "api")
+    if _transient(dp):
+        try:
+            import silk_ops_log
+            silk_ops_log.record_error(
+                "data_pipeline_error",
+                f"تعذّر جلب {indicator} لـ{iso3} بعد {PUBLIC_INDICATOR_ATTEMPTS} محاولات",
+                {"indicator": indicator, "iso3": iso3})
+        except Exception as e:  # noqa: BLE001 — السجل قناة جانبية
+            log.warning("ops log skipped: %s", e)
+        return replace(dp, status="fetch_failed")
+    return dp
+
+
+def _world_bank_resolved(iso3: str, indicator: str, year: int | None) -> DataPoint:
     dp = _world_bank_for_year(iso3, indicator, year)
     if dp.value is not None or year is None:
         return dp
@@ -901,7 +952,7 @@ def world_bank(iso3: str, indicator: str, year: int | None = None) -> DataPoint:
             confidence=fallback.confidence,
             note=f"{indicator}: سنة {year} لم تُنشر بعد لـ{iso3} — "
                  f"استُخدمت أحدث سنة متاحة ({fallback.note})",
-            retrieved_at=fallback.retrieved_at)
+            retrieved_at=fallback.retrieved_at, data_year=fallback.data_year)
     return dp
 
 

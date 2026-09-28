@@ -40,6 +40,7 @@ os.environ.setdefault("SILK_EARLY_HALT", "0")
 # tests/test_study_batch1_delivery.py وحده.
 os.environ.setdefault("SILK_PREFLIGHT", "0")
 os.environ.setdefault("SILK_STUDY_SLOTS", "0")   # P2-3: نداءات الفراغات تُفعَّل صراحةً في اختباراتها
+os.environ.setdefault("SILK_INDICATOR_RETRY_BACKOFF", "0")   # P6-2: لا انتظار تراجع بشبكة مقطوعة
 
 # دفتر الاستخدام الدولاري (الموجة p6): الاختبارات الهرمتية التي لا تضبط
 # SILK_USAGE_DB كانت تحجز 3$ لكل /research في **دفتر الجهاز الحقيقي**
