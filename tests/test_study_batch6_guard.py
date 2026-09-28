@@ -47,3 +47,38 @@ def test_other_indicators_keep_single_attempt():
     with patch.object(D, "_world_bank_for_year", return_value=_dp(None, "NY.GDP fetch failed for MYS")) as m:
         D.world_bank("MYS", "NY.GDP.MKTP.KD.ZG", None)
     assert m.call_count == 1
+
+
+# ── P6-3 ───────────────────────────────────────────────────────────────
+def test_stale_verification_is_flagged_and_fresh_kept():
+    import datetime as dt
+    from silk_study_case import verified_label
+    today = dt.date(2026, 9, 28)
+    assert verified_label("2026-09-23", today) == "2026-09-23"
+    assert verified_label("2025-12-01", today) == "2025-12-01 (يُعاد التحقق)"
+    assert verified_label("", today) is None
+
+
+def test_live_case_requirement_rows_carry_verification_and_tax_wording():
+    from silk_study_case import build_case
+    c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
+    rows = c["requirements"]["rows"]
+    assert rows and all(r["verified_at"] is None or r["verified_at"].startswith("20") for r in rows)
+    for r in rows:
+        if "ضريبة" in r["item"] and "%" not in r["item"]:
+            assert "يُحدَّد المعدل من جدول" in r["item"]
+
+
+# ── P6-4 ───────────────────────────────────────────────────────────────
+def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows():
+    from silk_study_case import build_case, reexport_hubs
+    import silk_deep_pillars
+    assert "SGP" in reexport_hubs()
+    rows = [{"partner": "Singapore", "share": 16.0}, {"partner": "Indonesia", "share": 12.0},
+            {"partner": "Viet Nam", "share": 10.0}]
+    with patch.object(silk_deep_pillars, "top_supplier_shares", return_value=(rows, {"year": 2024})):
+        c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
+    kinds = {t["iso3"]: t["kind"] for t in c["suppliers"]["top"]}
+    assert kinds.get("SGP") == "reexport_hub" and kinds.get("IDN") == "producer"
+    from silk_study_numbers import compute
+    assert compute(c)["hub"]["iso3"] == "SGP"

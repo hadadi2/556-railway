@@ -110,6 +110,31 @@ def threshold_from(shelf: list, landed_high_pct: int = 45) -> tuple[int | None, 
     return v, v is not None
 
 
+STALE_DAYS = 183     # P6-3: «آخر تحقق» أقدم من ستة أشهر يُوسم لإعادة التحقق
+
+
+def verified_label(verified_at, today) -> str | None:
+    """P6-3: تاريخ آخر تحقق كما هو، أو موسوماً «(يُعاد التحقق)» إن قدُم؛ غيابه None
+    (القالب يعرض «يُستوضح»)."""
+    v = str(verified_at or "").strip()
+    if not v:
+        return None
+    try:
+        d = _dt.date.fromisoformat(v[:10])
+    except ValueError:
+        return v
+    return f"{v} (يُعاد التحقق)" if (today - d).days > STALE_DAYS else v
+
+
+def reexport_hubs() -> set[str]:
+    p = os.path.join(_ROOT, "data", "reexport_hubs_l1.csv")
+    try:
+        with open(p, encoding="utf-8") as f:
+            return {r["iso3"] for r in csv.DictReader(ln for ln in f if not ln.startswith("#"))}
+    except OSError:
+        return set()
+
+
 def _gap(label: str, iso3: str = "") -> dict:
     owner = GAP_OWNERS.get(label)
     if label == "مستوردون مؤكدون بالاسم":
@@ -226,7 +251,10 @@ def build_case(found: dict, *, product_short: str | None = None,
     for r in rows[:4]:
         pref, _ = resolve_market(r["partner"])
         top.append({"iso3": getattr(pref, "iso3", "") or "", "name_ar": getattr(pref, "name_ar", None) or r["partner"],
-                    "share_pct": r["share"], "kind": None})
+                    "share_pct": r["share"],
+                    # P6-4: مركز إعادة تصدير من جدول مرجعي مسنَد؛ `kind` من البيانات يتقدّم.
+                    "kind": r.get("kind") or ("reexport_hub" if (getattr(pref, "iso3", "") or "")
+                                              in reexport_hubs() else "producer")})
     saudi = next((r["share"] for r in rows if r.get("saudi")), 0.0)
     sup_count = None
     for f in _findings(dr, "competitors"):
@@ -266,8 +294,12 @@ def build_case(found: dict, *, product_short: str | None = None,
                 halal_mandatory = status == "legal_mandatory"
                 continue
             party = "المستورد" if "المستورد" in item else "المصدّر"
-            req_rows.append({"item": item, "authority": str(r.get("authority") or "").split(" — ")[0],
-                             "party": party, "verified_at": r.get("verified_at") or None})
+            auth = str(r.get("authority") or "").split(" — ")[0]
+            if "ضريبة" in item and not re.search(r"\d+(?:[.,]\d+)?\s*%", item):
+                # P6-3: ضريبة بلا معدل مثبت — لا رقم يُخمَّن؛ الجهة التي يُحدَّد منها.
+                item = f"{item} (يُحدَّد المعدل من جدول {auth})" if auth else item
+            req_rows.append({"item": item, "authority": auth, "party": party,
+                             "verified_at": verified_label(r.get("verified_at"), today)})
     except Exception:  # noqa: BLE001 — غياب المرجع = فجوة معلنة لا انهيار
         pass
 
