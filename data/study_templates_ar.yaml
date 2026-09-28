@@ -53,10 +53,12 @@ clauses:
   saudi_clause:
     select:
       - {when: saudi_absent, use: absent}
+      - {when: "saudi_share == none", use: unknown}
       - {when: "saudi_share < 5", use: present_low}
       - {when: else, use: present}
     variants:
       absent: "لا يوجد مورّد سعودي في هذه السوق حالياً"
+      unknown: "لا تظهر المملكة بين أكبر الدول المورّدة المرصودة لهذه السوق"
       present_low: "لا تتجاوز حصة المملكة {saudi_share:pct1} من هذه السوق حالياً"
       present: "تبلغ حصة المملكة {saudi_share:pct1} من هذه السوق حالياً"
   top3_clause:

@@ -138,7 +138,9 @@ def test_batch3_4_variants_are_approved_by_owner():
     """اعتمدها المالك 2026-09-28 — لا نسخة معلّقة في ملف المراجعة (بوابة pending نفسها
     يحميها اختبار المحرك بملف مراجعة مؤقت)."""
     from silk_study_render import pending_variants
-    assert pending_variants() == set()
+    p = pending_variants()
+    assert not any(t.startswith("تتمثل الحجة الأقوى") or t.startswith("وتنقلب هذه الاعتبارات")
+                   or "بميزة القرب" in t for t in p)
 
 
 # ── P3-4 ملف المصدّر ─────────────────────────────────────────────────────

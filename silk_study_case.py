@@ -307,13 +307,19 @@ def build_case(found: dict, *, product_short: str | None = None,
                     # لا «منتج» مُفترَض: التصنيف يحتاج دليلاً؛ غيره None (لا اختلاق).
                     "kind": r.get("kind") or ("reexport_hub" if (getattr(pref, "iso3", "") or "")
                                               in _hubs else None)})
-    saudi = next((r["share"] for r in rows if r.get("saudi")), 0.0)
+    saudi = next((r["share"] for r in rows if r.get("saudi")), None)
     sup_count = None
     for f in _findings(dr, "competitors"):
         v = f.get("value")
         if isinstance(v, dict) and v.get("supplier_count"):
             sup_count = int(v["supplier_count"])
             break
+    if saudi is None and rows:
+        # الغياب يُقرَّر فقط حين تغطي الصفوف كل الموردين (عددهم أو مجموع الحصص)؛
+        # وإلا فالسعودية قد تكون خارج أول عشرة — الحصة مجهولة (None) لا صفر.
+        covered = sum(float(r.get("share") or 0) for r in rows)
+        if (sup_count is not None and len(rows) >= sup_count) or covered >= 99.5:
+            saudi = 0.0
 
     # ── التعرفة ──────────────────────────────────────────────────────────
     tariff = {"status": "gap", "rate_pct": None}

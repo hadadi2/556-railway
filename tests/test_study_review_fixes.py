@@ -66,3 +66,19 @@ def test_live_tariff_is_read_from_raw_evidence_and_not_confused_with_fx():
     c = build_case({"deep_research": {"missions": {"tariffs_agreements": {"findings": [claim]}}},
                     "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
     assert c["tariff"]["status"] == "exempt" and c["tariff"]["rate_pct"] == 0.0
+
+
+# ── (٤) حصة السعودية خارج أول عشرة ─────────────────────────────────────────
+def test_saudi_outside_top_rows_is_unknown_not_absent():
+    import silk_deep_pillars
+    from silk_study_case import build_case
+    from silk_study_numbers import compute
+    rows = [{"partner": "Indonesia", "share": 20.0}, {"partner": "Viet Nam", "share": 15.0}]
+    with patch.object(silk_deep_pillars, "top_supplier_shares", return_value=(rows, {"year": 2024})):
+        c = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
+    assert c["suppliers"]["saudi_share_pct"] is None
+    assert compute(c)["saudi_absent"] is False
+    full = rows + [{"partner": "Italy", "share": 65.0}]
+    with patch.object(silk_deep_pillars, "top_supplier_shares", return_value=(full, {"year": 2024})):
+        c2 = build_case({"deep_research": {}, "product": "قهوة", "hs_code": "090121", "market": "Malaysia"})
+    assert c2["suppliers"]["saudi_share_pct"] == 0.0 and compute(c2)["saudi_absent"] is True

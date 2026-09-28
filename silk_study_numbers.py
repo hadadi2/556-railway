@@ -198,8 +198,9 @@ def compute(case: dict) -> dict:
         **{f"shape_{k}": v for k, v in shape.items()},
         **{f"dec_{k}": v for k, v in dec.items()},
         "supplier_count": sup.get("count"),
-        "saudi_share": sup.get("saudi_share_pct") or 0.0,
-        "saudi_absent": not sup.get("saudi_share_pct"),
+        "saudi_share": sup.get("saudi_share_pct"),
+        # الغياب حقيقة فقط حين الحصة صفر مثبت؛ None (مجهولة) لا تعني غياباً.
+        "saudi_absent": sup.get("saudi_share_pct") == 0,
         "top_n": len(top3), "top3_share": top3_sum,
         "top3_frac": fraction_word(top3_sum / 100.0) if top3_sum is not None else None,
         "top3_near": near,
