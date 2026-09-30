@@ -143,6 +143,19 @@ def test_batch3_4_variants_are_approved_by_owner():
                    or "بميزة القرب" in t for t in p)
 
 
+def test_review_fix_variants_are_approved_and_render_without_allow_pending():
+    """اعتمدها المالك 2026-09-30: «غير مرصودة» لحصة السعودية و«ضغط» التضخم."""
+    from silk_study_render import pending_variants, render_study
+    p = pending_variants()
+    assert not any("لا تظهر المملكة" in t or "قد يضغط على القوة الشرائية" in t for t in p)
+    c = _case()
+    c["macro"]["inflation_pct"] = 12.0
+    assert "قد يضغط على القوة الشرائية" in render_study(c, _kn())
+    c2 = _case()
+    c2["suppliers"]["saudi_share_pct"] = None
+    assert "لا تظهر المملكة" in render_study(c2, _kn())
+
+
 # ── P3-4 ملف المصدّر ─────────────────────────────────────────────────────
 def test_processor_exporter_credited_with_direct_buying_benefit_is_critical():
     from silk_study_linter import lint
