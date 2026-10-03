@@ -88,7 +88,7 @@ _NON_MONEY_UNIT_RE = re.compile(
     r"persons?|tonnes?|tons?|kg|litres?|liters?|units?)(?![A-Za-z؀-ۿ])", re.I)
 
 
-def _num_usd(value: object, note: object = "") -> "float | None":
+def _num_usd(value: object, note: object = "", money: bool = True) -> "float | None":
     """قيمةٌ رقميةٌ بالدولار من قيمةٍ عدديةٍ أو نصٍّ («497 مليون دولار»)، أو None.
 
     لا اختلاق: يعيد None إن لم يُرصَد رقمٌ حقيقيّ — المتّصلُ يتجاوز البند بدل
@@ -109,7 +109,7 @@ def _num_usd(value: object, note: object = "") -> "float | None":
             if (text[m.end(1):m.end(1) + 2].lstrip()[:1] in ("%", "٪")
                     or _CODE_LIKE_RE.fullmatch(bare) or _BARE_YEAR_RE.fullmatch(bare)):
                 continue                  # نسبةٌ أو رمزُ بند أو سنة — لا مبلغ
-        if _NON_MONEY_UNIT_RE.match(text, m.end()):
+        if money and _NON_MONEY_UNIT_RE.match(text, m.end()):
             continue                      # عددُ أشخاص/وحدات أو كتلة — لا مبلغ
         try:
             base = float(re.sub(r"[,،٬]", "", raw).replace("٫", "."))
@@ -202,7 +202,10 @@ def _anchors(dr: dict) -> dict:
         series_anchor = True
     for _key, f in _iter_findings(dr):
         blob = f"{f.get('note') or ''} {f.get('value') or ''}"
-        val = _num_usd(f.get("value"), f.get("note"))
+        is_pop = (_kw_hit(blob, _POP_KW) and not _kw_hit(blob, _IMPORT_KW)
+                  and not _kw_hit(blob, _GDP_PC_KW))
+        # السكان عددٌ لا مبلغ — «34 مليون نسمة» يُقرأ هنا وحده (مراجعة §58 الثانية).
+        val = _num_usd(f.get("value"), f.get("note"), money=not is_pop)
         if val is None or val <= 0:
             continue
         if _kw_hit(blob, _IMPORT_KW) and not _kw_hit(blob, _MARKET_SIZE_KW):
