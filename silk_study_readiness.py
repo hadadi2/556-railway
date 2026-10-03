@@ -12,6 +12,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as _Timeout
 
 MIN_YEARS = 3
+# فحوص تُعلَن فجوةً ولا تمنع الإطلاق — advisory checks: declared gap, never a blocker.
+ADVISORY = frozenset({"الرسم الجمركي المنطبق"})
 
 
 def _timeout_s() -> float:
@@ -99,4 +101,10 @@ def preflight(hs: str, market) -> dict:
                 missing.append(k)
     finally:
         ex.shutdown(wait=False)       # لا انتظار لعامل متعثّر بعد المهلة
-    return {"ok": not missing, "missing": missing, "unverified": unverified, "checked": checked}
+    # التعرفة فجوة معلنة في التقرير (silk_study_case) لا شرط إطلاق: كثير من
+    # الأسواق بلا صفّ WITS/WTO ثنائي، فكان غيابها وحده يرفض الدراسة كلها (بلاغ حي).
+    advisory = [k for k in missing if k in ADVISORY]
+    missing = [k for k in missing if k not in ADVISORY]
+    unverified = [k for k in unverified if k not in ADVISORY]
+    return {"ok": not missing, "missing": missing, "unverified": unverified,
+            "checked": checked, "advisory_gaps": advisory}

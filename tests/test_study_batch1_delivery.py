@@ -209,3 +209,22 @@ def test_insufficient_409_carries_a_factory_readable_reason_without_api_flag():
             "persist": True, "async_run": True, "hs_confirmed": True})
     d = r.json()["detail"]
     assert r.status_code == 409 and "accept_limited" not in d["reason"] and "الناقص" in d["reason"]
+
+
+def test_tariff_gap_alone_never_blocks_the_study():
+    """بلاغ حي: «الناقص: الرسم الجمركي المنطبق» رفض الدراسة رغم توفّر الواردات والحصص."""
+    from silk_data_layer import DataPoint
+    from silk_market_resolver import resolve_market
+    import silk_study_readiness as R
+    ref, _ = resolve_market("Malaysia")
+    with patch.dict(os.environ, {"SILK_PREFLIGHT_TIMEOUT_S": "3"}), \
+            patch("silk_data_layer.comtrade_trade",
+                  return_value=[{"partnerCode": 0, "primaryValue": 89_400_000.0}]), \
+            patch("silk_data_layer_v2.market_competitors_status",
+                  return_value=([DataPoint({"partner": "IDN", "share": 19}, "UN Comtrade", 0.9, "",
+                                           "2026-09-27")], False)), \
+            patch("silk_tariffs_agent.tariff_with_fallback",
+                  return_value=DataPoint(None, "WTO", 0.0, "لا سجل", "")):
+        out = R.preflight("090121", ref)
+    assert out["ok"] and not out["missing"]
+    assert out["advisory_gaps"] == ["الرسم الجمركي المنطبق"]
