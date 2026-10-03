@@ -176,7 +176,7 @@ def test_series_augment_fetches_missing_years_once():
         SM._augment_trade_flow_series(report, "090121", ref)
     import datetime as _dt
     y0 = _dt.date.today().year - 1
-    assert asked == [[y for y in range(2019, y0 + 1) if y != 2024]]
+    assert asked == [[y] for y in range(y0, 2018, -1) if y != 2024]   # الأحدث أوّلاً، سنةٌ بنداء
     years = sorted(dp.data_year for dp in report.findings)
     assert years == list(range(2019, y0 + 1))
 
@@ -239,10 +239,87 @@ def test_gate_blocks_a_route_that_starts_in_the_target_market():
     import silk_quality_gate as QG
 
     def run(text):
-        return QG._check_reversed_route({"deep_research": {"report": {"text": text}}})
+        return QG._check_reversed_route({"market": {"iso3": "MYS"},
+                                         "deep_research": {"report": {"text": text}}})
     assert run("الشحن البحري من ميناء كلانغ إلى جدة يستغرق نحو 14 يوماً.")
     assert run("Sea freight from Port Klang to Jeddah takes 14 days.")
     assert run("من كلانغ إلى الدمام عبر خط مباشر.")
     assert run("الشحن من جدة إلى ميناء كلانغ يستغرق نحو 14 يوماً.") == []
     assert run("النقل البري من الرياض إلى الدمام ثم الشحن البحري.") == []
     assert run("ينقل المصنع البضاعة من المستودع إلى جدة.") == []
+
+
+# ── مراجعة §58 على المرحلة الأولى ─────────────────────────────────────────
+
+def test_tam_comes_from_the_base_year_not_a_partial_mirror_year():
+    import silk_deep_pillars as DP
+    m = {"trade_flow": {"findings": [_pt(2022, 100e6), _pt(2023, 100e6), _pt(2024, 40e6, True)]}}
+    assert DP.base_year(m) == 2023
+    assert DP.build_pillar_inputs({"missions": m})["market_attractiveness"]["tam_usd"] == 100e6
+
+
+def test_store_path_keeps_aggregates_in_the_denominator():
+    import silk_data_layer_v2 as V2
+    recs = _recs([(0, 1000.0), (156, 500.0), (899, 300.0), (699, 200.0)])
+    written = []
+    with mock.patch.object(V2, "comtrade_trade", return_value=recs):
+        mi = V2.market_imports("090121", "458", 2024)
+    with mock.patch("silk_store.migrate"), \
+            mock.patch("silk_store.upsert_trade_flows", side_effect=lambda rows: written.extend(rows)):
+        V2._write_through_market(mi, "090121", "MYS", 2024)
+    isos = {r["partner_iso3"]: r["value_usd"] for r in written}
+    assert isos.get("899") == 300.0 and isos.get("IND") == 200.0 and "699" not in isos
+
+
+def test_reversed_route_only_when_the_origin_is_the_target_market():
+    import silk_quality_gate as QG
+
+    def run(text):
+        return QG._check_reversed_route({"market": {"iso3": "MYS"},
+                                         "deep_research": {"report": {"text": text}}})
+    for ok in ("من مصر إلى جدة", "من الصين إلى جدة", "إعادة التصدير من دبي إلى جدة",
+               "مقارنةً بـ 10 أيام من الهند إلى جدة", "من الطائف إلى جدة", "زمن العبور إلى جدة",
+               "ضمن الخطة إلى جدة", "انخفضت الواردات من 100 مليون دولار إلى جدة",
+               "Saudi imports from China to Jeddah"):
+        assert run(ok) == [], ok
+    for bad in ("الشحن من ماليزيا إلى جدة", "من ميناء كلانغ إلى جدة", "Port Klang → Jeddah",
+                "from Port Klang to Jeddah", "من كلانغ حتى الدمام"):
+        out = run(bad)
+        assert out and out[0]["check"] == "reversed_route", bad
+    note = run("الشحن البحري من ميناء كلانغ إلى جدة يستغرق 14 يوماً.")[0]["note"]
+    assert "جدة" in note and "جده" not in note
+
+
+def test_cagr_check_ignores_a_partial_mirror_endpoint():
+    import silk_quality_gate as QG
+    dr = {"missions": {"trade_flow": {"findings": [
+        {"value": v, "data_year": y, "status": st, "source": src,
+         "note": f"HS090121 إجمالي استيراد Malaysia من العالم {y}, USD"}
+        for y, v, st, src in ((2021, 50e6, "", "UN Comtrade"), (2022, 70e6, "", "UN Comtrade"),
+                              (2023, 100e6, "", "UN Comtrade"), (2024, 110e6, "", "UN Comtrade"),
+                              (2025, 60e6, "mirrored", "UN Comtrade (مرآة)"))]}}}
+    assert 2025 not in QG._annual_import_series(dr)
+
+
+def test_unknown_partner_gate_needs_a_material_share_and_dedups():
+    import silk_quality_gate as QG
+    tiny = [{"partner": "A", "share": 99.5, "code": "1"}, {"partner": "B", "share": 0.4, "code": "2"},
+            {"partner": "Unclassified area (Comtrade code 998)", "share": 0.05}]
+    assert QG._check_unknown_partner_codes(_gate_dr(tiny)) == []
+    dup = {"missions": {
+        "competitors": {"findings": [{"value": {"top_suppliers": [
+            {"partner": "Unclassified area (Comtrade code 998)", "share": 26.7}]}}]},
+        "trade_flow": {"findings": [{"value": {"top_suppliers": [
+            {"partner": "Unclassified area (Comtrade code 998)", "share": 25.1, "code": "998"}]}}]}}}
+    assert len(QG._check_unknown_partner_codes(dup)) == 1
+
+
+def test_mirror_incomplete_year_is_not_called_the_current_year():
+    import silk_i18n as I
+    assert "جارية" not in I.t("imports_incomplete_year", "ar")
+    assert "تصريحات الشركاء" in I.t("imports_incomplete_chart_note", "ar", year=2024)
+
+
+def test_492_is_monaco_not_an_aggregate():
+    import silk_data_layer as DL
+    assert not DL.is_aggregate_partner("492") and DL.partner_name("492") == "Monaco"

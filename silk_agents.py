@@ -388,6 +388,8 @@ class CompetitionAgent(BaseAgent):
                     retrieved_at=p.get("retrieved_at")))
                 if status:
                     comps[-1].status = status
+            if not comps:
+                return None               # مراجعة §58: مخزنٌ بتجميعات فقط ⇒ المسار الحي لا «لا بيانات»
             import silk_context
             silk_context.count_data("store_hits")
             return comps

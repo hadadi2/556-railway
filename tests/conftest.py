@@ -39,6 +39,9 @@ os.environ.setdefault("SILK_EARLY_HALT", "0")
 # هرمتياً فكل تشغيلة كانت ستُرفَض 409؛ يُطفأ افتراضياً هنا ويُشغَّل صراحةً في
 # tests/test_study_batch1_delivery.py وحده.
 os.environ.setdefault("SILK_PREFLIGHT", "0")
+# الدرس 290 (مراجعة §58): إلحاق سلسلة الواردات (2019→الأحدث) يبلغ كومتريد الحي — هرمتياً مطفأ؛
+# `tests/test_proposal_phase1.py` يستدعي الدالة مباشرةً بأداةٍ محاكاة.
+os.environ.setdefault("SILK_SERIES_AUGMENT", "0")
 os.environ.setdefault("SILK_STUDY_SLOTS", "0")   # P2-3: نداءات الفراغات تُفعَّل صراحةً في اختباراتها
 os.environ.setdefault("SILK_INDICATOR_RETRY_BACKOFF", "0")
 # سجل العمليات إلى ملف مؤقت لا إلى data/ops_errors.db في الريبو (مراجعة ذاتية، الدفعة ٦).

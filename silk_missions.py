@@ -223,9 +223,9 @@ MISSIONS: dict[str, dict] = {
         "allowed_tools": ["worldbank_indicator", "lookup_reference", "web_search"],
         "instructions": (
             "مؤشر أداء اللوجستيات (worldbank_indicator indicator="
-            "logistics_lpi). الشحن صادرٌ من ميناء سعودي (جدة/الدمام) إلى ميناء السوق "
-            "المستهدف (lookup_reference جدول ports للسوق المستهدف) — الاتجاه دائماً "
-            "السعودية ← السوق، ولا تكتب مساراً يبدأ من ميناء السوق. خطوط شحن منشورة "
+            "logistics_lpi). الشحن صادرٌ من ميناء سعودي (جدة/الدمام) — أو منفذٍ برّي للدول "
+            "المجاورة — إلى ميناء السوق (lookup_reference جدول ports للسوق المستهدف) — "
+            "الاتجاه دائماً السعودية ← السوق، ولا تكتب مساراً يبدأ من ميناء السوق. خطوط شحن منشورة "
             "إن وُجدت عبر بحث الويب. زمن/تكلفة الشحن غير المرصودين = فجوة "
             "معلنة، لا تقدير."),
     },
@@ -763,16 +763,24 @@ def _augment_trade_flow_series(report: AgentReport, hs_code: str, market) -> Non
     years = [y for y in range(_SERIES_FIRST_YEAR, y0 + 1) if y not in have]
     if not years:
         return
-    try:
-        from silk_llm_runtime import _tool_comtrade_imports
-        out = _tool_comtrade_imports({"years": years}, {"hs_code": hs_code, "market": market})
-    except Exception as e:  # noqa: BLE001 — إلحاقٌ تحسيني
-        log.warning("trade_flow series augment skipped: %s", e)
-        return
-    for dp in out or []:
-        if getattr(dp, "data_year", None) in years and isinstance(getattr(dp, "value", None),
-                                                                   (int, float)):
-            findings.append(dp)
+    import time as _time
+    from silk_llm_runtime import _tool_comtrade_imports
+    # مراجعة §58: مهلةٌ داخلية دون سقف `_bounded_augment` (٣٠ث) — السنوات الأحدث أوّلاً، سنةٌ
+    # بنداء، والتوقّف عند المهلة فلا يبقى عاملٌ متخلّف يستهلك خانات كومتريد بعد الإلغاء.
+    deadline = _time.monotonic() + float(os.environ.get("SILK_SERIES_AUGMENT_S", "20"))
+    for y in sorted(years, reverse=True):
+        if _time.monotonic() > deadline:
+            log.warning("trade_flow series augment stopped at deadline (years left from %s)", y)
+            break
+        try:
+            out = _tool_comtrade_imports({"years": [y]}, {"hs_code": hs_code, "market": market})
+        except Exception as e:  # noqa: BLE001 — إلحاقٌ تحسيني
+            log.warning("trade_flow series augment skipped: %s", e)
+            return
+        for dp in out or []:
+            if getattr(dp, "data_year", None) == y and isinstance(getattr(dp, "value", None),
+                                                                  (int, float)):
+                findings.append(dp)
 
 
 def _augment_competitors_structured(report: AgentReport, hs_code: str,
@@ -970,7 +978,8 @@ def run_all_missions(market: MarketRef, product: str = "",
     from silk_request_identity import fingerprint
     before_augment = {key: fingerprint(reports[key])
                       for key in ("competitors", "risk_news", "trade_flow") if key in reports}
-    if hs_code and "trade_flow" in reports:
+    if hs_code and "trade_flow" in reports and \
+            os.environ.get("SILK_SERIES_AUGMENT", "1").strip() != "0":
         _bounded_augment("trade_flow_series", reports["trade_flow"],
                          _augment_trade_flow_series, reports["trade_flow"], hs_code, market)
     if hs_code and "competitors" in reports:

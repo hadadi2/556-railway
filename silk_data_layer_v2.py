@@ -11,6 +11,7 @@ from silk_data_layer import (
     DataPoint,
     ISO3_TO_M49,
     M49_TO_ISO3,
+    comtrade_partner_iso3,
     comtrade_trade,
     is_aggregate_partner,
     partner_name,
@@ -396,10 +397,18 @@ def _write_through_market(mi: dict, hs_code: str, market_iso3: str,
                              "value_usd": mi["total_usd"]})
             for c in mi["competitors"]:
                 v = c.value or {}
-                piso = M49_TO_ISO3.get(str(v.get("code")), str(v.get("code")))
+                code = str(v.get("code"))
+                # الدرس 290: رمز كومتريد الخاص (699) يُخزَّن بـISO3 (IND) لا رقماً خاماً.
+                piso = comtrade_partner_iso3(code) or M49_TO_ISO3.get(code, code)
                 rows.append({"hs6": hs_code, "reporter_iso3": market_iso3,
                              "partner_iso3": piso, "year": int(year), "flow": "M",
                              "value_usd": v.get("value_usd")})
+            # مراجعة §58: التجميعات (899…) تُخزَّن برمزها فيبقى مقامُ الحصص في قراءة المخزن
+            # كما في الجلب الحي — والمسارُ المخزَّن يستبعدها من الترتيب (`is_aggregate_partner`).
+            for a in mi.get("aggregates") or []:
+                rows.append({"hs6": hs_code, "reporter_iso3": market_iso3,
+                             "partner_iso3": str(a.get("code")), "year": int(year),
+                             "flow": "M", "value_usd": a.get("value_usd")})
             if rows:
                 silk_store.migrate()
                 silk_store.upsert_trade_flows(rows)

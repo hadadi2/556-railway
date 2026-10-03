@@ -581,8 +581,12 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
         and any(t in s_partner.lower() for t in _INCUMBENT_SAUDI_TOKENS))
     if saudi_share is None and _incumbent_saudi and s_top is not None:
         saudi_share = s_top
+    # الدرس 290 (مراجعة §58): حجمُ السوق من سلسلة الواردات عند سنة الأساس — مرشّحٌ من سنةٍ
+    # جزئية (مرآة ناقصة) أو نثرٍ لسنة أخرى لا يصير TAM بينما الرسم والدفتر على سنة الأساس.
+    _series_pts = [p for p in (import_series(missions).get("series") or []) if not p.get("partial")]
+    _tam = float(_series_pts[-1]["value"]) if _series_pts else _numeric(trade, "tam_usd")
     market = {
-        "tam_usd": _numeric(trade, "tam_usd"),
+        "tam_usd": _tam,
         "import_cagr_pct": _numeric(trade, "import_cagr_pct"),
         "gdp_per_capita_usd": _numeric(econ, "gdp_per_capita_usd"),
         "saudi_share_pct": saudi_share,

@@ -4030,7 +4030,9 @@ def _chart_imports_trend(imports: "dict | None", lang: str) -> "dict | None":
         "note": " · ".join(x for x in (
             (imports or {}).get("note"), (imports or {}).get("gap_line"),
             (imports or {}).get("mirror_line"),
-            _I.t("imports_partial_chart_note", lang,
+            _I.t("imports_incomplete_chart_note"
+                 if partial[-1].get("partial_reason") == "mirror_incomplete"
+                 else "imports_partial_chart_note", lang,
                  year=partial[-1]["year"]) if partial else "") if x),
     }
 
