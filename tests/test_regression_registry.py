@@ -4599,6 +4599,16 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    291: lambda: (
+        _needles("silk_wto_tariff.py", "def _logging_fetcher")(),
+        _needles("silk_data_layer.py", "def _wgi_current_id")(),
+        _needles("silk_faostat_agent.py", "def _bearer")(),
+        _needles("silk_study_render.py", "_TABLE_GAP", "def _provisional_year")(),
+        _needles("tests/test_lesson291_source_gaps.py",
+                 "def test_wits_network_failure_does_not_step_back",
+                 "def test_faostat_login_sends_bearer",
+                 "def test_empty_table_keeps_header_with_declared_gap_row")(),
+        _needles("tests/test_lessons_enforcement.py", "(291, ")()),
     290: lambda: (
         _needles("silk_data_layer.py", "def comtrade_partner_iso3", "def is_aggregate_partner")(),
         _needles("data/comtrade_partner_codes.csv", "699,IND,India")(),

@@ -396,7 +396,17 @@ _WALL_GRACE_S = int(os.environ.get("SILK_MISSION_WALL_GRACE_S", "10"))
 _MISSION_AUGMENT_TIMEOUT_S = float(os.environ.get("SILK_MISSION_AUGMENT_TIMEOUT_S", "30"))
 
 
-def _bounded_augment(label: str, report: "AgentReport", fn, *args) -> bool:
+def _supplier_nature_timeout_s() -> float:
+    """سقف تعزيز طبيعة المورّدين — ≈١٠ نداءات كومتريد بمباعدة 1.1ث تُخطّت 30ث على الإنتاج
+    (الدراسة ٩، الدرس ٢٩١)؛ سقفها 60ث ومهلتها الداخلية تسلّم ما اكتمل."""
+    try:
+        return float(os.environ.get("SILK_SUPPLIER_NATURE_TIMEOUT_S", "60") or "60")
+    except ValueError:
+        return 60.0
+
+
+def _bounded_augment(label: str, report: "AgentReport", fn, *args,
+                     timeout: float | None = None) -> bool:
     """شغّل تعزيزاً تحت مهلة `SILK_MISSION_AUGMENT_TIMEOUT_S` — التجاوزُ يُلغى ويُعلَن في
     ملخّص البعثة، ولا يُنتظَر العاملُ (EXT-6/API-13)."""
     import contextvars as _cv
@@ -408,13 +418,14 @@ def _bounded_augment(label: str, report: "AgentReport", fn, *args) -> bool:
     pool = ThreadPoolExecutor(max_workers=1)
     try:
         fut = pool.submit(_cv.copy_context().run, fn, *isolated_args)
-        done, _pending = cf_wait({fut}, timeout=_MISSION_AUGMENT_TIMEOUT_S)
+        limit = timeout or _MISSION_AUGMENT_TIMEOUT_S
+        done, _pending = cf_wait({fut}, timeout=limit)
         if not done:
             fut.cancel()
-            log.warning("augment %s skipped: exceeded %ss", label, _MISSION_AUGMENT_TIMEOUT_S)
+            log.warning("augment %s skipped: exceeded %ss", label, limit)
             try:
                 report.summary = (report.summary or "") + (
-                    f" — تعزيزُ «{label}» تُخطّي (تجاوز {int(_MISSION_AUGMENT_TIMEOUT_S)} ث)")
+                    f" — تعزيزُ «{label}» تُخطّي (تجاوز {int(limit)} ث)")
             except Exception:  # noqa: BLE001
                 pass
             return False
@@ -998,7 +1009,8 @@ def run_all_missions(market: MarketRef, product: str = "",
         # البند ٢: طبيعةُ المورّدين الأكبر — منتجٌ أم معيدُ تصدير.
         _bounded_augment("commercial_supplier_nature", reports["competitors"],
                          _augment_supplier_nature, reports["competitors"], hs_code, market,
-                         _commercial_calls_used(reports.get("trade_flow")))
+                         _commercial_calls_used(reports.get("trade_flow")),
+                         timeout=_supplier_nature_timeout_s())
     if "risk_news" in reports:
         _bounded_augment("risk_news_wgi", reports["risk_news"],
                          _augment_risk_news_wgi, reports["risk_news"], getattr(market, "iso3", ""))
