@@ -2723,7 +2723,10 @@ _SYMBOL_ANCHORS_EXTRA = [
     (288, "silk_study_readiness.py", ["ADVISORY = frozenset", "def _mirror_records"]),
     (288, "tests/test_study_batch1_delivery.py", ["def test_tariff_gap_alone_never_blocks_the_study",
                                                  "def test_preflight_counts_mirror_imports_and_shares_like_the_pipeline",
-                                                 "def test_mirror_fetch_failure_is_unverified_not_insufficient"]),
+                                                 "def test_mirror_fetch_failure_is_unverified_not_insufficient",
+                                                 "def test_every_market_has_a_tariff_reporter_code",
+                                                 "def test_preflight_sweep_over_every_market"]),
+    (288, "silk_tariffs_agent.py", ["def _countries_m49", "ISO3_TO_M49.get(iso3) or _countries_m49(iso3)"]),
 ]
 
 

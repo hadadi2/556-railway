@@ -4604,7 +4604,10 @@ _LESSONS = {
         _needles("tests/test_study_batch1_delivery.py",
                  "def test_tariff_gap_alone_never_blocks_the_study",
                  "def test_preflight_counts_mirror_imports_and_shares_like_the_pipeline",
-                 "def test_mirror_fetch_failure_is_unverified_not_insufficient")(),
+                 "def test_mirror_fetch_failure_is_unverified_not_insufficient",
+                 "def test_every_market_has_a_tariff_reporter_code",
+                 "def test_preflight_sweep_over_every_market")(),
+        _needles("silk_tariffs_agent.py", "def _countries_m49")(),
         _needles("tests/test_lessons_enforcement.py", "(288, ")()),
     287: lambda: (
         _needles("silk_study_case.py", "def reexport_hubs", "def _used_sources")(),

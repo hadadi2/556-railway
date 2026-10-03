@@ -270,3 +270,48 @@ def test_mirror_fetch_failure_is_unverified_not_insufficient():
         out = R.preflight("090121", ref)
     assert not out["ok"] and out["missing"]
     assert set(out["missing"]) <= set(out["unverified"]), out
+
+
+def _all_markets():
+    """كل أسواق المنصّة (data/countries.csv، ٢٥٠ صفاً) — ما له رمز M49 فقط."""
+    from silk_market_resolver import _load, _to_ref
+    return [_to_ref(r, 1.0) for r in _load() if (r.get("m49") or "").strip()]
+
+
+def test_every_market_has_a_tariff_reporter_code():
+    """الدرس 288 (كل الدراسات لا واحدة): رمز المُبلِّغ كان من جدول ثابت لـ٧٢ دولة، فـ١٦٨ سوقاً
+    لا تُسأل WITS ولا WTO عن تعرفتها أصلاً. المرجع `countries.csv` يحمل الرمز الرقمي للجميع."""
+    from silk_tariffs_agent import _wits_reporter_code, _EU_ISO3, _EU_WITS_CODE
+    missing = []
+    for m in _all_markets():
+        code, is_eu = _wits_reporter_code(m.iso3)
+        want = _EU_WITS_CODE if m.iso3 in _EU_ISO3 else m.m49.zfill(3)
+        if code != want or is_eu != (m.iso3 in _EU_ISO3):
+            missing.append((m.iso3, code, want))
+    assert not missing, missing[:20]
+    assert _wits_reporter_code("MYS") == ("458", False)
+    assert _wits_reporter_code("UNK") == (None, False)    # كوسوفو: لا رمز M49 ⇒ فجوة معلنة
+    assert _wits_reporter_code("") == (None, False)
+
+
+def test_preflight_sweep_over_every_market():
+    """الفحص المسبق لكل سوق: تعرفة غائبة وحدها لا ترفض، وسوقٌ تخدمها المرآة لا تُرفض."""
+    from silk_data_layer import DataPoint
+    import silk_study_readiness as R
+    no_tariff = DataPoint(None, "World Bank WITS", 0.0, "لا سجل", "")
+    present = [{"reporterCode": 360, "partnerCode": 0, "primaryValue": 5_000_000.0}]
+    share = ([DataPoint({"partner": "IDN", "share": 19}, "UN Comtrade", 0.9, "", "2026-09-27")], False)
+    refused = []
+    with patch.dict(os.environ, {"SILK_PREFLIGHT_TIMEOUT_S": "3"}), \
+            patch("silk_tariffs_agent.tariff_with_fallback", return_value=no_tariff):
+        for m in _all_markets():
+            with patch("silk_data_layer.comtrade_trade", return_value=present), \
+                    patch("silk_data_layer_v2.market_competitors_status", return_value=share):
+                a = R.preflight("090121", m)
+            with patch("silk_data_layer.comtrade_trade", side_effect=_mirror_only_comtrade(present)), \
+                    patch("silk_data_layer_v2.market_competitors_status", return_value=([], False)):
+                b = R.preflight("090121", m)
+            for label, out in (("tariff-gap", a), ("mirror", b)):
+                if not out["ok"]:
+                    refused.append((m.iso3, label, out["missing"]))
+    assert not refused, refused[:20]
