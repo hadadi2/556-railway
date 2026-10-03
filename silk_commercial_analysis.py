@@ -230,11 +230,12 @@ def _iso3_of(name: str, code: object = None) -> "tuple | None":
     """(iso3, m49) لمورّدٍ من كومتريد — رمزُ M49 من الملخّص أوّلاً (يحمله
     `_competitor_dp`)، ثمّ مُحلّلُ الأسواق على الاسم؛ None = مجهولٌ يُتخطّى."""
     try:
-        from silk_data_layer import _country_m49_index, _normalize_m49
+        from silk_data_layer import ISO3_TO_M49, _normalize_m49, comtrade_partner_iso3
         norm = _normalize_m49(code) if code not in (None, "") else ""
-        row = _country_m49_index().get(norm) if norm.isdigit() else None
-        if row and row.get("iso3"):
-            return str(row["iso3"]).upper(), norm
+        # الدرس 290: رموز كومتريد الخاصة (699 الهند…) تُحلّ أيضاً؛ m49 المعاد رقم ISO.
+        iso3 = comtrade_partner_iso3(norm) if norm.isdigit() else None
+        if iso3:
+            return iso3.upper(), ISO3_TO_M49.get(iso3.upper(), norm)
     except Exception:  # noqa: BLE001
         pass
     try:

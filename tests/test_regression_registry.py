@@ -4599,6 +4599,16 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    290: lambda: (
+        _needles("silk_data_layer.py", "def comtrade_partner_iso3", "def is_aggregate_partner")(),
+        _needles("data/comtrade_partner_codes.csv", "699,IND,India")(),
+        _needles("silk_deep_pillars.py", "def base_year")(),
+        _needles("silk_quality_gate.py", "def _check_unknown_partner_codes", "def _check_reversed_route")(),
+        _needles("tests/test_proposal_phase1.py",
+                 "def test_market_imports_ranks_countries_and_keeps_aggregates_out_of_competitors",
+                 "def test_unknown_partner_gate_is_graded",
+                 "def test_series_augment_fetches_missing_years_once")(),
+        _needles("tests/test_lessons_enforcement.py", "(290, ")()),
     289: lambda: (
         _needles("silk_plausibility.py", "_HS_TOKEN_RE", "series_anchor = True")(),
         _needles("silk_quality_gate.py", "_PILLAR_RECOMMENDATION_EXEMPT", "def _is_value_free_target")(),

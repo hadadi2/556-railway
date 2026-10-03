@@ -1105,6 +1105,121 @@ def _check_bare_partner_codes(dr: dict) -> list[dict]:
     return findings
 
 
+def _check_hs_code_as_value(view: dict) -> list[dict]:
+    """الدرس 290 (الخلل ١ في مقترح التصحيح): رقمٌ في نص التقرير يساوي رمز البند بعد حذف صفره
+    البادئ («90,121$» = 090121) — رمزٌ قُرئ قيمةً. حاجب."""
+    hs = re.sub(r"\D", "", str(view.get("hs_code")
+                                or (view.get("header") or {}).get("hs_code") or ""))
+    if len(hs) != 6 or not hs.startswith("0"):
+        return []
+    n = int(hs)
+    text = (((view.get("deep_research") or {}).get("report") or {}).get("text") or "")
+    for form in {f"{n:,}", str(n)}:
+        pat = rf"(?<![\d.,A-Za-z]){re.escape(form)}(?![\d.,])"
+        for m in re.finditer(pat, text):
+            if not re.search(r"(?i)HS\s*[:#-]?\s*0?$", text[max(0, m.start() - 6):m.start()]):
+                return [{"check": "hs_code_as_value", "repairable": False,
+                         "note": (f"الرقم {form} في التقرير هو رمز البند الجمركي {hs} "
+                                  "وليس قيمةً مرصودة")}]
+    return []
+
+
+def _market_route_names(iso3: str) -> tuple:
+    """أسماء السوق المستهدفة وميناؤها (عربي/إنجليزي/أسماء بديلة + `data/ports_l1.csv`) —
+    مقارنةٌ بعد `_norm_ar` وخفض الحالة."""
+    names = set()
+    try:
+        from silk_market_resolver import _load
+        row = next((r for r in _load() if (r.get("iso3") or "").upper() == iso3), None) or {}
+        for n in [row.get("name_en"), row.get("name_ar")] + (row.get("aliases") or "").split(";"):
+            if n and len(n.strip()) > 2:
+                names.add(_norm_ar(n.strip()))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import csv
+        import os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ports_l1.csv")
+        with open(path, newline="", encoding="utf-8") as f:
+            for r in csv.reader(ln for ln in f if not ln.lstrip().startswith("#")):
+                if r and r[0].strip().upper() == iso3 and len(r) > 2:
+                    port = " ".join(r[2].split()).lower()
+                    names.add(port)
+                    names.update(w for w in port.split() if len(w) > 3 and w != "port")
+    except Exception:  # noqa: BLE001
+        pass
+    return tuple(n for n in names if n)
+
+
+# ميناء السوق بالعربية حين لا يحمله المرجع الإنجليزي — أشهرُ الوجهات فقط، صفوفُ بيانات.
+_PORT_AR = {"MYS": ("كلانغ", "كلانج", "بورت كلانغ"), "SGP": ("سنغافورة",),
+            "IDN": ("تانجونغ بريوك", "جاكرتا"), "IND": ("نافا شيفا", "مومباي")}
+_ROUTE_AR_RE = re.compile(
+    r"(?<!\S)من\s+([^\n،.؛:]{1,40}?)\s+(?:[اإأ]ل[ىي]|حتى|نحو)\s+(?:ميناء\s+)?(جد[ةه]|الدمام)")
+_ROUTE_EN_RE = re.compile(
+    r"(?i)\bfrom\s+([A-Za-z .'-]{2,40}?)\s+to\s+(?:the\s+port\s+of\s+)?(jeddah|dammam)\b")
+_ROUTE_ARROW_RE = re.compile(
+    r"([A-Za-z\u0600-\u06FF .'-]{2,30}?)\s*(?:→|->|–|—|-|←)\s*(جد[ةه]|الدمام|Jeddah|Dammam)\b")
+
+
+def _check_reversed_route(view: dict) -> list[dict]:
+    """الدرس 290 (الخلل ٤ في مقترح التصحيح): مسارٌ يبدأ من **السوق المستهدفة نفسها** (اسمها أو
+    ميناؤها) وينتهي في جدة/الدمام — «كلانغ إلى جدة» في دراسة تصديرٍ من السعودية. حاجب.
+    مراجعة §58: منشأٌ آخر («من الصين إلى جدة» منافسٌ، «من دبي» إعادة تصدير، «من الرياض» نقلٌ
+    داخلي) ليس اتجاهاً معكوساً لهذه الدراسة فلا يُحجب."""
+    text = (((view.get("deep_research") or {}).get("report") or {}).get("text") or "")
+    iso3 = str((view.get("market") or {}).get("iso3")
+               or (view.get("header") or {}).get("market_iso3") or "").strip().upper()
+    if not text or not iso3:
+        return []
+    names = set(_market_route_names(iso3)) | {_norm_ar(n) for n in _PORT_AR.get(iso3, ())}
+    for rx in (_ROUTE_AR_RE, _ROUTE_EN_RE, _ROUTE_ARROW_RE):
+        for m in rx.finditer(text):
+            origin = _norm_ar(m.group(1)).lower()
+            if any(n and n in origin for n in names):
+                span = " ".join(m.group(0).split())
+                return [{"check": "reversed_route", "repairable": False,
+                         "note": (f"ورد مسار الشحن معكوساً («{span}»)؛ التصدير يكون من "
+                                  "الموانئ السعودية إلى ميناء السوق")}]
+    return []
+
+
+_UNKNOWN_PARTNER_MARK = "Unclassified area"
+
+
+def _check_unknown_partner_codes(dr: dict) -> list[dict]:
+    """الدرس 290 (المرحلة الأولى من مقترح التصحيح): مورّدٌ بلا اسمٍ معروف («Unclassified area»)
+    حاجبٌ فقط إن كانت حصته جوهرية — ضمن أكبر ٥ بحصة ≥ 0.5%، أو أي حصة ≥ 2%. الهامشيُّ
+    يُسجَّل في لوحة الدعم (`silk_data_layer._record_unknown_partner`) ولا يحجب تقريراً سليماً.
+    الترتيب من ملخّص المنافسين وحده؛ الرمز الواحد ملاحظةٌ واحدة."""
+    worst: dict = {}
+    for m in (dr.get("missions") or {}).values():
+        fs = (m.get("findings") if isinstance(m, dict) else getattr(m, "findings", None)) or []
+        for f in fs:
+            rows = [f] + list((f.get("raw_evidence") if isinstance(f, dict)
+                               else getattr(f, "raw_evidence", None)) or [])
+            for row in rows:
+                v = row.get("value") if isinstance(row, dict) else getattr(row, "value", None)
+                if not (isinstance(v, dict) and isinstance(v.get("top_suppliers"), list)):
+                    continue
+                ranked = sorted((r for r in v["top_suppliers"] if isinstance(r, dict)),
+                                key=lambda r: -float(r.get("share") or 0))
+                for rank, r in enumerate(ranked, 1):
+                    name = str(r.get("partner") or "")
+                    if _UNKNOWN_PARTNER_MARK not in name:
+                        continue
+                    share = float(r.get("share") or 0)
+                    if not ((rank <= 5 and share >= 0.5) or share >= 2.0):
+                        continue
+                    key = str(r.get("code") or re.sub(r"\D", "", name) or name)
+                    if key not in worst or share > worst[key][1]:
+                        worst[key] = (rank, share)
+    return [{"check": "unknown_partner_code", "repairable": False,
+             "note": (f"تعذّر التعرّف على اسم دولة أحد كبار المورّدين (المرتبة {rank}، حصة "
+                      f"{share:g}%) في مرجع الدول")}
+            for rank, share in worst.values()]
+
+
 def _check_intersection_insufficiency(dr: dict, lang: str = "ar") -> list[dict]:
     """"دليل غير كافٍ" رغم وجود ≥٢ بند ذي صلة — بلاغ حي (الموجة ٩-١٠).
 
@@ -1828,7 +1943,15 @@ def _annual_import_series(dr: dict) -> dict:
                     or _NON_TOTAL_NOTE_RE.search(note):
                 continue
             series[y] = float(v)   # آخر قيمةٍ لكلّ سنة إن تكرّرت
-    return series
+    # الدرس 290 (مراجعة §58): السنةُ الجزئية (الجارية أو مرآةٌ لم تكتمل) لا تصير نهايةً للنمو —
+    # نفسُ قاعدة `silk_deep_pillars.import_series` الذي يقرؤه الرسم والدفتر.
+    try:
+        from silk_deep_pillars import import_series
+        partial = {int(p["year"]) for p in (import_series(dr.get("missions") or {})
+                                             .get("series") or []) if p.get("partial")}
+    except Exception:  # noqa: BLE001
+        partial = set()
+    return {y: v for y, v in series.items() if y not in partial}
 
 
 def _check_cagr_sign_flips_under_base_year(dr: dict) -> list[dict]:
@@ -2008,6 +2131,7 @@ def _check_source_coverage(dr: dict) -> list[dict]:
 # أهدأ من فشل بنيوي حقيقي (section_structure/agent_failed). ثابتٌ على مستوى
 # الوحدة كي تُثبِّته الاختبارات (عقد تصعيد §8: …_excess داخله، WARN خارجه).
 _REGRESSION_GUARD_FIRED = {"min_pillars_scored", "competition_unit_valid",
+                           "unknown_partner_code", "hs_code_as_value", "reversed_route",
                            "retail_unit_mismatch", "retail_price_presence_conflict",
                            "pillar_narrative_sync",
                            "hs_recommendation_match",
@@ -7138,6 +7262,9 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_confidentiality_leaks(combined_text)
     findings += _check_style(text)
     findings += _check_bare_partner_codes(dr)
+    findings += _check_unknown_partner_codes(dr)
+    findings += _check_hs_code_as_value(view)
+    findings += _check_reversed_route(view)
     findings += _check_intersection_insufficiency(dr, _lang)
     findings += _check_section_structure(dr, _lang)
     findings += _check_cagr_consistency(dr)

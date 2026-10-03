@@ -1272,6 +1272,23 @@ def _finding(check: str, note: str, *, always_block: bool = False) -> dict:
             "note": note}
 
 
+def _chart_year_findings(view: dict, latest: int) -> list:
+    """الدرس 290: سنةُ رسم الواردات مدىً نصّيّ («2019–2023») — كان `_num` يُرجع None فيموت
+    الفحص. تُقرأ نهايةُ المدى وتُقارَن بسنة الأساس."""
+    charts = ((view.get("deep_research") or {}).get("charts") or []) \
+        if isinstance(view, dict) else []
+    out = []
+    for ch in charts:
+        if not (isinstance(ch, dict) and ch.get("id") == "imports_trend"):
+            continue
+        yrs = [int(y) for y in _YEAR_RE.findall(str(ch.get("year") or ""))]
+        if yrs and max(yrs) != latest:
+            out.append(_finding(
+                "chart_year_mismatch",
+                f"رسم الواردات ينتهي عند {max(yrs)} بينما سنة الأساس {latest}"))
+    return out
+
+
 def check(view: dict, text: str) -> list:
     """قابِل النصَّ النهائي المُصيَّر بالسجلّ — يعيد ملاحظات بشكل بوابة
     الجودة. تحذيرية افتراضاً (قياس)، وغير قابلة للإصلاح تحت الإنفاذ؛ رمزٌ
@@ -1368,16 +1385,7 @@ def check(view: dict, text: str) -> list:
                     f"النص ينسب الواردات إلى سنة {max(yrs)} بينما أحدث سنة "
                     f"مرصودة في السلسلة {latest}"))
                 break
-        charts = ((view.get("deep_research") or {}).get("charts") or []) \
-            if isinstance(view, dict) else []
-        for ch in charts:
-            cy = _num(ch.get("year")) if isinstance(ch, dict) else None
-            if isinstance(ch, dict) and ch.get("id") == "imports_trend" and cy \
-                    and int(cy) != latest:
-                findings.append(_finding(
-                    "chart_year_mismatch",
-                    f"رسم الواردات موسوم بسنة {int(cy)} بينما أحدث سنة مرصودة "
-                    f"{latest}"))
+        findings += _chart_year_findings(view, latest)
     bc = entries.get("blocking_condition") or {}
     if bc.get("value"):
         needle = _distinct_tokens(str(bc["value"]))

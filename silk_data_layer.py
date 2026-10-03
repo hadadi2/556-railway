@@ -712,18 +712,74 @@ def _country_m49_index() -> dict:
         return {}
 
 
+@functools.lru_cache(maxsize=1)
+def _comtrade_partner_index() -> dict:
+    """الدرس 290: رموز كومتريد التي لا تطابق رقم ISO (699 الهند، 757 سويسرا، 842 أمريكا…)
+    + التجميعات — `data/comtrade_partner_codes.csv`. لا تُضاف إلى `M49_TO_ISO3`: قلبُها
+    يجعل ISO3_TO_M49["IND"]=699 فتنكسر طلبات التعرفة التي تحتاج أرقام ISO."""
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "comtrade_partner_codes.csv")
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(ln for ln in f if not ln.lstrip().startswith("#")))
+    except Exception as e:  # noqa: BLE001 — مرجع غائب = رجوع للخاصين فقط
+        log.warning("comtrade partner codes unavailable: %s", e)
+        return {}
+    return {_normalize_m49(r["code"]): r for r in rows if (r.get("code") or "").strip()}
+
+
+def is_aggregate_partner(code: object) -> bool:
+    """رمزٌ تجميعي (العالم، Areas nes، المناطق الحرة…) — ليس دولةً مورّدة."""
+    norm = _normalize_m49(str(code))
+    row = _comtrade_partner_index().get(norm)
+    return bool(row and str(row.get("aggregate") or "0").strip() == "1") or norm == "0"
+
+
+def comtrade_partner_iso3(code: object) -> "str | None":
+    """ISO3 لرمز شريك كومتريد — رقم ISO من countries.csv أو رمز كومتريد الخاص؛ None للتجميع والمجهول."""
+    norm = _normalize_m49(str(code))
+    row = _country_m49_index().get(norm)
+    if row:
+        return row.get("iso3") or None
+    row = _comtrade_partner_index().get(norm)
+    return ((row or {}).get("iso3") or "").strip() or None
+
+
+_UNKNOWN_PARTNERS_SEEN: set = set()
+
+
+def _record_unknown_partner(code: str) -> None:
+    """رمزٌ مجهول يُسجَّل مرةً لكل عملية في لوحة الدعم — لا للعميل (الدرس 290)."""
+    if code in _UNKNOWN_PARTNERS_SEEN:
+        return
+    _UNKNOWN_PARTNERS_SEEN.add(code)
+    try:
+        import silk_ops_log
+        silk_ops_log.record_error(
+            "unknown_partner_code", f"رمز شريك كومتريد غير معروف في المرجع: {code}",
+            context={"code": code})
+    except Exception:  # noqa: BLE001 — قناة جانبية
+        pass
+
+
 def partner_name(code: object) -> str:
-    """اسم الشريك — countries.csv (٢٥٠ دولة حقيقية) أولاً، ثم رموز كومتريد
-    الخاصة/التجميعية، وإلا تسمية معلنة "منطقة غير مصنّفة" بدل رقم خام (بوابة
-    الجودة، الموجة ١٠: لا رقم خام حيث يُتوقَّع اسم دولة/شريك)."""
+    """اسم الشريك — countries.csv (٢٥٠ دولة حقيقية) أولاً، ثم رموز كومتريد الخاصة
+    والتجميعية (`data/comtrade_partner_codes.csv`، الدرس 290)، وإلا تسمية معلنة
+    "منطقة غير مصنّفة" بدل رقم خام (بوابة الجودة، الموجة ١٠: لا رقم خام حيث يُتوقَّع
+    اسم دولة/شريك) — والمجهول يُسجَّل في لوحة الدعم."""
     raw = str(code)
     norm = _normalize_m49(raw)
     row = _country_m49_index().get(norm)
     if row:
         return row.get("name_en") or row.get("name_ar") or raw
+    row = _comtrade_partner_index().get(norm)
+    if row and row.get("name_en"):
+        return row["name_en"]
     if norm in _COMTRADE_SPECIAL_PARTNERS:
         return _COMTRADE_SPECIAL_PARTNERS[norm]
     if raw.isdigit():
+        _record_unknown_partner(norm)
         return f"Unclassified area (Comtrade code {raw})"
     return raw
 

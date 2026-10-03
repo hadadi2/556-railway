@@ -56,6 +56,8 @@ AXIS_WEIGHTS = {
 _REGRESSION_DROP_THRESHOLD = 10  # نقطة — انخفاض أكبر منها = فشل معلن
 
 _NUM_RE = re.compile(r"-?\d[\d,]*\.?\d*")
+# الدرس 290: «HS090121» ليس رقماً — وإلا عُدّ «90,121$» مسنوداً بالمصدر.
+_HS_TOKEN_RE = re.compile(r"(?i)(?<![A-Za-z])HS\s*\d?\s*[:#-]?\s*\d[\d.]{1,11}")
 
 
 def _extract_numbers(text: str) -> list[float]:
@@ -66,6 +68,7 @@ def _extract_numbers(text: str) -> list[float]:
     """
     body = "\n".join(ln for ln in (text or "").splitlines()
                      if not ln.strip().startswith("## "))
+    body = _HS_TOKEN_RE.sub(" ", body)
     out: list[float] = []
     for m in _NUM_RE.finditer(body):
         raw = m.group().replace(",", "")

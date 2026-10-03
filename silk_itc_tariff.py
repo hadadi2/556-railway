@@ -17,7 +17,11 @@ ITC_MAM_URL = "https://www.macmap.org/en/query/results"
 
 def hs6(hs_code: str) -> str:
     digits = re.sub(r"\D", "", str(hs_code or ""))
-    return digits.zfill(6) if 1 <= len(digits) <= 6 else ""
+    # الدرس 290: خمس خانات = صفرٌ بادئ سقط (90121→090121)؛ عنوانُ ٤ خانات لا يُحشى
+    # صفراً يساراً (0901→000901 بندٌ آخر) — فجوةٌ معلنة بدل بندٍ خاطئ.
+    if len(digits) == 6:
+        return digits
+    return digits.zfill(6) if len(digits) == 5 else ""
 
 
 def query_url(hs_code: str, exporter_iso3: str = "SAU",

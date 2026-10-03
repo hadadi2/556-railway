@@ -223,8 +223,9 @@ MISSIONS: dict[str, dict] = {
         "allowed_tools": ["worldbank_indicator", "lookup_reference", "web_search"],
         "instructions": (
             "مؤشر أداء اللوجستيات (worldbank_indicator indicator="
-            "logistics_lpi) وأفضل ميناء ملائم من jeddah/dammam "
-            "(lookup_reference جدول ports للسوق المستهدف). خطوط شحن منشورة "
+            "logistics_lpi). الشحن صادرٌ من ميناء سعودي (جدة/الدمام) — أو منفذٍ برّي للدول "
+            "المجاورة — إلى ميناء السوق (lookup_reference جدول ports للسوق المستهدف) — "
+            "الاتجاه دائماً السعودية ← السوق، ولا تكتب مساراً يبدأ من ميناء السوق. خطوط شحن منشورة "
             "إن وُجدت عبر بحث الويب. زمن/تكلفة الشحن غير المرصودين = فجوة "
             "معلنة، لا تقدير."),
     },
@@ -736,8 +737,54 @@ def _augment_raw_input_trade(report: AgentReport, hs_code: str) -> None:
     _CA.augment_raw_input_trade(report, hs_code)
 
 
+_SERIES_FIRST_YEAR = 2019
+
+
+def _augment_trade_flow_series(report: AgentReport, hs_code: str, market) -> None:
+    """الدرس 290 (الخلل ٣ في مقترح التصحيح): سلسلةُ الواردات كاملةً (2019 → أحدث سنة) تُلحَق
+    حتماً ببعثة التدفّق — البعثةُ تطلب ما يختاره النموذج (٣ سنوات افتراضاً) فكان الرسمُ يقف عند
+    2023 والنصُّ يقول 2024. الأداةُ نفسها (مباشرٌ ثمّ مرآة) خلف كاش الطلبات بمفتاح السنة؛ تُطلب
+    السنوات الغائبة وحدها، فإعادةُ التوليد لا تُكرّر النداءات."""
+    findings = getattr(report, "findings", None)
+    if findings is None:
+        return
+    import datetime as _dt
+    y0 = _dt.date.today().year - 1
+    have = set()
+    for dp in findings:
+        val = getattr(dp, "value", None)
+        yr = getattr(dp, "data_year", None)
+        if isinstance(val, (int, float)) and not isinstance(val, bool) and yr:
+            have.add(int(yr))
+        for row in (getattr(dp, "raw_evidence", None) or ()):
+            if isinstance(row, dict) and isinstance(row.get("value"), (int, float)) \
+                    and row.get("data_year"):
+                have.add(int(row["data_year"]))
+    years = [y for y in range(_SERIES_FIRST_YEAR, y0 + 1) if y not in have]
+    if not years:
+        return
+    import time as _time
+    from silk_llm_runtime import _tool_comtrade_imports
+    # مراجعة §58: مهلةٌ داخلية دون سقف `_bounded_augment` (٣٠ث) — السنوات الأحدث أوّلاً، سنةٌ
+    # بنداء، والتوقّف عند المهلة فلا يبقى عاملٌ متخلّف يستهلك خانات كومتريد بعد الإلغاء.
+    deadline = _time.monotonic() + float(os.environ.get("SILK_SERIES_AUGMENT_S", "20"))
+    for y in sorted(years, reverse=True):
+        if _time.monotonic() > deadline:
+            log.warning("trade_flow series augment stopped at deadline (years left from %s)", y)
+            break
+        try:
+            out = _tool_comtrade_imports({"years": [y]}, {"hs_code": hs_code, "market": market})
+        except Exception as e:  # noqa: BLE001 — إلحاقٌ تحسيني
+            log.warning("trade_flow series augment skipped: %s", e)
+            return
+        for dp in out or []:
+            if getattr(dp, "data_year", None) == y and isinstance(getattr(dp, "value", None),
+                                                                  (int, float)):
+                findings.append(dp)
+
+
 def _augment_competitors_structured(report: AgentReport, hs_code: str,
-                                    market) -> None:
+                                    market, trade_report: "AgentReport | None" = None) -> None:
     """ألحِق ملخّصَ المنافسين المُهيكل بنتائج البعثة إن غاب (البند 1).
 
     idempotent (نمط `_augment_risk_news_wgi`): وجود نتيجةٍ قيمتُها dict
@@ -749,9 +796,29 @@ def _augment_competitors_structured(report: AgentReport, hs_code: str,
     if any(isinstance(getattr(dp, "value", None), dict)
            and "hhi" in dp.value for dp in findings):
         return
+    # الدرس 290: ملخّص المنافسين على سنة الأساس نفسها (HHI والحصص والعدد)؛ غيابُ موردي تلك
+    # السنة ⇒ أحدثُ سنةٍ متاحة موسومةً صراحةً — لا تُقرأ كأنها سنة الأساس.
+    base = None
+    if trade_report is not None:
+        try:
+            from silk_deep_pillars import base_year
+            base = base_year({"trade_flow": trade_report})
+        except Exception:  # noqa: BLE001
+            base = None
     try:
         from silk_llm_runtime import competition_summary_findings
-        out = competition_summary_findings(hs_code, market, deadline_s=1.0)
+        out = competition_summary_findings(hs_code, market, year=base, deadline_s=1.0) \
+            if base else []
+        if base and not any(isinstance(getattr(dp, "value", None), dict)
+                            and "hhi" in dp.value for dp in out):
+            out = competition_summary_findings(hs_code, market, deadline_s=1.0)
+            for dp in out:
+                v = getattr(dp, "value", None)
+                if isinstance(v, dict) and "hhi" in v and v.get("year") != base:
+                    dp.note = (f"{dp.note} — أحدث سنة متاحة لحصص الموردين {v.get('year')} "
+                               f"(سنة الأساس {base} بلا بيانات موردين)")
+        elif not base:
+            out = competition_summary_findings(hs_code, market, deadline_s=1.0)
     except Exception as e:  # noqa: BLE001 — إلحاقٌ تحسيني لا شرط تشغيل
         log.warning("competitors structured augment skipped: %s", e)
         return
@@ -911,9 +978,14 @@ def run_all_missions(market: MarketRef, product: str = "",
     from silk_request_identity import fingerprint
     before_augment = {key: fingerprint(reports[key])
                       for key in ("competitors", "risk_news", "trade_flow") if key in reports}
+    if hs_code and "trade_flow" in reports and \
+            os.environ.get("SILK_SERIES_AUGMENT", "1").strip() != "0":
+        _bounded_augment("trade_flow_series", reports["trade_flow"],
+                         _augment_trade_flow_series, reports["trade_flow"], hs_code, market)
     if hs_code and "competitors" in reports:
         _bounded_augment("competitors_structured", reports["competitors"],
-                         _augment_competitors_structured, reports["competitors"], hs_code, market)
+                         _augment_competitors_structured, reports["competitors"], hs_code, market,
+                         reports.get("trade_flow"))
     # الموجة د-٢: إشارتان مُهيكَلتان تُخزَّنان اكتشافاتٍ فيقرؤها السجلُّ بلا
     # شبكة. ميزانيةُ التشغيلة واحدة (`SILK_COMMERCIAL_MAX_CALLS` ≤ ١٥): المدخلاتُ
     # الخام أوّلاً (≤ ٦ نداءات، حتمية) ثمّ المورّدون بما بقي؛ واليوميةُ تُستشار

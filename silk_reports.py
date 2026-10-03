@@ -3913,7 +3913,9 @@ def _client_imports_section(doc, dr: dict, lang: str = "ar") -> None:
             # مباشرةً كاملة (تقرير ٧ §3.2).
             v = _fmt_usd(p.get("value"), lang)
             if p.get("partial"):
-                v += " " + _T("imports_partial_year", lang)
+                v += " " + _T("imports_incomplete_year"
+                              if p.get("partial_reason") == "mirror_incomplete"
+                              else "imports_partial_year", lang)
             if p.get("mirrored"):
                 v += " " + _T("imports_mirrored", lang)
             return v

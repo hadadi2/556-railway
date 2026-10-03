@@ -355,6 +355,12 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "سنة {year} جارية ورقمها جزئي — في الجدول لا في الرسم",
         "en": "{year} is the current year with a partial figure — shown in "
               "the table, not the chart"},
+    "imports_incomplete_year": {"ar": "(تصريحات الشركاء لهذه السنة لم تكتمل)",
+                                "en": "(partner reports for this year incomplete)"},
+    "imports_incomplete_chart_note": {
+        "ar": "تصريحات الشركاء لسنة {year} لم تكتمل بعد — في الجدول لا في الرسم",
+        "en": "Partner reports for {year} are not complete yet — shown in the "
+              "table, not the chart"},
     "imports_mirrored": {"ar": "(من بيانات الشركاء)",
                          "en": "(from partner data)"},
     "price_observed_at": {"ar": "رُصد {date}", "en": "observed {date}"},

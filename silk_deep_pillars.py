@@ -205,7 +205,8 @@ def _metric_findings(missions: dict, key: str) -> list:
                     continue
             except (TypeError, ValueError):
                 continue
-            if row.get("status") not in (None, "", "ok"):
+            # الدرس 290: صفُّ المرآة رصدٌ موسوم لا فجوة — يدخل السلسلة بمفاضلتها (مباشرٌ أوّلاً).
+            if row.get("status") not in (None, "", "ok", "mirrored"):
                 continue
             identity = json.dumps(row, sort_keys=True, ensure_ascii=False, default=str)
             if identity not in seen:
@@ -308,7 +309,9 @@ def _numeric_with_source(findings: list, metric: str) -> tuple:
         # يُطبَّق «مليون/مليار» على الرقم نفسِه، ويُرفَض رقمُ وزنٍ قيمةً دولاريّة
         # (مراجعة §58: «الوزن الصافي … كجم» كان يُتبنّى TAM، و«350 مليون دولار»
         # كان يسقط دون العتبة لإهمال كلمةِ المقدار).
-        raw = str(val or "")
+        # الدرس 290: رمز البند ليس رقماً («HS 200811» كان مرشّحاً ضمن مدى tam_usd).
+        raw = re.sub(r"(?i)(?<![A-Za-z])HS\s*\d?\s*[:#-]?\s*\d[\d.]{1,11}", " ",
+                     str(val or ""))
         for m in _NUM_RE.finditer(raw):
             base = _num_to_float(m.group(0))
             if base is None:
@@ -578,8 +581,12 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
         and any(t in s_partner.lower() for t in _INCUMBENT_SAUDI_TOKENS))
     if saudi_share is None and _incumbent_saudi and s_top is not None:
         saudi_share = s_top
+    # الدرس 290 (مراجعة §58): حجمُ السوق من سلسلة الواردات عند سنة الأساس — مرشّحٌ من سنةٍ
+    # جزئية (مرآة ناقصة) أو نثرٍ لسنة أخرى لا يصير TAM بينما الرسم والدفتر على سنة الأساس.
+    _series_pts = [p for p in (import_series(missions).get("series") or []) if not p.get("partial")]
+    _tam = float(_series_pts[-1]["value"]) if _series_pts else _numeric(trade, "tam_usd")
     market = {
-        "tam_usd": _numeric(trade, "tam_usd"),
+        "tam_usd": _tam,
         "import_cagr_pct": _numeric(trade, "import_cagr_pct"),
         "gdp_per_capita_usd": _numeric(econ, "gdp_per_capita_usd"),
         "saudi_share_pct": saudi_share,
@@ -836,6 +843,14 @@ def import_series(missions: dict) -> dict:
     for p in series:
         p["partial"] = _is_partial_year(p["year"])
         p["provisional"] = is_provisional_year(p["year"])   # P1-8
+    # الدرس 290 (قرار المالك): أحدثُ سنةٍ **فقط**، ولم تُبلِغ عنها السوق نفسها (مرآة)، وقيمتُها
+    # دون 80% من متوسط السنتين السابقتين ⇒ جزئية (تصريحات الشركاء لم تكتمل). سنةُ هبوطٍ مُبلَّغة
+    # مباشرةً أو سنةٌ أقدم تُقبل كما هي — لا يُسقَط هبوطٌ حقيقي.
+    if len(series) >= 3 and series[-1].get("mirrored") and not series[-1]["partial"]:
+        prev = [p["value"] for p in series[-3:-1]]
+        if series[-1]["value"] < 0.8 * (sum(prev) / len(prev)):
+            series[-1]["partial"] = True
+            series[-1]["partial_reason"] = "mirror_incomplete"
     full = [p for p in series if not p["partial"]]
     years_missing = sorted(y for y in missing if y not in best)
     growth = cagr = None
@@ -848,6 +863,14 @@ def import_series(missions: dict) -> dict:
             growth = cagr = None
     return {"series": series, "years_missing": years_missing,
             "growth_pct": growth, "cagr_pct": cagr}
+
+
+def base_year(missions: dict) -> "int | None":
+    """سنةُ الأساس الواحدة (الدرس 290): أحدثُ سنةٍ غير جزئية في سلسلة الواردات — تقرؤها
+    الرسوم والنص والدفتر وملخّص المنافسين. None = لا سلسلة."""
+    full = [p for p in (import_series(missions or {}).get("series") or [])
+            if not p.get("partial")]
+    return int(full[-1]["year"]) if full else None
 
 
 def top_supplier_shares(missions: dict) -> tuple:
