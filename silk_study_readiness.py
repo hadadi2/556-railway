@@ -27,6 +27,22 @@ class Unverified(RuntimeError):
     """تعذّر الجلب (شبكة/حد معدل) — ليس «لا بيانات»؛ يُعلَن مؤقتاً لا نقصاً."""
 
 
+def _mirror_records(comtrade_trade, hs: str, market, year: int) -> list | None:
+    """سجلات المرآة: تصريحات تصدير الشركاء إلى السوق — الاحتياطُ نفسه في خط الدراسة
+    (`silk_llm_runtime` للواردات والموردين) حين لا تُبلِغ السوق كومتريد عن نفسها.
+    None = تعذّر الجلب؛ [] = لا سجل فعلاً. الجالب يُمرَّر مربوطاً مرةً واحدة لكل فحص."""
+    try:
+        return comtrade_trade(hs, "all", year, flow="X", partner=market.m49)
+    except Exception:  # noqa: BLE001 — فجوة لا انهيار
+        return None
+
+
+def _positive_total(recs) -> bool:
+    from silk_data_layer import primary_value
+    return sum(v for v in (primary_value(r) for r in recs or [] if isinstance(r, dict))
+               if v is not None) > 0
+
+
 def _imports_years(hs: str, market) -> int:
     from silk_data_layer import comtrade_trade
     import datetime as _dt
@@ -39,11 +55,17 @@ def _imports_years(hs: str, market) -> int:
             recs = None
         if recs is None:              # None = تعذّر الجلب؛ [] = لا سجل فعلاً
             failed += 1
+            continue
         # comtrade_trade تعيد list[dict] (سجلات كومتريد) لا DataPoint — كان
         # getattr(.., "value") يعطي None دائماً فيُرفض كل طلب بـ409 (بلاغ حي).
-        total = sum(float(r.get("primaryValue") or 0) for r in recs or []
-                    if isinstance(r, dict))
-        if total > 0:
+        if _positive_total(recs):
+            n += 1
+            continue
+        # الدرس 288: لا سجل مباشر ⇒ المرآة كما في خط الدراسة (لا عند تعذّر الجلب).
+        mirror = _mirror_records(comtrade_trade, hs, market, y)
+        if mirror is None:
+            failed += 1
+        elif _positive_total(mirror):
             n += 1
     if n < MIN_YEARS and failed and n + failed >= MIN_YEARS:
         raise Unverified("comtrade")  # قد تكفي لو نجح الجلب — لا نحكم بالنقص
@@ -51,15 +73,24 @@ def _imports_years(hs: str, market) -> int:
 
 
 def _shares_present(hs: str, market) -> bool:
+    from silk_data_layer import comtrade_trade, primary_value
     from silk_data_layer_v2 import market_competitors_status
     import datetime as _dt
+    year = _dt.date.today().year - 1
     try:
-        rows, fetch_failed = market_competitors_status(hs, market.m49, _dt.date.today().year - 1)
+        rows, fetch_failed = market_competitors_status(hs, market.m49, year)
     except Exception as e:  # noqa: BLE001
         raise Unverified("competitors") from e
     if fetch_failed and not rows:
         raise Unverified("competitors")
-    return any(isinstance(getattr(r, "value", None), dict) for r in rows)
+    if any(isinstance(getattr(r, "value", None), dict) for r in rows):
+        return True
+    # الدرس 288: المرآة للسنة نفسها كما في `competition_summary_findings`.
+    mirror = _mirror_records(comtrade_trade, hs, market, year)
+    if mirror is None:
+        raise Unverified("competitors")
+    return any(r.get("reporterCode") and (primary_value(r) or 0) > 0
+               for r in mirror if isinstance(r, dict))
 
 
 def _tariff_present(hs: str, market) -> bool:

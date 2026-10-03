@@ -4599,6 +4599,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    288: lambda: (
+        _needles("silk_study_readiness.py", "ADVISORY = frozenset", "def _mirror_records")(),
+        _needles("tests/test_study_batch1_delivery.py",
+                 "def test_tariff_gap_alone_never_blocks_the_study",
+                 "def test_preflight_counts_mirror_imports_and_shares_like_the_pipeline",
+                 "def test_mirror_fetch_failure_is_unverified_not_insufficient")(),
+        _needles("tests/test_lessons_enforcement.py", "(288, ")()),
     287: lambda: (
         _needles("silk_study_case.py", "def reexport_hubs", "def _used_sources")(),
         _needles("data/reexport_hubs_l1.csv", "SGP,")(),

@@ -228,3 +228,45 @@ def test_tariff_gap_alone_never_blocks_the_study():
         out = R.preflight("090121", ref)
     assert out["ok"] and not out["missing"]
     assert out["advisory_gaps"] == ["الرسم الجمركي المنطبق"]
+
+
+def _mirror_only_comtrade(mirror_recs):
+    """سوقٌ لا تُبلِغ كومتريد عن نفسها: الاستعلام المباشر [] والمرآة (reporter=all) تحمل السجلات."""
+    def fake(hs, reporter, year, flow="M", partner=0):
+        if reporter == "all":
+            return mirror_recs
+        return []
+    return fake
+
+
+def test_preflight_counts_mirror_imports_and_shares_like_the_pipeline():
+    """الدرس 288: خط الدراسة يحتاط بالمرآة (silk_llm_runtime) فالفحص المسبق يحتاط بها أيضاً —
+    وإلا رُفضت سوقٌ لا تُبلِغ كومتريد (اليمن/ليبيا) رغم أن الدراسة تخدمها."""
+    from silk_data_layer import DataPoint
+    from silk_market_resolver import resolve_market
+    import silk_study_readiness as R
+    ref, _ = resolve_market("Malaysia")
+    recs = [{"reporterCode": 360, "partnerCode": int(ref.m49), "primaryValue": 5_000_000.0}]
+    with patch.dict(os.environ, {"SILK_PREFLIGHT_TIMEOUT_S": "3"}), \
+            patch("silk_data_layer.comtrade_trade", side_effect=_mirror_only_comtrade(recs)), \
+            patch("silk_data_layer_v2.market_competitors_status", return_value=([], False)), \
+            patch("silk_tariffs_agent.tariff_with_fallback",
+                  return_value=DataPoint(0.0, "WTO", 0.8, "", "2026-09-27")):
+        out = R.preflight("090121", ref)
+    assert out["ok"] and not out["missing"], out
+
+
+def test_mirror_fetch_failure_is_unverified_not_insufficient():
+    """المرآة تعذّر جلبها (None) ⇒ «غير مُتحقق» (503) لا «نقص بيانات» (409)."""
+    from silk_data_layer import DataPoint
+    from silk_market_resolver import resolve_market
+    import silk_study_readiness as R
+    ref, _ = resolve_market("Malaysia")
+    with patch.dict(os.environ, {"SILK_PREFLIGHT_TIMEOUT_S": "3"}), \
+            patch("silk_data_layer.comtrade_trade", side_effect=_mirror_only_comtrade(None)), \
+            patch("silk_data_layer_v2.market_competitors_status", return_value=([], False)), \
+            patch("silk_tariffs_agent.tariff_with_fallback",
+                  return_value=DataPoint(0.0, "WTO", 0.8, "", "2026-09-27")):
+        out = R.preflight("090121", ref)
+    assert not out["ok"] and out["missing"]
+    assert set(out["missing"]) <= set(out["unverified"]), out
