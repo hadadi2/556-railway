@@ -223,8 +223,9 @@ MISSIONS: dict[str, dict] = {
         "allowed_tools": ["worldbank_indicator", "lookup_reference", "web_search"],
         "instructions": (
             "مؤشر أداء اللوجستيات (worldbank_indicator indicator="
-            "logistics_lpi) وأفضل ميناء ملائم من jeddah/dammam "
-            "(lookup_reference جدول ports للسوق المستهدف). خطوط شحن منشورة "
+            "logistics_lpi). الشحن صادرٌ من ميناء سعودي (جدة/الدمام) إلى ميناء السوق "
+            "المستهدف (lookup_reference جدول ports للسوق المستهدف) — الاتجاه دائماً "
+            "السعودية ← السوق، ولا تكتب مساراً يبدأ من ميناء السوق. خطوط شحن منشورة "
             "إن وُجدت عبر بحث الويب. زمن/تكلفة الشحن غير المرصودين = فجوة "
             "معلنة، لا تقدير."),
     },

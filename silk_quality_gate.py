@@ -1124,6 +1124,36 @@ def _check_hs_code_as_value(view: dict) -> list[dict]:
     return []
 
 
+_SAUDI_PLACES = tuple(_norm_ar(w) for w in (
+    "الرياض", "الدمام", "جدة", "الجبيل", "ينبع", "القصيم", "مكة", "المدينة", "تبوك", "حائل",
+    "أبها", "جازان", "الخبر", "الأحساء", "المصنع", "المستودع", "المملكة", "السعودية",
+    "الموانئ السعودية", "ميناء الملك عبدالعزيز", "ميناء جدة الإسلامي"))
+_SAUDI_PLACES_EN = ("riyadh", "dammam", "jeddah", "jubail", "yanbu", "saudi", "factory",
+                    "warehouse", "king abdulaziz")
+_REVERSED_AR_RE = re.compile(r"من\s+([^\n،.؛:]{1,40}?)\s+(?:الي|إلى|الى)\s+(?:ميناء\s+)?(جده|الدمام)")
+_REVERSED_EN_RE = re.compile(r"(?i)\bfrom\s+([A-Za-z .'-]{2,40}?)\s+to\s+(?:the\s+port\s+of\s+)?(jeddah|dammam)\b")
+
+
+def _check_reversed_route(view: dict) -> list[dict]:
+    """الدرس 290 (الخلل ٤ في مقترح التصحيح): مسارٌ يبدأ من خارج المملكة وينتهي في جدة/الدمام
+    في دراسة تصديرٍ من السعودية («كلانغ إلى جدة») — اتجاهٌ معكوس. حاجب. النقل الداخلي
+    (الرياض إلى الدمام) لا يُعدّ."""
+    text = (((view.get("deep_research") or {}).get("report") or {}).get("text") or "")
+    norm = _norm_ar(text)
+    for m in _REVERSED_AR_RE.finditer(norm):
+        origin = m.group(1)
+        if not any(p in origin for p in _SAUDI_PLACES):
+            return [{"check": "reversed_route", "repairable": False,
+                     "note": (f"مسار الشحن مكتوب معكوساً («من {origin.strip()} إلى {m.group(2)}») — "
+                              "التصدير من الموانئ السعودية إلى ميناء السوق")}]
+    for m in _REVERSED_EN_RE.finditer(text):
+        origin = m.group(1).lower()
+        if not any(p in origin for p in _SAUDI_PLACES_EN):
+            return [{"check": "reversed_route", "repairable": False,
+                     "note": "مسار الشحن مكتوب معكوساً — التصدير من الموانئ السعودية إلى ميناء السوق"}]
+    return []
+
+
 _UNKNOWN_PARTNER_MARK = "Unclassified area"
 
 
@@ -2070,7 +2100,7 @@ def _check_source_coverage(dr: dict) -> list[dict]:
 # أهدأ من فشل بنيوي حقيقي (section_structure/agent_failed). ثابتٌ على مستوى
 # الوحدة كي تُثبِّته الاختبارات (عقد تصعيد §8: …_excess داخله، WARN خارجه).
 _REGRESSION_GUARD_FIRED = {"min_pillars_scored", "competition_unit_valid",
-                           "unknown_partner_code", "hs_code_as_value",
+                           "unknown_partner_code", "hs_code_as_value", "reversed_route",
                            "retail_unit_mismatch", "retail_price_presence_conflict",
                            "pillar_narrative_sync",
                            "hs_recommendation_match",
@@ -7203,6 +7233,7 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_bare_partner_codes(dr)
     findings += _check_unknown_partner_codes(dr)
     findings += _check_hs_code_as_value(view)
+    findings += _check_reversed_route(view)
     findings += _check_intersection_insufficiency(dr, _lang)
     findings += _check_section_structure(dr, _lang)
     findings += _check_cagr_consistency(dr)

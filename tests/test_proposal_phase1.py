@@ -220,3 +220,29 @@ def test_chart_year_mismatch_reads_the_range_end():
     assert out and out[0]["check"] == "chart_year_mismatch"
     view["deep_research"]["charts"][0]["year"] = "2019–2024"
     assert FL._chart_year_findings(view, 2024) == []
+
+
+# ── 1.4 اتجاه الشحن ───────────────────────────────────────────────────────
+
+def test_every_mission_is_told_the_export_direction():
+    import silk_llm_runtime as RT
+    from silk_market_resolver import resolve_market
+    ref, _ = resolve_market("Malaysia")
+    line = RT._direction_line(ref)
+    assert "السعودية" in line and "Malaysia" in line and line.index("السعودية") < line.index("Malaysia")
+    import silk_missions as SM
+    ins = SM.MISSIONS["logistics"]["instructions"]
+    assert "إلى ميناء السوق" in ins and "لا تكتب مساراً يبدأ من ميناء السوق" in ins
+
+
+def test_gate_blocks_a_route_that_starts_in_the_target_market():
+    import silk_quality_gate as QG
+
+    def run(text):
+        return QG._check_reversed_route({"deep_research": {"report": {"text": text}}})
+    assert run("الشحن البحري من ميناء كلانغ إلى جدة يستغرق نحو 14 يوماً.")
+    assert run("Sea freight from Port Klang to Jeddah takes 14 days.")
+    assert run("من كلانغ إلى الدمام عبر خط مباشر.")
+    assert run("الشحن من جدة إلى ميناء كلانغ يستغرق نحو 14 يوماً.") == []
+    assert run("النقل البري من الرياض إلى الدمام ثم الشحن البحري.") == []
+    assert run("ينقل المصنع البضاعة من المستودع إلى جدة.") == []

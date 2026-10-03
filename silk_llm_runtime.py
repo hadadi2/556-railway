@@ -327,6 +327,13 @@ def _tool_worldbank_indicator(args: dict, ctx: dict) -> list[DataPoint]:
     return [world_bank(market.iso3, code, int(year) if year else None)]
 
 
+def _direction_line(market) -> str:
+    """الدرس 290 (الخلل ٤ في مقترح التصحيح): اتجاه التصدير صريحٌ في رسالة كل بعثة — تقرير
+    الدراسة ٩ كتب «كلانغ إلى جدة» لأن البعثة لم تُعطَ منشأً ولا وجهة."""
+    return (f"اتجاه التصدير: المنشأ السعودية (موانئ جدة/الدمام) ← الوجهة "
+            f"{_isolate(f'{market.name_en} ({market.iso3})')}")
+
+
 def _tariff_partner(args: dict, market) -> tuple:
     """الدرس 289: النموذج مرّر الشريك = السوق نفسها (MYS→MYS) — لا تعريفة لسوقٍ على وارداته
     من نفسه، فنداءٌ عقيم يُرى فجوة. يُستبدَل بالشريك الافتراضي (السعودية) معلَناً بلغة القارئ."""
@@ -1326,6 +1333,7 @@ def _run_loop(mission: dict, ctx: dict, budget: dict,
         f"المهمة: {_isolate(str(mission.get('name') or mission.get('key') or ''))}\n"
         f"المنتج: {_isolate(str(ctx.get('product') or ''))}\n"
         f"السوق: {_isolate(f'{market.name_en} ({market.iso3})')}\n"
+        + f"{_direction_line(market)}\n"
         + (f"رمز HS: {_isolate(str(hs))}\n" if hs else "")
         + (f"نتائج الوكلاء السابقين (حلّلها ولا تُعِد جمعها — استشهد "
            f"بمعرّفاتها dpN كأي نقطة بيانات):\n{_isolate(prior_block)}\n"
