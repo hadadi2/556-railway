@@ -250,28 +250,41 @@ def competition_summary_findings(hs: str, market, year: "int | None" = None,
     `silk_deep_pillars` إلا بهذا الإلحاق. النداءات خلف كاش الطلبات (دافئٌ
     فور تشغيل البعثة) — التكلفة عملياً صفر."""
     from silk_data_layer_v2 import market_competitors, market_competitors_mirror
-    y = int(year) if year else _recent_years(1)[0]
     import time as _time
     _t0 = _time.monotonic()
-    comps = market_competitors(hs, market.m49, y)
-    # P1-10 (F-08): نقطةُ فشلٍ معلنة (`value=None`, fetch_failed) قائمةٌ غير فارغة —
-    # كانت تُسقِط احتياطَ المرآة ثم تنهار على `.get` بصمت. تُستبعَد قبل الحكم.
-    comps = [c for c in (comps or []) if isinstance(getattr(c, "value", None), dict)]
-    mirrored = False
-    # `deadline_s` (مسار الإلحاق الحتمي حصراً — الأداة تمرّر None فتحتفظ
-    # بسلوكها حرفياً): شبكةٌ ساقطة تجعل نداء المرآة الاحتياطي محاولةً عقيمة
-    # ثانية تطيل ذيل التشغيلة — يُتخطّى معلَناً عند تجاوز المهلة.
-    _mirror_ok = (deadline_s is None
-                  or (_time.monotonic() - _t0) < float(deadline_s))
-    if not comps and _mirror_ok:
-        # ترقية المرحلة ٢ج (خيار A — إحصاءات المرآة): الاستعلام المباشر
-        # يتطلب أن تُبلِغ السوق الهدف عن نفسها لكومتريد (reporter=السوق)
-        # — أسواق كثيرة لا تُبلِغ إطلاقاً رغم أن شركاءها التجاريين
-        # يُبلِغون عن تصديرهم إليها. احتياط فقط، لا استبدال للاستعلام
-        # المباشر.
-        comps = [c for c in (market_competitors_mirror(hs, market.m49, y) or [])
-                 if isinstance(getattr(c, "value", None), dict)]
-        mirrored = bool(comps)
+    # الدرس 288 (كل الدراسات): السنة الصريحة تُحترم حرفياً؛ وبلا سنة: الأحدث ثم السابقة —
+    # سوقٌ لم تُودِع سنتها الأخيرة بعد (شائع حتى منتصف السنة) لا تفقد جدول مورّديها كله.
+    # السنة المستعملة تُحمَل في الملخّص (`year`) فلا تُقدَّم السابقة على أنها الأحدث.
+    years = [int(year)] if year else _recent_years(2)[::-1]
+    comps, mirrored, y = [], False, years[0]
+    for y in years:
+        if (y != years[0] and deadline_s is not None
+                and (_time.monotonic() - _t0) >= float(deadline_s)):
+            y = years[0]
+            break
+        comps = market_competitors(hs, market.m49, y)
+        # P1-10 (F-08): نقطةُ فشلٍ معلنة (`value=None`, fetch_failed) قائمةٌ غير فارغة —
+        # كانت تُسقِط احتياطَ المرآة ثم تنهار على `.get` بصمت. تُستبعَد قبل الحكم.
+        comps = [c for c in (comps or []) if isinstance(getattr(c, "value", None), dict)]
+        mirrored = False
+        # `deadline_s` (مسار الإلحاق الحتمي حصراً — الأداة تمرّر None فتحتفظ
+        # بسلوكها حرفياً): شبكةٌ ساقطة تجعل نداء المرآة الاحتياطي محاولةً عقيمة
+        # ثانية تطيل ذيل التشغيلة — يُتخطّى معلَناً عند تجاوز المهلة.
+        _mirror_ok = (deadline_s is None
+                      or (_time.monotonic() - _t0) < float(deadline_s))
+        if not comps and _mirror_ok:
+            # ترقية المرحلة ٢ج (خيار A — إحصاءات المرآة): الاستعلام المباشر
+            # يتطلب أن تُبلِغ السوق الهدف عن نفسها لكومتريد (reporter=السوق)
+            # — أسواق كثيرة لا تُبلِغ إطلاقاً رغم أن شركاءها التجاريين
+            # يُبلِغون عن تصديرهم إليها. احتياط فقط، لا استبدال للاستعلام
+            # المباشر.
+            comps = [c for c in (market_competitors_mirror(hs, market.m49, y) or [])
+                     if isinstance(getattr(c, "value", None), dict)]
+            mirrored = bool(comps)
+        if comps:
+            break
+    if not comps:
+        y = years[0]
     if not comps:
         return [DataPoint(
             None, "UN Comtrade", 0.0,

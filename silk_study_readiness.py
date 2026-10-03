@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as _Timeout
 
 MIN_YEARS = 3
@@ -16,11 +17,19 @@ MIN_YEARS = 3
 ADVISORY = frozenset({"الرسم الجمركي المنطبق"})
 
 
+# مراجعة §58 (الدرس 288): سوقٌ لا تُبلِغ كومتريد تحتاج حتى ٧ نداءات كومتريد متسلسلة (٦ للواردات
+# مباشرةً ومرآةً ثم خروج مبكر، ونداء مباشر للحصص؛ مرآة السنة الأحدث مشتركة، وسنةٌ سابقة
+# للحصص فقط حين تغيب الأحدث) تحت مباعدة
+# SILK_COMTRADE_MIN_GAP_MS (١٫١ث) + زمن الشبكة — ٨ث كانت تُسقِط أول إطلاق إلى 503. الإطلاق من
+# المنصّة غير متزامن فلا يعلّق الواجهة؛ مسار /research المباشر ينتظر الـ202 فقط.
+_DEFAULT_TIMEOUT_S = 25.0
+
+
 def _timeout_s() -> float:
     try:
-        return float(os.environ.get("SILK_PREFLIGHT_TIMEOUT_S", "8"))
+        return float(os.environ.get("SILK_PREFLIGHT_TIMEOUT_S", _DEFAULT_TIMEOUT_S))
     except ValueError:
-        return 8.0
+        return _DEFAULT_TIMEOUT_S
 
 
 class Unverified(RuntimeError):
@@ -37,20 +46,52 @@ def _mirror_records(comtrade_trade, hs: str, market, year: int) -> list | None:
         return None
 
 
+class _Mirror:
+    """مرآة (رمز، سوق، سنة) تُجلب مرةً واحدة لكل فحص مسبق — single-flight بين فحصي الواردات
+    والحصص (كانا يجلبان مرآة السنة الأحدث معاً فيستهلكان خانتين من مباعدة كومتريد)."""
+
+    def __init__(self, fetch):
+        self._fetch = fetch
+        self._lock = threading.Lock()
+        self._slots: dict = {}
+
+    def get(self, hs: str, market, year: int) -> list | None:
+        key = (hs, market.m49, year)
+        with self._lock:
+            slot = self._slots.get(key)
+            owner = slot is None
+            if owner:
+                slot = self._slots[key] = {"ready": threading.Event()}
+        if owner:
+            try:
+                slot["value"] = _mirror_records(self._fetch, hs, market, year)
+            finally:
+                slot["ready"].set()
+        else:
+            slot["ready"].wait()
+        return slot.get("value")
+
+
 def _positive_total(recs) -> bool:
     from silk_data_layer import primary_value
     return sum(v for v in (primary_value(r) for r in recs or [] if isinstance(r, dict))
                if v is not None) > 0
 
 
-def _imports_years(hs: str, market) -> int:
-    from silk_data_layer import comtrade_trade
+def _imports_years(hs: str, market, fetch=None, mirror: "_Mirror | None" = None) -> int:
+    if fetch is None:
+        from silk_data_layer import comtrade_trade as fetch
+    mirror = mirror or _Mirror(fetch)
     import datetime as _dt
     y0 = _dt.date.today().year - 1
+    years = list(range(y0, y0 - 4, -1))
     n, failed = 0, 0
-    for y in range(y0, y0 - 4, -1):
+    for i, y in enumerate(years):
+        # الحكم محسوم (كفاية، أو نقص لا تغيّره بقية السنوات) ⇒ لا نداء كومتريد زائد تحت المباعدة.
+        if n >= MIN_YEARS or n + failed + (len(years) - i) < MIN_YEARS:
+            break
         try:
-            recs = comtrade_trade(hs, market.m49, y)
+            recs = fetch(hs, market.m49, y)
         except Exception:  # noqa: BLE001 — فجوة لا انهيار
             recs = None
         if recs is None:              # None = تعذّر الجلب؛ [] = لا سجل فعلاً
@@ -62,35 +103,46 @@ def _imports_years(hs: str, market) -> int:
             n += 1
             continue
         # الدرس 288: لا سجل مباشر ⇒ المرآة كما في خط الدراسة (لا عند تعذّر الجلب).
-        mirror = _mirror_records(comtrade_trade, hs, market, y)
-        if mirror is None:
+        found = mirror.get(hs, market, y)
+        if found is None:
             failed += 1
-        elif _positive_total(mirror):
+        elif _positive_total(found):
             n += 1
     if n < MIN_YEARS and failed and n + failed >= MIN_YEARS:
         raise Unverified("comtrade")  # قد تكفي لو نجح الجلب — لا نحكم بالنقص
     return n
 
 
-def _shares_present(hs: str, market) -> bool:
-    from silk_data_layer import comtrade_trade, primary_value
+def _shares_present(hs: str, market, fetch=None, mirror: "_Mirror | None" = None) -> bool:
+    from silk_data_layer import primary_value
     from silk_data_layer_v2 import market_competitors_status
+    if fetch is None:
+        from silk_data_layer import comtrade_trade as fetch
+    mirror = mirror or _Mirror(fetch)
     import datetime as _dt
-    year = _dt.date.today().year - 1
-    try:
-        rows, fetch_failed = market_competitors_status(hs, market.m49, year)
-    except Exception as e:  # noqa: BLE001
-        raise Unverified("competitors") from e
-    if fetch_failed and not rows:
-        raise Unverified("competitors")
-    if any(isinstance(getattr(r, "value", None), dict) for r in rows):
-        return True
-    # الدرس 288: المرآة للسنة نفسها كما في `competition_summary_findings`.
-    mirror = _mirror_records(comtrade_trade, hs, market, year)
-    if mirror is None:
-        raise Unverified("competitors")
-    return any(r.get("reporterCode") and (primary_value(r) or 0) > 0
-               for r in mirror if isinstance(r, dict))
+    y0 = _dt.date.today().year - 1
+    unknown = False
+    # الأحدث ثم السابقة — كما في `competition_summary_findings` بلا سنة صريحة (الدرس 288).
+    for year in (y0, y0 - 1):
+        try:
+            rows, fetch_failed = market_competitors_status(hs, market.m49, year)
+        except Exception:  # noqa: BLE001
+            rows, fetch_failed = [], True
+        if any(isinstance(getattr(r, "value", None), dict) for r in rows):
+            return True
+        # الدرس 288: المرآة للسنة نفسها كما في `competition_summary_findings` — وهي تُجرَّب هناك
+        # بعد فشل الجلب المباشر أيضاً.
+        found = mirror.get(hs, market, year)
+        if found is None:
+            unknown = True
+            continue
+        if any(r.get("reporterCode") and (primary_value(r) or 0) > 0
+               for r in found if isinstance(r, dict)):
+            return True
+        unknown = unknown or fetch_failed
+    if unknown:
+        raise Unverified("competitors")   # مصدرٌ تعذّر جلبه — لا نحكم بالنقص
+    return False
 
 
 def _tariff_present(hs: str, market) -> bool:
@@ -107,9 +159,12 @@ def _tariff_present(hs: str, market) -> bool:
 def preflight(hs: str, market) -> dict:
     """{ok, missing:[…], unverified:[…], checked:{…}} — الثلاثة بالتوازي تحت مهلة واحدة.
     `unverified` ⊂ `missing`: تعذّر الجلب أو انقضت المهلة — لا يُعرض نقصَ بيانات."""
+    from silk_data_layer import comtrade_trade
+    mirror = _Mirror(comtrade_trade)   # جالبٌ مربوط مرةً ومرآةٌ مشتركة بين الفحصين
     checks = {
-        "سلسلة واردات لثلاث سنوات على الأقل": lambda: _imports_years(hs, market) >= MIN_YEARS,
-        "حصص الموردين": lambda: _shares_present(hs, market),
+        "سلسلة واردات لثلاث سنوات على الأقل":
+            lambda: _imports_years(hs, market, comtrade_trade, mirror) >= MIN_YEARS,
+        "حصص الموردين": lambda: _shares_present(hs, market, comtrade_trade, mirror),
         "الرسم الجمركي المنطبق": lambda: _tariff_present(hs, market),
     }
     import time as _time
@@ -119,6 +174,8 @@ def preflight(hs: str, market) -> dict:
         futs = {k: ex.submit(fn) for k, fn in checks.items()}
         deadline = _time.monotonic() + _timeout_s()      # مهلة واحدة للفحص كله
         for k, fut in futs.items():
+            if k in ADVISORY and not fut.done():
+                continue              # الاستشاري لا يطيل انتظار الإطلاق — يُعلَن إن اكتمل فقط
             try:
                 ok = bool(fut.result(timeout=max(0.0, deadline - _time.monotonic())))
             except (_Timeout, Unverified):

@@ -4606,7 +4606,11 @@ _LESSONS = {
                  "def test_preflight_counts_mirror_imports_and_shares_like_the_pipeline",
                  "def test_mirror_fetch_failure_is_unverified_not_insufficient",
                  "def test_every_market_has_a_tariff_reporter_code",
-                 "def test_preflight_sweep_over_every_market")(),
+                 "def test_preflight_sweep_over_every_market",
+                 "def test_mirror_path_fits_the_comtrade_throttle_budget",
+                 "def test_supplier_shares_fall_back_to_the_previous_year_in_pipeline_and_preflight")(),
+        _needles("silk_study_readiness.py", "class _Mirror", "_DEFAULT_TIMEOUT_S = 25.0")(),
+        _needles("silk_llm_runtime.py", "years = [int(year)] if year else _recent_years(2)[::-1]")(),
         _needles("silk_tariffs_agent.py", "def _countries_m49")(),
         _needles("tests/test_lessons_enforcement.py", "(288, ")()),
     287: lambda: (
