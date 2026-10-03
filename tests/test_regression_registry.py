@@ -4599,6 +4599,15 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    289: lambda: (
+        _needles("silk_plausibility.py", "_HS_TOKEN_RE", "series_anchor = True")(),
+        _needles("silk_quality_gate.py", "_PILLAR_RECOMMENDATION_EXEMPT", "def _is_value_free_target")(),
+        _needles("silk_export_gate.py", "export blocked (%s, %s) analysis=%s")(),
+        _needles("tests/test_study9_delivery_block.py",
+                 "def test_hs_code_in_a_gap_note_is_never_the_import_anchor",
+                 "def test_saudi_share_recommendation_is_not_a_narrated_measurement",
+                 "def test_saudi_share_value_while_unmeasured_still_blocks")(),
+        _needles("tests/test_lessons_enforcement.py", "(289, ")()),
     288: lambda: (
         _needles("silk_study_readiness.py", "ADVISORY = frozenset", "def _mirror_records")(),
         _needles("tests/test_study_batch1_delivery.py",

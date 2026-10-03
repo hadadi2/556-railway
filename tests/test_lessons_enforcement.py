@@ -2730,6 +2730,15 @@ _SYMBOL_ANCHORS_EXTRA = [
                                                  "def test_mirror_path_fits_the_comtrade_throttle_budget",
                                                  "def test_supplier_shares_fall_back_to_the_previous_year_in_pipeline_and_preflight"]),
     (288, "silk_llm_runtime.py", ["years = [int(year)] if year else _recent_years(2)[::-1]"]),
+    (289, "silk_plausibility.py", ["_HS_TOKEN_RE", "series_anchor = True"]),
+    (289, "silk_quality_gate.py", ["_PILLAR_RECOMMENDATION_EXEMPT", "def _is_value_free_target", "def _table_needle_has_value"]),
+    (289, "silk_export_gate.py", ["export blocked (%s, %s) analysis=%s"]),
+    (289, "silk_trends_agent.py", ["def _log_related_failure"]),
+    (289, "silk_llm_runtime.py", ["def _tariff_partner"]),
+    (289, "tests/test_study9_delivery_block.py", ["def test_num_usd_reads_amounts_not_codes_years_gaps_or_percentages",
+                                                 "def test_live_claims_anchor_on_the_typed_import_series",
+                                                 "def test_saudi_share_value_while_unmeasured_still_blocks",
+                                                 "def test_blocked_export_writes_the_gate_notes_to_the_log"]),
     (288, "silk_tariffs_agent.py", ["def _countries_m49", "ISO3_TO_M49.get(iso3) or _countries_m49(iso3)"]),
 ]
 

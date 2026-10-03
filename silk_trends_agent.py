@@ -277,6 +277,16 @@ def _coerce_trend_value(v: object) -> object:
     return s or None
 
 
+def _log_related_failure(section: str, kw: str, exc: Exception) -> None:
+    """الدرس 289: pytrends 4.9.2 يفهرس `rankedList[0]/[1]` ولا يلتقط إلا KeyError — ردٌّ قصير
+    من Google (كلمة قليلة البحث/نطاق صغير) يرمي IndexError: غيابُ سياقٍ لا عطل، فلا تحذير.
+    غيرُه (KeyError من تغيّر بنية الردّ، حدّ معدل…) يبقى تحذيراً كما كان."""
+    if isinstance(exc, IndexError):
+        log.info("%s: ردّ Google Trends ناقص البنية لـ'%s' — لا سياق مرتبط", section, kw)
+    else:
+        log.warning("%s failed ('%s'): %s", section, kw, exc)
+
+
 def trends_context(keyword: str, geo: str | None = None,
                    timeframe: str = "today 12-m") -> dict:
     """سياق طلب أغنى من بناء حمولة pytrends واحد — R3 (ثقافة المستهلك الأعمق):
@@ -333,13 +343,13 @@ def trends_context(keyword: str, geo: str | None = None,
         out["related_rising"] = _rows(rq.get("rising"), "query")
         found = found or bool(out["related_top"] or out["related_rising"])
     except Exception as e:  # noqa: BLE001
-        log.warning("related_queries failed ('%s'): %s", kw, e)
+        _log_related_failure("related_queries", kw, e)
     try:
         rt = (py.related_topics() or {}).get(kw) or {}
         out["topics_rising"] = _rows(rt.get("rising"), "topic_title")
         found = found or bool(out["topics_rising"])
     except Exception as e:  # noqa: BLE001
-        log.warning("related_topics failed ('%s'): %s", kw, e)
+        _log_related_failure("related_topics", kw, e)
     try:
         reg = py.interest_by_region(resolution="REGION")
         if reg is not None and not reg.empty and kw in reg.columns:

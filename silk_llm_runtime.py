@@ -327,6 +327,24 @@ def _tool_worldbank_indicator(args: dict, ctx: dict) -> list[DataPoint]:
     return [world_bank(market.iso3, code, int(year) if year else None)]
 
 
+def _tariff_partner(args: dict, market) -> tuple:
+    """الدرس 289: النموذج مرّر الشريك = السوق نفسها (MYS→MYS) — لا تعريفة لسوقٍ على وارداته
+    من نفسه، فنداءٌ عقيم يُرى فجوة. يُستبدَل بالشريك الافتراضي (السعودية) معلَناً بلغة القارئ."""
+    partner = str(args.get("partner_iso3") or "SAU").strip().upper()
+    market_iso3 = str(getattr(market, "iso3", "") or "").upper()
+    if partner == market_iso3 and partner != "SAU":
+        return "SAU", (f"الشريك المطلوب ({partner}) هو السوق المستهدف نفسه — لا تعريفة لسوقٍ "
+                       "على وارداته من نفسه؛ استُخدم الشريك الافتراضي (SAU).")
+    return partner, ""
+
+
+def _with_note(dp: DataPoint, extra: str) -> DataPoint:
+    if not extra:
+        return dp
+    import dataclasses
+    return dataclasses.replace(dp, note=f"{dp.note} — {extra}" if dp.note else extra)
+
+
 def _tool_wits_tariff(args: dict, ctx: dict) -> list[DataPoint]:
     # سلسلة التراجع (الموجة: دمج مصادر جديدة): WTO TTD → WITS → فجوة معلنة —
     # WTO TTD يسدّ فجوة التعريفة الثنائية المزمنة في WITS للأسواق الأوروبية.
@@ -335,10 +353,11 @@ def _tool_wits_tariff(args: dict, ctx: dict) -> list[DataPoint]:
     if not hs:
         return [DataPoint(None, "World Bank WITS", 0.0,
                           "لا رمز HS مرتبط بهذه المهمة", _today())]
-    partner = str(args.get("partner_iso3") or "SAU").upper()
+    partner, partner_note = _tariff_partner(args, market)
     year = args.get("year")
-    return [tariff_with_fallback(hs, market.iso3, partner_iso3=partner,
-                                 year=int(year) if year else None)]
+    return [_with_note(tariff_with_fallback(hs, market.iso3, partner_iso3=partner,
+                                            year=int(year) if year else None),
+                       partner_note)]
 
 
 def _tool_itc_market_access(args: dict, ctx: dict) -> list[DataPoint]:
@@ -346,10 +365,11 @@ def _tool_itc_market_access(args: dict, ctx: dict) -> list[DataPoint]:
     from silk_itc_tariff import market_access_evidence
     hs = ctx.get("hs_code")
     market = ctx["market"]
-    partner = str(args.get("partner_iso3") or "SAU").upper()
+    partner, partner_note = _tariff_partner(args, market)
     year = args.get("year")
-    return [market_access_evidence(hs, market.iso3, partner,
-                                   int(year) if year else None)]
+    return [_with_note(market_access_evidence(hs, market.iso3, partner,
+                                              int(year) if year else None),
+                       partner_note)]
 
 
 def _tool_imf_indicator(args: dict, ctx: dict) -> list[DataPoint]:
