@@ -81,6 +81,11 @@ _HS_TOKEN_RE = re.compile(r"(?i)(?<![A-Za-z])HS\s*\d?\s*[:#-]?\s*\d[\d.]{1,11}")
 _CODE_LIKE_RE = re.compile(r"0\d{3,}(?:\.\d+)?")       # 0901 / 090121 / 0901.21
 _BARE_YEAR_RE = re.compile(r"(?:19|20)\d\d")
 _AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+# مراجعة §58 على الدرس 289: عددٌ أو كتلةٌ ليس مبلغاً — «34 مليون مستهلك» صار 34,000,000$ في تحفّظ العميل.
+_NON_MONEY_UNIT_RE = re.compile(
+    r"\s*(?:مستهلك|مستهلكين|نسمة|نسمه|شخص|أشخاص|فرد|أفراد|مواطن|طن|أطنان|اطنان|كجم|كغ|كيلو|"
+    r"لتر|حاوية|حاويات|عبوة|عبوات|دولة|دول|مورد|موردين|شركة|شركات|consumers?|people|"
+    r"persons?|tonnes?|tons?|kg|litres?|liters?|units?)(?![A-Za-z؀-ۿ])", re.I)
 
 
 def _num_usd(value: object, note: object = "") -> "float | None":
@@ -104,6 +109,8 @@ def _num_usd(value: object, note: object = "") -> "float | None":
             if (text[m.end(1):m.end(1) + 2].lstrip()[:1] in ("%", "٪")
                     or _CODE_LIKE_RE.fullmatch(bare) or _BARE_YEAR_RE.fullmatch(bare)):
                 continue                  # نسبةٌ أو رمزُ بند أو سنة — لا مبلغ
+        if _NON_MONEY_UNIT_RE.match(text, m.end()):
+            continue                      # عددُ أشخاص/وحدات أو كتلة — لا مبلغ
         try:
             base = float(re.sub(r"[,،٬]", "", raw).replace("٫", "."))
         except ValueError:

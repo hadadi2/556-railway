@@ -3377,29 +3377,93 @@ def _norm_gap_tokens() -> tuple:
     return tuple(_norm_ar(g) for g in _GAP_SENTENCE_TOKENS)
 
 
-# الدرس 289 (الدراسة ٩): مكوّنٌ لا يُعدّ مسروداً إلا مع قيمةٍ في الجملة نفسها — «نوصي ببناء
-# الحصة السعودية» توصيةٌ لا قياس، وكانت تحجب تقريراً كاملاً. «الحصة السعودية صفر/0%/ضئيلة»
-# يبقى سرداً لقيمةٍ غير مرصودة فيُحجب كما كان. الصرف خارج هذا الاستثناء عمداً.
-_PILLAR_NEEDS_QUANTITY = frozenset({"saudi_momentum"})
-_QUANTITY_RE = re.compile(r"[0-9٠-٩%٪]|صفر|ضئيل|معدوم|منعدم|تستحوذ|تبلغ|بلغت|نسبة")
+# الدرس 289 (الدراسة ٩): الحجبُ هو الأصل كما كان — يُعفى مقطعُ «الحصة السعودية» فقط حين يكون
+# توصيةً أو هدفاً («نوصي ببناء الحصة السعودية») بلا قيمةٍ فيه ولا في المقطع التالي. مراجعة §58:
+# قائمةٌ بيضاء للكمّ كانت تمرّر الوصف اللفظي («هامشية»، «أقل من واحد بالمئة») — فعُكس المنطق.
+# حلٌّ مرحلي؛ الدائم سجلُّ الحقائق (المرحلة ٢ من مقترح التصحيح). الصرف خارج هذا الاستثناء عمداً.
+_PILLAR_RECOMMENDATION_EXEMPT = frozenset({"saudi_momentum"})
+_REC_VERBS = tuple(_norm_ar(w) for w in (
+    "بناء", "تعزيز", "رفع", "زيادة", "تنمية", "اكتساب", "انتزاع", "توسيع", "نستهدف",
+    "استهداف", "هدف"))
+_VALUE_WORDS = tuple(_norm_ar(w) for w in (
+    "صفر", "ضئيل", "معدوم", "منعدم", "محدود", "منخفض", "هامشي", "متواضع", "ضعيف", "قليل",
+    "صغير", "غائب", "لا تذكر", "لا تُذكر", "لا وجود", "أقل من", "لا تتجاوز", "تتجاوز", "تقارب",
+    "في حدود", "المرتبة", "بالمئة", "بالمائة", "في المئة", "في المائة", "نسبة", "تستحوذ",
+    "تبلغ", "بلغت", "واحد", "نصف", "مرتفع", "كبير", "مهيمن"))
+_BARE_YEAR_OR_STEP_RE = re.compile(r"\b(?:19|20)\d\d\b|(?:المرحله|الخطوه|المرحلة)\s*\d+")
+
+
+def _has_value(seg: str) -> bool:
+    """قيمةٌ في المقطع: رقمٌ (لا سنة مجرّدة ولا رقم مرحلة) أو نسبةٌ أو كلمةُ قدرٍ وصفية."""
+    bare = _BARE_YEAR_OR_STEP_RE.sub(" ", seg)
+    return bool(re.search(r"[0-9٠-٩%٪]", bare)) or any(w in seg for w in _VALUE_WORDS)
+
+
+def _is_value_free_target(seg: str, nxt: str, n_needles: tuple) -> bool:
+    """توصيةٌ/هدفٌ يسبق الإبرةَ مباشرةً (≤٣ كلمات) بلا قيمةٍ في المقطع ولا التالي."""
+    pos = min((seg.find(n) for n in n_needles if n in seg), default=-1)
+    if pos < 0:
+        return False
+    before = seg[:pos].split()[-3:]
+    def _forms(t):                 # حرفُ جرٍّ/عطفٍ ملتصق: «ببناء»، «ولتعزيز»
+        return {t, t[1:] if t[:1] in "وبلف" else t, t[2:] if t[:2] in ("وب", "ول", "فب", "فل") else t}
+    rec = any(_forms(t) & set(_REC_VERBS) for t in before)
+    return rec and not _has_value(seg) and not _has_value(nxt)
+
+
+def _table_needle_has_value(lines: list, i: int, n_needles: tuple, gaps: tuple) -> bool:
+    """صفُّ جدولٍ يحمل الإبرة: ترويسةٌ ⇒ خلايا عمودها في الصفوف التالية؛ صفُّ بيانات ⇒ بقية خلاياه.
+    خليةٌ فارغة أو «—» أو رمز فجوة ليست قيمة."""
+    def cells(ln):
+        return [c.strip() for c in ln.strip().strip("|").split("|")]
+
+    def is_value(c):
+        return bool(c) and c.strip("-—– ") != "" and not any(g in c for g in gaps)
+    row = cells(lines[i])
+    idx = next((k for k, c in enumerate(row) if any(n in c for n in n_needles)), None)
+    if idx is None:
+        return False
+    nxt = lines[i + 1] if i + 1 < len(lines) else ""
+    if re.fullmatch(r"\s*\|?[\s:|-]+\|?\s*", nxt or "") and "-" in nxt:
+        vals = []
+        for ln in lines[i + 2:]:
+            if "|" not in ln:
+                break
+            c = cells(ln)
+            if idx < len(c):
+                vals.append(c[idx])
+        return any(is_value(v) for v in vals)
+    return any(is_value(c) for k, c in enumerate(row) if k != idx)
 
 
 def _narrated_outside_gap_sentences(text: str, needles: tuple,
-                                    need_quantity: bool = False) -> bool:
+                                    exempt_targets: bool = False) -> bool:
     """هل يسرد المتنُ المكوّنَ خارج جملِ الفجوة المعلنة؟ التقطيع على فواصل
     الجمل فقط (لا النقطتين) كي يبقى صفُّ الجدول «إجمالي الواردات: غير
-    مرصود» جملةً واحدة. المطابقة عبر المُطبِّع الواحد `_norm_ar`."""
+    مرصود» جملةً واحدة. المطابقة عبر المُطبِّع الواحد `_norm_ar`.
+    `exempt_targets` (الدرس 289): صفوف الجدول تُقرأ بخلاياها، والتوصيةُ بلا قيمة تُعفى."""
     n_needles = tuple(_norm_ar(n) for n in needles)
     gaps = _norm_gap_tokens()
+    norm = _norm_ar(text)
+    if exempt_targets:
+        lines = norm.split("\n")
+        for i, ln in enumerate(lines):
+            if "|" in ln and any(n in ln for n in n_needles):
+                if _table_needle_has_value(lines, i, n_needles, gaps):
+                    return True
+        norm = "\n".join(ln for ln in lines if "|" not in ln)
     # A decimal point is not a sentence boundary; headings name an indicator
     # without asserting that it was measured. Keep observed prose checked.
-    for seg in re.split(r"(?<!\d)\.|\.(?!\d)|[\n؟!؛]", _norm_ar(text)):
+    segs = re.split(r"(?<!\d)\.|\.(?!\d)|[\n؟!؛]", norm)
+    for i, seg in enumerate(segs):
         heading = seg.strip().strip("#* :|").strip()
         if heading in n_needles:
             continue
         if (any(n in seg for n in n_needles)
-                and not any(g in seg for g in gaps)
-                and (not need_quantity or _QUANTITY_RE.search(seg))):
+                and not any(g in seg for g in gaps)):
+            nxt = segs[i + 1] if i + 1 < len(segs) else ""
+            if exempt_targets and _is_value_free_target(seg, nxt, n_needles):
+                continue
             return True
     return False
 
@@ -3425,7 +3489,8 @@ def _check_pillar_narrative_sync(view: dict) -> list[dict]:
         for comp in (p.get("missing") or []):
             needles = _PILLAR_BODY_NEEDLES.get(comp)
             if needles and _narrated_outside_gap_sentences(
-                    text, needles, need_quantity=comp in _PILLAR_NEEDS_QUANTITY):
+                    text, needles,
+                    exempt_targets=comp in _PILLAR_RECOMMENDATION_EXEMPT):
                 findings.append({
                     "check": "pillar_narrative_sync", "repairable": False,
                     "note": (f"اللوحة تعلن «{_PILLAR_COMPONENT_AR.get(comp, comp)}"

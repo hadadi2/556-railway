@@ -23,6 +23,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ── المعقولية: لا رقم مختلَق من رمز بند أو ملاحظة فجوة ─────────────────────
 
+def test_num_usd_text_needs_a_currency_not_a_count_or_mass():
+    """مراجعة §58 (3/3): تخطّي النسب والسنوات كان يبلغ أعداداً غير نقدية (مستهلك/طن)."""
+    import silk_plausibility as P
+    assert P._num_usd("ينمو حجم سوق القهوة 6% سنوياً مدفوعاً بـ 34 مليون مستهلك") is None
+    assert P._num_usd("استهلاك 12 ألف طن سنوياً") is None
+    assert P._num_usd("حجم السوق 51.36 مليون دولار") == 51_360_000.0
+    assert P._num_usd("market size $3 million") == 3_000_000.0
+    dr = {"missions": {"m": {"findings": [
+        {"value": "تمثل الواردات 85% من الاستهلاك المحلي البالغ 120 مليون مستهلك",
+         "source": "ويب", "note": "واردات"},
+        {"value": "7,000,000 دولار", "source": "UN Comtrade", "note": "إجمالي استيراد QAT من العالم"},
+    ]}}}
+    assert P._anchors(dr)["imports_usd"] == 7_000_000.0
+
+
 def test_num_usd_reads_amounts_not_codes_years_gaps_or_percentages():
     from silk_plausibility import _num_usd
     assert _num_usd(None, "HS090121 استيراد Malaysia 2024: تعذّر الجلب") is None
@@ -109,6 +124,29 @@ def test_saudi_share_value_while_unmeasured_still_blocks():
     assert _sync("تبلغ حصة السعودية 0% من الواردات.")
     assert _sync("تستحوذ السعودية على 3٪ من السوق.")
     assert _sync("الحصة السعودية ضئيلة جداً.")
+
+
+def test_saudi_share_described_in_words_while_unmeasured_still_blocks():
+    """مراجعة §58 (3/3): القائمة البيضاء للكمّ كانت تمرّر الوصف اللفظي — العكس: الحجب أصلٌ."""
+    for s in ("الحصة السعودية محدودة في هذه السوق.",
+              "حصة السعودية المنخفضة تفتح نافذة للدخول.",
+              "الحصة السعودية هامشية.",
+              "الحصة السعودية غائبة تماماً عن هذه السوق.",
+              "الحصة السعودية لا تُذكر.",
+              "لا تتجاوز الحصة السعودية واحداً بالمئة.",
+              "حصة السعودية أقل من واحد في المئة.",
+              "الحصة السعودية في المرتبة الخامسة عشرة.",
+              "تمثل الحصة السعودية نسبة صغيرة من الواردات.",
+              "تبدو الحصة السعودية هامشية؛ إذ لا تتجاوز 1.5% من الإجمالي.",
+              "| السنة | إجمالي الواردات | الحصة السعودية |\n|---|---|---|\n| 2024 | 74.9 مليون دولار | 0.8% |",
+              "نوصي ببناء الحصة السعودية؛ وهي اليوم 0.5% فقط."):
+        assert _sync(s), s
+
+
+def test_saudi_share_target_without_a_value_does_not_block():
+    assert _sync("نوصي ببناء الحصة السعودية تدريجياً بحلول 2027.") == []
+    assert _sync("تعزيز حصة السعودية في السوق خلال المرحلة 2.") == []
+    assert _sync("| الحصة السعودية | غير مرصودة |") == []
 
 
 # ── حجب التصدير يُقرأ من السجل ─────────────────────────────────────────────

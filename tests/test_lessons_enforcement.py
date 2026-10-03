@@ -2731,7 +2731,7 @@ _SYMBOL_ANCHORS_EXTRA = [
                                                  "def test_supplier_shares_fall_back_to_the_previous_year_in_pipeline_and_preflight"]),
     (288, "silk_llm_runtime.py", ["years = [int(year)] if year else _recent_years(2)[::-1]"]),
     (289, "silk_plausibility.py", ["_HS_TOKEN_RE", "series_anchor = True"]),
-    (289, "silk_quality_gate.py", ["_PILLAR_NEEDS_QUANTITY", "need_quantity=comp in _PILLAR_NEEDS_QUANTITY"]),
+    (289, "silk_quality_gate.py", ["_PILLAR_RECOMMENDATION_EXEMPT", "def _is_value_free_target", "def _table_needle_has_value"]),
     (289, "silk_export_gate.py", ["export blocked (%s, %s) analysis=%s"]),
     (289, "silk_trends_agent.py", ["def _log_related_failure"]),
     (289, "silk_llm_runtime.py", ["def _tariff_partner"]),

@@ -4601,7 +4601,7 @@ _LESSONS = {
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
     289: lambda: (
         _needles("silk_plausibility.py", "_HS_TOKEN_RE", "series_anchor = True")(),
-        _needles("silk_quality_gate.py", "_PILLAR_NEEDS_QUANTITY")(),
+        _needles("silk_quality_gate.py", "_PILLAR_RECOMMENDATION_EXEMPT", "def _is_value_free_target")(),
         _needles("silk_export_gate.py", "export blocked (%s, %s) analysis=%s")(),
         _needles("tests/test_study9_delivery_block.py",
                  "def test_hs_code_in_a_gap_note_is_never_the_import_anchor",
