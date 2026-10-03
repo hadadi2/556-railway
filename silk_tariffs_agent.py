@@ -45,8 +45,19 @@ def _wits_reporter_code(iso3: str) -> tuple[str | None, bool]:
     iso3 = (iso3 or "").upper()
     if iso3 in _EU_ISO3:
         return _EU_WITS_CODE, True
-    m49 = ISO3_TO_M49.get(iso3)
+    # الدرس 288: الجدول الثابت يغطي ٧٢ دولة فقط — بقية أسواق المنصّة رمزها الرقمي
+    # الحقيقي في `data/countries.csv` (مرجع المُحلِّل نفسه)، فلا تبقى بلا سؤال.
+    m49 = ISO3_TO_M49.get(iso3) or _countries_m49(iso3)
     return (m49.zfill(3) if m49 else None), False
+
+
+def _countries_m49(iso3: str) -> str | None:
+    """رمز M49 من مرجع الأسواق `countries.csv` — None إن غاب (فجوة معلنة لا تخمين)."""
+    if not iso3:
+        return None
+    from silk_market_resolver import _load
+    row = next((r for r in _load() if (r.get("iso3") or "").upper() == iso3), None)
+    return ((row or {}).get("m49") or "").strip() or None
 
 
 # أعضاء الاتحاد الجمركي الخليجي — ثابت معاهدة (ميثاق مجلس التعاون، الاتحاد

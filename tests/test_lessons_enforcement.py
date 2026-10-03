@@ -2720,6 +2720,17 @@ _SYMBOL_ANCHORS_EXTRA = [
     (287, "tests/test_study_batch6_guard.py", ["def test_singapore_is_tagged_reexport_hub_in_live_supplier_rows",
                                               "def test_non_food_no_halal_case_polymers_turkey_renders_without_critical_violations"]),
     (286, "tests/test_study_batch4_field.py", ["def test_study_mode_third_party_imports_are_in_production_requirements"]),
+    (288, "silk_study_readiness.py", ["ADVISORY = frozenset", "def _mirror_records", "class _Mirror",
+                                      "_DEFAULT_TIMEOUT_S = 25.0"]),
+    (288, "tests/test_study_batch1_delivery.py", ["def test_tariff_gap_alone_never_blocks_the_study",
+                                                 "def test_preflight_counts_mirror_imports_and_shares_like_the_pipeline",
+                                                 "def test_mirror_fetch_failure_is_unverified_not_insufficient",
+                                                 "def test_every_market_has_a_tariff_reporter_code",
+                                                 "def test_preflight_sweep_over_every_market",
+                                                 "def test_mirror_path_fits_the_comtrade_throttle_budget",
+                                                 "def test_supplier_shares_fall_back_to_the_previous_year_in_pipeline_and_preflight"]),
+    (288, "silk_llm_runtime.py", ["years = [int(year)] if year else _recent_years(2)[::-1]"]),
+    (288, "silk_tariffs_agent.py", ["def _countries_m49", "ISO3_TO_M49.get(iso3) or _countries_m49(iso3)"]),
 ]
 
 
