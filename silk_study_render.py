@@ -213,7 +213,7 @@ class Renderer:
             "local_producers_word": c["imports"].get("local_producers_word"),
             "uv_first": c["imports"].get("unit_value_first"), "uv_last": c["imports"].get("unit_value_last_reliable"),
             "uv_excl_year": c["imports"].get("unit_value_year_excluded"),
-            "sup_year": (c.get("suppliers") or {}).get("year"),
+            "sup_year": _provisional_year((c.get("suppliers") or {}).get("year"), c),
             "tariff_status": c["tariff"]["status"], "tariff": c["tariff"].get("rate_pct"),
             "sst_rule": c["tariff"].get("sst_rule"), "sst_authority": c["tariff"].get("sst_authority"),
             "pref_note": c["tariff"].get("preferential_note"), "pref_status": c["tariff"].get("preferential_status"),
@@ -511,7 +511,18 @@ class Renderer:
             base = list(self.case.get("gaps") or []) + extra
             self.ctx["gaps_inline"] = "؛ ".join(gap_text(g) for g in base)
         self.missing, self.gaps, self.llm_slots = [], [], []
-        return self._render_once()
+        md = self._render_once()
+        # الدرس ٢٩١: مصدرٌ يستشهد به المتن يُلحق بسطر المصادر (لا مصدر غائب عن القائمة).
+        from silk_study_linter import missing_sources
+        absent = missing_sources(md)
+        if absent and self.case.get("sources"):
+            import logging
+            logging.getLogger(__name__).warning(
+                "study sources line: appended sources cited in the body: %s", ", ".join(absent))
+            self.ctx["sources_inline"] = "؛ ".join([self.ctx["sources_inline"], *absent])
+            self.missing, self.gaps, self.llm_slots = [], [], []
+            md = self._render_once()
+        return md
 
     def _render_once(self) -> str:
         out: list[str] = []
@@ -547,8 +558,12 @@ class Renderer:
             if kind == "table":
                 rows = self._rows(block["rows"])
                 if not rows:
+                    # الدرس ٢٩١: الجدول لا يسقط من القالب — يبقى برأسه وصفِّ فجوة معلنة،
+                    # والفجوة تُعلن في «ما لم يتسنّ توثيقه» كما كانت.
                     self.missing.append(block["rows"])
-                    return None
+                    cols = block["columns"]
+                    return "\n".join(["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols),
+                                      "| " + " | ".join([_TABLE_GAP] + ["—"] * (len(cols) - 1)) + " |"])
                 return self._table(block)
             if kind == "para":
                 txt = block.get("text")
@@ -561,6 +576,18 @@ class Renderer:
             if kind == "list":
                 return self.fill(block["text"])
             raise StudyRenderError(f"نوع كتلة غير معروف: {kind}")
+
+
+_TABLE_GAP = "غير مرصود في هذه النسخة"
+
+
+def _provisional_year(year, case: dict):
+    """سنة حصص الموردين بعد آخر سنة واردات مكتملة تُوسم «أولي» (الدرس ٢٩١)."""
+    last = max((r["year"] for r in ((case.get("imports") or {}).get("series") or [])
+                if r.get("complete")), default=None)
+    if isinstance(year, int) and isinstance(last, int) and year > last:
+        return f"{year} (أولي)"
+    return year
 
 
 def render_study(case: dict, knowledge: dict | None = None, llm_fill=None,

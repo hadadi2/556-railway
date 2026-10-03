@@ -29,7 +29,7 @@ import datetime
 import logging
 import os
 
-from silk_data_layer import DataPoint, ISO3_TO_M49, _today
+from silk_data_layer import DataPoint, _today
 # نعيد استخدام منطق ترميز المُبلِّغ من وكيل WITS (عضو الاتحاد الأوروبي => 918)
 # — نفس تعريفة الاتحاد الموحّدة، فلا نكرّر جدول الدول.
 from silk_tariffs_agent import _hs6, _wits_reporter_code
@@ -40,6 +40,8 @@ _WTO_BASE = "https://api.wto.org/timeseries/v1/data"
 _TTL = 30 * 86400  # التعريفات تتغيّر بطيئاً — تخزين شهر رخيص.
 # رمز مؤشر التعريفة المطبَّقة (AVE, MFN applied simple average) في WTO Timeseries.
 _INDICATOR_MFN_APPLIED = "TP_A_0010"
+# مدى السنوات في نداء واحد (سنة الطلب وثلاث قبلها) — أحدث المُبلَّغ يُختار.
+_YEARS_BACK = 3
 
 
 def wto_api_key() -> str:
@@ -53,16 +55,46 @@ def _default_year() -> int:
     return datetime.date.today().year - 3
 
 
+def _logging_fetcher(http_get, hs6: str, iso3: str):
+    """غلاف الجلب: ردّ 4xx/5xx من WTO يُسجَّل **بنصّه** (منقَّحاً) قبل أن يرفعه
+    `cached_get` — سطر «400 Bad Request» وحده لم يكشف أيّ معامل رُفض (الدرس ٢٩١)."""
+    def fetch(url, params, headers=None):
+        resp = http_get(url, params, headers=headers)
+        code = getattr(resp, "status_code", 200)
+        if isinstance(code, int) and code >= 400:
+            fetch.recorded = True
+            try:
+                from silk_diagnostics import _redact
+                body = _redact(str(getattr(resp, "text", "") or "")[:300])
+            except Exception:  # noqa: BLE001
+                body = ""
+            detail = f"HTTP {code}: {body}" if body else f"HTTP {code}"
+            log.warning("WTO TTD rejected HS%s %s — %s", hs6, iso3, detail)
+            _record_failure(hs6, iso3, detail)
+        return resp
+    fetch.recorded = False
+    return fetch
+
+
 def _parse_value(payload: object) -> tuple[float | None, int | None]:
-    """استخرج أول قيمة تعريفة رقمية + سنتها من ردّ WTO Timeseries.
+    """استخرج **أحدث** قيمة تعريفة رقمية + سنتها من ردّ WTO Timeseries.
 
     الشكل الرسمي: {"Dataset": [{"Value": .., "Year": ..}, ...]}. دفاعي — يقبل
-    اختلاف حالة المفاتيح ويتجاهل ما لا يُفسَّر رقماً؛ لا شيء => (None, None)."""
+    اختلاف حالة المفاتيح ويتجاهل ما لا يُفسَّر رقماً؛ لا شيء => (None, None).
+    الطلب مدى سنوات، فيُختار الصف الأحدث سنةً (لا الأول ترتيباً)."""
     if not isinstance(payload, dict):
         return None, None
     rows = payload.get("Dataset") or payload.get("dataset") or payload.get("data")
     if not isinstance(rows, list):
         return None, None
+    best: tuple[float, int | None] | None = None
+    for val, yr in _rows(rows):
+        if best is None or (yr is not None and (best[1] is None or yr > best[1])):
+            best = (val, yr)
+    return best if best is not None else (None, None)
+
+
+def _rows(rows: list):
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -76,8 +108,7 @@ def _parse_value(payload: object) -> tuple[float | None, int | None]:
             yr = int(yr_raw)
         except (TypeError, ValueError):
             yr = None
-        return val, yr
-    return None, None
+        yield val, yr
 
 
 def wto_applied_tariff(hs_code: str, market_iso3: str,
@@ -100,31 +131,33 @@ def wto_applied_tariff(hs_code: str, market_iso3: str,
                          "WTO TTD غير مُهيَّأ (WTO_TTD_API_KEY غير مضبوط) — "
                          "فجوة معلنة، لا محاولة جلب بلا مفتاح", _today())
     reporter_code, is_eu = _wits_reporter_code(market_iso3)
-    partner_m49 = ISO3_TO_M49.get((partner_iso3 or "").upper())
     if not reporter_code:
         return DataPoint(None, "WTO TTD", 0.0,
                          f"لا رمز رقمي معروف لـ{market_iso3!r} في فهرس WTO — "
                          "فجوة معلنة (لا استعلام بلا رمز)", _today())
     year = year or _default_year()
+    # الدرس ٢٩١: TP_A_0010 متوسطُ MFN للمُبلِّغ **بلا بُعد شريك** — إرسال `p`
+    # كان يردّ 400 Bad Request لكل نداء على الإنتاج (الدراسة ٩، 2026-10-03).
+    # مدى سنوات بدل سنة واحدة: نداء واحد يعيد أحدث سنة مُبلَّغة.
     params = {
         "i": _INDICATOR_MFN_APPLIED,
         "r": reporter_code,
         "pc": hs6,
-        "ps": str(year),
+        "ps": f"{year - _YEARS_BACK}-{year}",
         "fmt": "json",
         "mode": "full",
     }
-    if partner_m49:  # الشريك اختياري — MFN المطبَّق لا يعتمد على الشريك عادةً
-        params["p"] = partner_m49.zfill(3)
     # المفتاح في **ترويسة** لا في الاستعلام (الآلية الموثّقة لبوابة WTO/Azure
     # APIM) — فلا يظهر السرّ في الـURL (تدقيق مراجعة: منع تسرّب المفتاح لسجلّات
     # الوسطاء/البروكسي). لا يدخل مفتاح التخزين المؤقت (ثابت للخادم).
     headers = {"Ocp-Apim-Subscription-Key": key}
+    fetcher = None
     try:
         from silk_data_layer import _http_get
         from silk_cache import cached_get
+        fetcher = _logging_fetcher(_http_get, hs6, market_iso3)
         data = cached_get(_WTO_BASE, params=params, ttl_seconds=_TTL,
-                          fetcher=_http_get, headers=headers)
+                          fetcher=fetcher, headers=headers)
     except Exception as e:  # noqa: BLE001 — لا استثناء يصل المستدعي
         data = None
         _record_failure(hs6, market_iso3, f"{type(e).__name__}: {e}")
@@ -132,7 +165,8 @@ def wto_applied_tariff(hs_code: str, market_iso3: str,
         note = (f"WTO TTD غير متاح الآن لـHS{hs6} {market_iso3} {year} — "
                 "تعذّر الجلب، فجوة معلنة")
         log.warning(note)
-        _record_failure(hs6, market_iso3, "cached_get returned None")
+        if not getattr(fetcher, "recorded", False):  # رفضٌ سُجِّل بنصّه — لا تكرار
+            _record_failure(hs6, market_iso3, "cached_get returned None")
         return DataPoint(None, "WTO TTD", 0.0, note, _today(),
                          status="fetch_failed")
     rate, got_year = _parse_value(data)
@@ -148,7 +182,7 @@ def wto_applied_tariff(hs_code: str, market_iso3: str,
         round(rate, 2), "WTO TTD", 0.9,
         f"التعريفة المطبَّقة % HS{hs6} إلى {market_iso3} "
         f"{got_year or year} (MFN applied، WTO Tariff & Trade Data){eu_note}",
-        _today())
+        _today(), data_year=got_year)
 
 
 def _record_failure(hs6: str, iso3: str, detail: str) -> None:

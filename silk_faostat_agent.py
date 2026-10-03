@@ -33,8 +33,69 @@ _auth_blocked: str | None = None
 
 def reset_auth_block() -> None:
     """أعد فتح قاطع الدارة — test/ops helper؛ لا يُستدعى في مسار تشغيل عادي."""
-    global _auth_blocked
+    global _auth_blocked, _token_cache, _login_failed_until
     _auth_blocked = None
+    _token_cache = None
+    _login_failed_until = 0.0
+
+
+# الدرس ٢٩١: FAOSTAT يشترط منذ 2025 رمز JWT من حساب مطوّر مجاني
+# (POST /api/v1/auth/login، form-urlencoded username/password ⇒
+# AuthenticationResult.AccessToken، صالح ~60 دقيقة) يُرسل `Authorization: Bearer`.
+# FAOSTAT_USERNAME + FAOSTAT_PASSWORD (يُفضَّلان: رمز يتجدّد) أو FAOSTAT_TOKEN (رمز جاهز)؛ بلا أيٍّ منها
+# يبقى السلوك القديم (محاولة مجهولة ⇒ 401 ⇒ قاطع الدارة) مع ملاحظة تسمّي المتغيّرات.
+_LOGIN_URL = "https://faostatservices.fao.org/api/v1/auth/login"
+_TOKEN_TTL_S = 55 * 60
+_token_cache: tuple[str, float] | None = None
+_LOGIN_RETRY_S = 600
+_login_failed_until = 0.0
+
+
+def _has_credentials() -> bool:
+    return bool(os.environ.get("FAOSTAT_TOKEN", "").strip()
+                or (os.environ.get("FAOSTAT_USERNAME", "").strip()
+                    and os.environ.get("FAOSTAT_PASSWORD", "").strip()))
+
+
+def _bearer(force: bool = False) -> str | None:
+    """رمز Bearer الحالي. اسم المستخدم/كلمة المرور يُفضَّلان (رمز يتجدّد) على FAOSTAT_TOKEN
+    الثابت (ينتهي بعد ساعة). دخولٌ فاشل يُحفظ عشر دقائق ويُعلن للمشغّل مرة — لا وابل
+    دخولٍ مع كل نداء. الفشل => None."""
+    global _token_cache, _login_failed_until
+    import time
+    user = os.environ.get("FAOSTAT_USERNAME", "").strip()
+    pwd = os.environ.get("FAOSTAT_PASSWORD", "").strip()
+    if not (user and pwd):
+        return os.environ.get("FAOSTAT_TOKEN", "").strip() or None
+    now = time.time()
+    if not force and _token_cache and _token_cache[1] > now:
+        return _token_cache[0]
+    if _login_failed_until > now:
+        return None
+    token, why = None, ""
+    try:
+        import silk_data_layer
+        r = silk_data_layer.throttled_request("POST", _LOGIN_URL, timeout=_TIMEOUT,
+                                              form={"username": user, "password": pwd})
+        if r.status_code >= 400:
+            why = f"HTTP {r.status_code}"
+        else:
+            token = ((r.json() or {}).get("AuthenticationResult") or {}).get("AccessToken")
+            why = "" if token else "no AccessToken"
+    except Exception as e:  # noqa: BLE001 — لا يُسرَّب نص الاستثناء (قد يحمل بيانات الدخول)
+        why = type(e).__name__
+    if not token:
+        _login_failed_until = now + _LOGIN_RETRY_S
+        note = f"FAOSTAT login failed ({why}) — يُعاد بعد {_LOGIN_RETRY_S // 60} دقائق"
+        log.warning(note)
+        try:
+            import silk_ops_log
+            silk_ops_log.record_service_failure("faostat", note)
+        except Exception:  # noqa: BLE001
+            pass
+        return None
+    _token_cache = (str(token), time.time() + _TOKEN_TTL_S)
+    return _token_cache[0]
 
 
 def _disabled_note(iso3: str, item: str) -> str | None:
@@ -107,12 +168,28 @@ def per_capita_supply(
         import silk_data_layer
         # المسار المقوّى (البند ٨). قاطع الدارة المحلي أدناه (401/403) يبقى
         # كما هو — هما ليسا قابلين للإعادة أصلاً.
-        r = silk_data_layer.throttled_get(url, params=params, timeout=_TIMEOUT)
+        token = _bearer() if _has_credentials() else None
+        if _has_credentials() and not token:
+            note = (f"FAOSTAT unavailable: تعذّر الدخول بحساب FAOSTAT لـ{iso3}/{item} "
+                    "— فجوة معلنة")
+            log.warning(note)
+            return DataPoint(None, "FAOSTAT", 0.0, note, _today())
+        headers = {"Authorization": f"Bearer {token}"} if token else None
+        r = silk_data_layer.throttled_get(url, params=params, headers=headers,
+                                          timeout=_TIMEOUT)
+        if r.status_code == 401 and token and os.environ.get("FAOSTAT_PASSWORD", "").strip():
+            fresh = _bearer(force=True)  # رمز منتهٍ — دخول جديد مرة واحدة
+            if fresh:
+                r = silk_data_layer.throttled_get(
+                    url, params=params, headers={"Authorization": f"Bearer {fresh}"},
+                    timeout=_TIMEOUT)
         if r.status_code in (401, 403):
             global _auth_blocked
             _auth_blocked = f"HTTP {r.status_code}"  # قاطع الدارة — لا محاولات لاحقة
+            hint = ("الرمز/الحساب المضبوط مرفوض" if token else
+                    "يتطلب حساب مطوّر FAOSTAT — اضبط FAOSTAT_USERNAME وFAOSTAT_PASSWORD")
             note = (f"FAOSTAT unavailable: HTTP {r.status_code} for {iso3}/{item} "
-                    "(auth now required?) — عُطّلت المحاولات اللاحقة تلقائياً "
+                    f"({hint}) — عُطّلت المحاولات اللاحقة تلقائياً "
                     "لهذه العملية")
             log.warning(note)
             return DataPoint(None, "FAOSTAT", 0.0, note, _today())

@@ -113,6 +113,10 @@ def _gcc_documented_exemption(hs_code: str, market_iso3: str,
                      conf, note, _today(), status="documented_agreement")
 
 
+# التراجع بالسنة حين لا سجل مُبلَّغ (الدرس ٢٩١) — نداءان إضافيان كحدّ أقصى.
+_WITS_STEP_BACK_YEARS = 2
+
+
 def _default_year() -> int:
     """آخر سنة على الأرجح متاحة في WITS — بيانات التعريفة أبطأ من التجارة
     العادية عادةً، فنؤخّرها سنتين إضافيتين؛ محسوبة لا رقماً ثابتاً يتقادم."""
@@ -172,7 +176,8 @@ def applied_tariff(
         # هذا فارقٌ معنوي عن عطل شبكة: فجوة بيانات حقيقية لا خللاً تقنياً —
         # نص عربي هادئ بلا رابط/نص استثناء خام يتسرّب لتقرير مُنتَج.
         status = getattr(e.response, "status_code", None)
-        if status is not None and 400 <= status < 500:
+        # 400/404 وحدهما «لا سجل» (مراجعة §58): 401/403/429 عطلٌ أو حدّ معدّل لا فجوة بيانات.
+        if status in (400, 404):
             note = (f"لا بيانات تعريفة مُبلَّغة إلى WITS لهذا الزوج (HS{hs6}، "
                     f"{partner_iso3}←{market_iso3}، {year}) — الزوج غير "
                     "مُغطّى في مصدر WITS لهذه السنة، ليس عطلاً تقنياً "
@@ -182,7 +187,10 @@ def applied_tariff(
                     f"{partner_iso3}←{market_iso3} {year} — أعد المحاولة لاحقاً.")
         log.warning("WITS HTTPError %s for HS%s %s->%s %s: %s",
                    status, hs6, partner_iso3, market_iso3, year, e)
-        return DataPoint(None, "World Bank WITS", 0.0, note, _today())
+        # 4xx = لا سجل مُبلَّغ لهذه السنة (يفتح التراجع بالسنة في
+        # tariff_with_fallback)؛ 5xx/شبكة = عطل لا يُعاد بسنة أخرى.
+        return DataPoint(None, "World Bank WITS", 0.0, note, _today(),
+                         status="no_record" if status in (400, 404) else "fetch_failed")
     except Exception as e:  # noqa: BLE001 — WITS is volatile; never raise
         note = (f"WITS غير متاح الآن ({type(e).__name__}) لـHS{hs6} "
                 f"{partner_iso3}←{market_iso3} {year} — أعد المحاولة لاحقاً.")
@@ -200,7 +208,7 @@ def applied_tariff(
     return DataPoint(
         round(rate, 2), "World Bank WITS", 0.9,
         f"reported import tariff % HS{hs6} "
-        f"{partner_iso3}->{market_iso3} {year}{eu_note}", _today())
+        f"{partner_iso3}->{market_iso3} {year}{eu_note}", _today(), data_year=int(year))
 
 
 def _parse_rate(resp: requests.Response) -> float | None:
@@ -275,6 +283,22 @@ def tariff_with_fallback(
                  _hs6(hs_code), market_iso3, partner_iso3, wto.value)
         return wto
     wits = applied_tariff(hs_code, market_iso3, partner_iso3, year)
+    # الدرس ٢٩١: سوقٌ لم تُبلِغ WITS جدولَها لسنة الطلب (ماليزيا 2023/2024 → 404)
+    # لا تعني «لا تعريفة» — نتراجع حتى سنتين إلى أحدث سنة مُبلَّغة، والسنة
+    # الفعلية في الملاحظة. فقط على «لا سجل» (4xx)، لا على عطل شبكة.
+    base = year or _default_year()
+    for back in range(1, _WITS_STEP_BACK_YEARS + 1):
+        if wits.value is not None or wits.status != "no_record":
+            break
+        older = applied_tariff(hs_code, market_iso3, partner_iso3, base - back)
+        if older.value is not None:
+            wits = DataPoint(older.value, older.source, older.confidence,
+                             f"{older.note} — أحدث سنة مُبلَّغة ({base - back})؛ "
+                             f"لا جدول مُبلَّغ لسنة {base}",
+                             older.retrieved_at, status=older.status,
+                             data_year=base - back)
+        elif older.status != "no_record":
+            break
     if wits.value is not None:
         log.info("tariff path=wits HS%s %s<-%s: %s%%",
                  _hs6(hs_code), market_iso3, partner_iso3, wits.value)
