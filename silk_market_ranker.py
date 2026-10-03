@@ -277,13 +277,15 @@ def supplier_plausibility(hs_code, market_iso3: str, market_m49,
         return None
     topm, mink, maxov = _a2_params()
     try:
-        from silk_data_layer import M49_TO_ISO3
+        from silk_data_layer import M49_TO_ISO3, comtrade_partner_iso3
         from silk_data_layer_v2 import market_imports
         mi = market_imports(hs, market_m49, year) or {}
         suppliers: list[str] = []
         for dp in (mi.get("competitors") or []):
             v = getattr(dp, "value", None) or {}
-            i3 = M49_TO_ISO3.get(str(v.get("code") or ""), "")
+            # الدرس 290: رموز كومتريد الخاصة (699 الهند…) — كانت تُسقَط بصمت.
+            i3 = (comtrade_partner_iso3(v.get("code") or "")
+                  or M49_TO_ISO3.get(str(v.get("code") or ""), "") or "")
             if len(i3) == 3 and i3 not in suppliers:
                 suppliers.append(i3)
             if len(suppliers) >= topm:

@@ -308,7 +308,9 @@ def _numeric_with_source(findings: list, metric: str) -> tuple:
         # يُطبَّق «مليون/مليار» على الرقم نفسِه، ويُرفَض رقمُ وزنٍ قيمةً دولاريّة
         # (مراجعة §58: «الوزن الصافي … كجم» كان يُتبنّى TAM، و«350 مليون دولار»
         # كان يسقط دون العتبة لإهمال كلمةِ المقدار).
-        raw = str(val or "")
+        # الدرس 290: رمز البند ليس رقماً («HS 200811» كان مرشّحاً ضمن مدى tam_usd).
+        raw = re.sub(r"(?i)(?<![A-Za-z])HS\s*\d?\s*[:#-]?\s*\d[\d.]{1,11}", " ",
+                     str(val or ""))
         for m in _NUM_RE.finditer(raw):
             base = _num_to_float(m.group(0))
             if base is None:

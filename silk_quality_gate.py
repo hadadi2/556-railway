@@ -1105,6 +1105,68 @@ def _check_bare_partner_codes(dr: dict) -> list[dict]:
     return findings
 
 
+def _check_hs_code_as_value(view: dict) -> list[dict]:
+    """الدرس 290 (الخلل ١ في مقترح التصحيح): رقمٌ في نص التقرير يساوي رمز البند بعد حذف صفره
+    البادئ («90,121$» = 090121) — رمزٌ قُرئ قيمةً. حاجب."""
+    hs = re.sub(r"\D", "", str(view.get("hs_code")
+                                or (view.get("header") or {}).get("hs_code") or ""))
+    if len(hs) != 6 or not hs.startswith("0"):
+        return []
+    n = int(hs)
+    text = (((view.get("deep_research") or {}).get("report") or {}).get("text") or "")
+    for form in {f"{n:,}", str(n)}:
+        pat = rf"(?<![\d.,A-Za-z]){re.escape(form)}(?![\d.,])"
+        for m in re.finditer(pat, text):
+            if not re.search(r"(?i)HS\s*[:#-]?\s*0?$", text[max(0, m.start() - 6):m.start()]):
+                return [{"check": "hs_code_as_value", "repairable": False,
+                         "note": (f"الرقم {form} في التقرير هو رمز البند {hs} مقروءاً قيمةً — "
+                                  "يُصحَّح مصدر الرقم قبل التسليم")}]
+    return []
+
+
+_UNKNOWN_PARTNER_MARK = "Unclassified area"
+
+
+def _check_unknown_partner_codes(dr: dict) -> list[dict]:
+    """الدرس 290 (المرحلة الأولى من مقترح التصحيح): مورّدٌ بلا اسمٍ معروف («Unclassified area»)
+    حاجبٌ فقط إن كان ضمن أكبر ٥ موردين أو حصته ≥ 2% — رمزٌ مجهول هامشي يُسجَّل في لوحة الدعم
+    (`silk_data_layer._record_unknown_partner`) ولا يحجب تقريراً سليماً."""
+    findings, seen = [], set()
+
+    def _scan(rows):
+        ranked = sorted((r for r in rows if isinstance(r, dict)),
+                        key=lambda r: -float(r.get("share") or 0))
+        for rank, r in enumerate(ranked, 1):
+            name = str(r.get("partner") or "")
+            if _UNKNOWN_PARTNER_MARK not in name:
+                continue
+            share = float(r.get("share") or 0)
+            key = (str(r.get("code") or name), round(share, 2))
+            if key in seen or not (rank <= 5 or share >= 2.0):
+                continue
+            seen.add(key)
+            findings.append({
+                "check": "unknown_partner_code", "repairable": False,
+                "note": (f"أحد كبار المورّدين (المرتبة {rank}، حصة {share:g}%) لم يُتعرَّف على "
+                         "اسم دولته في مرجع الدول — تُراجَع بيانات المورّدين قبل التسليم")})
+
+    for m in (dr.get("missions") or {}).values():
+        fs = (m.get("findings") if isinstance(m, dict) else getattr(m, "findings", None)) or []
+        singles = []
+        for f in fs:
+            rows = [f] + list((f.get("raw_evidence") if isinstance(f, dict)
+                               else getattr(f, "raw_evidence", None)) or [])
+            for row in rows:
+                v = row.get("value") if isinstance(row, dict) else getattr(row, "value", None)
+                if isinstance(v, dict) and isinstance(v.get("top_suppliers"), list):
+                    _scan(v["top_suppliers"])
+                elif isinstance(v, dict) and "partner" in v and "share" in v:
+                    singles.append(v)
+        if singles:
+            _scan(singles)
+    return findings
+
+
 def _check_intersection_insufficiency(dr: dict, lang: str = "ar") -> list[dict]:
     """"دليل غير كافٍ" رغم وجود ≥٢ بند ذي صلة — بلاغ حي (الموجة ٩-١٠).
 
@@ -2008,6 +2070,7 @@ def _check_source_coverage(dr: dict) -> list[dict]:
 # أهدأ من فشل بنيوي حقيقي (section_structure/agent_failed). ثابتٌ على مستوى
 # الوحدة كي تُثبِّته الاختبارات (عقد تصعيد §8: …_excess داخله، WARN خارجه).
 _REGRESSION_GUARD_FIRED = {"min_pillars_scored", "competition_unit_valid",
+                           "unknown_partner_code", "hs_code_as_value",
                            "retail_unit_mismatch", "retail_price_presence_conflict",
                            "pillar_narrative_sync",
                            "hs_recommendation_match",
@@ -7138,6 +7201,8 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_confidentiality_leaks(combined_text)
     findings += _check_style(text)
     findings += _check_bare_partner_codes(dr)
+    findings += _check_unknown_partner_codes(dr)
+    findings += _check_hs_code_as_value(view)
     findings += _check_intersection_insufficiency(dr, _lang)
     findings += _check_section_structure(dr, _lang)
     findings += _check_cagr_consistency(dr)

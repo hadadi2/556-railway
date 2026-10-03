@@ -12,6 +12,7 @@ from silk_data_layer import (
     ISO3_TO_M49,
     M49_TO_ISO3,
     comtrade_trade,
+    is_aggregate_partner,
     partner_name,
     primary_value,
     world_bank,
@@ -234,6 +235,7 @@ def market_imports(hs_code: str, market_m49: object, year: int) -> dict:
     # جمع حسب الشريك مع التقاط صفّ العالم — aggregate per partner; capture World row.
     world: float | None = None
     totals: dict[str, float] = {}
+    aggregates: dict[str, float] = {}
     for rec in recs:
         code = str(rec.get("partnerCode"))
         val = primary_value(rec)
@@ -242,8 +244,13 @@ def market_imports(hs_code: str, market_m49: object, year: int) -> dict:
         if code == "0":  # World aggregate = total market imports (market size)
             world = val
             continue
+        if is_aggregate_partner(code):
+            # الدرس 290: «Areas, nes»/المناطق الحرة… جزءٌ من الواردات لا مورّد — تدخل
+            # المقام (الإجمالي) ولا تُرتَّب ولا تدخل HHI ولا عدد الموردين.
+            aggregates[code] = aggregates.get(code, 0.0) + val
+            continue
         totals[code] = totals.get(code, 0.0) + val
-    grand = sum(totals.values())
+    grand = sum(totals.values()) + sum(aggregates.values())
     # حجم السوق: الأكبر رياضياً بين صف العالم ومجموع الشركاء (مراجعة المشروع).
     # ثابت رياضي لا يقبل النقاش: الإجمالي لا يمكن أن يصغر عن مجموع جزءٍ منه —
     # فحين world < grand يكون صف العالم خاطئاً/غير مكتمل يقيناً (لا نخمّن أيّهما
@@ -280,8 +287,12 @@ def market_imports(hs_code: str, market_m49: object, year: int) -> dict:
             competitors.append(_competitor_dp(
                 code, val, grand, hs_code=hs_code, market_label=market_m49,
                 year=year, confidence=comp_conf, note_suffix=comp_note))
+    aggregate_rows = ([{"code": c, "partner": partner_name(c), "value_usd": v,
+                        "share": round(100 * v / grand, 2)}
+                       for c, v in sorted(aggregates.items(), key=lambda kv: kv[1], reverse=True)]
+                      if grand > 0 else [])
     return {"total_usd": total_usd, "competitors": competitors,
-            "xval_note": xval_note}
+            "xval_note": xval_note, "aggregates": aggregate_rows}
 
 
 def market_competitors(hs_code: str, market_m49: object, year: int) -> list[DataPoint]:
@@ -335,8 +346,8 @@ def market_competitors_mirror(hs_code: str, market_m49: object,
     for rec in recs:
         code = str(rec.get("reporterCode") or "")
         val = primary_value(rec)
-        if val is None or not code:
-            continue
+        if val is None or not code or is_aggregate_partner(code):
+            continue                      # الدرس 290: التجميعات ليست مورّدين
         totals[code] = totals.get(code, 0.0) + val
     grand = sum(totals.values())
     if grand <= 0:
@@ -475,6 +486,8 @@ def market_imports_cached(hs_code: str, market_m49: object, market_iso3: str,
             if grand:
                 for p in valued:
                     m49 = ISO3_TO_M49.get(p["iso3"], p["iso3"])
+                    if is_aggregate_partner(m49):
+                        continue          # الدرس 290: في المقام لا في الترتيب
                     p_day = (p.get("retrieved_at") or fetched or "")[:10]
                     competitors.append(_competitor_dp(
                         m49, p["value_usd"], grand, hs_code=hs_code,

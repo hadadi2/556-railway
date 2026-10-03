@@ -1,0 +1,33 @@
+# رموز شركاء UN Comtrade التي لا تطابق رقم ISO في countries.csv — الدرس 290.
+# الدول: من export_potential/geography.json (معرّفات ITC = رموز كومتريد الخاصة: 699 الهند، 757 سويسرا، 842 أمريكا…)؛
+# الأسماء من data/countries.csv. التجميعات (aggregate=1): مرجع partnerAreas في UN Comtrade — لا تُرتَّب موردين ولا تدخل HHI.
+code,iso3,name_en,name_ar,aggregate
+251,FRA,France,فرنسا,0
+381,ITA,Italy,إيطاليا,0
+490,TWN,"Other Asia, nes (Taiwan)",تايوان,0
+579,NOR,Norway,النرويج,0
+699,IND,India,الهند,0
+757,CHE,Switzerland,سويسرا,0
+842,USA,United States,الولايات المتحدة,0
+849,UMI,United States Minor Outlying Islands,جزر الولايات المتحدة الصغيرة النائية,0
+0,,World,العالم,1
+899,,"Areas, nes",مناطق غير محددة,1
+838,,Free Zones,المناطق الحرة,1
+839,,Special Categories,فئات خاصة,1
+837,,Bunkers,وقود السفن والطائرات,1
+568,,"Other Europe, nes",أوروبا الأخرى غير المحددة,1
+577,,"Other Africa, nes",أفريقيا الأخرى غير المحددة,1
+636,,"Rest of America, nes",بقية الأمريكتين غير المحددة,1
+637,,"North America and Central America, nes",أمريكا الشمالية والوسطى غير المحددة,1
+527,,"Oceania, nes",أوقيانوسيا غير المحددة,1
+879,,"Western Asia, nes",غرب آسيا غير المحدد,1
+975,,"ASEAN, nes",آسيان غير المحددة,1
+492,,"Europe EU, nes",الاتحاد الأوروبي غير المحدد,1
+697,,"Europe EFTA, nes",إفتا غير المحددة,1
+473,,"LAIA, nes",رابطة تكامل أمريكا اللاتينية غير المحددة,1
+471,,"CACM, nes",السوق المشتركة لأمريكا الوسطى غير المحددة,1
+472,,"Africa CAMEU region, nes",منطقة CAMEU الأفريقية غير المحددة,1
+129,,"Caribbean, nes",الكاريبي غير المحدد,1
+221,,"Eastern Europe, nes",أوروبا الشرقية غير المحددة,1
+290,,"Northern Africa, nes",شمال أفريقيا غير المحدد,1
+536,,Neutral Zone,المنطقة المحايدة,1

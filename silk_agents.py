@@ -372,6 +372,9 @@ class CompetitionAgent(BaseAgent):
                 return None
             comps = []
             for p in valued:
+                from silk_data_layer import is_aggregate_partner
+                if is_aggregate_partner(ISO3_TO_M49.get(p["iso3"], p["iso3"])):
+                    continue              # الدرس 290: التجميع في المقام لا في الترتيب
                 day = (p.get("retrieved_at") or "")[:10]
                 suffix, status = silk_store.staleness_suffix(
                     p.get("retrieved_at"), "trade")
