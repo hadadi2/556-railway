@@ -125,3 +125,98 @@ def test_gate_blocks_a_number_equal_to_the_hs_code():
     assert out and out[0]["check"] == "hs_code_as_value" and out[0]["repairable"] is False
     view["deep_research"]["report"]["text"] = "البند HS 090121 (قهوة محمصة) — الواردات 89.4 مليون دولار."
     assert QG._check_hs_code_as_value(view) == []
+
+
+# ── 1.3 سنة أساس واحدة ────────────────────────────────────────────────────
+
+def _pt(year, value, mirrored=False):
+    from silk_data_layer import DataPoint
+    return DataPoint(value, "UN Comtrade (مرآة)" if mirrored else "UN Comtrade",
+                     0.6 if mirrored else 0.9,
+                     f"HS090121 إجمالي استيراد Malaysia من العالم {year}, USD", "2026-10-03",
+                     status="mirrored" if mirrored else "", data_year=year)
+
+
+def test_partial_rule_applies_to_the_latest_mirrored_year_only():
+    """قرار المالك: «جزئية» = أحدث سنة فقط، ولم تُبلِغ عنها السوق نفسها، ومرآتها < 80% من متوسط سنتين."""
+    import silk_deep_pillars as DP
+    low_mirror = {"trade_flow": {"findings": [_pt(2022, 100e6), _pt(2023, 100e6), _pt(2024, 50e6, True)]}}
+    s = DP.import_series(low_mirror)
+    assert [p["partial"] for p in s["series"]] == [False, False, True]
+    assert DP.base_year(low_mirror) == 2023
+    real_drop = {"trade_flow": {"findings": [_pt(2022, 100e6), _pt(2023, 100e6), _pt(2024, 70e6)]}}
+    assert DP.base_year(real_drop) == 2024                     # هبوط 30% مُبلَّغ مباشرةً يبقى
+    old_mirror = {"trade_flow": {"findings": [_pt(2021, 40e6, True), _pt(2022, 100e6), _pt(2023, 100e6)]}}
+    assert not any(p["partial"] for p in DP.import_series(old_mirror)["series"])
+
+
+def test_mirrored_raw_evidence_reaches_the_series():
+    import silk_deep_pillars as DP
+    raw = [{"value": 74_870_000.0, "source": "UN Comtrade", "confidence": 0.9, "data_year": 2023,
+            "note": "HS090121 إجمالي استيراد Malaysia من العالم 2023, USD"},
+           {"value": 89_400_000.0, "source": "UN Comtrade (مرآة)", "confidence": 0.6, "data_year": 2024,
+            "status": "mirrored", "note": "HS090121 تقدير استيراد Malaysia 2024 من مرآة"}]
+    m = {"trade_flow": {"findings": [{"value": "نمت الواردات", "note": "claim", "raw_evidence": raw}]}}
+    assert [p["year"] for p in DP.import_series(m)["series"]] == [2023, 2024]
+
+
+def test_series_augment_fetches_missing_years_once():
+    import silk_missions as SM
+    from silk_agents import AgentReport
+    from silk_market_resolver import resolve_market
+    ref, _ = resolve_market("Malaysia")
+    report = AgentReport("LLMMissionAgent:trade_flow", [_pt(2024, 89.4e6)], False, "s")
+    asked = []
+
+    def fake(args, ctx):
+        asked.append(list(args["years"]))
+        return [_pt(y, 70e6 + y) for y in args["years"]]
+    with mock.patch("silk_llm_runtime._tool_comtrade_imports", side_effect=fake):
+        SM._augment_trade_flow_series(report, "090121", ref)
+        SM._augment_trade_flow_series(report, "090121", ref)
+    import datetime as _dt
+    y0 = _dt.date.today().year - 1
+    assert asked == [[y for y in range(2019, y0 + 1) if y != 2024]]
+    years = sorted(dp.data_year for dp in report.findings)
+    assert years == list(range(2019, y0 + 1))
+
+
+def test_competition_summary_uses_the_base_year_and_labels_a_fallback():
+    import silk_missions as SM
+    from silk_agents import AgentReport
+    from silk_data_layer import DataPoint
+    from silk_market_resolver import resolve_market
+    ref, _ = resolve_market("Malaysia")
+    trade = AgentReport("LLMMissionAgent:trade_flow", [_pt(2023, 74.87e6), _pt(2024, 89.4e6)], False, "s")
+    comp = AgentReport("LLMMissionAgent:competitors", [], False, "s")
+    calls = []
+
+    def fake(hs, market, year=None, top_n=10, deadline_s=None):
+        calls.append(year)
+        if year == 2024:
+            return [DataPoint(None, "UN Comtrade", 0.0, "لا سجل", "2026-10-03")]
+        return [DataPoint({"year": 2023, "hhi": 1307, "supplier_count": 40, "top_suppliers": []},
+                          "UN Comtrade", 0.9, "HS090121 مورّدو Malaysia 2023", "2026-10-03")]
+    with mock.patch("silk_llm_runtime.competition_summary_findings", side_effect=fake):
+        SM._augment_competitors_structured(comp, "090121", ref, trade)
+    assert calls[0] == 2024
+    summary = comp.findings[0]
+    assert summary.value["year"] == 2023 and "أحدث سنة متاحة" in summary.note and "2024" in summary.note
+
+
+def test_tam_and_ledger_latest_year_come_from_the_base_year():
+    import silk_deep_pillars as DP
+    m = {"trade_flow": {"findings": [
+        _pt(2023, 74_870_000.0), _pt(2024, 89_400_000.0),
+        {"value": "بلغت واردات ماليزيا 120 مليون دولار", "note": "تقدير ويب 2024", "data_year": 2024}]}}
+    pi = DP.build_pillar_inputs({"missions": m})
+    assert pi["market_attractiveness"]["tam_usd"] == 89_400_000.0
+
+
+def test_chart_year_mismatch_reads_the_range_end():
+    import silk_fact_ledger as FL
+    view = {"deep_research": {"charts": [{"id": "imports_trend", "year": "2019–2023"}]}}
+    out = FL._chart_year_findings(view, 2024)
+    assert out and out[0]["check"] == "chart_year_mismatch"
+    view["deep_research"]["charts"][0]["year"] = "2019–2024"
+    assert FL._chart_year_findings(view, 2024) == []
