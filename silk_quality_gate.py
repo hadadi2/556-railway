@@ -3377,7 +3377,15 @@ def _norm_gap_tokens() -> tuple:
     return tuple(_norm_ar(g) for g in _GAP_SENTENCE_TOKENS)
 
 
-def _narrated_outside_gap_sentences(text: str, needles: tuple) -> bool:
+# الدرس 289 (الدراسة ٩): مكوّنٌ لا يُعدّ مسروداً إلا مع قيمةٍ في الجملة نفسها — «نوصي ببناء
+# الحصة السعودية» توصيةٌ لا قياس، وكانت تحجب تقريراً كاملاً. «الحصة السعودية صفر/0%/ضئيلة»
+# يبقى سرداً لقيمةٍ غير مرصودة فيُحجب كما كان. الصرف خارج هذا الاستثناء عمداً.
+_PILLAR_NEEDS_QUANTITY = frozenset({"saudi_momentum"})
+_QUANTITY_RE = re.compile(r"[0-9٠-٩%٪]|صفر|ضئيل|معدوم|منعدم|تستحوذ|تبلغ|بلغت|نسبة")
+
+
+def _narrated_outside_gap_sentences(text: str, needles: tuple,
+                                    need_quantity: bool = False) -> bool:
     """هل يسرد المتنُ المكوّنَ خارج جملِ الفجوة المعلنة؟ التقطيع على فواصل
     الجمل فقط (لا النقطتين) كي يبقى صفُّ الجدول «إجمالي الواردات: غير
     مرصود» جملةً واحدة. المطابقة عبر المُطبِّع الواحد `_norm_ar`."""
@@ -3390,7 +3398,8 @@ def _narrated_outside_gap_sentences(text: str, needles: tuple) -> bool:
         if heading in n_needles:
             continue
         if (any(n in seg for n in n_needles)
-                and not any(g in seg for g in gaps)):
+                and not any(g in seg for g in gaps)
+                and (not need_quantity or _QUANTITY_RE.search(seg))):
             return True
     return False
 
@@ -3415,7 +3424,8 @@ def _check_pillar_narrative_sync(view: dict) -> list[dict]:
             continue
         for comp in (p.get("missing") or []):
             needles = _PILLAR_BODY_NEEDLES.get(comp)
-            if needles and _narrated_outside_gap_sentences(text, needles):
+            if needles and _narrated_outside_gap_sentences(
+                    text, needles, need_quantity=comp in _PILLAR_NEEDS_QUANTITY):
                 findings.append({
                     "check": "pillar_narrative_sync", "repairable": False,
                     "note": (f"اللوحة تعلن «{_PILLAR_COMPONENT_AR.get(comp, comp)}"

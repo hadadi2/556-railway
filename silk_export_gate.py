@@ -240,6 +240,12 @@ def record_block(analysis_id, product, market, findings, digest,
                  fail_drivers: "list | None" = None) -> None:
     """سجّل الحجب في الحارس وسجلّ العمليات — `surface` يميّز مصنعاً من مشغّل.
     `fail_drivers` (شرط المُشرِف F): قائد الحكم يُخزَّن مع كل سجل حجب."""
+    # الدرس 289: ملاحظاتُ الحجب في سجل الخدمة أيضاً — سجلّ العمليات خلف مفتاح المشغّل،
+    # فحجبُ الدراسة ٩ لم يُعرَف مكوّنه من سجل Railway. الملاحظات مُطهَّرة أصلاً (نصّ عميل).
+    log.warning("export blocked (%s, %s) analysis=%s drivers=%s findings=%s",
+                surface, fmt, analysis_id, [str(x) for x in (fail_drivers or [])],
+                "; ".join(f"{d.get('check')}: {d.get('note')}" for d in (digest or [])
+                          if isinstance(d, dict))[:1500])
     try:
         import silk_watchdog
         silk_watchdog.record_blocked_export(analysis_id, product, market,

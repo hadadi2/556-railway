@@ -76,27 +76,40 @@ _MAGNITUDE_RE = re.compile(
     re.I)
 
 
+# الدرس 289: رمزُ البند ليس مبلغاً — «HS090121» في ملاحظة فجوة صار مرتكز واردات 90,121$.
+_HS_TOKEN_RE = re.compile(r"(?i)(?<![A-Za-z])HS\s*\d?\s*[:#-]?\s*\d[\d.]{1,11}")
+_CODE_LIKE_RE = re.compile(r"0\d{3,}(?:\.\d+)?")       # 0901 / 090121 / 0901.21
+_BARE_YEAR_RE = re.compile(r"(?:19|20)\d\d")
+_AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+
 def _num_usd(value: object, note: object = "") -> "float | None":
     """قيمةٌ رقميةٌ بالدولار من قيمةٍ عدديةٍ أو نصٍّ («497 مليون دولار»)، أو None.
 
     لا اختلاق: يعيد None إن لم يُرصَد رقمٌ حقيقيّ — المتّصلُ يتجاوز البند بدل
-    افتراضِ صفرٍ أو تخمين. المقياسُ يُقرأ من الكلمة التالية للرقم مباشرةً فقط."""
-    if isinstance(value, bool):
+    افتراضِ صفرٍ أو تخمين. المقياسُ يُقرأ من الكلمة التالية للرقم مباشرةً فقط.
+    الدرس 289: القيمةُ الغائبة (فجوة معلنة) بلا رقم — `note` مصدرٌ لا قيمة فلا يُقرأ؛
+    ولا يُقرأ مبلغاً رمزُ بند ولا سنةٌ مجرّدة ولا نسبةٌ مئوية."""
+    if value is None or isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
         return float(value)
-    m = _MAGNITUDE_RE.search(str(value or ""))
-    if not m or not m.group(1):
-        # القيمةُ نصٌّ بلا رقم — قد تحمل الملاحظةُ الرقمَ (نادر).
-        m = _MAGNITUDE_RE.search(str(note or ""))
-        if not m or not m.group(1):
-            return None
-    try:
-        base = float(re.sub(r"[,،٬]", "", m.group(1)).replace("٫", "."))
-    except ValueError:
-        return None
-    scale = (m.group(2) or "").lower()
-    return base * _SCALE_MULT.get(scale, 1.0)
+    if not isinstance(value, str):
+        return None                       # dict/list: لا قراءة لـstr(dict)
+    text = _HS_TOKEN_RE.sub(" ", value.translate(_AR_DIGITS))
+    for m in _MAGNITUDE_RE.finditer(text):
+        raw, scale = m.group(1), (m.group(2) or "").lower()
+        if not scale:
+            bare = re.sub(r"[,،٬]", "", raw).lstrip("+-")
+            if (text[m.end(1):m.end(1) + 2].lstrip()[:1] in ("%", "٪")
+                    or _CODE_LIKE_RE.fullmatch(bare) or _BARE_YEAR_RE.fullmatch(bare)):
+                continue                  # نسبةٌ أو رمزُ بند أو سنة — لا مبلغ
+        try:
+            base = float(re.sub(r"[,،٬]", "", raw).replace("٫", "."))
+        except ValueError:
+            continue
+        return base * _SCALE_MULT.get(scale, 1.0)
+    return None
 
 
 # ── كشفُ المرتكزات والمرشّحين من حقائق البعثات ───────────────────────────────
@@ -166,14 +179,29 @@ def _anchors(dr: dict) -> dict:
             return max(cur_val or 0.0, val), None
         return cur_val, cur_year
 
+    # الدرس 289: مرتكزُ الواردات من السلسلة المُهيكلة (`import_series` — المصدر الواحد
+    # للدفتر والجدول والدراسة؛ يقرأ raw_evidence الحيّ) قبل أيّ نثر؛ النثرُ احتياطٌ
+    # حين لا سلسلة، وبمدى tam_usd نفسه فلا تصير نسبةٌ أو عددُ دولٍ «إجمالي واردات».
+    series_anchor = False
+    try:
+        from silk_deep_pillars import _RANGE, import_series
+        full = [p for p in (import_series(dr.get("missions") or {}).get("series") or [])
+                if not p.get("partial")]
+        lo, hi = _RANGE.get("tam_usd", (0.0, float("inf")))
+    except Exception:  # noqa: BLE001 — السلسلة تحسينٌ لا شرط
+        full, lo, hi = [], 0.0, float("inf")
+    if full:
+        imports, imports_year = float(full[-1]["value"]), int(full[-1]["year"])
+        series_anchor = True
     for _key, f in _iter_findings(dr):
         blob = f"{f.get('note') or ''} {f.get('value') or ''}"
         val = _num_usd(f.get("value"), f.get("note"))
         if val is None or val <= 0:
             continue
         if _kw_hit(blob, _IMPORT_KW) and not _kw_hit(blob, _MARKET_SIZE_KW):
-            imports, imports_year = _prefer_latest(imports, imports_year,
-                                                   val, _finding_year(f))
+            if not series_anchor and lo <= val <= hi:
+                imports, imports_year = _prefer_latest(imports, imports_year,
+                                                       val, _finding_year(f))
         elif _kw_hit(blob, _GDP_PC_KW):
             gdp_pc = max(gdp_pc or 0.0, val)
         elif _kw_hit(blob, _POP_KW):
