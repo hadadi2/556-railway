@@ -170,7 +170,12 @@ class _Budget:
     `collection_runs` عند الإغلاق كي تراه `comtrade_budget_left()` في
     التشغيلة التالية."""
 
-    def __init__(self, spent: int = 0):
+    def __init__(self, spent: int = 0, deadline_s: float | None = None):
+        import time as _t
+        # الدرس ٢٩١: مهلةٌ داخلية اختيارية — بعدها لا نداءَ جديد (`has()` كاذبة)،
+        # فيُسلَّم ما اكتمل جزئياً بدل أن يُلغيه سقفُ `_bounded_augment` كلَّه.
+        self._deadline = _t.monotonic() + deadline_s if deadline_s else None
+        self.timed_out = False
         left = max_calls() - max(0, int(spent or 0))
         try:
             from silk_collectors import comtrade_budget_left
@@ -181,6 +186,11 @@ class _Budget:
         self.used = 0
 
     def has(self) -> bool:
+        if self._deadline is not None:
+            import time as _t
+            if _t.monotonic() > self._deadline:
+                self.timed_out = True
+                return False
         return self.left > 0
 
     def spend(self) -> None:
@@ -290,6 +300,21 @@ def _default_year() -> int:
     return _dt.date.today().year - 1
 
 
+def _supplier_nature_deadline_s() -> float:
+    """مهلةُ نداءات طبيعة المورّدين الجديدة (افتراضي 25ث) — دون سقف التعزيز المخصّص
+    لها في `silk_missions` (60ث) بما يكفي لإتمام نداءٍ جارٍ (مهلة قراءة 30ث)."""
+    try:
+        want = float(os.environ.get("SILK_SUPPLIER_NATURE_S", "25") or "25")
+    except ValueError:
+        want = 25.0
+    try:
+        ceiling = float(os.environ.get("SILK_SUPPLIER_NATURE_TIMEOUT_S", "60") or "60")
+    except ValueError:
+        ceiling = 60.0
+    # نداءٌ جارٍ عند المهلة يحتاج حتى مهلة قراءة (30ث) قبل السقف — وإلا ضاع ما اكتمل.
+    return max(1.0, min(want, ceiling - 35.0))
+
+
 def augment_supplier_nature(report, hs_code: str, market, year=None,
                             spent: int = 0) -> None:
     """البند ٢: لكلّ مورّدٍ من الثلاثة الأكبر — منتجٌ عالميٌّ أم معيدُ تصدير؟
@@ -313,7 +338,7 @@ def augment_supplier_nature(report, hs_code: str, market, year=None,
                                   "مورّدين مهيكل في هذه البعثة", 0.0))
         return
     y = int(summary.get("year") or year or _default_year())
-    budget = _Budget(spent)
+    budget = _Budget(spent, deadline_s=_supplier_nature_deadline_s())
     if not budget.has():
         findings.append(_dp(None, "طبيعة المورّدين غير محسوبة — ميزانية "
                                   "كومتريد اليومية مستنفدة أو بلا مفتاح", 0.0, y))
@@ -388,7 +413,8 @@ def augment_supplier_nature(report, hs_code: str, market, year=None,
          "calls_used": budget.used, "partial": partial},
         f"طبيعة المورّدين الأكبر لسنة {y}: {len(known)} مُقيَّم من {len(rows)}، "
         f"منهم {n_re} معيد تصدير مرجَّح — القاعدة: ليس من أعلى {topn} مصدّراً "
-        "عالمياً ووارداته ≥ صادراته",
+        "عالمياً ووارداته ≥ صادراته"
+        + ("؛ توقّف الجلب عند المهلة فالباقي غير مُقيَّم" if budget.timed_out else ""),
         0.8 if known else 0.0, y, stored_dates=tuple(dates)))
 
 

@@ -41,7 +41,10 @@ _SOURCES_LINE = re.compile(r"^\*\*المصادر:\*\*(.*)$", re.M)
 LEXICON = ("ويُعد", "وتُعد", "تُعد", "ويُلاحظ", "ويتعين", "يتعين", "غير أن",
            "وبناءً على ذلك", "في حين", "وفي المقابل", "وتشير", "ويستند",
            "ويُقدَّر", "ويُفاد", "وتبقى", "ويُقترح", "توصي الدراسة", "ويستوجب",
-           "وتعني", "إذ ", "بما يعادل", "بلغت", "بلغ", "تتمثل", "ولم تُعتمد")
+           "وتعني", "إذ ", "بما يعادل", "بلغت", "بلغ", "تتمثل", "ولم تُعتمد",
+           # الدرس ٢٩١: صيغ رسمية في نصوص القالب المعتمدة نفسها (قسما الطلب
+           # والتسعير بلا ملف معرفة كانا يُخالفان بنصّ القالب ذاته).
+           "ويُوصى", "وعليه،", "ولم تُدرج")
 # أقسام بنيوية (جدول/قائمة مصادر) لا يُشترط فيها المعجم.
 LEXICON_EXEMPT = ("## تاسعاً: خطة التنفيذ (90 يوماً)", "## المصادر وحدود الدراسة")
 _META_LINE = re.compile(r"^\*\*(?:المصادر|ما لم يتسنّ توثيقه):")
@@ -92,6 +95,20 @@ def _sections(md: str) -> list[tuple[str, list[str]]]:
         elif out:
             out[-1][1].append(ln)
     return out
+
+
+def missing_sources(md: str) -> list[str]:
+    """مصادر يستشهد بها المتن وتغيب عن سطر «المصادر:» — يستعملها الـlinter والمُصيِّر
+    (الذي يُلحقها بالسطر، الدرس ٢٩١). جملة تعلن تعذّر الجلب/الغياب ليست استشهاداً؛
+    على مستوى الشِّبه جملة («،» أيضاً): استشهادٌ حقيقي في جملة مختلطة يبقى مفحوصاً."""
+    sm = _SOURCES_LINE.search(md)
+    if not sm:
+        return []
+    body = " ".join(x for x in re.split(r"(?<=[.؛،])\s+|\n+", md[:sm.start()])
+                    if not any(w in x for w in _GAP_WORDS))
+    listed = sm.group(1)
+    return [name for name in SOURCE_NAMES
+            if name in body and not any(a in listed for a in (name, *SOURCE_ALIASES.get(name, ())))]
 
 
 def lint(md: str, claims: list[dict] | None = None,
@@ -162,16 +179,8 @@ def lint(md: str, claims: list[dict] | None = None,
         if head == COUNTER_HEADING and not any(w in " ".join(body) for w in FLIP_WORDS):
             add("counter_without_flip", head)
     # (٨-أ) P3-3: مصدر مذكور في المتن غائب عن قائمة المصادر.
-    sm = _SOURCES_LINE.search(md)
-    if sm:
-        # جملة تعلن تعذّر الجلب/الغياب ليست استشهاداً بالمصدر فلا توجب ذكره في القائمة.
-        # على مستوى الشِّبه جملة («،» أيضاً): استشهادٌ حقيقي في جملة مختلطة يبقى مفحوصاً.
-        body = " ".join(x for x in re.split(r"(?<=[.؛،])\s+|\n+", md[:sm.start()])
-                        if not any(w in x for w in _GAP_WORDS))
-        for name in SOURCE_NAMES:
-            listed = sm.group(1)
-            if name in body and not any(a in listed for a in (name, *SOURCE_ALIASES.get(name, ()))):
-                add("source_missing", name)
+    for name in missing_sources(md):
+        add("source_missing", name)
     return v
 
 

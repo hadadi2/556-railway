@@ -260,6 +260,10 @@ def _isolated_fact_store(monkeypatch):
     # هذا نامت الحزمة الهيرمتية ~ساعتين فعلياً (1.1ث × مئات نداءات كومتريد
     # المقطوعة الشبكة) — اكتُشف حياً عند إضافة النافذة.
     monkeypatch.setenv("SILK_COMTRADE_MIN_GAP_MS", "0")
+    # الدرس ٢٩١: نافذتا Exa (700ms) وFAOSTAT (550ms) الخاصتان تُصفَّران كذلك — بلا هذا
+    # تجاوزت الحزمة سقف CI (20 دقيقة) نوماً على نداءات محاكاة.
+    monkeypatch.setenv("SILK_EXA_MIN_GAP_MS", "0")
+    monkeypatch.setenv("SILK_FAOSTAT_MIN_GAP_MS", "0")
     # الموجة ٦ (V5): عزل ملفات التتبّع أيضاً — بلا هذا، اختبارات /research
     # الحقيقية (TestClient) تكتب data/traces/*.jsonl فعلياً على القرص.
     monkeypatch.setenv("SILK_TRACE_DIR", tempfile.mkdtemp())

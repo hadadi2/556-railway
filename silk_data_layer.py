@@ -155,6 +155,13 @@ def _min_gap_ms(host: str) -> float:
     العامة (SILK_HTTP_MIN_GAP_MS، افتراضي 250مث)."""
     if "comtradeapi.un.org" in host:
         return float(os.environ.get("SILK_COMTRADE_MIN_GAP_MS", "1100"))
+    # الدرس ٢٩١: بحث Exa العام (بلا مفتاح) ردّ 429 لأربعة نداءات متوازية على
+    # نافذة 250مث (الدراسة ٩)؛ 700مث تُبقي سقف الطابور (30ث) فوق ~40 بحثاً.
+    # وFAOSTAT يحدّ بنداءين في الثانية.
+    if "exa.ai" in host:
+        return float(os.environ.get("SILK_EXA_MIN_GAP_MS", "700"))
+    if "faostatservices.fao.org" in host:
+        return float(os.environ.get("SILK_FAOSTAT_MIN_GAP_MS", "550"))
     return float(os.environ.get("SILK_HTTP_MIN_GAP_MS", "250"))
 
 
@@ -244,7 +251,7 @@ def _http_get(url: str, params: dict | None = None,
 
 def throttled_request(method: str, url: str, *, params: dict | None = None,
                       headers: dict | None = None, json_body=None,
-                      timeout: float | None = None,
+                      form=None, timeout: float | None = None,
                       count_fetches: bool = True):
     """المسار المقوّى للوكلاء — the hardened path, for agents outside this module.
 
@@ -298,6 +305,8 @@ def throttled_request(method: str, url: str, *, params: dict | None = None,
             kwargs["headers"] = headers
         if json_body is not None:
             kwargs["json"] = json_body
+        if form is not None:            # جسم form-urlencoded (دخول FAOSTAT، الدرس ٢٩١)
+            kwargs["data"] = form
         try:
             resp = fn(url, **kwargs)
         except Exception as exc:  # noqa: BLE001 — EXT-9: عطلُ اتصال يُحسَب ويُعلَن ثم يُعاد
@@ -1063,8 +1072,55 @@ def _wb_shape_error(payload: object) -> str | None:
     return None
 
 
+# أسماء مؤشرات WGI الإنجليزية (قبل «:») — للتعرّف على معرّفها في قاعدة source=3
+# إن تغيّر الرمز (الدرس ٢٩١).
+_WGI_NAMES = {
+    "PV.EST": "political stability and absence of violence/terrorism",
+    "RL.EST": "rule of law", "RQ.EST": "regulatory quality",
+    "GE.EST": "government effectiveness", "CC.EST": "control of corruption",
+    "VA.EST": "voice and accountability",
+}
+_WGI_ID_CACHE: dict[str, str | None] = {}
+
+
+def _wgi_current_id(indicator: str, source: str) -> str | None:
+    """المعرّف الحالي لمؤشر WGI في قاعدة البنك الدولي — من فهرس القاعدة نفسها
+    (`/sources/{source}/indicators`)، مخزَّناً أسبوعاً. يطابق الرمزَ حرفياً أو
+    لاحقةً (`…_PV.EST`/`…PV_EST`) أو اسمَ المؤشر مع «Estimate». لا شيء => None."""
+    key = f"{source}:{indicator}"
+    if key in _WGI_ID_CACHE:
+        return _WGI_ID_CACHE[key]
+    found = None
+    try:
+        url = f"{ENDPOINTS['world_bank']}/sources/{source}/indicators"
+        payload = _cached_get(url, {"format": "json", "per_page": "2000"},
+                              ttl_seconds=7 * 86400,
+                              cacheable=lambda p: _wb_shape_error(p) is None)
+        rows = (payload[1] if isinstance(payload, list) and len(payload) > 1
+                and isinstance(payload[1], list) else [])
+        flat = indicator.replace(".", "_").upper()
+        name = _WGI_NAMES.get(indicator, "")
+        for row in rows:
+            rid = str((row or {}).get("id") or "")
+            rname = str((row or {}).get("name") or "").lower()
+            up = rid.upper().replace(".", "_")
+            if rid == indicator or up == flat or up.endswith("_" + flat):
+                found = rid
+                break
+            if (name and rname.startswith(name) and "estimate" in rname
+                    and "standard error" not in rname):
+                found = found or rid
+        if rows:  # فهرس مستلَم فعلاً — النتيجة (حتى None) تُحفظ للعملية
+            _WGI_ID_CACHE[key] = found
+    except Exception as e:  # noqa: BLE001 — الاكتشاف تحسين لا شرط
+        log.warning("WGI id discovery failed for %s: %s", indicator, e)
+    if not found:
+        log.warning("WGI id discovery: no current id for %s in source %s", indicator, source)
+    return found
+
+
 def _world_bank_for_year(iso3: str, indicator: str,
-                         year: int | None) -> DataPoint:
+                         year: int | None, _alias: str | None = None) -> DataPoint:
     """جلب فعلي لسنة محددة أو الأحدث — helper مستدعى مباشرة من world_bank()
     ومن مسار التراجُع فيه؛ لا يُستدعى مباشرة خارج هذا الملف.
 
@@ -1073,7 +1129,7 @@ def _world_bank_for_year(iso3: str, indicator: str,
     واضحة بدل السقوط في except الشامل برسالة استثناء غامضة."""
     url = f"{ENDPOINTS['world_bank']}/country/{iso3}/indicator/{indicator}"
     params = {"format": "json", "per_page": "100"}
-    src = _WB_INDICATOR_SOURCE.get(indicator)
+    src = _WB_INDICATOR_SOURCE.get(_alias or indicator)
     if src:  # WGI تعيش في source=3 — راجع تعليق _WB_INDICATOR_SOURCE
         params["source"] = src
     if year is not None:
@@ -1093,8 +1149,17 @@ def _world_bank_for_year(iso3: str, indicator: str,
             r.raise_for_status()
             payload = r.json()
         shape_err = _wb_shape_error(payload)
+        if shape_err and src and _alias is None:
+            # الدرس ٢٩١: البنك الدولي رفض الرمز في قاعدة WGI (تحديث WGI 2.0،
+            # سبتمبر 2026) — نسأل القاعدة نفسها عن معرّفها الحالي لهذا المؤشر
+            # ونعيد مرة واحدة؛ لا تخمين رموز.
+            current = _wgi_current_id(indicator, src)
+            if current and current != indicator:
+                dp = _world_bank_for_year(iso3, current, year, _alias=indicator)
+                if dp.value is not None:
+                    return dp
         if shape_err:
-            note = f"{indicator} ({iso3}): {shape_err}"
+            note = f"{_alias or indicator} ({iso3}): {shape_err}"
             log.warning(note)
             return DataPoint(None, "World Bank", 0.0, note, _today())
         records = payload[1] or []
@@ -1110,8 +1175,9 @@ def _world_bank_for_year(iso3: str, indicator: str,
                 # مقروءة «(2013)»، والفِنتيج يُقرأ من الحقل لا من النثر.
                 return DataPoint(
                     value=rec["value"], source="World Bank", confidence=0.95,
-                    note=f"{indicator} ({rec.get('date')})", retrieved_at=_today(),
-                    data_year=_dy,
+                    note=(f"{_alias} ({rec.get('date')}) — المعرّف الحالي {indicator}"
+                          if _alias else f"{indicator} ({rec.get('date')})"),
+                    retrieved_at=_today(), data_year=_dy,
                 )
         note = f"{indicator}: no value returned for {iso3}"
         log.warning(note)
