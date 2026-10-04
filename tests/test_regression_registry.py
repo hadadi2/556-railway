@@ -4599,6 +4599,14 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    292: lambda: (
+        _needles("silk_data_layer.py", "def comtrade_area_code")(),
+        _needles("tests/test_lesson292_market_comtrade_code.py",
+                 "def test_codes_comtrade_shares_with_iso_are_unchanged",
+                 "def test_ranker_maps_a_comtrade_reporter_code_without_reporter_iso",
+                 "def test_store_reader_merges_old_numeric_and_new_iso3_rows",
+                 "def test_collector_stores_comtrade_partner_as_iso3")(),
+        _needles("tests/test_lessons_enforcement.py", "(292, ")()),
     291: lambda: (
         _needles("silk_wto_tariff.py", "def _logging_fetcher")(),
         _needles("silk_data_layer.py", "def _wgi_current_id")(),

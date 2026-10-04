@@ -93,7 +93,7 @@ def world_import_totals(hs_code: str, year: int) -> list[dict]:
     the shared source both for Tier-1 dynamic candidates AND for Tier-2 market
     size (zero extra per-country calls). Returns [{iso3, m49, total_usd}] desc.
     """
-    from silk_data_layer import M49_TO_ISO3, comtrade_trade, primary_value
+    from silk_data_layer import ISO3_TO_M49, comtrade_partner_iso3, comtrade_trade, primary_value
     recs = comtrade_trade(hs_code, None, year, flow="M", partner=0) or []
     rows: list[tuple[float, str, str]] = []
     skipped = 0
@@ -105,11 +105,11 @@ def world_import_totals(hs_code: str, year: int) -> list[dict]:
         if val is None:
             continue
         iso3 = (str(rec.get("reporterISO") or "").strip().upper()
-                or M49_TO_ISO3.get(m49, ""))
+                or comtrade_partner_iso3(m49) or "")
         if len(iso3) != 3:
             skipped += 1
             continue
-        rows.append((val, iso3, m49))
+        rows.append((val, iso3, ISO3_TO_M49.get(iso3, m49)))  # الدرس ٢٩٢: m49 بصيغة ISO دائماً
     if skipped:
         log.info("world_import_totals: %d reporter(s) skipped — no ISO3 "
                  "mapping (declared degradation)", skipped)
@@ -154,7 +154,7 @@ def world_export_totals(hs_code: str, year: int, *, on_fetch_failure=()) -> "lis
     Mirror of `world_import_totals` with the export flow — the world-producers
     ranking by reporter for a given HS. Returns [{iso3, m49, total_usd}] desc.
     """
-    from silk_data_layer import M49_TO_ISO3, comtrade_trade, primary_value
+    from silk_data_layer import ISO3_TO_M49, comtrade_partner_iso3, comtrade_trade, primary_value
     recs = comtrade_trade(hs_code, None, year, flow="X", partner=0)
     if recs is None and on_fetch_failure != ():
         # الموجة د-٢: مستهلكٌ يفرّق تعذُّرَ الجلب (None) عن «لا مصدّرين» يمرّر
@@ -170,10 +170,10 @@ def world_export_totals(hs_code: str, year: int, *, on_fetch_failure=()) -> "lis
         if val is None:
             continue
         iso3 = (str(rec.get("reporterISO") or "").strip().upper()
-                or M49_TO_ISO3.get(m49, ""))
+                or comtrade_partner_iso3(m49) or "")
         if len(iso3) != 3:
             continue
-        rows.append((val, iso3, m49))
+        rows.append((val, iso3, ISO3_TO_M49.get(iso3, m49)))
     rows.sort(reverse=True)
     seen: set[str] = set()
     out: list[dict] = []

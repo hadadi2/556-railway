@@ -301,8 +301,24 @@ def market_imports_from_store(hs6: str, reporter_iso3: str, year: int) -> dict:
             "SELECT partner_iso3, value_usd, retrieved_at FROM trade_flows "
             "WHERE hs6=? AND reporter_iso3=? AND year=? AND flow='M' "
             "ORDER BY value_usd DESC"), (hs6, reporter_iso3, int(year))).fetchall()
-    partners = [{"iso3": r[0], "value_usd": r[1], "retrieved_at": r[2]}
-                for r in rows if r[0] != "WLD" and r[1] is not None]
+    # الدرس ٢٩٢ (مراجعة §58): صفوف قديمة خُزّنت برمز كومتريد الرقمي («699») وصفوف جديدة
+    # بـISO3 («IND») للدولة نفسها — تُوحَّد هنا مرة لكل المسارات، والأحدث جلباً يغلب.
+    try:
+        from silk_data_layer import comtrade_partner_iso3, is_aggregate_partner
+    except Exception:  # noqa: BLE001 — توحيدٌ تحسيني
+        comtrade_partner_iso3 = is_aggregate_partner = None
+    merged: dict = {}
+    for r in rows:
+        code, val, at = r[0], r[1], r[2]
+        if code == "WLD" or val is None:
+            continue
+        iso = code
+        if comtrade_partner_iso3 and str(code).isdigit() and not is_aggregate_partner(code):
+            iso = comtrade_partner_iso3(code) or code
+        prev = merged.get(iso)
+        if prev is None or str(at or "") > str(prev["retrieved_at"] or ""):
+            merged[iso] = {"iso3": iso, "value_usd": val, "retrieved_at": at}
+    partners = sorted(merged.values(), key=lambda p: -p["value_usd"])
     world = [r[1] for r in rows if r[0] == "WLD" and r[1] is not None]
     total = world[0] if world else (sum(p["value_usd"] for p in partners)
                                     if partners else None)
