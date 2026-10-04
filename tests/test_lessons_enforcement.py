@@ -2753,7 +2753,7 @@ _SYMBOL_ANCHORS_EXTRA = [
     (293, "silk_missions.py", ["def _declare_augment_gap", "def _competitors_augment_s"]),
     (293, "silk_study_render.py", ['sh["tariff_full"]', '"when_also" in block']),
     (293, "tests/test_lesson293_coverage_gaps.py", ["def test_uncovered_market_is_not_checked",
-                                                   "def test_new_wordings_stay_off_until_owner_approval"]),
+                                                   "def test_a_pending_wording_stays_off_until_owner_approval"]),
     (292, "silk_store.py", ["from silk_data_layer import comtrade_partner_iso3, is_aggregate_partner"]),
     (292, "silk_collectors.py", ['piso = "WLD" if code == "0" else (comtrade_partner_iso3(code) or code)']),
     (292, "silk_market_ranker.py", ["rows.append((val, iso3, ISO3_TO_M49.get(iso3, m49)))"]),

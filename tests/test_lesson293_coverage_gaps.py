@@ -166,17 +166,36 @@ def test_tariff_sentence_survives_missing_preferential_note():
     assert "**الرسوم والضرائب:**" in md and "التحقق من ضرائب الاستيراد الأخرى" in md
 
 
-def test_new_wordings_stay_off_until_owner_approval():
-    md = _render(lambda c: c["tariff"].update(preferential_note=None), allow_pending=False)
+def _render_with_pending(mut, pending: set):
+    from silk_study_render import Renderer, load_knowledge
+    with open(_FIX, encoding="utf-8") as f:
+        c = json.load(f)
+    mut(c)
+    with mock.patch("silk_study_render.pending_variants", return_value=pending):
+        return Renderer(c, load_knowledge("090121", "MY")).render()
+
+
+def _tpl():
+    import yaml
+    path = os.path.join(os.path.dirname(_FIX), "..", "..", "data", "study_templates_ar.yaml")
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def test_a_pending_wording_stays_off_until_owner_approval():
+    tariff_fb = next(b["text"] for b in _tpl()["blocks"] if isinstance(b, dict)
+                     and str(b.get("text", "")).startswith("**الرسوم والضرائب:** {c:tariff_sentence} ويتعين"))
+    md = _render_with_pending(lambda c: c["tariff"].update(preferential_note=None), {tariff_fb})
     assert "التحقق من ضرائب الاستيراد الأخرى" not in md
     assert "بانتظار اعتماد المالك" in md
 
 
-# ── مراجعة §58 ─────────────────────────────────────────────────────────
 def test_pending_clause_falls_back_instead_of_dropping_the_paragraph():
+    plain = _tpl()["clauses"]["gdp_compare_clause"]["variants"]["plain"].strip()
+
     def faster(c):
         c["imports"]["gdp_growth_pct"] = 99.0
-    md = _render(faster, allow_pending=False)
+    md = _render_with_pending(faster, {plain})
     assert "تشير بيانات الأمم المتحدة للتجارة إلى أن واردات" in md
     assert "لم يتجاوز نمو الناتج" not in md and "وبلغ نمو الناتج" not in md
 
