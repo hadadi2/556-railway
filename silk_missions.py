@@ -420,11 +420,18 @@ def _declare_augment_gap(report, label: str, why: str) -> None:
     try:
         from silk_data_layer import DataPoint, _today
         name = _AUGMENT_AR.get(label, "تحليل إضافي")
+        if any(_is_augment_gap(dp, name) for dp in report.findings):
+            return            # مراجعة §58: لا تكرار عند الاستئناف
         report.findings.append(DataPoint(
             None, "Silk", 0.0, f"{name}: {why} وقت الإعداد — فجوة معلنة",
             _today(), status="fetch_failed"))
     except Exception:  # noqa: BLE001 — إعلانٌ تحسيني
         pass
+
+
+def _is_augment_gap(dp, name: str) -> bool:
+    return (getattr(dp, "source", "") == "Silk" and getattr(dp, "value", 1) is None
+            and str(getattr(dp, "note", "")).startswith(f"{name}:"))
 
 
 def _bounded_augment(label: str, report: "AgentReport", fn, *args,
@@ -454,6 +461,10 @@ def _bounded_augment(label: str, report: "AgentReport", fn, *args,
             return False
         fut.result()
         if not silk_context.cancel_requested():
+            # مراجعة §58: نجاحٌ بعد فشلٍ سابق (استئناف) يُزيل فجوته القديمة.
+            name = _AUGMENT_AR.get(label, "تحليل إضافي")
+            candidate.findings = [dp for dp in candidate.findings
+                                  if not _is_augment_gap(dp, name)]
             report.__dict__.update(deepcopy(candidate.__dict__))
         else:
             return False
@@ -788,9 +799,9 @@ _SERIES_FIRST_YEAR = 2019
 
 def _competitors_augment_s() -> float:
     try:
-        return float(os.environ.get("SILK_COMPETITORS_AUGMENT_S", "12") or "12")
+        return float(os.environ.get("SILK_COMPETITORS_AUGMENT_S", "10") or "10")
     except ValueError:
-        return 12.0
+        return 10.0
 
 
 def _augment_trade_flow_series(report: AgentReport, hs_code: str, market) -> None:
@@ -862,12 +873,15 @@ def _augment_competitors_structured(report: AgentReport, hs_code: str,
         from silk_llm_runtime import competition_summary_findings
         # الدرس ٢٩٣: مهلة 1ث أقصر من نداء كومتريد واحد (مباعدة 1.1ث) فكانت المرآة
         # والسنة الثانية تُتخطّيان دائماً على كاش بارد.
+        import time as _t
         dl = _competitors_augment_s()
+        t0 = _t.monotonic()
+        left = lambda: max(1.0, dl - (_t.monotonic() - t0))  # noqa: E731 — مهلة واحدة للنداءين
         out = competition_summary_findings(hs_code, market, year=base, deadline_s=dl) \
             if base else []
         if base and not any(isinstance(getattr(dp, "value", None), dict)
                             and "hhi" in dp.value for dp in out):
-            out = competition_summary_findings(hs_code, market, deadline_s=dl)
+            out = competition_summary_findings(hs_code, market, deadline_s=left())
             for dp in out:
                 v = getattr(dp, "value", None)
                 if isinstance(v, dict) and "hhi" in v and v.get("year") != base:

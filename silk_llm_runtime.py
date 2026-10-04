@@ -1409,7 +1409,9 @@ def _run_loop(mission: dict, ctx: dict, budget: dict,
             tool_cap = int(os.environ.get("SILK_RESEARCH_MAX_TOOL_CALLS", "100"))
             # الدرس ٢٩٣: المحاولات (مع الإعادات) هي ما يحجزه المزوّد — قراءة النداءات
             # وحدها كانت تترك الجولة تُرفض فتسقط البعثة كلها بدل ختامٍ رشيق.
-            if (max(counter["llm_calls"], counter.get("llm_attempts", 0)) >= llm_cap
+            # مراجعة §58: الختام نفسه يحجز محاولة — يُطلق قبل السقف بواحدة.
+            if (counter["llm_calls"] >= llm_cap
+                    or counter.get("llm_attempts", 0) >= llm_cap - 1
                     or counter["tool_calls"] >= tool_cap):
                 global_cap_hit = True
         offer_tools = (tool_specs if tool_calls_used[0] < tool_budget

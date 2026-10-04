@@ -83,7 +83,7 @@ def test_missing_coverage_is_not_reported_as_zero():
 def test_concentrated_step_needs_hhi_or_top_share():
     import silk_decision as D
     src = open(D.__file__, encoding="utf-8").read()
-    assert "concentrated_basis" in src and 'comp_parts.get("hhi") is not None' in src
+    assert "concentrated_basis" in src and '(comp_parts.get("hhi") or 0) >= 0.5' in src
 
 
 def test_wto_empty_response_is_short_lived():
@@ -112,3 +112,121 @@ def test_fx_series_uses_the_published_year():
         M._augment_risk_news_fx(rep, "MYS")
     years = [dp.data_year for dp in rep.findings if dp.data_year]
     assert 2025 not in years
+
+
+# ── الدفعة ٢: صياغة الدراسة ─────────────────────────────────────────────
+import copy  # noqa: E402
+import json  # noqa: E402
+
+_FIX = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "evals", "golden_set", "malaysia_coffee_fixture.json")
+
+
+def _render(mut, allow_pending=True):
+    from silk_study_render import Renderer, load_knowledge
+    with open(_FIX, encoding="utf-8") as f:
+        c = json.load(f)
+    mut(c)
+    return Renderer(c, load_knowledge("090121", "MY"), allow_pending=allow_pending).render()
+
+
+def test_market_without_nisba_keeps_its_summary_paragraph():
+    md = _render(lambda c: c["market"].update(nisba_f=None, nisba_m=None))
+    assert "تُعد السوق المحلية في ماليزيا" in md
+    assert "صفة النسبة للسوق" not in md
+
+
+def test_gdp_comparison_only_when_gdp_grew_slower():
+    def faster(c):
+        c["imports"]["gdp_growth_pct"] = 99.0
+    md = _render(faster)
+    assert "لم يتجاوز نمو الناتج" not in md and "وبلغ نمو الناتج المحلي" in md
+
+
+def test_flat_series_is_not_called_steady_growth():
+    def flat(c):
+        for i, r in enumerate(c["imports"]["series"]):
+            r["value_musd"] = 50.0 + i * 0.1
+    md = _render(flat)
+    assert "وكان هذا النمو مطرداً" not in md
+
+
+def test_certification_needs_real_sources():
+    md = _render(lambda c: c.update(sources=[]))
+    assert "كل رقم جوهري للقرار في هذه الدراسة مقرون بمصدره" not in md
+
+
+def test_food_margin_rule_is_not_applied_to_non_food():
+    md = _render(lambda c: c["product"].update(hs="392690"))
+    assert "حلقتا التوزيع والتجزئة في القطاع الغذائي" not in md
+
+
+def test_tariff_sentence_survives_missing_preferential_note():
+    md = _render(lambda c: c["tariff"].update(preferential_note=None))
+    assert "**الرسوم والضرائب:**" in md and "التحقق من ضرائب الاستيراد الأخرى" in md
+
+
+def test_new_wordings_stay_off_until_owner_approval():
+    md = _render(lambda c: c["tariff"].update(preferential_note=None), allow_pending=False)
+    assert "التحقق من ضرائب الاستيراد الأخرى" not in md
+    assert "بانتظار اعتماد المالك" in md
+
+
+# ── مراجعة §58 ─────────────────────────────────────────────────────────
+def test_pending_clause_falls_back_instead_of_dropping_the_paragraph():
+    def faster(c):
+        c["imports"]["gdp_growth_pct"] = 99.0
+    md = _render(faster, allow_pending=False)
+    assert "تشير بيانات الأمم المتحدة للتجارة إلى أن واردات" in md
+    assert "لم يتجاوز نمو الناتج" not in md and "وبلغ نمو الناتج" not in md
+
+
+def test_no_doubled_local_in_gdp_phrase():
+    def kenya_like(c):
+        c["market"].update(nisba_f=None, nisba_m=None)
+        c["imports"]["gdp_growth_pct"] = 0.1
+    md = _render(kenya_like)
+    assert "الناتج المحلي الإجمالي المحلي" not in md
+
+
+def test_confirmed_barrier_survives_an_uncovered_market():
+    import silk_deep_pillars as P
+    src = open(P.__file__, encoding="utf-8").read()
+    assert 'True if reg_state.get("open_hard")' in src
+
+
+def test_unconcentrated_hhi_is_not_called_concentrated():
+    import silk_decision as D
+    pillars = {"competition": {"value": 0.517, "components":
+                               {"hhi": 0.3, "top_share": 0.4, "named_density": 1.0}},
+               "regulatory": {"value": None}, "profit": {"value": 0.5}}
+    steps = D._first_steps("conditional", pillars, [], {}) if D._first_steps.__code__.co_argcount >= 4 \
+        else D._first_steps("conditional", pillars, [])
+    assert not any("سوق مركّز" in s for s in steps)
+
+
+def test_augment_gap_is_not_duplicated_and_clears_on_success():
+    import silk_missions as M
+    from silk_agents import AgentReport
+    rep = AgentReport("risk_news", [], False, "")
+
+    def boom(r):
+        raise RuntimeError("x")
+
+    def ok(r):
+        r.findings.append(DataPoint(4.2, "World Bank", 0.9, "fx"))
+    M._bounded_augment("risk_news_fx", rep, boom, rep)
+    M._bounded_augment("risk_news_fx", rep, boom, rep)
+    assert sum(f.value is None for f in rep.findings) == 1
+    M._bounded_augment("risk_news_fx", rep, ok, rep)
+    assert [f.value for f in rep.findings] == [4.2]
+
+
+def test_daily_budget_is_named_as_the_cause():
+    import silk_commercial_analysis as C
+    with mock.patch.object(C, "max_calls", return_value=12), \
+         mock.patch("silk_collectors.comtrade_budget_left", return_value=2):
+        assert C._Budget(0).daily_bound is True
+    with mock.patch.object(C, "max_calls", return_value=12), \
+         mock.patch("silk_collectors.comtrade_budget_left", return_value=500):
+        assert C._Budget(0).daily_bound is False

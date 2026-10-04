@@ -177,9 +177,12 @@ class _Budget:
         self._deadline = _t.monotonic() + deadline_s if deadline_s else None
         self.timed_out = False
         left = max_calls() - max(0, int(spent or 0))
+        self.daily_bound = False
         try:
             from silk_collectors import comtrade_budget_left
-            left = min(left, int(comtrade_budget_left()))
+            daily = int(comtrade_budget_left())
+            self.daily_bound = daily < left      # مراجعة §58: أيّ السقفين حدّ الجلب
+            left = min(left, daily)
         except Exception:  # noqa: BLE001 — الميزانيةُ تحسينٌ لا شرط
             pass
         self.left = max(0, left)
@@ -416,7 +419,8 @@ def augment_supplier_nature(report, hs_code: str, market, year=None,
         "عالمياً ووارداته ≥ صادراته"
         + ("؛ توقّف الجلب عند المهلة فالباقي غير مُقيَّم" if budget.timed_out else "")
         # الدرس ٢٩٣: سقف النداءات (قرار المالك ١٢) يُسمّى سبباً بدل «N من M» صامتة.
-        + ("؛ نفد سقف نداءات كومتريد لهذه الدراسة فالباقي غير مُقيَّم"
+        + (("؛ نفدت ميزانية كومتريد اليومية فالباقي غير مُقيَّم" if budget.daily_bound
+            else "؛ نفد سقف نداءات كومتريد لهذه الدراسة فالباقي غير مُقيَّم")
            if partial and not budget.timed_out else ""),
         0.8 if known else 0.0, y, stored_dates=tuple(dates)))
 

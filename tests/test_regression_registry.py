@@ -4599,6 +4599,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    293: lambda: (
+        _needles("silk_data_layer.py", "def country_row")(),
+        _needles("silk_missions.py", "def _declare_augment_gap")(),
+        _needles("tests/test_lesson293_coverage_gaps.py",
+                 "def test_failed_augment_is_declared_in_the_mission",
+                 "def test_gdp_comparison_only_when_gdp_grew_slower")(),
+        _needles("tests/test_lessons_enforcement.py", "(293, ")()),
     292: lambda: (
         _needles("silk_data_layer.py", "def comtrade_area_code")(),
         _needles("tests/test_lesson292_market_comtrade_code.py",

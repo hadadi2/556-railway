@@ -206,7 +206,10 @@ class Renderer:
             "exporter_type": c["product"].get("exporter_type") or "processor_of_imported_input",
             "product_full": c["product"]["name_full"], "product_short": c["product"]["short"],
             "hs": c["product"]["hs"], "origin_ar": c["product"]["origin_ar"], "commodity": c["product"]["commodity"],
-            "market": c["market"]["name_ar"], "market_nisba": c["market"]["nisba_f"],
+            "market": c["market"]["name_ar"],
+            # الدرس ٢٩٣: صفة النسبة في ٣٨ سوقاً فقط — خارجها صيغة «المحلية في <السوق>»
+            # بدل إسقاط فقرة الملخّص والتعرفة والاقتصاد الكلي والمتطلبات معاً.
+            "market_nisba": c["market"]["nisba_f"] or f"المحلية في {c['market']['name_ar']}",
             "prep_year": c["prepared"]["year"], "prep_month": c["prepared"]["month"],
             "last_complete_year": max((r["year"] for r in (c["imports"].get("series") or []) if r.get("complete")), default=None),
             "gdp_growth": c["imports"].get("gdp_growth_pct"), "gdp_source": c["imports"].get("gdp_source"),
@@ -283,8 +286,12 @@ class Renderer:
         sh["uv_dir"] = ((c["imports"]["unit_value_last_reliable"] - c["imports"]["unit_value_first"])
                         if c["imports"].get("unit_value_first") and c["imports"].get("unit_value_last_reliable") else None)
         sh["fx_cur_short"] = c["fx"].get("currency_short")
-        sh["market_nisba_m"] = c["market"].get("nisba_m") or (_masc_nisba(c["market"]["nisba_f"]) if c["market"].get("nisba_f") else None)
-        sh["market_nisba_gdp"] = sh["market_nisba_m"]
+        sh["market_nisba_m"] = c["market"].get("nisba_m") or (
+            _masc_nisba(c["market"]["nisba_f"]) if c["market"].get("nisba_f")
+            else f"المحلي في {c['market']['name_ar']}")
+        sh["market_nisba_gdp"] = (sh["market_nisba_m"] if c["market"].get("nisba_f")
+                                  or c["market"].get("nisba_m")
+                                  else f"في {c['market']['name_ar']}")   # لا «المحلي المحلي»
         sh["product_short_bare"] = c["product"].get("base_word") or c["product"]["short"]
         sh["commodity_raw_word"] = c["product"].get("raw_input_word") or c["product"]["commodity"]
         sh["macro_gdp_abs"] = abs(sh["macro_gdp"]) if sh.get("macro_gdp") is not None else None
@@ -293,6 +300,26 @@ class Renderer:
         g, inf = sh.get("macro_gdp"), sh.get("macro_inf")
         sh["inflation_band"] = ("low" if (g is not None and inf is not None and g > 0 and inf <= 3.5)
                                 else "high")
+        # الدرس ٢٩٣: أعلام اكتمال الفقرات — الفقرة المعتمدة كما هي حين تكتمل معطياتها،
+        # وصيغة أقصر صادقة حين يغيب جزء، بدل إسقاط الفقرة كلها (والتعرفة/المؤشر معها).
+        tf = c["tariff"]
+        sh["tariff_full"] = all(tf.get(k) is not None for k in
+                                ("sst_rule", "sst_authority", "preferential_note", "preferential_status"))
+        sh["logistics_full"] = (c["market"].get("capital_port") is not None
+                                and c["logistics"].get("sea_days_word") is not None)
+        sh["fx_full"] = all(c["fx"].get(k) is not None for k in
+                            ("currency_ar", "range_years", "range_pct"))
+        sp = c.get("shelf_prices") or {}
+        sh["shelf_fx_full"] = all(v is not None for v in (
+            c["fx"].get("currency_short"), sp.get("fx_rate"), sp.get("fx_year"), c["fx"].get("source")))
+        sh["has_sources"] = bool(c.get("sources"))
+        hs2 = str(c["product"].get("hs") or "")[:2]
+        sh["food_hs"] = hs2.isdigit() and 1 <= int(hs2) <= 24
+        gg, ly = sh.get("gdp_growth"), sh.get("last_yoy")
+        sh["gdp_compare"] = ("none" if gg is None else
+                             "slower" if (ly is not None and gg < ly) else "plain")
+        sh["shape_up_steady"] = sh.get("shape_trend") == "up" and sh.get("shape_dip_year") is None
+        sh["no_supplier_rows"] = not (c.get("suppliers") or {}).get("top")
         reqs = [q["text"] for q in c["decision"]["requirements"]]
         sh["requirements_inline"] = "؛ ".join([reqs[0]] + ["و" + q for q in reqs[1:]]) if reqs else ""
         sh["sources_inline"] = "؛ ".join(c.get("sources") or []) or "لم يُسنَد رقم إلى مصدر في هذه النسخة"
@@ -411,6 +438,11 @@ class Renderer:
         variants = spec["variants"]
         if key not in variants:
             raise StudyRenderError(f"لا نسخة {key!r} للجملة {name}")
+        # الدرس ٢٩٣ (مراجعة §58): نسخةٌ معلّقة لاعتماد المالك لا تُسقط الفقرة الكبيرة
+        # الحاوية — تحلّ محلها النسخة القائمة المسمّاة `pending_fallback` إن وُجدت.
+        fb = spec.get("pending_fallback")
+        if fb is not None and (variants[key] or "").strip() in self._pending:
+            key = fb
         return self.fill(variants[key] or "")
 
     def _select(self, spec: dict) -> str:
@@ -550,6 +582,9 @@ class Renderer:
         if True:
             kind = block.get("type", "para")
             if "when" in block and not self._cond(block["when"]):
+                return None
+            # الدرس ٢٩٣: شرطٌ ثانٍ اختياري (كلاهما يلزم) — بلا تركيب تعبيرات.
+            if "when_also" in block and not self._cond(block["when_also"]):
                 return None
             if kind == "heading":
                 return self.fill(block["text"])

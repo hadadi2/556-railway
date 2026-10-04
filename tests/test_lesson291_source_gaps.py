@@ -273,11 +273,15 @@ def _case():
         return json.load(f)
 
 
-def _render(mut, kn=True):
-    from silk_study_render import load_knowledge, render_study
+def _render(mut, kn=True, allow_pending=True):
+    # الدرس ٢٩٣: الصياغات الاحتياطية الجديدة مسجّلة `pending` حتى يعتمدها المالك؛
+    # الأقفال تفحص النص كما سيظهر بعد الاعتماد (allow_pending)، وقفلٌ مستقل في
+    # test_lesson293 يثبت أنها لا تُحمَّل قبله.
+    from silk_study_render import Renderer, load_knowledge
     c = copy.deepcopy(_case())
     mut(c)
-    return render_study(c, load_knowledge("090121", "MY") if kn else None)
+    return Renderer(c, load_knowledge("090121", "MY") if kn else None,
+                    allow_pending=allow_pending).render()
 
 
 def test_empty_table_keeps_header_with_declared_gap_row():

@@ -143,7 +143,7 @@ def test_wto_key_sent_as_header_not_url_param():
     captured = {}
 
     def fake_cached_get(url, params=None, ttl_seconds=0, fetcher=None,
-                        headers=None):
+                        headers=None, **kw):   # الدرس ٢٩٣: cacheable/short_lived اختياريان
         captured["params"] = params or {}
         captured["headers"] = headers or {}
         return _WTO_SHAPE

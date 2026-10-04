@@ -362,7 +362,7 @@ class CompetitionAgent(BaseAgent):
             return None
         try:
             import silk_store
-            from silk_data_layer import ISO3_TO_M49, m49_of  # noqa: F401
+            from silk_data_layer import m49_of
             from silk_data_layer_v2 import _competitor_dp
             got = silk_store.market_imports_from_store(hs, iso3, int(year))
             valued = [p for p in got["partners"]

@@ -678,8 +678,8 @@ def _first_steps(verdict: str, pillars: dict, conditions: list[str],
     comp_parts = pillars["competition"].get("components") or {}
     # الدرس ٢٩٣: «مركّز» حكمٌ على HHI أو حصة الأكبر — كثافة الأسماء وحدها (كثرة
     # الشركات) عكس التركّز، فلا يُطلق منها.
-    concentrated_basis = (comp_parts.get("hhi") is not None
-                          or comp_parts.get("top_share") is not None)
+    concentrated_basis = ((comp_parts.get("hhi") or 0) >= 0.5          # HHI ≥ 2500
+                          or (comp_parts.get("top_share") or 0) >= 0.5)  # الأكبر ≥ 50%
     if comp is not None and comp > 0.5 and concentrated_basis:
         steps.append("سوق مركّز: ادخل عبر موزّع قائم من مرشّحي التوريد "
                      "المرصودين بدل البناء المباشر")

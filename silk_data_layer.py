@@ -725,12 +725,13 @@ def country_row(iso3: object) -> dict:
     """الدرس ٢٩٣: صف الدولة من countries.csv (٢٥٠ دولة) بـISO3 — iso2/m49/name_ar/name_en.
     المرجع الكامل الوحيد؛ القوائم المضمَّنة (٣٧–٧٢ دولة) تحتاط إليه بدل فجوة صامتة."""
     key = str(iso3 or "").strip().upper()
-    if not key:
-        return {}
-    for row in _country_m49_index().values():
-        if (row.get("iso3") or "").strip().upper() == key:
-            return row
-    return {}
+    return _country_iso3_index().get(key, {}) if key else {}
+
+
+@functools.lru_cache(maxsize=1)
+def _country_iso3_index() -> dict:
+    return {(r.get("iso3") or "").strip().upper(): r
+            for r in _country_m49_index().values() if (r.get("iso3") or "").strip()}
 
 
 def m49_of(iso3: object) -> "str | None":
