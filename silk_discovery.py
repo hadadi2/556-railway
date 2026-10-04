@@ -188,7 +188,8 @@ def discover(market_iso3: str, year: int | None = None, *,
     جلب = فجوة معلنة في `gaps` — لا اختلاق.
     """
     year = year or _DEFAULT_YEAR
-    m49 = ISO3_TO_M49.get((market_iso3 or "").upper())
+    from silk_data_layer import m49_of
+    m49 = m49_of(market_iso3)   # الدرس ٢٩٣: ٢٥٠ دولة لا ٧٢
     if not m49:
         return {"market": market_iso3, "opportunities": [], "gaps": [
             f"سوق غير معروف الرمز: {market_iso3}"], "preliminary": True}

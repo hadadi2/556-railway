@@ -451,8 +451,15 @@ GAP_WORD = "غير متوفر"
 def country_ar(code_or_name: object, fallback: str | None = None) -> str:
     """اسم السوق بالعربية — من ISO3 أو الاسم الإنجليزي؛ يسقط للأصل بلا تخمين."""
     s = str(code_or_name or "").strip()
-    return (COUNTRY_AR.get(s.upper()) or _EN_COUNTRY_AR.get(s)
-            or fallback or s or GAP)
+    hit = COUNTRY_AR.get(s.upper()) or _EN_COUNTRY_AR.get(s)
+    if not hit and len(s) == 3 and s.isalpha():
+        # الدرس ٢٩٣: الاسم العربي من countries.csv (٢٥٠ دولة) لا الرمز/الإنجليزي.
+        try:
+            from silk_data_layer import country_row
+            hit = (country_row(s).get("name_ar") or "").strip() or None
+        except Exception:  # noqa: BLE001
+            hit = None
+    return hit or fallback or s or GAP
 
 
 def authoritative_verdict(verdict: "dict | None") -> "tuple[object, object]":

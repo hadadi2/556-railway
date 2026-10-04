@@ -14,6 +14,7 @@ from silk_data_layer import (
     comtrade_partner_iso3,
     comtrade_trade,
     is_aggregate_partner,
+    m49_of,
     partner_name,
     primary_value,
     world_bank,
@@ -494,7 +495,7 @@ def market_imports_cached(hs_code: str, market_m49: object, market_iso3: str,
             competitors = []
             if grand:
                 for p in valued:
-                    m49 = ISO3_TO_M49.get(p["iso3"], p["iso3"])
+                    m49 = m49_of(p["iso3"]) or p["iso3"]   # الدرس ٢٩٣: ٢٥٠ دولة
                     if is_aggregate_partner(m49):
                         continue          # الدرس 290: في المقام لا في الترتيب
                     p_day = (p.get("retrieved_at") or fetched or "")[:10]

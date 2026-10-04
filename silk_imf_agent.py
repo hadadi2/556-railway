@@ -94,7 +94,10 @@ def imf_indicator(iso3: str, metric: str, year: int | None = None) -> DataPoint:
     try:
         from silk_data_layer import _http_get
         from silk_cache import cached_get
-        data = cached_get(url, params=None, ttl_seconds=_TTL, fetcher=_http_get)
+        # الدرس ٢٩٣: ردٌّ لا يحمل قيمة (غلاف خطأ/فراغ) لا يُخزَّن أسبوعاً.
+        data = cached_get(url, params=None, ttl_seconds=_TTL, fetcher=_http_get,
+                          cacheable=lambda p: isinstance(p, dict),
+                          short_lived=lambda p: not (p or {}).get("values"))
     except Exception as e:  # noqa: BLE001 — لا استثناء يصل المستدعي أبداً
         data = None
         _record_failure(iso, code, f"{type(e).__name__}: {e}")

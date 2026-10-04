@@ -414,7 +414,10 @@ def augment_supplier_nature(report, hs_code: str, market, year=None,
         f"طبيعة المورّدين الأكبر لسنة {y}: {len(known)} مُقيَّم من {len(rows)}، "
         f"منهم {n_re} معيد تصدير مرجَّح — القاعدة: ليس من أعلى {topn} مصدّراً "
         "عالمياً ووارداته ≥ صادراته"
-        + ("؛ توقّف الجلب عند المهلة فالباقي غير مُقيَّم" if budget.timed_out else ""),
+        + ("؛ توقّف الجلب عند المهلة فالباقي غير مُقيَّم" if budget.timed_out else "")
+        # الدرس ٢٩٣: سقف النداءات (قرار المالك ١٢) يُسمّى سبباً بدل «N من M» صامتة.
+        + ("؛ نفد سقف نداءات كومتريد لهذه الدراسة فالباقي غير مُقيَّم"
+           if partial and not budget.timed_out else ""),
         0.8 if known else 0.0, y, stored_dates=tuple(dates)))
 
 

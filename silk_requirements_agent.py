@@ -257,9 +257,15 @@ def regulatory_state(market: str, hs_code: str | None,
         timeline = access_timeline((market or "").strip().upper(), cat)
     except Exception:  # noqa: BLE001 — الجدولُ إضافةٌ لا شرطُ حالة
         timeline = {}
+    # الدرس ٢٩٣: سوقٌ بلا صفوف دخول في المرجع (الولايات المتحدة، الهند، الصين…) لم
+    # يُفحَص — `checked=True` بقائمتين فارغتين كان يقول «فُحِصت ولا حاجز».
+    mkt = (market or "").strip().upper()
+    covered = any(_matches(r, mkt, cat, "entry", is_animal_origin(hs_code))
+                  for r in _load_reference())
     return {"open_hard": open_hard_blockers(blk),
             "needs_verification": unverified_blockers(blk),
-            "all": blk, "checked": True, "access_timeline": timeline}
+            "all": blk, "checked": covered,
+            "access_timeline": timeline}
 
 
 def open_hard_blockers(blockers: list[dict]) -> list[dict]:

@@ -420,7 +420,7 @@ def _pillar_risk(pi: dict) -> dict:
 
 # ── سجل المخاطر · rule-derived risk register (كل بند بدليله) ─────────────────
 
-def _risk_register(pi_risk: dict, coverage: float) -> list[dict]:
+def _risk_register(pi_risk: dict, coverage: "float | None") -> list[dict]:
     R: list[dict] = []
     hhi = pi_risk.get("supplier_concentration_hhi")
     # الموجة 2ب: عتبة المقياس الموحّد ⇔ 0.25 القديمة حرفياً — من المصدر الواحد.
@@ -437,7 +437,7 @@ def _risk_register(pi_risk: dict, coverage: float) -> list[dict]:
         R.append({"risk": "استقرار سياسي منخفض", "severity":
                   "عالية" if pv < -1.5 else "متوسطة",
                   "evidence": f"WGI PV.EST={pv} (World Bank)"})
-    if coverage < 0.6:
+    if coverage is not None and coverage < 0.6:
         R.append({"risk": "تغطية بيانات منخفضة", "severity": "متوسطة",
                   "evidence": f"تغطية الوكلاء {round(100 * coverage)}% < 60% — "
                               "القرار مشروط باكتمالها"})
@@ -497,7 +497,9 @@ def decide(bundle: dict, weights_option: str | None = None) -> dict:
 
     risk_pi = pi.get("risk") or {}
     critical = bool(risk_pi.get("critical_risk"))
-    risks = _risk_register(risk_pi, _clip(coverage))
+    # الدرس ٢٩٣: تغطيةٌ غائبة ليست «0%» — لا يُسجَّل خطرُ تغطيةٍ بلا رقمها.
+    risks = _risk_register(risk_pi, _clip(coverage)
+                           if bundle.get("coverage") is not None else None)
 
     conditions: list[str] = []
     # تقرير ٧ §4.1: قائمةُ شروطٍ **مهيكلة** بجانب النصوص (إضافيّ) — كلُّ شرطٍ
@@ -673,7 +675,12 @@ def _first_steps(verdict: str, pillars: dict, conditions: list[str],
             pillars["regulatory"]["value"] < 0.5:
         steps.append("أغلق بنود قائمة الاشتراطات بنداً بنداً بمرجعها الرسمي")
     comp = pillars["competition"]["value"]
-    if comp is not None and comp > 0.5:
+    comp_parts = pillars["competition"].get("components") or {}
+    # الدرس ٢٩٣: «مركّز» حكمٌ على HHI أو حصة الأكبر — كثافة الأسماء وحدها (كثرة
+    # الشركات) عكس التركّز، فلا يُطلق منها.
+    concentrated_basis = (comp_parts.get("hhi") is not None
+                          or comp_parts.get("top_share") is not None)
+    if comp is not None and comp > 0.5 and concentrated_basis:
         steps.append("سوق مركّز: ادخل عبر موزّع قائم من مرشّحي التوريد "
                      "المرصودين بدل البناء المباشر")
     prof = pillars["profit"]["value"]

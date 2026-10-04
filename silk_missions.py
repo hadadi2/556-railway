@@ -405,6 +405,28 @@ def _supplier_nature_timeout_s() -> float:
         return 60.0
 
 
+_AUGMENT_AR = {
+    "trade_flow_series": "سلسلة الواردات السنوية",
+    "competitors_structured": "حصص الموردين ومؤشر التركز",
+    "commercial_raw_inputs": "تجارة المدخلات الخام",
+    "commercial_supplier_nature": "طبيعة المورّدين (منتج أم معيد تصدير)",
+    "risk_news_wgi": "مؤشرات الحوكمة",
+    "risk_news_fx": "تقلّب سعر الصرف",
+}
+
+
+def _declare_augment_gap(report, label: str, why: str) -> None:
+    """الدرس ٢٩٣: تعزيزٌ فاشل أو متجاوز للمهلة يُعلَن فجوةً في البعثة (لا سطر سجلّ فقط)."""
+    try:
+        from silk_data_layer import DataPoint, _today
+        name = _AUGMENT_AR.get(label, "تحليل إضافي")
+        report.findings.append(DataPoint(
+            None, "Silk", 0.0, f"{name}: {why} وقت الإعداد — فجوة معلنة",
+            _today(), status="fetch_failed"))
+    except Exception:  # noqa: BLE001 — إعلانٌ تحسيني
+        pass
+
+
 def _bounded_augment(label: str, report: "AgentReport", fn, *args,
                      timeout: float | None = None) -> bool:
     """شغّل تعزيزاً تحت مهلة `SILK_MISSION_AUGMENT_TIMEOUT_S` — التجاوزُ يُلغى ويُعلَن في
@@ -423,6 +445,7 @@ def _bounded_augment(label: str, report: "AgentReport", fn, *args,
         if not done:
             fut.cancel()
             log.warning("augment %s skipped: exceeded %ss", label, limit)
+            _declare_augment_gap(report, label, "تجاوز المهلة")
             try:
                 report.summary = (report.summary or "") + (
                     f" — تعزيزُ «{label}» تُخطّي (تجاوز {int(limit)} ث)")
@@ -437,6 +460,7 @@ def _bounded_augment(label: str, report: "AgentReport", fn, *args,
         return True
     except Exception as e:  # noqa: BLE001 — التعزيزُ تحسين لا شرط
         log.warning("augment %s failed: %s", label, e)
+        _declare_augment_gap(report, label, "تعذّر الجلب")
         return False
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
@@ -528,6 +552,13 @@ _WGI_GOVERNANCE = (
 )
 
 
+def _int_year(v) -> "int | None":
+    try:
+        return int(str(v)[:4])
+    except (TypeError, ValueError):
+        return None
+
+
 def _wgi_governance_datapoints(iso3: str) -> list:
     """المؤشرات الثلاثة كـDataPoints — قيمة من المخزن أولاً ثم World Bank
     الحيّ (source=3 مُسجَّل في silk_data_layer)، أو فجوة معلنة عند الفشل.
@@ -546,7 +577,8 @@ def _wgi_governance_datapoints(iso3: str) -> list:
                 round(float(got["value"]), 3),
                 got.get("source", "World Bank"),
                 float(got.get("confidence") or 0.9),
-                f"[risk] {label} — {ind} سنة {got.get('year')} (مخزن الحقائق)"))
+                f"[risk] {label} — {ind} سنة {got.get('year')} (مخزن الحقائق)",
+                data_year=_int_year(got.get("year"))))   # الدرس ٢٩٣: بلا سنة كانت تُرفض
             continue
         try:
             dp = world_bank(iso3, ind)
@@ -667,16 +699,19 @@ def _augment_risk_news_fx(report: AgentReport, iso3: str) -> None:
                 val = float(got["value"])
         except Exception:  # noqa: BLE001 — المخزن تحسين لا شرط
             val = None
+        got_y = y
         if val is None and _live_failures < 1:
             try:
                 dp = world_bank(iso3, "PA.NUS.FCRF", y)
                 val = dp.value if dp.value is not None else None
+                # الدرس ٢٩٣: البنك الدولي يتراجع لأحدث سنة منشورة — السنة الفعلية لا المطلوبة
+                got_y = getattr(dp, "data_year", None) or y
             except Exception:  # noqa: BLE001 — فشل الجلب فجوة لا كسر
                 val = None
             if val is None:
                 _live_failures += 1
-        if val is not None:
-            series.append((y, float(val)))
+        if val is not None and got_y not in {yy for yy, _ in series}:
+            series.append((got_y, float(val)))
     # البند 6 (أمر إصلاح المحرّك): آخرُ سعر صرفٍ رسميّ مرصود يُلحَق كحقيقةٍ
     # مستقلة — مقارنةُ التنافسية السعرية (أقصى EXW مقابل متوسط سعر الاستيراد
     # بالدولار) تحتاجه للتحويل، والسلسلةُ مجلوبة هنا أصلاً بلا نداء إضافي.
@@ -751,6 +786,13 @@ def _augment_raw_input_trade(report: AgentReport, hs_code: str) -> None:
 _SERIES_FIRST_YEAR = 2019
 
 
+def _competitors_augment_s() -> float:
+    try:
+        return float(os.environ.get("SILK_COMPETITORS_AUGMENT_S", "12") or "12")
+    except ValueError:
+        return 12.0
+
+
 def _augment_trade_flow_series(report: AgentReport, hs_code: str, market) -> None:
     """الدرس 290 (الخلل ٣ في مقترح التصحيح): سلسلةُ الواردات كاملةً (2019 → أحدث سنة) تُلحَق
     حتماً ببعثة التدفّق — البعثةُ تطلب ما يختاره النموذج (٣ سنوات افتراضاً) فكان الرسمُ يقف عند
@@ -818,18 +860,21 @@ def _augment_competitors_structured(report: AgentReport, hs_code: str,
             base = None
     try:
         from silk_llm_runtime import competition_summary_findings
-        out = competition_summary_findings(hs_code, market, year=base, deadline_s=1.0) \
+        # الدرس ٢٩٣: مهلة 1ث أقصر من نداء كومتريد واحد (مباعدة 1.1ث) فكانت المرآة
+        # والسنة الثانية تُتخطّيان دائماً على كاش بارد.
+        dl = _competitors_augment_s()
+        out = competition_summary_findings(hs_code, market, year=base, deadline_s=dl) \
             if base else []
         if base and not any(isinstance(getattr(dp, "value", None), dict)
                             and "hhi" in dp.value for dp in out):
-            out = competition_summary_findings(hs_code, market, deadline_s=1.0)
+            out = competition_summary_findings(hs_code, market, deadline_s=dl)
             for dp in out:
                 v = getattr(dp, "value", None)
                 if isinstance(v, dict) and "hhi" in v and v.get("year") != base:
                     dp.note = (f"{dp.note} — أحدث سنة متاحة لحصص الموردين {v.get('year')} "
                                f"(سنة الأساس {base} بلا بيانات موردين)")
         elif not base:
-            out = competition_summary_findings(hs_code, market, deadline_s=1.0)
+            out = competition_summary_findings(hs_code, market, deadline_s=dl)
     except Exception as e:  # noqa: BLE001 — إلحاقٌ تحسيني لا شرط تشغيل
         log.warning("competitors structured augment skipped: %s", e)
         return

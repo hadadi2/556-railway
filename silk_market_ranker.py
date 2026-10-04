@@ -79,6 +79,13 @@ ISO2: dict[str, str] = {
     "ESP": "ES", "NLD": "NL", "USA": "US", "CAN": "CA",
 }
 
+
+def _iso2_of(iso3: str) -> "str | None":
+    """ISO2 من countries.csv لسوقٍ خارج خريطة `ISO2` المضمَّنة (الدرس ٢٩٣) — وإلا
+    جرى Trends وبحث الأسعار عالمياً بصمت."""
+    from silk_data_layer import country_row
+    return (country_row(iso3).get("iso2") or "").strip() or None
+
 def world_import_totals(hs_code: str, year: int) -> list[dict]:
     """كل مستوردي هذا الرمز عالمياً بقيمهم — every world importer of this HS, ONE call.
 
@@ -388,7 +395,7 @@ def _tier2_gather_row(hs_code: str, entry: dict, year: int) -> dict:
     }
     return {
         "iso3": iso3, "m49": m49,
-        "iso2": ISO2.get(iso3),      # قد يكون None لدولٍ خارج خريطة سِلك
+        "iso2": ISO2.get(iso3) or _iso2_of(iso3),  # الدرس ٢٩٣: countries.csv لما خارج الخريطة
         "components": comp_dps,
         "income_ppp": inc.value,
         "population": pop.value,
@@ -578,7 +585,7 @@ def _gather_row(hs_code: str, c: dict, year: int) -> dict:
         "iso3": iso3, "m49": m49,
         # iso2 من خريطة سِلك أولاً ثم ما مرّره المستخدم — يغذي Trends (geo)
         # وبحث التسوّق (gl) اللذين كانا يتراجعان لعالمي بصمت (P0-3).
-        "iso2": ISO2.get(iso3) or c.get("iso2"),
+        "iso2": ISO2.get(iso3) or c.get("iso2") or _iso2_of(iso3),
         "components": comp_dps,
         "income_ppp": inc.value,                 # يُعاد استعمال نفس الجلب
         "population": pop.value,

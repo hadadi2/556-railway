@@ -136,7 +136,12 @@ def _market_locale(ctx: dict) -> dict:
 
 def _locale_gl(ctx: dict) -> str:
     """نطاق الدولة (gl، ISO 3166-1 alpha-2) للسوق من مرجع locale — '' إن غاب."""
-    return (_market_locale(ctx).get("gl") or "").strip().lower()
+    gl = (_market_locale(ctx).get("gl") or "").strip().lower()
+    if gl:
+        return gl
+    # الدرس ٢٩٣: سوقٌ خارج market_locale.csv (٣٨ سوقاً) يبقى مقيّداً بدولته عبر ISO2
+    # بدل بحث عالمي صامت.
+    return (str(getattr(ctx.get("market"), "iso2", "") or "")).strip().lower()
 
 
 def _locale_hl(ctx: dict) -> str:
@@ -1402,7 +1407,10 @@ def _run_loop(mission: dict, ctx: dict, budget: dict,
         if counter is not None and not global_cap_hit:
             llm_cap = int(os.environ.get("SILK_RESEARCH_MAX_LLM_CALLS", "40"))
             tool_cap = int(os.environ.get("SILK_RESEARCH_MAX_TOOL_CALLS", "100"))
-            if counter["llm_calls"] >= llm_cap or counter["tool_calls"] >= tool_cap:
+            # الدرس ٢٩٣: المحاولات (مع الإعادات) هي ما يحجزه المزوّد — قراءة النداءات
+            # وحدها كانت تترك الجولة تُرفض فتسقط البعثة كلها بدل ختامٍ رشيق.
+            if (max(counter["llm_calls"], counter.get("llm_attempts", 0)) >= llm_cap
+                    or counter["tool_calls"] >= tool_cap):
                 global_cap_hit = True
         offer_tools = (tool_specs if tool_calls_used[0] < tool_budget
                       and not global_cap_hit else None)

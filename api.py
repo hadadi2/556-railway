@@ -3445,8 +3445,8 @@ def create_app():
         _require_key(request)
         _rate_limit(request)
         import silk_trend
-        from silk_data_layer import ISO3_TO_M49
-        m49 = ISO3_TO_M49.get((req.market_iso3 or "").upper())
+        from silk_data_layer import m49_of
+        m49 = m49_of(req.market_iso3)   # الدرس ٢٩٣: ٢٥٠ دولة لا ٧٢
         if not m49:
             raise HTTPException(status_code=422,
                                 detail=f"unknown market ISO3: {req.market_iso3}")

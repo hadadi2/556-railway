@@ -42,7 +42,10 @@ def test_timed_out_augment_cannot_mutate_published_report(monkeypatch):
     finally:
         release.set()
         assert done.wait(3)
-    assert report.findings == []
+    # الدرس ٢٩٣: لا شيء من العامل المتأخر يصل التقرير؛ الموجود فجوةٌ معلنة وحدها.
+    assert all(f.value is None and f.source == "Silk" and f.status == "fetch_failed"
+               for f in report.findings), report.findings
+    assert len(report.findings) == 1
 
 
 def test_tagging_preserves_provenance():

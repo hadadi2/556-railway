@@ -721,6 +721,24 @@ def _country_m49_index() -> dict:
         return {}
 
 
+def country_row(iso3: object) -> dict:
+    """الدرس ٢٩٣: صف الدولة من countries.csv (٢٥٠ دولة) بـISO3 — iso2/m49/name_ar/name_en.
+    المرجع الكامل الوحيد؛ القوائم المضمَّنة (٣٧–٧٢ دولة) تحتاط إليه بدل فجوة صامتة."""
+    key = str(iso3 or "").strip().upper()
+    if not key:
+        return {}
+    for row in _country_m49_index().values():
+        if (row.get("iso3") or "").strip().upper() == key:
+            return row
+    return {}
+
+
+def m49_of(iso3: object) -> "str | None":
+    """رقم ISO للدولة — الجدول المضمَّن أولاً ثم countries.csv."""
+    key = str(iso3 or "").strip().upper()
+    return ISO3_TO_M49.get(key) or (country_row(key).get("m49") or "").strip() or None
+
+
 @functools.lru_cache(maxsize=1)
 def _comtrade_partner_index() -> dict:
     """الدرس 290: رموز كومتريد التي لا تطابق رقم ISO (699 الهند، 757 سويسرا، 842 أمريكا…)

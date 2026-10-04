@@ -4477,7 +4477,9 @@ def _regulatory_state(result: dict) -> dict:
                      if st.get("access_timeline")), {})
     return {"open_hard": _merge("open_hard"),
             "needs_verification": _merge("needs_verification"),
-            "all": _merge("all"), "checked": True,
+            "all": _merge("all"),
+            # الدرس ٢٩٣: سوقٌ غير مغطى بالمرجع ⇒ «لم تُفحَص» لا «لا حاجز».
+            "checked": all(st.get("checked", True) for st in states),
             "access_timeline": timeline}
 
 
