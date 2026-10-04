@@ -20,7 +20,7 @@ import time
 import silk_store
 from silk_data_layer import throttled_get  # EXT-17: المسارُ المقوّى للجامعين
 from silk_data_layer import (ENDPOINTS, ISO3_TO_M49, M49_TO_ISO3,
-                             COMTRADE_KEY, _comtrade_url)
+                             COMTRADE_KEY, _comtrade_url, comtrade_partner_iso3)
 
 log = logging.getLogger(__name__)
 
@@ -199,7 +199,8 @@ def collect_comtrade(hs6: str, targets: list[dict], year: int,
                     val = primary_value(rec)
                     if val is None:
                         continue
-                    piso = "WLD" if code == "0" else M49_TO_ISO3.get(code, code)
+                    # الدرس ٢٩٢: رمز كومتريد الخاص (699) يُخزَّن بـISO3 (IND) لا رقماً خاماً.
+                    piso = "WLD" if code == "0" else (comtrade_partner_iso3(code) or code)
                     rows.append({"hs6": hs6, "reporter_iso3": t["iso3"],
                                  "partner_iso3": piso, "year": int(year),
                                  "flow": "M", "value_usd": val})

@@ -755,6 +755,39 @@ def comtrade_partner_iso3(code: object) -> "str | None":
     return ((row or {}).get("iso3") or "").strip() or None
 
 
+_ISO_TO_COMTRADE: dict = {}
+
+
+def _iso_to_comtrade() -> dict:
+    """رقم ISO → رمز كومتريد حين يختلفان (356→699 الهند، 840→842 أمريكا، 250→251…).
+    يُحفظ فقط إن بُني غيرَ فارغ — فشلٌ عابر في تحميل المرجعين لا يُطفئ الترجمة للعملية."""
+    if _ISO_TO_COMTRADE:
+        return _ISO_TO_COMTRADE
+    by_iso3 = {(r.get("iso3") or "").strip(): code
+               for code, r in _comtrade_partner_index().items()
+               if (r.get("iso3") or "").strip() and str(r.get("aggregate") or "0").strip() != "1"}
+    out = {}
+    for iso_code, row in _country_m49_index().items():
+        ct = by_iso3.get((row.get("iso3") or "").strip())
+        if ct and ct != iso_code:
+            out[iso_code] = ct
+    if out:
+        _ISO_TO_COMTRADE.update(out)
+    else:
+        log.warning("comtrade area-code map is empty — ISO codes sent to Comtrade unchanged")
+    return out
+
+
+def comtrade_area_code(code: object) -> object:
+    """الدرس ٢٩٢: رمز الدولة **كما يعرفه كومتريد** لطرفي الطلب (المُبلِّغ والشريك).
+    السوق تُحلّ برقم ISO من countries.csv (الهند 356)، وكومتريد يعرفها برمزه الخاص
+    (699) — بلا الترجمة تعود واردات الهند/أمريكا/فرنسا/إيطاليا/النرويج/سويسرا/تايوان
+    فارغة. غير ذلك يُعاد كما هو؛ `ISO3_TO_M49` لا يُمسّ (WITS/WTO تحتاج ISO)."""
+    if code is None:
+        return code
+    return _iso_to_comtrade().get(_normalize_m49(str(code)), code)
+
+
 _UNKNOWN_PARTNERS_SEEN: set = set()
 
 
@@ -857,11 +890,11 @@ def comtrade_trade(
     # الدول (الواجهة ترفض قيمة all الصريحة). reporter=all يخدم «أكبر
     # المستوردين عالمياً» (8c) — صف لكل دولة مبلّغة مع partner=0 (العالم).
     if reporter_m49 not in (None, "all", "ALL"):
-        params["reporterCode"] = str(reporter_m49)
+        params["reporterCode"] = str(comtrade_area_code(reporter_m49))
     # partner=0 => World total (one row). "all"/None => OMIT partnerCode so Comtrade
     # returns every partner (the API rejects partnerCode=all as invalid).
     if partner not in (None, "all", "ALL"):
-        params["partnerCode"] = str(partner)
+        params["partnerCode"] = str(comtrade_area_code(partner))
     # R7 (SEC-4): المفتاحُ ترويسةً (`Ocp-Apim-Subscription-Key`) لا معاملَ استعلام —
     # كان يُكتب في مفتاح الكاش وفي كلّ سطر سجلّ `HTTPError`. صمّامُ رجوع:
     # `SILK_COMTRADE_KEY_IN_QUERY=1` يعيد الاستعلامَ إن رفض المزوّدُ الترويسة.
@@ -887,8 +920,9 @@ def comtrade_trade(
             payload = r.json()
         data = payload.get("data") or []
     except Exception as e:  # noqa: BLE001 — never raise to caller
-        log.warning("Comtrade fetch failed (%s, reporter=%s, %s): %s",
-                    hs_code, reporter_m49, year, _redacted(e))
+        log.warning("Comtrade fetch failed (%s, reporter=%s, partner=%s, %s): %s",
+                    hs_code, params.get("reporterCode"), params.get("partnerCode"),
+                    year, _redacted(e))
         return None  # 1b: تعذّر الجلب ≠ لا سجل — المستهلك يميّز
     prov = {"source": "UN Comtrade", "confidence": 0.9, "retrieved_at": _today()}
     for rec in data:
