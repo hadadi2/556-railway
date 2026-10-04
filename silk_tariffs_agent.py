@@ -149,7 +149,8 @@ def applied_tariff(
     # المُبلِّغ عبر _wits_reporter_code (يشمل تحويل عضو الاتحاد الأوروبي
     # إلى 918)، والشريك عبر ISO3_TO_M49 مباشرة.
     reporter_code, is_eu = _wits_reporter_code(market_iso3)
-    partner_m49 = ISO3_TO_M49.get((partner_iso3 or "").upper())
+    from silk_data_layer import m49_of
+    partner_m49 = m49_of(partner_iso3)   # الدرس ٢٩٣: ٢٥٠ دولة لا ٧٢
     if not reporter_code or not partner_m49:
         missing = market_iso3 if not reporter_code else partner_iso3
         return DataPoint(

@@ -362,7 +362,7 @@ class CompetitionAgent(BaseAgent):
             return None
         try:
             import silk_store
-            from silk_data_layer import ISO3_TO_M49
+            from silk_data_layer import m49_of
             from silk_data_layer_v2 import _competitor_dp
             got = silk_store.market_imports_from_store(hs, iso3, int(year))
             valued = [p for p in got["partners"]
@@ -373,13 +373,13 @@ class CompetitionAgent(BaseAgent):
             comps = []
             for p in valued:
                 from silk_data_layer import is_aggregate_partner
-                if is_aggregate_partner(ISO3_TO_M49.get(p["iso3"], p["iso3"])):
+                if is_aggregate_partner(m49_of(p["iso3"]) or p["iso3"]):
                     continue              # الدرس 290: التجميع في المقام لا في الترتيب
                 day = (p.get("retrieved_at") or "")[:10]
                 suffix, status = silk_store.staleness_suffix(
                     p.get("retrieved_at"), "trade")
                 comps.append(_competitor_dp(
-                    ISO3_TO_M49.get(p["iso3"], p["iso3"]), p["value_usd"],
+                    m49_of(p["iso3"]) or p["iso3"], p["value_usd"],
                     grand, hs_code=hs, market_label=iso3, year=int(year),
                     source="UN Comtrade (مخزن الحقائق)",
                     note_suffix=(" — من المخزن"

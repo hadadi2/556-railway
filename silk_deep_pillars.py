@@ -621,7 +621,9 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
         # **بوّابةُ الأهلية بنيويّةٌ لا نصّية** (R-03): تُقرأ من حالة الحواجز
         # التي بنتها الموجة C، لا بمطابقة عبارةٍ في نثرٍ قد يصوغها الكاتب بألف
         # صيغة. حاجزٌ صلبٌ مؤكَّدُ الانطباق وغيرُ محسوم = بوّابةٌ مفتوحة.
-        "eligibility_gate": bool(reg_state.get("open_hard")),
+        # الدرس ٢٩٣: سوقٌ لم يغطّه المرجع ⇒ البوّابة مجهولة (None) لا «مغلقة».
+        "eligibility_gate": (True if reg_state.get("open_hard")
+                             else False if reg_state.get("checked", True) else None),
         # الدرس ٢٨٠: اسمُ البوّابة يرافقها — ليست كلُّ بوّابةٍ إدراجاً أوروبياً
         # (حلالُ اللحوم في ماليزيا بوّابةٌ صلبة أيضاً).
         "eligibility_gate_item": str(((reg_state.get("open_hard") or [{}])[0]

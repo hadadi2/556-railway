@@ -156,8 +156,11 @@ def wto_applied_tariff(hs_code: str, market_iso3: str,
         from silk_data_layer import _http_get
         from silk_cache import cached_get
         fetcher = _logging_fetcher(_http_get, hs6, market_iso3)
+        # الدرس ٢٩٣: ردٌّ بلا Dataset (غلاف خطأ/فراغ) لا يُخزَّن شهراً.
         data = cached_get(_WTO_BASE, params=params, ttl_seconds=_TTL,
-                          fetcher=fetcher, headers=headers)
+                          fetcher=fetcher, headers=headers,
+                          cacheable=lambda p: isinstance(p, dict),
+                          short_lived=lambda p: _parse_value(p)[0] is None)
     except Exception as e:  # noqa: BLE001 — لا استثناء يصل المستدعي
         data = None
         _record_failure(hs6, market_iso3, f"{type(e).__name__}: {e}")

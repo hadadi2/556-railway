@@ -51,14 +51,17 @@ clauses:
       hhi_high: "مع تركّز شديد في عدد محدود منها"
       no_shares: ""
   saudi_clause:
+    pending_fallback: unknown
     select:
       - {when: saudi_absent, use: absent}
+      - {when: no_supplier_rows, use: unobserved}
       - {when: "saudi_share == none", use: unknown}
       - {when: "saudi_share < 5", use: present_low}
       - {when: else, use: present}
     variants:
       absent: "لا يوجد مورّد سعودي في هذه السوق حالياً"
       unknown: "لا تظهر المملكة بين أكبر الدول المورّدة المرصودة لهذه السوق"
+      unobserved: "لم تُرصد حصص الدول المورّدة لهذه السوق، فلا تُعرف حصة المملكة فيها"
       present_low: "لا تتجاوز حصة المملكة {saudi_share:pct1} من هذه السوق حالياً"
       present: "تبلغ حصة المملكة {saudi_share:pct1} من هذه السوق حالياً"
   top3_clause:
@@ -72,9 +75,18 @@ clauses:
       far: "وتستحوذ ثلاث دول على {top3_frac} الواردات تقريباً"
       few: "وتستحوذ {top_n:count(دولة, nom)} على {top3_frac} الواردات تقريباً"
       no_shares: "ولم تتوفر حصص الموردين لبيان تركّز الواردات"
+  gdp_compare_clause:
+    # الدرس ٢٩٣: «لم يتجاوز» مقارنةٌ تُقال فقط حين يقلّ نمو الناتج فعلاً عن نمو الواردات.
+    select: gdp_compare
+    pending_fallback: omitted
+    variants:
+      omitted: ""
+      slower: "، في حين لم يتجاوز نمو الناتج المحلي الإجمالي {market_nisba_gdp} {gdp_growth:pct1} خلال العام ذاته وفق تقديرات {gdp_source}"
+      plain: "، وبلغ نمو الناتج المحلي الإجمالي {market_nisba_gdp} {gdp_growth:pct1} خلال العام ذاته وفق تقديرات {gdp_source}"
+      none: "، ولم يُرصد نمو الناتج المحلي الإجمالي لهذا العام"
   series_shape_clause:
     select:
-      - {when: "shape_dip_year == none", use: up_steady}
+      - {when: shape_up_steady, use: up_steady}
       - {when: "shape_trend == up", use: up_bumpy}
       - {when: "shape_trend == down", use: down}
       - {when: else, use: flat}
@@ -176,7 +188,7 @@ blocks:
   - {type: rule}
   # ── أولاً ────────────────────────────────────────────────────────────
   - {type: heading, text: "## أولاً: حجم السوق واتجاهاته"}
-  - text: "تشير بيانات الأمم المتحدة للتجارة إلى أن واردات {market} من {product_short} {dir:shape_g_first_last:ارتفعت|تراجعت} من {shape_v_first:m1} في عام {shape_y_first} إلى {shape_v_last:m1} في عام {shape_y_last}. {c:series_shape_clause} وقد سجلت الواردات {dir:last_yoy:نمواً|تراجعاً} بنسبة {last_yoy_abs:pct0} بين عامي {shape_y_prev} و{shape_y_last}، في حين لم يتجاوز نمو الناتج المحلي الإجمالي {market_nisba_gdp} {gdp_growth:pct1} خلال العام ذاته وفق تقديرات {gdp_source}."
+  - text: "تشير بيانات الأمم المتحدة للتجارة إلى أن واردات {market} من {product_short} {dir:shape_g_first_last:ارتفعت|تراجعت} من {shape_v_first:m1} في عام {shape_y_first} إلى {shape_v_last:m1} في عام {shape_y_last}. {c:series_shape_clause} وقد سجلت الواردات {dir:last_yoy:نمواً|تراجعاً} بنسبة {last_yoy_abs:pct0} بين عامي {shape_y_prev} و{shape_y_last}{c:gdp_compare_clause}."
   - select: dec_variant
     variants:
       decomposable_with_excluded_last: "ويتعين قراءة هذا النمو بحذر، لأنه نمو في القيمة يجمع أثر الكمية وأثر السعر معاً. فبين عامي {dec_y_a} و{dec_y_b} {dir:dec_dv:ارتفعت|تراجعت} القيمة بنسبة {dec_dv:pct0}، بينما {dir:dec_dp:ارتفع|تراجع} متوسط سعر الكيلوغرام المستورد بنسبة {dec_dp:pct0} (من {dec_p_a:usd1} إلى {dec_p_b:usd1} دولار)، أي أن الكمية المستوردة {dir:dec_dq:ارتفعت|تراجعت} بنحو {dec_dq:pct0} خلال الفترة، وتفسّر نحو {q_share_frac} نمو القيمة، ويعود الباقي إلى {dir:dec_dp:ارتفاع|تراجع} السعر. أما عام {dec_y_excl} فلا يمكن فصل أثر الكمية فيه عن أثر السعر لعدم موثوقية بيانات الوزن{c:world_price_note}. وعليه، فإن الاستنتاج المؤكد هو أن الكمية المستوردة {dir:dec_dq:نمت|انكمشت} بما يقارب {q_growth_frac} في {dec_span_years:count(سنة, gen)}، لا أن {dir:last_yoy:نمو|تراجع} الطلب بلغ {last_yoy_abs:pct0} في عام واحد؛ مع ملاحظة أن الواردات لا تمثل الطلب الكلي في سوق تنشط فيها {local_producers_word}."
@@ -218,6 +230,9 @@ blocks:
     when: has_shelf_rows
   - {type: table, columns: ["المنتج", "التصنيف", "السعر للكيلوغرام", "المصدر"], rows: shelf_prices}
   - text: "وعليه، يتراوح نطاق أسعار الرف للمنتجات غير المختصة بين {shelf_min:int} و{shelf_max:int} دولاراً للكيلوغرام، محسوباً على سعر صرف {shelf_fx:raw} {fx_cur_short} للدولار وفق بيانات {fx_source} لعام {shelf_fx_year}.{c:nonequivalent_note}"
+    when: shelf_fx_full
+  - text: "وعليه، يتراوح نطاق أسعار الرف المرصودة بين {shelf_min:int} و{shelf_max:int} دولاراً للكيلوغرام بعد التحويل بسعر الصرف المعلن في مصدر كل سعر.{c:nonequivalent_note}"
+    when: "shelf_fx_full == false"
   - text: "{k:s3_local_competitors}"
   - text: "{k:s3_advantage}"
   - text: "{k:s3_freshness}"
@@ -225,6 +240,9 @@ blocks:
   # ── رابعاً ───────────────────────────────────────────────────────────
   - {type: heading, text: "## رابعاً: المتطلبات التنظيمية ومسار الدخول"}
   - text: "**الرسوم والضرائب:** {c:tariff_sentence} وتُطبَّق ضريبة المبيعات (SST) عند الاستيراد بمعدل {sst_rule}، ويتعين تحديد المعدل المنطبق من جدول {sst_authority} قبل التسعير. ولا يُعتد بأي معاملة تفضيلية بموجب عضوية {pref_note}، لكون نظامها التفضيلي {pref_status}."
+    when: tariff_full
+  - text: "**الرسوم والضرائب:** {c:tariff_sentence} ويتعين التحقق من ضرائب الاستيراد الأخرى وأي معاملة تفضيلية منطبقة من الجهة الجمركية في {market} قبل التسعير."
+    when: "tariff_full == false"
   - text: "**المتطلبات الإلزامية في السوق {market_nisba}:**"
     when: has_requirement_rows
   - {type: table, columns: ["المتطلب", "الجهة المختصة", "الطرف المسؤول", "آخر تحقق"], rows: requirements}
@@ -245,6 +263,9 @@ blocks:
   - text: "ونظراً لأن الاعتماد على جهة واحدة يعرّض الخطة للتوقف عند رفضها، يُوصى بتحديد جهتين أو ثلاث إضافية {directories_phrase} قبل بدء التفاوض، وهو ما يمثل المتطلب {entity_req_ordinal}."
     when: "entity_para == no_excluded"
   - text: "**اللوجستيات:** يُعد {port} ميناء الدخول الرئيسي، ويبلغ مؤشر الأداء اللوجستي لـ{market} {lpi:raw} من 5 وفق {fx_source} ({lpi_year}). ويستغرق الشحن البحري من موانئ المملكة {sea_days}، ولم تُوثق تكلفته، ويُوصى بالحصول على ثلاثة عروض من وكلاء الشحن."
+    when: logistics_full
+  - text: "**اللوجستيات:** يبلغ مؤشر الأداء اللوجستي لـ{market} {lpi:raw} من 5 وفق {fx_source} ({lpi_year}). ولم تُوثق مدة الشحن من موانئ المملكة ولا تكلفته، ويُوصى بالحصول على ثلاثة عروض من وكلاء الشحن."
+    when: "logistics_full == false"
   - {type: rule}
   # ── سادساً ───────────────────────────────────────────────────────────
   - {type: heading, text: "## سادساً: المؤشرات المالية"}
@@ -253,12 +274,17 @@ blocks:
     when: "unit_cost_provided == false"
   - text: "ويمكن الاستناد إلى قاعدة تقديرية إلى حين إدخال التكلفة الفعلية: تستحوذ حلقتا التوزيع والتجزئة في القطاع الغذائي على ما بين {rule_low:pct0} و{rule_high:pct0} من سعر الرف، وبالتالي ينبغي ألا تتجاوز التكلفة الواصلة إلى {market} {landed_low:pct0} إلى {landed_high:pct0} من سعر الرف المستهدف."
     when: "unit_cost_provided == false"
+    when_also: food_hs
   - text: "غير أن سعر الرف المستهدف نفسه لم يُرصد بعد. فالأسعار المتاحة تخص علامة عالمية جماهيرية ({shelf_max:int} دولاراً) وبناً تقليدياً لا ينافسه المنتج ({shelf_min:int} دولاراً)، بينما الشريحة المستهدفة هي {segment_word}، ويُتوقع أن تفوق أسعار {competitor_word} {shelf_max:int} دولاراً للكيلوغرام، وهو توقع يُتحقق منه ضمن المتطلب الثاني لا حقيقة مثبتة. وعليه، تُعتمد عتبة {threshold:int} دولاراً للتكلفة الواصلة حداً مؤقتاً مبنياً على أعلى سعر مرصود ({shelf_max:int} دولاراً)، بوصفه أدنى تقدير ممكن لسعر رف المنتج المختص، ومن المرجح أن تتسع بعد رصد سعر محمصة مختصة واحدة على الأقل (المتطلب الثاني). ولا يُتخذ قرار إرجاء على أساس هذه العتبة قبل استيفاء ذلك المتطلب."
     when: "segment_price_observed == false"
   - {type: rule}
   # ── سابعاً ───────────────────────────────────────────────────────────
   - {type: heading, text: "## سابعاً: المخاطر"}
-  - text: "**سعر الصرف:** يبلغ متوسط سعر صرف {fx_cur} {fx_avg:raw} للدولار في عام {fx_year}، وبلغ الفارق بين أعلى وأدنى متوسط سنوي خلال الأعوام {fx_range_years} نحو {fx_range_pct:pct1} من المتوسط. ويُلاحظ أن التقلب داخل السنة الواحدة أكبر من ذلك بحسب بيانات الصرف اليومية، ويُوصى بمراجعة نطاق العام الأخير من مصدر رسمي قبل تحديد آلية التسعير. ويُوصى بالتسعير بالدولار مع بند مراجعة نصف سنوي، مع الإشارة إلى أن ضعف {fx_cur} ينعكس على أسعار الرف والطلب حتى مع التسعير بالدولار."
+  - text: "**سعر الصرف:** يبلغ متوسط سعر صرف العملة المحلية لـ{market} {fx_avg:raw} وحدة للدولار في عام {fx_year} وفق {fx_source}، ويُوصى بمراجعة نطاق تقلبه من مصدر رسمي قبل تحديد آلية التسعير، وبالتسعير بالدولار مع بند مراجعة نصف سنوي."
+    when: "fx_full == false"
+    when_also: fx_avg
+  - when: fx_full
+    text: "**سعر الصرف:** يبلغ متوسط سعر صرف {fx_cur} {fx_avg:raw} للدولار في عام {fx_year}، وبلغ الفارق بين أعلى وأدنى متوسط سنوي خلال الأعوام {fx_range_years} نحو {fx_range_pct:pct1} من المتوسط. ويُلاحظ أن التقلب داخل السنة الواحدة أكبر من ذلك بحسب بيانات الصرف اليومية، ويُوصى بمراجعة نطاق العام الأخير من مصدر رسمي قبل تحديد آلية التسعير. ويُوصى بالتسعير بالدولار مع بند مراجعة نصف سنوي، مع الإشارة إلى أن ضعف {fx_cur} ينعكس على أسعار الرف والطلب حتى مع التسعير بالدولار."
   - text: "**سعر الصرف:** لم تُدرج بيانات سعر صرف العملة المحلية في هذه النسخة لتعذر استرجاعها وقت الإعداد، ويتعين مراجعتها من مصدر رسمي قبل تحديد آلية التسعير."
     when: "fx_avg == none"
   - text: "**الاقتصاد الكلي:** سجل الاقتصاد {market_nisba_m} {dir:macro_gdp:نمواً|انكماشاً} بنسبة {macro_gdp_abs:pct1} في عام {macro_year} مع تضخم بنسبة {macro_inf:pct1}{c:inflation_read}."
@@ -301,3 +327,4 @@ blocks:
   - text: "**المصادر:** {sources_inline}."
   - text: "**ما لم يتسنّ توثيقه:** {gaps_inline}. وقد أُشير عند كل منها إلى الجهة القادرة على استكماله."
   - text: "كل رقم جوهري للقرار في هذه الدراسة مقرون بمصدره، والقواعد التقديرية والمعلومات السياقية موسومة بذلك، وما لم يتوفر له مصدر أُثبت غيابه دون تقدير."
+    when: has_sources

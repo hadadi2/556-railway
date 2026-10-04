@@ -296,6 +296,12 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                                  - _reserved_usd + actual)
                     if projected > daily:
                         hit.append(f"SILK_PAID_DAILY_USD_CAP={daily:g}")
+                # الدرس ٢٩٣: سقف محاولات كلود المشترك مستنفد ⇒ المراحل المدفوعة الباقية
+                # تُتخطّى معلَنةً بدل نداءٍ يُرفض صامتاً.
+                _c = silk_context.data_counter() or {}
+                _llm_cap = int(os.environ.get("SILK_RESEARCH_MAX_LLM_CALLS", "40"))
+                if _c.get("llm_attempts", 0) >= _llm_cap:
+                    hit.append(f"SILK_RESEARCH_MAX_LLM_CALLS={_llm_cap}")
                 if hit:
                     _stage_budget["halted_before"] = before_stage
                     _stage_budget["caps_hit"] = hit
