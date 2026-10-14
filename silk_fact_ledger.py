@@ -41,6 +41,27 @@ import re
 ENFORCE_FLAG = "SILK_LEDGER_ENFORCE"
 MAX_REVISIONS_FLAG = "SILK_LEDGER_MAX_REVISIONS"
 TOKEN_RE = re.compile(r"\{\{\s*(status:)?([a-z_]+)(:sentence)?\s*\}\}")
+#: أيُّ قوسين مزدوجين — الكاتبُ يكتب الرمز أحياناً بمسافةٍ أو حرفٍ كبير أو
+#: شرطة، أو ينسخ العنصرَ النائب «{{status:المفتاح}}» من الموجّه (الدرس ٢٩٤).
+_LOOSE_TOKEN_RE = re.compile(r"\{\{([^{}\n]{0,120})\}\}")
+
+
+def _normalize_tokens(text: str) -> tuple:
+    """وحّد صيغةَ الرموز قبل الملء والفحص — يعيد (النص، [المشوَّهة]).
+
+    ما يُطبَّع إلى الصيغة القانونية يُكتب بها؛ وما لا يُفهم رمزاً يبقى كما هو
+    ويُعاد في القائمة كي يُعلَن غيابُه (الملء) أو يُعاد للكاتب (المسوّدة)."""
+    bad: list = []
+
+    def _one(m):
+        canon = re.sub(r"\s*:\s*", ":", m.group(1).strip().lower())
+        canon = re.sub(r"[\s-]+", "_", canon)
+        tok = "{{" + canon + "}}"
+        if TOKEN_RE.fullmatch(tok):
+            return tok
+        bad.append(m.group(0))
+        return m.group(0)
+    return _LOOSE_TOKEN_RE.sub(_one, text or ""), bad
 
 OBSERVED, WEAK, MISSING = "observed", "weak", "missing"
 #: درجتان للاستنتاج (الموجة د): تقديرٌ بنطاقٍ وافتراضٍ معلن، واستنتاجٌ يسمّي
@@ -918,7 +939,12 @@ def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
     if not text or "{{" not in text:
         return text or "", {"bound": 0, "unknown": [], "used": []}
     entries = (ledger or {}).get("entries") or {}
-    unknown: list = []
+    text, bad = _normalize_tokens(text)
+    # رمزٌ لا يُفهم مفتاحُه فجوةٌ معلنة كالمفتاح غير المسرود — لا يصل قوسُه
+    # عميلاً (`ledger_token_unbound` حجب الدراسة ١٠ على هذا بالضبط).
+    for tok in set(bad):
+        text = text.replace(tok, "not available" if lang == "en" else "غير متاح")
+    unknown: list = list(bad)
     used: list = []
     n = 0
 
@@ -1004,7 +1030,7 @@ def snapshot_for(text: str, ledger: dict) -> dict:
     والسنة كما رآها — تُخزَّن مع التقرير. `leads` مستثناة بالبناء (ليست مفتاحاً)."""
     entries = (ledger or {}).get("entries") or {}
     snap: dict = {}
-    for _st, key, _s in TOKEN_RE.findall(text or ""):
+    for _st, key, _s in TOKEN_RE.findall(_normalize_tokens(text)[0]):
         e = entries.get(key)
         if e is not None and key not in snap:
             snap[key] = {"value": e.get("value"), "status": e["status"],
@@ -1048,6 +1074,10 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
         return []
     issues: list = []
     entries = (ledger or {}).get("entries") or {}
+    draft, bad = _normalize_tokens(draft)
+    for tok in dict.fromkeys(bad):
+        issues.append(f"رمز بصيغة غير مفهومة «{tok}» — اكتبه بمفتاحه من "
+                      "[LEDGER] حرفياً (مثل {{status:hhi}}) أو احذفه")
     for _st, key, _s in TOKEN_RE.findall(draft):
         if key not in entries:
             issues.append(f"رمز غير مسرود في السجلّ «{{{{{key}}}}}» — احذفه أو "

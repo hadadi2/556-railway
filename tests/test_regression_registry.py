@@ -4599,6 +4599,12 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    294: lambda: (
+        _needles("silk_fact_ledger.py", "def _normalize_tokens")(),
+        _needles("tests/test_lesson294_report10_gate.py",
+                 "def test_real_adjacent_stutter_still_fires",
+                 "def test_malformed_token_is_sent_back_to_the_writer")(),
+        _needles("tests/test_lessons_enforcement.py", "(294, ")()),
     293: lambda: (
         _needles("silk_data_layer.py", "def country_row")(),
         _needles("silk_missions.py", "def _declare_augment_gap")(),
