@@ -48,8 +48,9 @@ const assert = require('assert/strict');
       assert.equal(await page.locator('.dialog-error').textContent(), 'خطأ ظاهر داخل النافذة');
       await page.evaluate(() => window.testDialog.querySelector('.ft').prepend(pdfBtn(1)));
       await page.locator('.veil .ft button').first().click();
-      await page.waitForFunction(() => document.querySelector('.dialog-error').textContent.includes('agent_failed'));
-      assert((await page.locator('.dialog-error').textContent()).includes('agent_failed'));
+      await page.waitForFunction(() => document.querySelector('.dialog-error').textContent.includes('تعذر تسليم التقرير'));
+      // الدرس ٢٩٥: معرّفُ الفحص الداخليّ لا يصل المصنع — الجملةُ وحدها.
+      assert(!(await page.locator('.dialog-error').textContent()).includes('agent_failed'));
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('.veil').count(), 0);
       assert.equal(await page.evaluate(() => document.body.classList.contains('dialog-open')), false);
