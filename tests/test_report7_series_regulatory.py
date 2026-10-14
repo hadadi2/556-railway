@@ -122,4 +122,4 @@ def test_the_latest_missing_year_and_a_single_observed_year_are_rows():
 def test_regulatory_fit_is_explained_by_what_it_measures():
     import silk_i18n as I
     note = I.t("pillar_regulatory_note", "ar")
-    assert "لا يعني حصولَ منشأتك على الموافقات" in note
+    assert "لا يعني أن منشأتك حصلت على الموافقات" in note

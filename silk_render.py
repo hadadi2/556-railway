@@ -3914,7 +3914,9 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
         "value_line": _I.t("imports_value_line", lang,
                            amount=_fmt_usd(latest["value"], lang),
                            year=latest["year"],
-                           source=latest.get("source") or "UN Comtrade"),
+                           # «(مرآة)» وسمٌ داخليّ — سطرُ المرآة يشرحه للقارئ.
+                           source=(latest.get("source") or "UN Comtrade")
+                           .replace(" (مرآة)", "")),
         "growth_pct": s.get("growth_pct"),
         "cagr_pct": s.get("cagr_pct"),
         "years_missing": s.get("years_missing") or [],

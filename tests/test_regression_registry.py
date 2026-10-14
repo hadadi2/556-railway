@@ -2899,10 +2899,10 @@ def _guard_the_decision_basis_reaches_the_client_artefact():
     import re as _re
     import silk_i18n
     blob = "\n".join(_z_client_lines(_z_view()))
-    for needle in ("على أيّ أساس صدر هذا الحكم",
-                   "قاعدة الحكم مُعلنة قبل النظر في الأرقام",
+    for needle in ("كيف وصلنا إلى هذا الحكم",
+                   "وضعنا قاعدة الحكم قبل النظر في الأرقام",
                    "جاذبية السوق", "لم يُحسب بعد", "ينقصنا:",
-                   "أقوى ما يُقال ضدّ هذا الحكم"):
+                   "أقوى اعتراض على هذا الحكم"):
         assert needle in blob, f"أساسُ الحكم غائبٌ عن المُسلَّم: {needle!r}"
     for banned in ("political_stability", "price_position", "tam_log"):
         assert banned not in blob, f"معرّفٌ داخليّ في مُسلَّم العميل: {banned}"

@@ -92,7 +92,7 @@ def test_confidence_and_money_and_growth_formats():
     # والمنسِّقُ واحد: `fmt_money` غلافُ `fmt_amount(v, "USD")` حرفياً.
     assert N.fmt_money(48_537_942) == N.fmt_amount(48_537_942, "USD")
     g = N.growth_phrase(25.5, 291.3, years="2019–2025")
-    assert "معدل نمو سنوي مركّب 25.5%" in g and "CAGR" not in g
+    assert "متوسط سنوي مركّب 25.5%" in g and "CAGR" not in g
 
 
 def _view():

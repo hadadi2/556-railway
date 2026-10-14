@@ -135,7 +135,7 @@ def test_view_carries_imports_only_behind_the_flag(monkeypatch):
     on = R.build_view(_result(findings))
     imp = on["deep_research"]["imports"]
     assert imp["latest_year"] == 2024 and imp["latest_value_usd"] == 89400000.0
-    assert "نمو إجمالي 74.1%" in imp["growth_line"]
+    assert "نمو بنسبة 74.1%" in imp["growth_line"]
     assert "20.3%" in imp["growth_line"]
     assert "3.5%" in imp["saudi_line"]
     assert "2023" in imp["gap_line"]
@@ -190,7 +190,7 @@ def test_saudi_share_never_borrows_the_imports_year(monkeypatch):
     res["markets"][0]["components"]["saudi_position"]["data_year"] = None
     imp = R.build_view(res)["deep_research"]["imports"]
     assert "3.5%" in imp["saudi_line"] and "2024" not in imp["saudi_line"]
-    assert "لم يذكرها المصدر" in imp["saudi_line"]
+    assert "لم يذكر المصدر سنة" in imp["saudi_line"]
 
 
 def test_growth_without_cagr_reads_cleanly_in_english(monkeypatch):
@@ -248,7 +248,7 @@ def test_client_docx_opens_market_numbers_with_the_imports_block(monkeypatch, tm
     text = docx_all_text(SR.render_client_docx(v, str(tmp_path / "on.docx")))
     assert "واردات السوق من هذا الصنف" in text
     assert "89.4 مليون دولار" in text
-    assert "نمو إجمالي 74.1%" in text
+    assert "نمو بنسبة 74.1%" in text
     assert "2023" in text and "لم تُقدَّر" in text
     assert "51.36 مليون دولار" in text, "جدولُ السنوات بمنزلتين"
     assert "51,358,600.874" not in text

@@ -288,16 +288,16 @@ TERMS: dict[str, dict[str, str]] = {
     # يقرأ حكماً بلا أن يعرف على أيّ شيءٍ بُني. النصّان مكتوبان أصالةً في
     # اللغتين، والنِّسَبُ بشرية لا كسورٌ آلية خام (الدرس ٩٢).
     "decision_basis_head": {
-        "ar": "على أيّ أساس صدر هذا الحكم",
+        "ar": "كيف وصلنا إلى هذا الحكم",
         "en": "What this decision rests on"},
     # البند ٣ (لغة الزائر): «الدرجة الموزونة … بثقة %» صيغت بجملة معنى —
     # القاعدة نفسها والعتبات نفسها، بلا مصطلح قياس داخلي على سطح العميل.
     "decision_rule_lead": {
-        "ar": "قاعدة الحكم مُعلنة قبل النظر في الأرقام: نوصي بالمضي حين "
-              "تبلغ قوة الفرصة {go} من 100 فأعلى ويبلغ مستوى الثقة {conf}% "
-              "فأعلى وبلا شروط مفتوحة؛ ونرفض حين تنزل القوة دون "
-              "{nogo} أو عند اختلال أمان السوق؛ "
-              "وما بينهما دخول مشروط بشروط مسمّاة أدناه.",
+        "ar": "وضعنا قاعدة الحكم قبل النظر في الأرقام. نوصي بالدخول إذا "
+              "بلغت قوة الفرصة {go} من 100 أو أكثر، وبلغت ثقتنا في هذا "
+              "التقييم {conf}% أو أكثر، ولم يبقَ شرط معلّق. ولا نوصي بالدخول "
+              "إذا نزلت قوة الفرصة عن {nogo}، أو تبيّن أن السوق غير آمن. وما "
+              "بين الحدّين دخول مشروط، وشروطه مذكورة أدناه.",
         "en": "The decision rule, stated before the numbers were weighed: we "
               "recommend proceeding when the opportunity strength reaches "
               "{go} out of 100 or more with a confidence of {conf}% or more "
@@ -316,11 +316,11 @@ TERMS: dict[str, dict[str, str]] = {
     "pillar_not_computed": {"ar": "لم يُحسب بعد", "en": "Not computed yet"},
     # D4 (دراسة #12، البند 16) ثم البند ٣: الغياب يُقال بما ينقصنا فعلاً.
     "pillar_missing_lead": {
-        "ar": "ينقصنا: {parts} — أكمِلها قبل أي التزام.",
+        "ar": "ينقصنا: {parts}. أكمِل هذه البيانات قبل أي التزام.",
         "en": "We still need: {parts} — close these before committing."},
     "pillar_regulatory_note": {
-        "ar": "يقيس انخفاضَ التعرفة ووضوحَ الاشتراطات المنشورة — لا يعني "
-              "حصولَ منشأتك على الموافقات.",
+        "ar": "يعكس انخفاض الرسوم الجمركية ووضوح الاشتراطات المنشورة، ولا "
+              "يعني أن منشأتك حصلت على الموافقات المطلوبة.",
         "en": "Measures low tariffs and how clearly the rules are published "
               "— it does not mean your facility holds the approvals."},
     "req_heading": {"ar": "متطلبات الدخول والخروج بحسب نوعها",
@@ -379,7 +379,7 @@ TERMS: dict[str, dict[str, str]] = {
                              "en": "Not available (not retrieved)"},
     "pillar_measured": {
         # تقرير ٧ §5: بيانُ نوع الدليل لا ادّعاءُ تحقّقٍ لم يجرِ بشرياً.
-        "ar": "مرصودٌ من مصادر مباشرة.",
+        "ar": "مبنيّ على بيانات من مصادرها الأصلية.",
         "en": "Observed from direct sources."},
     "decision_weighted_line": {
         # مراجعة §58: {conf} ثقةُ الحكم (قد تكون مسقوفة) لا حصةُ دليلٍ مرصود —
@@ -393,14 +393,14 @@ TERMS: dict[str, dict[str, str]] = {
     # الإنجليزيّ بلا الشروط التي تَعِده قاعدةُ الحكم بها — وسطرُ العمود الضعيف
     # فيه معادلةُ حسابٍ بلغةِ مشغّل لا بلغةِ عميل.
     "cond_pillar_missing": {
-        "ar": "جانب {pillar} لم يُحسب بعد — يتطلب: {parts}. أكمِلها "
-              "قبل أي التزام إنتاجي أو شحني.",
+        "ar": "لم نحسب {pillar} بعد، لأن الحساب يحتاج إلى: {parts}. أكمِل "
+              "هذه البيانات قبل أي التزام بالإنتاج أو الشحن.",
         "en": "The {pillar} aspect is not computed yet — it requires: "
               "{parts}. Close these before you commit to "
               "production or shipping."},
     "cond_pillar_weak": {
-        "ar": "جانب {pillar} ضعيف ({pct}%) — عالِجه قبل الالتزام، أو ادخل "
-              "بحجمٍ يحتمل ضعفه.",
+        "ar": "مستوى {pillar} ضعيف ({pct}%). عالِج هذا الضعف قبل الالتزام، "
+              "أو ابدأ بكمية صغيرة تتحمّله.",
         "en": "Pillar {pillar} is weak ({pct}%) — address it before you "
               "commit, or enter at a size that can absorb it."},
     # تقرير ٧ §4.1: خطوةُ استكمالٍ لكلّ شرط — تُربَط بها خطواتُ الخطة.
@@ -515,15 +515,15 @@ TERMS: dict[str, dict[str, str]] = {
     "prov_merged_sources": {"ar": "مصادر مدمجة: {names}",
                             "en": "merged sources: {names}"},
     "decision_conditions_head": {
-        "ar": "ما يجب إغلاقه قبل الالتزام",
+        "ar": "ما يجب حسمه قبل الالتزام",
         "en": "What must be closed before you commit"},
     "counter_case_head": {
-        "ar": "أقوى ما يُقال ضدّ هذا الحكم",
+        "ar": "أقوى اعتراض على هذا الحكم",
         "en": "The strongest case against this decision"},
     "counter_case_computed": {
-        "ar": "أقوى الجوانب «{strong}» عند {strong_pct}% يشدّ نحو الدخول، "
-              "وأضعفها «{weak}» عند {weak_pct}% يشدّ ضدّه. اعتُمد الحكم على "
-              "الجوانب مجتمعةً بأوزانها المعلنة، لا على جانبٍ واحد.",
+        "ar": "أقوى الجوانب «{strong}» ({strong_pct}%) يدعم الدخول، وأضعفها "
+              "«{weak}» ({weak_pct}%) يدعم التريّث. بنينا الحكم على الجوانب "
+              "كلها بحسب أوزانها، لا على جانب واحد.",
         "en": "The strongest pillar, {strong}, at {strong_pct}% pulls toward "
               "entry; the weakest, {weak}, at {weak_pct}% pulls against it. "
               "The decision follows the pillars together under their stated "
@@ -1064,7 +1064,7 @@ TERMS.update({
         "ar": "واردات السوق من هذا الصنف",
         "en": "The market's imports of this product"},
     "imports_value_line": {
-        "ar": "واردات السوق من هذا الصنف بلغت {amount} في {year} وفق {source}.",
+        "ar": "بلغت واردات السوق من هذا الصنف {amount} في {year}، بحسب {source}.",
         "en": "The market imported {amount} of this product in {year}, "
               "according to {source}."},
     "imports_growth_line": {
@@ -1073,11 +1073,11 @@ TERMS.update({
               "— a compound annual rate of {cagr}."},
     # لا نقطتين رأسيتين قبل خانةٍ قد تفرغ (اختبار «كلّ قالبٍ ينجو بخاناتٍ فارغة»).
     "imports_saudi_line": {
-        "ar": "نصيب السعودية من هذه الواردات {pct} ({year}).",
+        "ar": "حصة السعودية من هذه الواردات {pct} ({year}).",
         "en": "Saudi Arabia holds {pct} of these imports ({year})."},
     "imports_saudi_line_noyear": {
-        "ar": "نصيب السعودية من هذه الواردات {pct} (سنة الحصة لم يذكرها "
-              "المصدر).",
+        "ar": "حصة السعودية من هذه الواردات {pct} (لم يذكر المصدر سنة هذه "
+              "الحصة).",
         "en": "Saudi Arabia holds {pct} of these imports (the source does not "
               "state the year of this share)."},
     "imports_growth_line_nocagr": {
@@ -1097,8 +1097,8 @@ TERMS.update({
         "en": "Years without a fetched figure: {years} — not estimated, "
               "not filled in."},
     "imports_mirrored_note": {
-        "ar": "قيمة {years} مقدَّرة من تصريحات الشركاء التجاريين (مرآة) — "
-              "أقل يقيناً من تصريح مباشر.",
+        "ar": "رقم {years} مقدَّر من بيانات الدول المصدّرة إلى هذه السوق، لا "
+              "من بيانات السوق نفسها، لذلك هو أقل دقة من الرقم المباشر.",
         "en": "The {years} value is estimated from trading partners' "
               "declarations (mirror data) — less certain than a direct "
               "declaration."},
@@ -1381,11 +1381,12 @@ TERMS.update({
               "source was not computed for this study; anything without an "
               "observed source is still stated as an explicit gap."},
     "decision_rule_lead_empty": {
-        "ar": "قاعدة الحكم مُعلنة قبل النظر في الأرقام: نوصي بالمضي حين تبلغ "
-              "قوة الفرصة عتبتَها المُعلنة ويبلغ مستوى الثقة حدَّه الأدنى "
-              "وبلا شروط مفتوحة؛ ونرفض حين تنزل دون عتبة الرفض أو "
-              "عند اختلال أمان السوق؛ وما بينهما دخول مشروط بشروط مسمّاة "
-              "أدناه. عتباتُ هذه التشغيلة غير متاحة للعرض.",
+        "ar": "وضعنا قاعدة الحكم قبل النظر في الأرقام. نوصي بالدخول إذا "
+              "بلغت قوة الفرصة الحدّ المحدد للدخول، وكانت ثقتنا في التقييم "
+              "كافية، ولم يبقَ شرط معلّق. ولا نوصي بالدخول إذا نزلت قوة "
+              "الفرصة عن حدّ الرفض، أو تبيّن أن السوق غير آمن. وما بين "
+              "الحدّين دخول مشروط، وشروطه مذكورة أدناه. أرقام هذه الحدود "
+              "غير متاحة في هذه الدراسة.",
         "en": "The decision rule, stated before the numbers were weighed: we "
               "recommend proceeding when the opportunity strength reaches its "
               "stated threshold with at least the minimum confidence and "
