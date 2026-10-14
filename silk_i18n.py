@@ -711,7 +711,7 @@ TERMS: dict[str, dict[str, str]] = {
         "ar": "ملاحظة على التوصية: {detail}",
         "en": "Note on the recommendation: {detail}"},
     "limit_source_fetch_failed": {
-        "ar": "المصدر «{label}» تعذّر جلب بياناته في هذه التشغيلة — لم يُعتمد "
+        "ar": "المصدر «{label}» تعذّر جلب بياناته في هذه الدراسة — لم يُعتمد "
               "عليه ولا يُدرَج ضمن مصادر التقرير.",
         "en": "Source “{label}” could not be retrieved for this study — it "
               "was not relied upon and is not listed among the report's sources."},
@@ -751,7 +751,7 @@ TERMS: dict[str, dict[str, str]] = {
               "flagged as unverified; no material gap prevents a decision "
               "within the scope of this report."},
     "references_none": {
-        "ar": "لا مصادر عمومية موثّقة قابلة للعرض هنا في هذه التشغيلة.",
+        "ar": "لا مصادر عمومية موثّقة قابلة للعرض هنا في هذه الدراسة.",
         "en": "No documented public sources are available to list for this study."},
     "methodology_paragraph": {
         "ar": "اعتمد هذا التقرير على مصادر رسمية عامة ({sources})، مع تحليل "
@@ -996,13 +996,13 @@ TERMS: dict[str, dict[str, str]] = {
     # المرتبط» — الأولى تقول للعميل إنّ السوق بلا موزّعين مرصودين، والثانية
     # تقول إنّ التنقية عملت. خلطُهما يُخفي عملَ المِصفاة ويُقرأ نقصَ بحث.
     "leads_none_filtered": {
-        "ar": "لم نجد موزّعاً مرتبطاً بهذا المنتج في هذا التشغيل — "
+        "ar": "لم نجد موزّعاً مرتبطاً بهذا المنتج في هذه الدراسة — "
               "الجهاتُ التي ظهرت في البحث لا تتعامل بهذه الفئة",
         "en": "No distributor related to this product was found in this "
               "study — the entities that surfaced do not deal in this "
               "category"},
     "leads_none": {
-        "ar": "لا جهات اتصال قابلة للتواصل في هذا التشغيل — القائمة غير متاحة",
+        "ar": "لا جهات اتصال قابلة للتواصل في هذه الدراسة — القائمة غير متاحة",
         "en": "No contactable leads in this study — the list is not available"},
     "col_name": {"ar": "الاسم", "en": "Name"},
     "col_address": {"ar": "العنوان", "en": "Address"},
@@ -1384,18 +1384,18 @@ def repair_interpolation(text: str) -> str:
 TERMS.update({
     "coverage_good_empty": {
         "ar": "نسبةُ الأرقام المسنودة إلى مصدرٍ منشور غيرُ محسوبة في هذه "
-              "التشغيلة — تُقرأ مصادرُ كلّ رقم من قسم «المراجع».",
+              "الدراسة — تُقرأ مصادرُ كلّ رقم من قسم «المراجع».",
         "en": "The share of figures traceable to a published source was not "
               "computed for this study — read each figure's source under "
               "“References”."},
     "coverage_low_empty": {
         "ar": "نسبةُ الأرقام المسنودة إلى مصدرٍ منشور غيرُ محسوبة في هذه "
-              "التشغيلة — تُقرأ مصادرُ كلّ رقم من قسم «المراجع».",
+              "الدراسة — تُقرأ مصادرُ كلّ رقم من قسم «المراجع».",
         "en": "The share of figures traceable to a published source was not "
               "computed for this study — read each figure's source under "
               "“References”."},
     "coverage_intro_empty": {
-        "ar": "لم يُحسَب مدى التغطية خلف أرقام هذه الدراسة في هذه التشغيلة. "
+        "ar": "لم يُحسَب مدى التغطية خلف أرقام هذه الدراسة. "
               "مصادرُ كلّ قيمةٍ مجموعةٌ في قسم «المراجع» ختام التقرير — "
               "تُقرأ منه مباشرةً بدل نسبةٍ إجمالية غير متاحة.",
         "en": "The coverage behind this study's figures was not computed here. "
@@ -1404,7 +1404,7 @@ TERMS.update({
               "unavailable summary percentage."},
     "coverage_named_sources_empty": {
         "ar": "وعلى مستوى الإسناد: نسبةُ القيم الحاملة مصدراً عمومياً مسمّى "
-              "غيرُ محسوبة في هذه التشغيلة؛ وما لم نرصد له مصدراً يُذكَر "
+              "غيرُ محسوبة في هذه الدراسة؛ وما لم نرصد له مصدراً يُذكَر "
               "فجوةً صريحة كما هو.",
         "en": "On sourcing: the share of values carrying a named public "
               "source was not computed for this study; anything without an "
@@ -1424,7 +1424,7 @@ TERMS.update({
               "conditional entry, with the conditions named below. This study's "
               "thresholds are not available for display."},
     "decision_weighted_line_empty": {
-        "ar": "قوةُ هذه الفرصة غيرُ محسوبة في هذه التشغيلة — الجوانبُ "
+        "ar": "قوةُ هذه الفرصة غيرُ محسوبة في هذه الدراسة — الجوانبُ "
               "المحسوبة دون الحدّ الأدنى للتقييم، فلا درجةَ تُعرَض ولا "
               "تُخمَّن.",
         "en": "This opportunity's strength was not computed for this study — "
@@ -1433,7 +1433,7 @@ TERMS.update({
     "counter_case_computed_empty": {
         "ar": "لا تُبنى حجةٌ مضادة من جانبٍ واحد: مقارنةُ أقوى الجوانب "
               "بأضعفها تحتاج جانبين محسوبين على الأقل، وهما غيرُ متاحين في "
-              "هذه التشغيلة.",
+              "هذه الدراسة.",
         "en": "A counter-case cannot be built from a single aspect: "
               "contrasting the strongest with the weakest needs at least two "
               "scored aspects, and those are not available in this study."},
@@ -1448,7 +1448,7 @@ TERMS.update({
     "eco_pricing_warning_empty": {
         "ar": "تحذير: تعارضٌ تسعيريٌّ مرصود بين أقصى سعر مصنع قابل للمنافسة "
               "ومتوسط سعر الاستيراد، وطرفُ المقارنة غيرُ محسوب في هذه "
-              "التشغيلة — لا يصلح هذا الرقم أساساً للتفاوض.",
+              "الدراسة — لا يصلح هذا الرقم أساساً للتفاوض.",
         "en": "Warning: a pricing contradiction was observed between the "
               "maximum competitive ex-factory price and the average import "
               "price, and one side of the comparison is not computed for this "

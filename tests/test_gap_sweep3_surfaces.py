@@ -154,7 +154,8 @@ def test_platform_pdf_button_reads_the_gate_payload_not_raw_json():
                encoding="utf-8").read()
     assert 'window.open(API + "/studies/" + id + "/report.pdf"' not in src, \
         "زر PDF ما زال يفتح JSON الحجب خاماً في تبويب"
-    assert "blocked_checks" in src
+    # الدرس ٢٩٥: الزرّ يقرأ جمل الحمولة لا معرّفاتها.
+    assert "fail_driver_reasons" in src and "blocked_checks" not in src
     assert "out.quality" in src, "ملخّص الجودة (G-02) ما زال بلا مستهلك"
 
 

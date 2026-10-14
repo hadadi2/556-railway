@@ -3246,28 +3246,9 @@ function viewReportBtn(s) {
           _rs.forEach((r) => { html += "<li>" + esc(r) + "</li>"; });
           html += "</ul>";
         }
-        /* المعرّفاتُ تبقى **مرجعاً تقنياً للدعم** لا رسالةً للمصنع (شرط
-           المُشرِف F محفوظ: الحجبُ يسمّي فحوصَه): سطرٌ خافتٌ أسفل الجمل. */
-        /* الدرس ٢٦١: كان السطرُ يدمج `fail_drivers` مع بقيّة `blocked_checks`
-           تحت عنوانٍ واحد «الفحوص الحاجبة» — فيُقرَأ فحصٌ **لا يحجب**
-           (`trends_hollow_completion` مثلاً، وهو ملاحظةٌ منهجيةٌ عمداً) سبباً
-           للحجب، ويُرسَل صاحبُ المصنع خلف علاجٍ لا يفتح شيئاً. الآن صفّان
-           مفصولان بأسمائهما الصادقة. */
-        if (q.blocked_checks && q.blocked_checks.length) {
-          const _drv = q.fail_drivers || [];
-          const _other = q.blocked_checks.filter((c) => _drv.indexOf(c) < 0);
-          html += '<div class="foot" style="opacity:.65;margin-top:4px">';
-          if (_drv.length)
-            html += ar_en("للدعم الفنّي — الفحوص الحاجبة: ",
-                          "For support — blocking checks: ") +
-                    esc(_drv.join("، "));
-          if (_other.length)
-            html += (_drv.length ? "<br>" : "") +
-                    ar_en("ملاحظات لا تحجب التسليم: ",
-                          "Notes that do not block delivery: ") +
-                    esc(_other.join("، "));
-          html += "</div>";
-        }
+        /* الدرس ٢٩٥ (قرار المالك): لا معرّفَ فحصٍ على سطح المصنع — كان سطرُ
+           «للدعم» يطبع أسماءً برمجية. المعرّفاتُ في سجلّ الخدمة، والمصنعُ
+           يقرأ الجمل أعلاه وحدها. */
         html += "</div>";
       }
       /* البطاقات: التغطية/الاكتمال مشتقّان من صفوف الأسواق — للمسار السريع
@@ -3287,11 +3268,7 @@ function viewReportBtn(s) {
             '</span><span class="v" style="font-size:var(--fs-body)">' +
             esc(comp.label) + "</span></div>");
       }
-      if (dr && dr.report && dr.report.review_cycles != null)
-        tiles.push('<div class="rstat"><span class="k">' +
-          ar_en("دورات المراجعة", "Review cycles") +
-          '</span><span class="v num">' + esc(String(dr.report.review_cycles)) +
-          "</span></div>");
+      /* الدرس ٢٩٥: «دورات المراجعة» عدّادٌ داخليّ لا معلومةُ سوق — حُذفت. */
       /* بطاقةُ تكلفة التشغيلة — **للأدمِن وحده**: القيمة من `/admin/metrics`
          لا من حمولة التقرير (المصنع يقرأ الحمولة نفسها وهي مجرَّدة من كل
          مفتاح تكلفة بنيوياً). غيابُ التسعير = لا بطاقة، لا صفرٌ مختلَق. */
@@ -3519,8 +3496,8 @@ function viewReportBtn(s) {
           }
         } else if (dr.narrative && dr.narrative.available === false) {
           html += '<p class="hint">' +
-            ar_en("تعذّر توليد السرد لهذه التشغيلة — الأرقام والحكم أعلاه من التوليف الحتمي.",
-               "The narrative could not be generated for this run — the numbers and verdict above come from deterministic synthesis.") +
+            ar_en("لم يكتمل النص المكتوب لهذه الدراسة؛ الأرقام والتوصية أعلاه محسوبة من بياناتها مباشرة.",
+               "The written text for this study is not complete; the numbers and recommendation above are computed directly from its data.") +
             "</p>";
         }
         /* مجموعاتٌ لم تجد قسمَها في السرد تُعرَض هنا لا تُسقَط. */
@@ -3629,13 +3606,7 @@ function pdfBtn(id) {
         const _dr = (det && det.blocked_reasons) || [];
         if (_dv2.length) msg += " — " + _dv2[0];
         else if (_dr.length) msg += " — " + _dr.join(" ");
-        /* مرجعُ الدعم في ذيل الرسالة — لا يتصدّرها (بلاغ المالك الثالث). */
-        if (det && det.fail_drivers && det.fail_drivers.length)
-          msg += " [" + ar_en("للدعم: ", "support: ") +
-                 det.fail_drivers.join("، ") + "]";
-        else if (det && det.blocked_checks && det.blocked_checks.length)
-          msg += " [" + ar_en("للدعم: ", "support: ") +
-                 det.blocked_checks.join("، ") + "]";
+        /* الدرس ٢٩٥: لا «[للدعم: معرّف_فحص]» في رسالة المصنع. */
         showActionError(b, msg);
         return;
       }

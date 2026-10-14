@@ -99,7 +99,12 @@ def strip_cost_keys(obj):
     المحرّك مستقبلاً يُجرَّد تلقائياً دون تذكُّر أحد.
     """
     if isinstance(obj, dict):
-        return {k: strip_cost_keys(v) for k, v in obj.items()
+        # الدرس ٢٩٥: `run_error` المخزَّن قبل الإصلاح يحمل نصَّ العطل الخام —
+        # يُنظَّف عند العبور أيضاً لا عند الكتابة وحدها.
+        return {k: (customer_failure_text(v)
+                    if k == "run_error" and isinstance(v, str) and v
+                    else strip_cost_keys(v))
+                for k, v in obj.items()
                 if k not in _COST_KEYS and k not in _INTERNAL_AUDIT_KEYS}
     if isinstance(obj, list):
         return [strip_cost_keys(x) for x in obj]
@@ -129,6 +134,98 @@ TIMEOUT_REASON = "تجاوز التنفيذ المهلة القصوى فأُوق
 CANCELLED_REASON = "أُلغيت الدراسة بطلبك — أُرجعت حصّتها"
 CANCELLED_QUEUED_REASON = "أُلغيت الدراسة قبل بدء التنفيذ بطلبك — أُرجعت حصّتها"
 CANCELLED_TITLE_FMT = "أُلغيت دراسة «{p}» وأُرجعت حصّتها"
+
+# ── الدرس ٢٩٥: سببُ التعثّر كما يقرؤه المصنع ─────────────────────────────────
+# `run_error` وجسمُ الإشعار سطحان يقرؤهما المصنع، وكانا يحملان نصَّ العطل
+# التقنيّ («anthropic.APIStatusError: overloaded_error (529)…»)، وتكلفةً داخلية
+# («1.80$ لا تُستردّ»)، وأسماءَ مفاتيح الخادم («ANTHROPIC_API_KEY»)، ورموزاً
+# («monthly_quota_exceeded»). السببُ الكامل يبقى في `study_runs.error_text`
+# والتدقيق والسجلّ؛ والمصنعُ يقرأ جملةً تقول ما حدث وما يفعل.
+#: علاماتٌ تقنية صلبة — الجملةُ التي تحملها تُسقَط من نصّ المصنع كاملة.
+_HARD_MARK_RE = re.compile(
+    r"[A-Za-z]+_[A-Za-z_]+|[A-Za-z]+(?:Error|Exception)\b|\$|https?://|"
+    r"\bHTTP\b|\.csv\b|\.py\b|\.db\b|\bANTHROPIC|\bSILK_|\(\d{3}\)|"
+    r"/research|[A-Za-z]+\.[A-Za-z_]+\(")
+_DETAIL_SUFFIX_RE = re.compile(r"\s*\(التفصيل:.*$", re.S)
+_ANALYSIS_NO_RE = re.compile(r"\s*\(رقم التحليل \d+\)")
+#: مفرداتٌ داخلية تُستبدَل بلغة العميل (الأطولُ أولاً).
+_SOFT_WORDS = (
+    ("اكتملت البعثات والتحليل وحُفظا", "اكتمل جمع البيانات والتحليل وحُفظا"),
+    ("اكتملت البعثات وحُفظت", "اكتمل جمع البيانات وحُفظ"),
+    ("طبقة التحليل الشامل", "مرحلة التحليل"), ("كاتب التقرير", "كتابة التقرير"),
+    ("قاعدة المحرّك", "قاعدة البيانات"), ("جسر التشغيل", "المنصة"),
+    ("أعد التشغيل", "أعد الإطلاق"), ("هذه التشغيلة", "هذه الدراسة"),
+    ("التشغيلة", "الدراسة"), ("للبعثات", "لجمع البيانات"),
+    ("البعثات", "مهام جمع البيانات"),
+    ("محرّك البحث العميق غير جاهز على الخادم", "خدمة الدراسات غير متاحة مؤقتاً"),
+    ("المحرّك", "النظام"), ("المحرك", "النظام"), ("محرّك", "نظام"))
+_QUOTA_TEXT = {
+    "monthly_quota_exceeded": "استنفدت حصّتك الشهرية من الدراسات",
+    "lifetime_quota_exceeded": "استنفدت حصّة الدراسات في باقتك",
+    "user_quota_exceeded": "استنفد هذا المستخدم حصّته من الدراسات",
+}
+_EMPTY_TEXT = ("لم نجمع بيانات كافية لإكمال الدراسة هذه المرة، وأُعيدت حصّتك. "
+               "أعد إطلاقها لاحقاً، وإن تكرّر فتواصل معنا.")
+#: عناوينُ تفصيلٍ داخليّ — جملتُها كلُّها للمشغّل لا للمصنع.
+_LABEL_ONLY = ("السبب", "التفصيل", "الطبقة الفاشلة", "الصنف")
+_DAILY_CAP_TEXT = ("بلغت المنصة حدّها اليومي للدراسات، ولم تُحتسب هذه الدراسة "
+                   "من حصّتك. أعد إطلاقها غداً.")
+_GENERIC_TEXT = ("تعذّر إكمال الدراسة هذه المرة لخلل من جهتنا، وأُعيدت حصّتك. "
+                 "أعد إطلاقها، وإن تكرّر فتواصل معنا.")
+
+
+def quota_refusal_text(reason: str, used, limit) -> str:
+    """رفضُ الحصّة بجملة عميل لا برمز (`monthly_quota_exceeded`)."""
+    head = _QUOTA_TEXT.get(str(reason or ""), "استُنفدت الحصّة المتاحة")
+    return f"لم تنطلق الدراسة: {head} ({used} من {limit})."
+
+
+def customer_failure_text(reason: str, error_code: "str | None" = None) -> str:
+    """سببُ تعثّرٍ صالحٌ لعين المصنع: تُسقَط الجملُ التي تحمل تفصيلاً تقنياً
+    (نصّ استثناء، تكلفة، مسار ملف، مفتاح خادم)، وتبقى الجملُ المفيدة («اكتب وصف
+    المنتج نفسه…»، «أُرجع مقعد الإطلاق…») بمفرداتٍ عادية. لا يبقى شيءٌ مفيد ⇒
+    جملةٌ عامّةٌ صادقة."""
+    text = _DETAIL_SUFFIX_RE.sub("", str(reason or ""))
+    text = _ANALYSIS_NO_RE.sub("", text).strip()
+    for code, phrase in _QUOTA_TEXT.items():      # صفوفٌ قديمة بالرمز الخام
+        text = text.replace(code, phrase)
+    if "$" in text and "اليوم" in text:           # سقفُ الإنفاق اليوميّ
+        return _DAILY_CAP_TEXT
+    keep: list = []
+    for c in re.split(r"(?<=[.؛])\s+|\s+—\s+", text):
+        c = c.strip()
+        if not c or c.startswith("الطبقة الفاشلة"):
+            continue
+        if c.startswith(_LABEL_ONLY) and ":" in c:   # «السبب: …» — يبقى ما بعده
+            c = c.split(":", 1)[1].strip()
+        if not _HARD_MARK_RE.search(c):
+            keep.append(c)
+            continue
+        # «تعذّر تصنيف المنتج: مطابقة ضعيفة في hs_seed.csv» — الرأسُ مفيد.
+        head = c.split(":", 1)[0] if ":" in c else ""
+        if (head.strip() and not _HARD_MARK_RE.search(head)
+                and head.strip() not in _LABEL_ONLY):
+            keep.append(head.strip())
+    out = ""
+    for k in (k.strip(" ؛—-") for k in keep):
+        if k:
+            out = k if not out else out + (
+                " " if out.endswith((".", "؟", "!")) else " — ") + k
+    out = out.strip(" ؛—-")
+    for old, new in _SOFT_WORDS:
+        out = out.replace(old, new)
+    if out == text:
+        return text                       # نظيفٌ أصلاً — يُعاد حرفياً
+    if out and any(ch.isalpha() for ch in out):
+        out = out if out.endswith((".", "؟", "!")) else out + "."
+        # جملةٌ بلا فعلٍ يقول للمصنع ماذا يفعل تُختَم بالخطوة التالية.
+        if (out.rstrip(".") != text.rstrip(".")
+                and not re.search(r"أعد|اكتب|أدخل|أكمل|تواصل|اختر|انتظر|ارفع",
+                                  out)):
+            out += " أعد الإطلاق، وإن تكرّر فتواصل معنا."
+        return out
+    return _EMPTY_TEXT if error_code == "empty" else _GENERIC_TEXT
+
 
 # مقبضُ التشغيلة الحالية داخل خيطها (contextvar) — يقرؤه `_run_engine_deep`
 # ليمرّر نداءَ تخصيص معرّف المحرّك (`on_allocated`) بلا تغيير توقيع
@@ -1385,7 +1482,8 @@ def _finish_failure(study_id: int, account_id: int, reason: str,
             "analysis_id = COALESCE(?, analysis_id), "
             "updated_at = ? WHERE id = ? AND owner_id = ? "
             "AND state = 'in_progress' AND (? IS NULL OR run_token = ?)",
-            (now_iso(), (reason or "")[:_REASON_MAX], run_stats,
+            (now_iso(), customer_failure_text(reason, error_code)[:_REASON_MAX],
+             run_stats,
              (json.dumps(hs_candidates, ensure_ascii=False)
               if hs_candidates else None),
              (int(analysis_id) if analysis_id else None),
@@ -1415,7 +1513,8 @@ def _finish_failure(study_id: int, account_id: int, reason: str,
         _notify_after_commit(study_id, account_id, kind=notify_kind,
                              title_fmt=(notify_title_fmt
                                         or "تعثّرت دراسة «{p}» وأُرجعت حصّتها"),
-                             body=(reason or "")[:_REASON_MAX])
+                             body=customer_failure_text(
+                                 reason, error_code)[:_REASON_MAX])
 
 
 def _thread_body(study_id: int, account_id: int, product: str,

@@ -3826,8 +3826,7 @@ _LESSONS = {
     154: lambda: (
         _needles("silk_export_gate.py", "def _fail_drivers")(),
         _needles("tests/test_download_gate_block.py",
-                 "def test_connector_excess_is_the_only_driver_among_"
-                 "the_four")(),
+                 "def test_style_findings_never_drive_a_delivery_block")(),
         _needles("tests/test_lessons_enforcement.py", '(154, ')()),
     155: lambda: (
         _needles("silk_render.py",
@@ -4599,6 +4598,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    295: lambda: (
+        _needles("silk_fact_ledger.py", "def _drops_sentence")(),
+        _needles("silk_quality_gate.py", "def delivery_blockers")(),
+        _needles("tests/test_lesson295_fabrication_and_delivery.py",
+                 "def test_fabrication_and_internal_tokens_still_block",
+                 "def test_failed_run_reason_hides_the_technical_detail")(),
+        _needles("tests/test_lessons_enforcement.py", "(295, ")()),
     294: lambda: (
         _needles("silk_fact_ledger.py", "def _normalize_tokens")(),
         _needles("tests/test_lesson294_report10_gate.py",
@@ -4946,7 +4952,8 @@ _LESSONS = {
                  "_HEADING_CANDIDATE_RE", "def _heading_sample",
                  "writer_headings_unrecognized")(),
         _needles("silk_render.py", "canonicalize_section_headings")(),
-        _needles("web/platform.html", "ملاحظات لا تحجب التسليم: ")(),
+        # الدرس ٢٩٥: سطرُ المعرّفات حُذف من المصنع — الجملُ وحدها.
+        _needles("web/platform.html", "fail_driver_reasons")(),
         _needles("tools/audit_study_reports.py", "def review")(),
         _needles("tests/test_heading_canonicalization.py",
                  "def test_every_blocked_heading_shape_becomes_canonical",

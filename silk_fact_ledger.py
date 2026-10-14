@@ -224,7 +224,7 @@ _DEFINITION_RE = re.compile(
     r"يعني|يقيس|مقياس|عتبة|تعريف|فوق|أعلى\s*من|دون|أقل\s*من|بين|مثال"
     r"|means|measures|threshold|above|below|scale")
 _TOLERANCE = 0.02
-_SENT_SPLIT_RE = re.compile(r"(?<=[.؛!؟\n])")
+_SENT_SPLIT_RE = re.compile(r"(?:(?<=[.؛!؟])(?![0-9٠-٩])|(?<=\n))")
 _SCALE = {"مليون": 1e6, "million": 1e6, "مليار": 1e9, "billion": 1e9,
           "ألف": 1e3}
 
@@ -910,8 +910,9 @@ LEDGER_TOKEN_RULE = (
     "و{{imports_latest_year}} — ولا تُكتب قيمتها ولا حالتها من عندك؛ النظام "
     "يستبدلها بالقيمة ومصدرها أو بإعلان الغياب بصيغة سليمة. الرمز بلاحقة "
     ":sentence (مثل {{open_conditions:sentence}}) يصير جملة كاملة تقف وحدها. "
-    "لتقرير حالة أي معطى آخر (متاح/ضعيف/غير متاح) اكتب {{status:المفتاح}} لا "
-    "كلمة من عندك. بقية الأرقام اكتبها بصيغتك الطبيعية (تقريب، مقارنة) — "
+    "لتقرير حالة أي معطى آخر (متاح/ضعيف/غير متاح) اكتب رمزاً مثل "
+    "{{status:hhi}} مستبدلاً hhi بمفتاح المعطى من [LEDGER] حرفياً، لا كلمة "
+    "من عندك. بقية الأرقام اكتبها بصيغتك الطبيعية (تقريب، مقارنة) — "
     "وتُفحص بعد الكتابة مقابل السجلّ بتسامح التقريب؛ رقم يخالفه يُعاد للتنقيح "
     "بجملته. لا تخترع رموزاً غير المسرودة.")
 LEDGER_TOKEN_RULE_EN = (
@@ -929,23 +930,25 @@ LEDGER_TOKEN_RULE_EN = (
 
 
 def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
-    """استبدل كل رمز بصيغته من السجلّ — يعيد (النص، {bound, unknown, used}).
+    """استبدل كل رمز بصيغته من السجلّ — يعيد (النص، {bound, unknown, used,
+    dropped}).
 
-    **الوحدةُ جملةٌ لا سطر** (مراجعة §58): رمزُ قيمةٍ غاب معطاه داخل جملةٍ
-    كُتبت لرقمٍ تُستبدَل **جملتُه وحدها** بجملة الغياب، فلا تُبتَر فقرةٌ
-    كاملة ولا يُهدَر ما حولها من سرد. وصفُّ جدولٍ (`| … |`) لا يُعاد بناؤه
-    أبداً — يُملأ في مكانه بكلمة الغياب كي لا ينكسر عمودُ الجدول.
+    **الوحدةُ جملةٌ لا سطر** (مراجعة §58)، و**الجملةُ التي نقص معطاها تُحذَف
+    كاملة** (قرار المالك 2026-10-14، الدرس ٢٩٥): رمزُ قيمةٍ غاب معطاه، أو رمزٌ
+    غير مسرود/مشوَّه، يُسقِط جملتَه وحدها — لا «غير متاح» وسط جملةٍ كُتبت
+    لرقم، ولا جملةَ غيابٍ بديلة. الفجوةُ نفسُها معلنةٌ في جدول النواقص الواحد.
+    وصفُّ جدولٍ (`| … |`) لا يُعاد بناؤه أبداً — يُملأ في مكانه بكلمة الغياب
+    كي لا ينكسر عمودُ الجدول. كلُّ جملةٍ محذوفة تُسجَّل في `dropped`.
     """
     if not text or "{{" not in text:
-        return text or "", {"bound": 0, "unknown": [], "used": []}
+        return text or "", {"bound": 0, "unknown": [], "used": [],
+                            "dropped": []}
     entries = (ledger or {}).get("entries") or {}
     text, bad = _normalize_tokens(text)
-    # رمزٌ لا يُفهم مفتاحُه فجوةٌ معلنة كالمفتاح غير المسرود — لا يصل قوسُه
-    # عميلاً (`ledger_token_unbound` حجب الدراسة ١٠ على هذا بالضبط).
-    for tok in set(bad):
-        text = text.replace(tok, "not available" if lang == "en" else "غير متاح")
+    gap_word = "not available" if lang == "en" else "غير متاح"
     unknown: list = list(bad)
     used: list = []
+    dropped: list = []
     n = 0
 
     def _render(m, *, in_table: bool) -> str:
@@ -954,7 +957,7 @@ def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
         e = entries.get(key)
         if e is None:
             unknown.append(key)
-            return "not available" if lang == "en" else "غير متاح"
+            return gap_word
         n += 1
         used.append(key)
         if is_status:
@@ -968,18 +971,55 @@ def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
         if "{{" not in line:
             out_lines.append(line)
             continue
-        in_table = line.lstrip().startswith("|")
-        if in_table:
+        # الجدولُ والعنوانُ يُملآن في مكانهما: حذفُ جملة عنوانٍ مرقّم («## 3.
+        # حجم السوق في {{…}}») كان يُسقِط عنوانه فيذوب قسمُه في سابقه (مراجعة
+        # §58 للدرس ٢٩٥) — بنيةُ المستند أهمّ من صياغة العنوان.
+        if line.lstrip().startswith(("|", "#")):
+            for tok in set(bad):
+                line = line.replace(tok, gap_word)
             out_lines.append(TOKEN_RE.sub(
                 lambda m: _render(m, in_table=True), line))
             continue
-        out_lines.append(_bind_line(line, entries, lang, _render))
+        new = _bind_line(line, entries, lang, _render, dropped, unknown)
+        if new.strip() and not _LIST_PREFIX_RE.fullmatch(new):
+            out_lines.append(new)
     return "\n".join(out_lines), {"bound": n, "unknown": sorted(set(unknown)),
-                                   "used": sorted(set(used))}
+                                   "used": sorted(set(used)),
+                                   "dropped": dropped}
 
 
-def _bind_line(line: str, entries: dict, lang: str, render) -> str:
-    """املأ سطرَ نثرٍ جملةً جملة — الغائبُ يُبدِّل جملتَه لا السطرَ كلَّه."""
+def _drops_sentence(part: str, entries: dict) -> bool:
+    """هل تُحذَف هذه الجملة؟ — رمزٌ مشوَّه، أو مفتاحٌ غير مسرود، أو معطىً
+    ناقص (عدا ذي الصيغة الواصفة لنفسها: «لا شروط مفتوحة» حقيقةٌ لا غياب).
+    رمزُ الحالة (`status:`) يقول «غير متاح» حالةً لا رقماً فيبقى."""
+    for m in _LOOSE_TOKEN_RE.finditer(part):
+        tm = TOKEN_RE.fullmatch(m.group(0))
+        if tm is None:
+            return True
+        is_status, key = tm.group(1), tm.group(2)
+        e = entries.get(key)
+        if e is None:
+            return True
+        if (not is_status and e["status"] == MISSING
+                and (key not in _SELF_DESCRIBING_KEYS
+                     or key == "open_conditions")):
+            # «لا شروط مفتوحة» حين لم يُحسَب العددُ نفيٌ مختلَق (مراجعة §58).
+            return True
+    return False
+
+
+def _strip_label_echo(before: str, entry: dict, lang: str) -> str:
+    """«**الشروط المفتوحة** — {{open_conditions:sentence}}»: الجملةُ المملوءة
+    تبدأ بالتسمية نفسِها، فتُحذَف التسميةُ التي كتبها الكاتب قبلها (الدرس ٢٩٥ —
+    كان يخرج «الشروط المفتوحة — الشروط المفتوحة شرطان»)."""
+    label = entry["label_en"] if lang == "en" else entry["label_ar"]
+    core = re.sub(r"[*_:\-–—=\s]+", " ", before).strip()
+    return "" if core == label else before
+
+
+def _bind_line(line: str, entries: dict, lang: str, render,
+               dropped: list, unknown: list) -> str:
+    """املأ سطرَ نثرٍ جملةً جملة — الجملةُ التي نقص معطاها تُحذَف وحدها."""
     prefix_m = _LIST_PREFIX_RE.match(line)
     prefix = prefix_m.group(1) if prefix_m else ""
     body = line[len(prefix):]
@@ -989,21 +1029,27 @@ def _bind_line(line: str, entries: dict, lang: str, render) -> str:
         if "{{" not in part:
             out.append(part)
             continue
-        gone = None
-        for m in TOKEN_RE.finditer(part):
-            is_status, key, as_sentence = m.group(1), m.group(2), m.group(3)
-            e = entries.get(key)
-            if (e is not None and not is_status and not as_sentence
-                    and e["status"] == MISSING
-                    and key not in _SELF_DESCRIBING_KEYS):
-                gone = e
-                break
-        if gone is not None:
-            tail = _trailing_space(part)
-            out.append(render_sentence(gone, lang) + tail)
+        if _drops_sentence(part, entries):
+            dropped.append(part.strip())
+            for m in _LOOSE_TOKEN_RE.finditer(part):
+                tm = TOKEN_RE.fullmatch(m.group(0))
+                if tm is None or tm.group(2) not in entries:
+                    unknown.append(tm.group(2) if tm else m.group(0))
             continue
+        m0 = TOKEN_RE.search(part)
+        if m0 and m0.group(3) and not m0.group(1) and m0.group(2) in entries:
+            lead = _strip_label_echo(part[:m0.start()], entries[m0.group(2)],
+                                     lang)
+            part = lead + part[m0.start():]
         out.append(TOKEN_RE.sub(lambda m: render(m, in_table=False), part))
-    return prefix + "".join(out)
+    joined = "".join(out)
+    if not joined.strip():
+        return ""
+    if len(out) < len(parts):                     # حُذفت جملةٌ من السطر
+        joined = joined.strip()
+        if joined.count("**") % 2:                # «**» يتيمٌ من جملةٍ محذوفة
+            joined = re.sub(r"^\*\*\s*|\s*\*\*$", "", joined, count=1)
+    return prefix + joined
 
 
 def _trailing_space(part: str) -> str:
@@ -1012,7 +1058,10 @@ def _trailing_space(part: str) -> str:
 
 
 #: تقطيعٌ يحفظ الفواصل — الجملةُ تُستبدَل بعلامتها لا بدونها.
-_SENT_KEEP_RE = re.compile(r"(?<=[.؛!؟])")
+#: لا قطعَ بعد نقطةٍ عشرية (الدرس ٢٩٥): «89.4» كانت تُقطَع جملتين فتُستبدَل
+#: الأولى ويبقى «.4 مليون» — رقمٌ مختلَق.
+_SENT_KEEP_RE = re.compile(
+    r"(?<=[.؛!؟])(?![0-9٠-٩])(?<!(?<![0-9٠-٩])[0-9٠-٩]\.)(?<!(?<![0-9٠-٩])[0-9٠-٩]{2}\.)")
 
 
 _LIST_PREFIX_RE = re.compile(r"^(\s*(?:[-*•]|\d+[.)]|#+)\s+)")

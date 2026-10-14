@@ -1435,6 +1435,8 @@ def mount(app) -> bool:
                 "SELECT id, product, market_pref, state, completed_at, "
                 "run_error FROM studies WHERE owner_id = ? "
                 "ORDER BY id DESC LIMIT 5", (ctx.account_id,)).fetchall()]
+            # الدرس ٢٩٥: سببُ التعثّر المخزَّن قبل الإصلاح يُنظَّف هنا أيضاً.
+            recent = engine_bridge.strip_cost_keys(recent)
         finally:
             conn.close()
         markets: list[dict] = []
@@ -1983,7 +1985,8 @@ def mount(app) -> bool:
         """
         conn.execute("UPDATE studies SET run_error = ?, updated_at = ? "
                      "WHERE id = ? AND owner_id = ?",
-                     (str(note)[:400], auth.now_iso(), study_id, ctx.account_id))
+                     (engine_bridge.customer_failure_text(note)[:400],
+                      auth.now_iso(), study_id, ctx.account_id))
         audit.record(conn, action="study_launch_refused", user_id=ctx.user_id,
                      account_id=ctx.account_id, resource_type="study",
                      resource_id=study_id, changes={"reason": str(note)[:200]})
@@ -2112,8 +2115,8 @@ def mount(app) -> bool:
                              "launched_by_user_id = NULL, run_started_at = NULL, "
                              "run_error = ?, "
                              "updated_at = ? WHERE id = ? AND owner_id = ?",
-                             (f"لم تنطلق: {decision.reason} — الحصّة المستهلكة "
-                              f"{decision.used} من {decision.limit}",
+                             (engine_bridge.quota_refusal_text(
+                                 decision.reason, decision.used, decision.limit),
                               auth.now_iso(), study_id, ctx.account_id))
                 audit.record(conn, action="study_launch_refused",
                              user_id=ctx.user_id, account_id=ctx.account_id,
@@ -2180,8 +2183,8 @@ def mount(app) -> bool:
                              "run_error = ?, updated_at = ? "
                              "WHERE id = ? AND owner_id = ? "
                              "AND state = 'in_progress' AND run_token = ?",
-                             ("لم تنطلق: عطل داخلي أثناء تسجيل التشغيلة — "
-                              "أعد المحاولة", auth.now_iso(), study_id,
+                             ("لم تنطلق الدراسة لخلل من جهتنا، ولم تُحتسب من "
+                              "حصّتك. أعد المحاولة.", auth.now_iso(), study_id,
                               ctx.account_id, run_token))
                 quota.release_launch(conn, ctx.account_id, launched_at=now)
                 conn.commit()
@@ -2315,6 +2318,13 @@ def mount(app) -> bool:
         view, decision = _client_view_gated(row, "json", block=False)
         import silk_export_gate as _eg
         _lang = fsettings.study_report_language(row)
+        # الدرس ٢٩٥: نصُّ الكاتب على الشاشة يمرّ بمُطهِّر العميل نفسِه الذي
+        # يمرّ به Word/PDF — كان يُعرَض بتنقية المشغّل وحدها فتظهر «اثنتا
+        # عشرة بعثة… فكاتب التقرير بدورتَي مراجعة» و«بدرجة (درجة الثقة)».
+        _rep = (view.get("deep_research") or {}).get("report")
+        if isinstance(_rep, dict) and _rep.get("text"):
+            import silk_reports as _sr
+            _rep["text"] = _sr.client_screen_text(_rep["text"], _lang)
         return {"study": {k: row.get(k) for k in
                           ("id", "product", "market_pref", "hs_code", "state",
                            "run_started_at", "run_finished_at",

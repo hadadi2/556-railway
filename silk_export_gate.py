@@ -23,6 +23,7 @@ from __future__ import annotations
 import hmac
 import logging
 import os
+import re
 
 log = logging.getLogger("silk.export_gate")
 
@@ -154,13 +155,26 @@ def evaluate(view: dict) -> dict:
                          "لحماية العميل من محتوى لم يُفحَص فعلياً.")}]}
         verdict = "FAIL"
     findings = gate_out.get("findings") or []
-    blocking = [f for f in findings if not f.get("repairable", True)]
+    # الدرس ٢٩٥: التسليمُ يُحجَب على العائلات الثلاث وحدها (اختلاق، رموز
+    # داخلية، لغة نظام) — حكمُ البوّابة الكامل يبقى في `gate_verdict` للمشغّل.
+    gate_verdict = verdict
+    try:
+        import silk_quality_gate as _QG
+        blocking = _QG.delivery_blockers(findings)
+    except Exception:  # noqa: BLE001 — تعذّرُ القراءة = الحكمُ كما هو
+        blocking = [f for f in findings if not f.get("repairable", True)]
+    else:
+        if blocking:
+            verdict = "FAIL"
+        elif str(gate_verdict).upper() == "FAIL" or findings:
+            verdict = "PASS-WITH-WARNINGS"
     digest = [{"check": f.get("check"), "note": f.get("note")}
               for f in (blocking or findings)]
     # حادثة قراءة حجب #12: حمولة 409 حملت أربعة أسماء بينما المُفشِل واحد
     # (`style_connector_excess`) — بقيّتها ملاحظات حاجبة غير قائدة، فقُرئت
     # القائمة كلُّها أسباباً. يُميَّز القائد صراحةً (مفتاح إضافي فقط).
-    drivers = _fail_drivers(findings)
+    drivers = list(dict.fromkeys(str(f.get("check") or "") for f in blocking
+                                 if f.get("check")))
     if str(verdict).upper() == "FAIL" and not drivers:
         # حكمٌ FAIL بلا قائدٍ محسوب (عطل بوابة/تعذّر استيراد المجموعات):
         # كلُّ الملاحظات الحاجبة تُعَدّ قائدة — لا حمولةَ FAIL بلا سبب معلن.
@@ -171,7 +185,7 @@ def evaluate(view: dict) -> dict:
                 drivers.append(chk)
     return {"verdict": verdict, "findings": findings,
             "digest": digest, "blocking": blocking, "gate": gate_out,
-            "fail_drivers": drivers}
+            "fail_drivers": drivers, "gate_verdict": gate_verdict}
 
 
 def _fail_drivers(findings: list) -> list:
@@ -277,14 +291,13 @@ _OPERATOR_MESSAGE = (
 # **ولا تُقال «عطلٌ تقني»** — كان رفضُ الجودة يُترجَم 501/503 «وحدات المحرّك
 # غير متاحة» فيُقرأ عطلاً في البنية (البند G-04).
 _FACTORY_MESSAGE_AR = (
-    "تقريرُ هذه الدراسة لم يجتز فحصَ الجودة النهائيّ، فلم نُسلِّمه — نُفضّل "
-    "ألّا نُعطيك تقريراً ناقصاً على أن نُعطيك تقريراً لا يصلح للقرار. "
-    "أعِد توليدَ الدراسة، وإن تكرّر الأمر فتواصل معنا.")
+    # الدرس ٢٩٥: كانت تقول «أعِد توليدَ الدراسة» ولا زرَّ يفعل ذلك للمصنع
+    # (الإطلاق يرفض غير المسوّدة) — وعدٌ لا يُنفَّذ.
+    "لم نُسلِّم تقريرَ هذه الدراسة لأنّ فيه خللاً نُفضّل إصلاحه قبل أن "
+    "تعتمد عليه. تواصل معنا وسنُعيد إصداره.")
 _FACTORY_MESSAGE_EN = (
-    "This study's report did not pass the final quality check, so we did not "
-    "deliver it — we would rather give you no report than one you cannot "
-    "safely decide on. Please regenerate the study; if this repeats, contact "
-    "us.")
+    "We did not deliver this study's report because it has a flaw we would "
+    "rather fix before you rely on it. Contact us and we will reissue it.")
 
 
 # ── جملةُ الزائر لكل فحصٍ حاجب (بلاغ المالك الثالث، 2026-08-29) ──────────
@@ -562,6 +575,32 @@ _CLIENT_REASONS: dict[str, dict[str, str]] = {
 }
 
 
+# الدرس ٢٩٥: جملٌ مخصَّصة للعائلات الثلاث التي تحجب التسليم وحدها — بلا
+# معرّفٍ ولا لغة بوّابة، وما يفعله المصنع واحد: يتواصل معنا لإعادة الإصدار.
+_INTERNAL_TEXT_REASON = {
+    "ar": "ظهر في التقرير نصٌّ داخلي من نظامنا لم يُستبدل بصياغته النهائية. "
+          "يُغلقه: إعادة التوليد.",
+    "en": "The report contains internal text from our system that was not "
+          "replaced with its final wording. Fix: regenerate."}
+_FABRICATION_REASON = {
+    "ar": "في التقرير رقمٌ لا تسنده البيانات المرصودة، فلم نُسلّمه. "
+          "يُغلقه: إعادة التوليد.",
+    "en": "The report contains a figure the observed data does not support, "
+          "so we did not deliver it. Fix: regenerate."}
+for _c in ("claude_mention", "english_field_leak", "env_var_leak",
+           "facts_list_leak", "internal_plumbing_leak", "mission_key_leak",
+           "ops_warning_leak", "raw_confidence", "research_track_leak",
+           "system_language_leak", "tool_use_leak"):
+    _CLIENT_REASONS.setdefault(_c, _INTERNAL_TEXT_REASON)
+for _c in ("derived_number_has_inputs", "hs_code_as_value"):
+    _CLIENT_REASONS.setdefault(_c, _FABRICATION_REASON)
+_CLIENT_REASONS.setdefault("gate_crash", {
+    "ar": "تعذّر فحص التقرير قبل تسليمه بسبب خلل من جهتنا. يُغلقه: تواصل "
+          "معنا وسنُعيد إصداره.",
+    "en": "We could not check the report before delivery because of a fault "
+          "on our side. Fix: contact us and we will reissue it."})
+
+
 # الجملةُ العامّة حين لا توجد مخصَّصة — **لا معرّفَ خاماً أبداً** (ملاحظة
 # مراجعةٍ ذاتية §58 على هذه الموجة نفسها): الفحوصُ التي تصل قائمةَ الحجب
 # أكثرُ من قائدي الفشل (كلُّ ملاحظةٍ غير قابلة للإصلاح تصلها)، وكتابةُ جملةٍ
@@ -589,7 +628,26 @@ def client_reason(check: object, lang: str = "ar") -> str:
         return ""
     _lang = "en" if str(lang).lower() == "en" else "ar"
     row = _CLIENT_REASONS.get(key)
-    return (row or _GENERIC_REASON)[_lang]
+    return _what_happened((row or _GENERIC_REASON)[_lang])
+
+
+#: ذيلُ «يُغلقه: …/Fix: …» بلغة بوّابة (الدرس ٢٩٥): إن كان السبيلُ إعادةَ
+#: توليدٍ/تشغيلٍ لا يملكها المصنع يُقصّ فتبقى «ما الذي وقع»؛ وإن كان خطوةً يملكها
+#: («إدخالُ المدخل الناقص») يبقى بعنوان «الحل:» بدل لغة البوّابة.
+_CLOSURE_TAIL_RE = re.compile(r"\s*(?:يُغلقه[:،]|Fix:)\s*(.*)$", re.S)
+_RERUN_RE = re.compile(r"^(?:إعادةُ?\s+(?:التوليد|توليد|التشغيل|تشغيل)|"
+                       r"regenerat|rerun|re-run)", re.I)
+
+
+def _what_happened(text: str) -> str:
+    m = _CLOSURE_TAIL_RE.search(text)
+    if not m:
+        return text.strip()
+    head, tail = text[:m.start()].strip(), m.group(1).strip()
+    if not tail or _RERUN_RE.search(tail):
+        return head
+    label = "Fix:" if re.search(r"[A-Za-z]", head[:1] or "") else "الحل:"
+    return f"{head} {label} {tail}"
 
 
 def client_reasons(checks, lang: str = "ar") -> list[str]:
@@ -629,13 +687,12 @@ def factory_detail(digest: list, lang: str = "ar", *,
     `fail_drivers` إضافيٌّ فقط (انظر `operator_detail`).
     """
     _checks = [str(d.get("check") or "") for d in digest][:8]
+    # الدرس ٢٩٥ (قرار المالك 2026-10-14): **لا معرّفَ فحصٍ في حمولة المصنع**
+    # — كانت تُطبَع «[للدعم: adjacent_short_stutter…]». المعرّفاتُ في سجلّ
+    # الخدمة وسجلّ العمليات (`record_block`) لا عند العميل.
     out = {"error": "quality_gate_fail", "message": factory_message(lang),
-           "blocked_checks": _checks,
-           # الجملُ بلغة الزائر (بلاغ المالك الثالث) — المعرّفاتُ تبقى للآلة
-           # وسطحِ المشغّل، والمصنعُ يقرأ ما وقع وما يُغلقه.
            "blocked_reasons": client_reasons(_checks, lang)}
     if fail_drivers:
-        out["fail_drivers"] = [str(x) for x in fail_drivers][:8]
         out["fail_driver_reasons"] = client_reasons(fail_drivers, lang)
     return out
 
@@ -659,11 +716,12 @@ def client_quality_summary(decision: dict, lang: str = "ar") -> dict:
         # صيد الفجوات ٣: كانت المقارنة بـ"WARN" بينما ثابت البوابة
         # "PASS-WITH-WARNINGS" — فرعٌ ميت، وتقريرٌ مثقلٌ بالملاحظات كان
         # يُعلَن للمصنع نجاحاً نظيفاً (G-02 نصف مُنفَّذ).
-        note = ("اجتاز التقريرُ فحصَ الجودة مع ملاحظات — راجع قسم «حدود "
-                "المنهجية وجودة البيانات» في التقرير."
+        # الدرس ٢٩٥: القسمُ المُحال إليه غير موجود في نسخة العميل.
+        note = ("التقرير جاهز، وفيه نقاط لم تكتمل بياناتها مذكورة في قسم «ما "
+                "لم يكتمل للقرار»."
                 if lang != "en" else
-                "The report passed the quality check with notes — see the "
-                "methodology-and-data-limits section.")
+                "The report is ready; points whose data is incomplete are "
+                "listed in its \"what is not yet complete\" section.")
     else:
         note = ("اجتاز التقريرُ فحصَ الجودة."
                 if lang != "en" else "The report passed the quality check.")
@@ -673,13 +731,12 @@ def client_quality_summary(decision: dict, lang: str = "ar") -> dict:
     out = {"verdict": verdict or "UNKNOWN",
            "blocking_count": n_block, "note": note}
     if verdict == "FAIL":
-        out["blocked_checks"] = [
-            str(f.get("check") or "")
-            for f in ((decision or {}).get("blocking") or [])
-            if isinstance(f, dict)][:8]
-        out["fail_drivers"] = [
-            str(x) for x in ((decision or {}).get("fail_drivers") or [])][:8]
-        # نفسُ الخريطة الواحدة على سطح القراءة (لا نسخةَ نصٍّ ثانية).
-        out["blocked_reasons"] = client_reasons(out["blocked_checks"], lang)
-        out["fail_driver_reasons"] = client_reasons(out["fail_drivers"], lang)
+        # الدرس ٢٩٥: الجملُ وحدها للمصنع — المعرّفاتُ في سجلّ الخدمة.
+        _blocked = [str(f.get("check") or "")
+                    for f in ((decision or {}).get("blocking") or [])
+                    if isinstance(f, dict)][:8]
+        out["blocked_reasons"] = client_reasons(_blocked, lang)
+        out["fail_driver_reasons"] = client_reasons(
+            [str(x) for x in ((decision or {}).get("fail_drivers") or [])][:8],
+            lang)
     return out

@@ -880,11 +880,10 @@ def _deep_research_brief(dr_view: dict, lang: str = "ar") -> list[str]:
     # البادئةُ تتبع ما يقوله الحقلُ فعلاً، فيقرأ المصنعُ سطراً مستقيماً.
     if ar:
         _lead = "الحالة" if _tone.startswith("data_") else "التوصية"
-        lines = [f"{_lead}: {v} — سوق {market} (بحث عميق شامل)"]
+        lines = [f"{_lead}: {v} — سوق {market}"]   # الدرس ٢٩٥: بلا وسمِ المسار
     else:
         _lead = "Status" if _tone.startswith("data_") else "Recommendation"
-        lines = [f"{_lead}: {v} — {market} market (comprehensive deep "
-                 "research)"]
+        lines = [f"{_lead}: {v} — {market} market"]
     by_cat = (dr_view.get("analyst") or {}).get("by_category", {})
     # دورة C4 (صيد ٣): لاحقةُ المصدر أُسقطت عمداً من المختصر — حقلُ المصدر
     # ملاحظةُ بعثةٍ قد تحمل اسمَ مرجعٍ داخلي (demographics_l1.csv وقعت في
@@ -892,9 +891,13 @@ def _deep_research_brief(dr_view: dict, lang: str = "ar") -> list[str]:
     # التقرير وقسم المراجع، والمختصرُ سطرُ جوّالٍ.
     demand = by_cat.get("demand") or []
     if demand:
-        lines.append((f"الطلب الفعلي المقدَّر: {demand[0].get('value')}"
-                      if ar else
-                      f"Estimated actual demand: {demand[0].get('value')}"))
+        _dv = demand[0].get("value")
+        # الدرس ٢٩٥: رقمٌ خام «42000000» بلا فاصل آلاف — يُفصَّل كما هو.
+        if isinstance(_dv, (int, float)) and not isinstance(_dv, bool):
+            from silk_narrative import fmt_number
+            _dv = fmt_number(_dv)
+        lines.append((f"الطلب الفعلي المقدَّر: {_dv}" if ar else
+                      f"Estimated actual demand: {_dv}"))
     entry_door = by_cat.get("entry_door") or []
     if entry_door:
         lines.append((f"أفضل باب دخول: {entry_door[0].get('value')}"
@@ -3209,8 +3212,8 @@ def _hs_derivation(result: dict) -> dict | None:
     elif result.get("hs_resolution_note"):
         basis = str(result["hs_resolution_note"])
     else:
-        basis = ("الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — "
-                 "راجع منهجية التقرير")
+        # الدرس ٢٩٥: لا إحالةَ إلى «منهجية التقرير» — قسمٌ لا تحمله نسخة العميل.
+        basis = "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف"
     record = {
         "hs6": hs6,
         "chapter": hs6[:2],

@@ -98,8 +98,9 @@ def test_every_sentence_says_what_closes_it():
 def test_an_unknown_check_falls_back_to_the_generic_never_the_raw_id():
     """معرّفٌ لا نعرفه يُوصَف عامّاً — ولا يُطبَع خاماً أبداً."""
     out = G.client_reason("no_such_check_id")
-    assert out == G._GENERIC_REASON["ar"]
-    assert "no_such_check_id" not in out
+    # الدرس ٢٩٥: ذيلُ «يُغلقه: …» يُقصّ عن جملة المصنع.
+    assert out == G._what_happened(G._GENERIC_REASON["ar"])
+    assert "يُغلقه" not in out and "no_such_check_id" not in out
     assert G.client_reason(None) == "" and G.client_reason("") == ""
 
 
@@ -113,13 +114,14 @@ def test_client_reasons_dedupes_and_keeps_order():
 
 
 # ═══════════ ٢ — الحمولتان تحملان الجمل، والمعرّفاتُ تبقى للآلة ══════════════
-def test_factory_detail_carries_the_sentences_beside_the_ids():
+def test_factory_detail_carries_sentences_and_no_ids():
     digest = [{"check": "unit_conversion_refusal"},
               {"check": "trends_hollow_completion"}]
     out = G.factory_detail(digest, "ar",
                            fail_drivers=["unit_conversion_refusal"])
-    assert out["blocked_checks"] == ["unit_conversion_refusal",
-                                     "trends_hollow_completion"]  # عقدٌ قائم
+    # الدرس ٢٩٥ (قرار المالك): لا معرّفَ فحصٍ في حمولة المصنع.
+    assert "blocked_checks" not in out and "fail_drivers" not in out
+    assert "unit_conversion_refusal" not in str(out)
     assert len(out["blocked_reasons"]) == 2
     assert "لتر↔كجم" in out["blocked_reasons"][0]
     assert out["fail_driver_reasons"] == [

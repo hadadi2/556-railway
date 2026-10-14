@@ -109,7 +109,9 @@ def test_header_brief_and_limits_reflect_deep_research():
 
     view = build_view(_deep_research_result())
     assert view["header"]["target_market"] in ("نيجيريا", "Nigeria")
-    assert any("WATCH" in b or "بحث عميق" in b for b in view["brief"])
+    # الدرس ٢٩٥: وسمُ المسار «(بحث عميق شامل)» حُذف من سطر المختصر.
+    assert any("WATCH" in b or "مراقبة" in b or "التوصية" in b
+               for b in view["brief"])
     # بلاغ منتج من المالك: المفتاح snake_case الخام (pricing_scout) لا
     # يجوز أن يظهر في حدود معروضة للعميل — اسم البعثة العربي يحل محله.
     assert not any("pricing_scout" in x for x in view["limits"])

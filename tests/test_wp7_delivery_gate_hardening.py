@@ -96,13 +96,14 @@ def test_render_client_docx_wires_artifact_gate_and_refuses_leak(tmp_path):
     src = open(os.path.join(_ROOT, "silk_reports.py"), encoding="utf-8").read()
     body = src.split("def render_client_docx(")[1].split("\ndef ")[0]
     assert "run_client_artifact_text_gate" in body
-    # سلوكياً: حقن بتر «...» في سرد الكاتب => رفض التسليم RuntimeError.
+    # سلوكياً: حقن نصٍّ نائبٍ تقنيّ في سرد الكاتب => رفض التسليم. (البترُ
+    # «...» صار ملاحظةً لا حجباً — الدرس ٢٩٥، قرار المالك: يحجب الاختلاقُ
+    # والرموزُ الداخلية ولغةُ النظام وحدها.)
     blob = kuwait_research_blob()
     _txt = blob["deep_research"]["report"]["report"]
     blob["deep_research"]["report"]["report"] = _txt.replace(
         "## 1. الخلاصة التنفيذية\n",
-        "## 1. الخلاصة التنفيذية\nفقرة تحليلية طويلة بما يكفي تنتهي ببتر "
-        "غير نظيف واضح تماماً...\n", 1)
+        "## 1. الخلاصة التنفيذية\nالتفاصيل في أثر التتبع لهذا البند.\n", 1)
     os.environ["SILK_HERMETIC"] = "1"
     view = build_view(blob)
     view["test_run"] = True

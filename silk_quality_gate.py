@@ -944,8 +944,12 @@ def _check_english_field_and_mission_key_leak(text: str) -> list[dict]:
                                 "مسرَّب في النص المصدَر"})
     try:
         from silk_missions import MISSIONS
+        # الدرس ٢٩٥: «(direct competitors)» شرحٌ إنجليزيّ مشروع — المفتاحان
+        # بلا شرطةٍ سفلية (competitors/logistics) لا يُعدّان تسريباً، تماماً
+        # كما لا يستبدلهما المُصلِح في `silk_render`.
         keys_re = re.compile(
-            r"\b(?:" + "|".join(re.escape(k) for k in MISSIONS) + r")\b")
+            r"\b(?:" + "|".join(re.escape(k) for k in MISSIONS if "_" in k)
+            + r")\b")
         if keys_re.search(text):
             findings.append({"check": "mission_key_leak", "repairable": True,
                              "note": "مفتاح بعثة داخلي خام (snake_case) "
@@ -964,7 +968,8 @@ _CONFIDENTIALITY_LEAK_PATTERNS = [
     ("tool_use_leak", re.compile(r"tool[-\s]?use", re.I), "وسم استخدام أداة"),
     ("claude_mention", re.compile(r"\bClaude\b|كلود"), "ذكر صريح للأداة (كلود)"),
     ("env_var_leak", re.compile(r"SILK_[A-Z_]+"), "اسم متغيّر بيئة داخلي"),
-    ("research_track_leak", re.compile(r"مسار(?:ات)?\s+(?:ال)?بحث"),
+    ("research_track_leak",
+     re.compile(r"مسار(?:ات)?\s+(?:ال)?بحث(?!\s+(?:عن|والتطوير|و\s*التطوير))"),
      "نسبة الحقائق لمسار بحث داخلي"),
     ("facts_list_leak", re.compile(r"بين\s+الحقائق"),
      "تلميح لقائمة حقائق داخلية"),
@@ -2804,6 +2809,40 @@ NON_LITERAL_FLAGGED_BLOCKERS: dict = {
 }
 
 
+# ── الدرس ٢٩٥ (قرار المالك 2026-10-14): ما يحجب **التسليم** ثلاث عائلات فقط ──
+# «قسّمها إلى حاجبة قليلة (اختلاق، رموز داخلية، لغة نظام) وتنبيهية للباقي».
+# حكمُ البوّابة (`run_quality_gate`) يبقى كما هو للمشغّل والقياس والاختبارات؛
+# هذه المجموعةُ وحدَها تقرّر هل يصل الملفُّ العميل (`silk_export_gate`).
+# كلُّ ما عداها — الأسلوب، التكرار، تعارضُ التسميات، الاتساقُ اللغويّ، البنية —
+# يُسلَّم مع ملاحظة، لأنّ الحجبَ بعد الدفع كان يُعيد التقريرَ كلّه للصفر.
+DELIVERY_FABRICATION = frozenset({
+    "derived_number_has_inputs", "reference_to_nonexistent_figure",
+    "hs_code_as_value", "evidence_body_numeric_contradiction",
+    "ledger_value_mismatch"})
+DELIVERY_INTERNAL_TOKENS = frozenset({
+    "ledger_token_unbound", "placeholder_leak", "internal_plumbing_leak",
+    "mission_key_leak", "english_field_leak", "env_var_leak", "tool_use_leak",
+    "facts_list_leak", "raw_confidence", "client_scaffold_leak"})
+DELIVERY_SYSTEM_LANGUAGE = frozenset({
+    "system_language_leak", "claude_mention", "research_track_leak",
+    "ops_warning_leak"})
+DELIVERY_BLOCKING_CHECKS = (DELIVERY_FABRICATION | DELIVERY_INTERNAL_TOKENS
+                            | DELIVERY_SYSTEM_LANGUAGE
+                            | frozenset({"gate_crash"}))
+
+
+def delivery_blockers(findings) -> list:
+    """الملاحظاتُ التي تمنع التسليم — من العائلات الثلاث وحدها، وبالقاعدة
+    نفسِها التي تجعل الملاحظةَ قائدةً للحكم (غيرُ قابلةٍ للإصلاح، أو حارسُ
+    انحدارٍ أطلق على النصّ المُصيَّر بعد إصلاحاته)."""
+    triggers = effective_fail_triggers() | {"gate_crash"}
+    return [f for f in (findings or [])
+            if isinstance(f, dict)
+            and f.get("check") in DELIVERY_BLOCKING_CHECKS
+            and ((not f.get("repairable", True) and f.get("check") in triggers)
+                 or f.get("check") in _REGRESSION_GUARD_FIRED)]
+
+
 def effective_fail_triggers() -> frozenset:
     """مجموعةُ الفحوص الحاجبة الآن — الثابتة زائداً ما تُفعِّله الرايات."""
     extra = set()
@@ -3876,8 +3915,16 @@ _TIME_QTY_RE = re.compile(
     r"اعوام|ربع|أرباع|ارباع)")
 
 
+# الدرس ٢٩٥: رقمٌ يعدّ المدخلات أو يُحيل إلى قسمٍ/جدول ليس قيمةَ البند —
+# «يحتاج حسابُ نقطة التعادل إلى 3 مدخلات» و«في القسم 7» كانا يُحجَبان.
+_COUNT_REF_RE = re.compile(
+    r"\d+\s*(?:مدخلات|مدخل|عناصر|بنود|شروط|خطوات)|"
+    r"(?:القسم|قسم|الجدول|جدول|الشكل|الملحق|البند|الماده|المادة)\s*\(?\d+\)?")
+
+
 def _shows_a_value(seg: str, time_item: bool) -> bool:
     """هل تعرض الجملةُ **قيمةً** للبند، أم جدولاً زمنياً فحسب؟"""
+    seg = _COUNT_REF_RE.sub(" ", seg)
     if not _ANY_DIGIT_RE.search(seg):
         return False
     if time_item:
@@ -4703,7 +4750,8 @@ def _check_adjacent_short_stutter(text: str) -> list[dict]:
     التشغيلي = …» تسميةٌ ثم معادلتُها — الصيغةُ التي يمليها موجّهُ الكاتب
     نفسُه — لا تلعثم، وكانت تحجب الدراسة ١٠."""
     findings = []
-    for line in (seg for ln in _prose_lines(text) for seg in ln.split(":")):
+    for line in (seg for ln in _prose_lines(text)
+                 for seg in re.split(r"[:=—–]", ln)):
         words = [w for w in _WORD_STRIP_RE.split(_norm_ar(line)) if w]
         n = len(words)
         hit = None
