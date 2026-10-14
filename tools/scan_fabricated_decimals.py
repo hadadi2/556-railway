@@ -57,7 +57,12 @@ def main(path: str) -> int:
             result = json.loads(blob or "{}")
         except ValueError:
             continue
-        text = ((result.get("deep_research") or {}).get("report") or {}).get("text")
+        rep = (result.get("deep_research") or {}).get("report") or {}
+        # المخزَّن يحمل نصَّ الكاتب في `report` (الملءُ عند العرض)؛ `text`
+        # اسمُه بعد `build_view` — يُقرأ الاثنان.
+        text = (rep.get("report") or rep.get("text")) if isinstance(rep, dict) else None
+        if not isinstance(text, str):
+            continue
         if not text or "{{" not in text:
             continue
         scanned += 1
