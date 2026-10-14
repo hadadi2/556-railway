@@ -120,7 +120,10 @@ def test_header_brief_and_limits_reflect_deep_research():
     # يصل هذا الحدّ حرفياً — الاسم التجاري العربي يحل محله الآن.
     assert not any("entry_cost" in x for x in view["limits"])
     assert any("تكلفة وصعوبة الدخول" in x for x in view["limits"])
-    assert any("ملاحظة" in x for x in view["limits"])
+    # الدرس ٢٩٥: ملاحظاتُ المراجع لغةُ فحصٍ داخلية — للمشغّل في
+    # `report.unresolved_notes` لا في حدود العميل.
+    assert not any("ملاحظة مراجع" in x for x in view["limits"])
+    assert view["deep_research"]["report"]["unresolved_notes"]
 
 
 def test_next_step_paid_layer_hint_only_on_go_verdict():

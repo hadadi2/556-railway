@@ -318,3 +318,45 @@ def test_every_delivery_blocker_has_its_own_sentence():
 def test_brief_demand_number_is_not_rounded_into_a_new_value():
     from silk_narrative import fmt_number
     assert fmt_number(0.4) == "0.4" and fmt_number(42000000) == "42,000,000"
+
+
+# ── (٥) الدراسة ١٠ بدليل الإنتاج المباشر (سطر المراجع الفعلي) ─────────────────
+
+_STUDY10_NOTE = ("الخلاصة التنفيذية تعد بـ 'دخول مشروط' لكن لا تحدد شروط الحجب "
+                 "الفعلية — تقول 'المتطلب السابق للتعاقد: {{blocking_condition}}' "
+                 "وهي قيمة حقل خام لم تُملأ؛ يجب استبدالها بالشروط الفعلية من "
+                 "القسم 10 (تصنيف القهوة بالهيل + سعر المصنع)")
+
+
+def test_study10_reviewer_note_quoting_a_token_no_longer_blocks():
+    import silk_render as R
+    from canonical_netherlands import netherlands_research_blob
+    os.environ.setdefault("SILK_HERMETIC", "1")
+    blob = copy.deepcopy(netherlands_research_blob())
+    blob["deep_research"]["report"]["unresolved_notes"] = [_STUDY10_NOTE]
+    v = R.build_view(blob)
+    d = G.evaluate(v)
+    assert d["verdict"] != "FAIL", d["fail_drivers"]
+    assert not any("{{" in str(x) for x in v["deep_research"]["limits"])
+    assert v["deep_research"]["report"]["unresolved_notes"] == []
+
+
+def test_reviewer_notes_stay_off_client_limits():
+    import silk_render as R
+    from canonical_netherlands import netherlands_research_blob
+    blob = copy.deepcopy(netherlands_research_blob())
+    blob["deep_research"]["report"]["unresolved_notes"] = ["ملاحظة أسلوبية"]
+    v = R.build_view(blob)
+    assert v["deep_research"]["report"]["unresolved_notes"] == ["ملاحظة أسلوبية"]
+    assert not any("ملاحظة مراجع" in str(x) for x in v["deep_research"]["limits"])
+
+
+def test_study10_breakeven_line_is_not_a_stutter():
+    line = ("نقطة التعادل التشغيلي: نقطة التعادل التشغيلي = التكاليف الثابتة ÷ "
+            "هامش المساهمة. المتاح: مؤشر على الهامش من فارق السعر المرصود.")
+    assert not Q._check_adjacent_short_stutter(line)
+
+
+def test_reviewer_is_told_ledger_tokens_are_filled_later():
+    src = open(os.path.join(_ROOT, "silk_ai_judge.py"), encoding="utf-8").read()
+    assert "يملؤها النظام بقيمتها ومصدرها عند" in src

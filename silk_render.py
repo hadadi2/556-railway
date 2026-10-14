@@ -3408,8 +3408,12 @@ def _deep_research_view(result: dict, lang: str = "ar",
     # لأغراض تشخيص المطوّرين (silk_ai_judge.failure_reason) لكن كان يصل
     # العميل حرفياً بما فيه توجيه تشغيلي ("راجع سجلّات الخادم") — العقد
     # الخام يبقى في `report_out` كما هو؛ التطهير هنا للعرض فقط.
+    # الدرس ٢٩٥ (الدراسة ١٠): ملاحظةُ مراجعٍ تقتبس رمزَ سجلٍّ إنذارٌ كاذبٌ
+    # بالبناء — الرمزُ يُملأ عند العرض دائماً — وكانت تحمل القوسين إلى نصّ
+    # العميل فتحجبه (`ledger_token_unbound`). تُسقَط.
     clean_unresolved = [_strip_internal_plumbing(n)
-                        for n in (report_out.get("unresolved_notes") or [])]
+                        for n in (report_out.get("unresolved_notes") or [])
+                        if "{{" not in str(n)]
     clean_failure_reason = (_strip_internal_plumbing(report_out.get("failure_reason"))
                             if report_out.get("failure_reason") else "")
     # PART B1 (أمر العمل الرئيس — «حدود هذا البحث» تناقض المتن): البعثات
@@ -3444,8 +3448,10 @@ def _deep_research_view(result: dict, lang: str = "ar",
              + [_i18n.t("limit_analyst_thin", lang,
                         label=_category_label(c, lang))
                for c in (analyst.get("missing_categories") or [])]
-             + [_i18n.t("limit_unresolved_note", lang, detail=n)
-                for n in clean_unresolved])
+             # الدرس ٢٩٥: ملاحظاتُ المراجع لغةُ فحصٍ داخلية («ملاحظة مراجع لم
+             # تُعالَج: …») — تبقى للمشغّل في `report.unresolved_notes` (لوحته
+             # وملفّه)، ولا تدخل حدودَ العميل ولا جدولَ نواقصه.
+             )
     if not report_out.get("report") and clean_failure_reason:
         limits.append(_i18n.t("limit_report_missing", lang,
                               detail=clean_failure_reason))
