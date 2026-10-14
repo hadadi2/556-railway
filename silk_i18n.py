@@ -411,6 +411,35 @@ TERMS: dict[str, dict[str, str]] = {
     "cond_closure_missing": {"ar": "استكمال {parts}",
                              "en": "complete {parts}"},
     "cond_numbered": {"ar": "الشرط {n}: {text}", "en": "Condition {n}: {text}"},
+    # طلب المالك 2026-10-14 («لا تعنيني درجة الثقة والتقييم»): الجانبُ الضعيف
+    # يُقال للعميل بمعناه في السوق وبما يفعله — بلا نسبةِ قوّة. تحت رايةِ
+    # خصوصية المقاييس وحدها؛ سطحُ المشغّل يرى النسبة في جدول الجوانب.
+    "cond_weak_plain_market": {
+        "ar": "الطلب في هذه السوق محدود قياساً بحجمها ونموها، فلا يكفي وحده "
+              "لدخول كامل. ابدأ بكمية صغيرة تختبر الطلب قبل التوسّع.",
+        "en": "Demand in this market is limited for its size and growth, so "
+              "it does not justify a full entry on its own. Start with a small "
+              "quantity that tests demand before scaling up."},
+    "cond_weak_plain_competition": {
+        "ar": "المنافسة في هذه السوق شديدة. ادخل بميزة واضحة في السعر أو "
+              "الجودة، أو ابدأ بكمية صغيرة.",
+        "en": "Competition in this market is strong. Enter with a clear price "
+              "or quality advantage, or start with a small quantity."},
+    "cond_weak_plain_regulatory": {
+        "ar": "اشتراطات الدخول أو الرسوم الجمركية تحتاج تحققاً. راجعها مع "
+              "الجهة المختصة قبل الالتزام.",
+        "en": "Entry requirements or customs duties need checking. Review "
+              "them with the competent authority before committing."},
+    "cond_weak_plain_profit": {
+        "ar": "هامش الربح ضعيف عند الأسعار المرصودة. راجع تكلفتك وسعر بيعك "
+              "قبل الالتزام.",
+        "en": "The margin is thin at the observed prices. Review your cost "
+              "and selling price before committing."},
+    "cond_weak_plain_risk": {
+        "ar": "مخاطر هذه السوق أعلى من المعتاد. ابدأ بكمية صغيرة وبشروط دفع "
+              "آمنة.",
+        "en": "This market carries above-normal risk. Start with a small "
+              "quantity and secure payment terms."},
     "cond_closure_weak": {"ar": "معالجة ضعف جانب {pillar} قبل الالتزام",
                           "en": "Address the weak {pillar} aspect before "
                                 "committing"},

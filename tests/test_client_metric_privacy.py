@@ -107,7 +107,8 @@ def test_hidden_list_is_declared_once_and_reaches_the_view(monkeypatch):
     v = R.build_view(_result())
     assert v["client_hidden_metrics"] == list(R.CLIENT_HIDDEN_METRICS)
     assert set(v["client_hidden_metrics"]) == {
-        "score", "confidence", "verification", "component_confidence"}
+        "score", "confidence", "verification", "component_confidence",
+        "decision_mechanics"}
     basis = v["decision"]["basis"]
     assert basis["client_hidden_metrics"] == v["client_hidden_metrics"]
     # **لا مفتاحَ يُحذَف ولا رقمَ يتغيّر**: المحرّكُ والبوّابةُ يقرؤون كما هم.
@@ -127,7 +128,8 @@ def test_client_docx_carries_none_of_the_four_metrics(monkeypatch, tmp_path):
     v = R.build_view(_result())
     out = SR.render_client_docx(v, str(tmp_path / "client.docx"))
     text = docx_all_text(out)
-    assert v["decision"]["basis"]["head"] in text, "أساسُ الحكم نفسُه باقٍ"
+    # طلب المالك 2026-10-14: آليةُ التقييم تخرج أيضاً؛ يبقى ما يُحسَم قبل الالتزام.
+    assert v["decision"]["basis"]["head"] not in text, "آليةُ التقييم وصلت العميل"
     assert "من 100" not in text, "الدرجةُ الكلية وصلت العميل"
     assert not re.search(r"بدرجة ثقة|ثقة (?:عالية|متوسطة|منخفضة)", text)
     assert "مؤشّر تغطية المصادر" not in text, "قسمُ نسبة التحقّق وصل العميل"

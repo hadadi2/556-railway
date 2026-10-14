@@ -188,6 +188,10 @@ CLIENT_HIDDEN_METRICS: tuple = (
     "confidence",             # درجةُ ثقة الحكم تسميةً ونسبةً
     "verification",           # نسبةُ التحقّق من البيانات وقسمُ التغطية
     "component_confidence",   # عمودُ «كم تحقّقنا منه» لكلّ مكوّن
+    # طلب المالك 2026-10-14: «لا تعنيني درجة الثقة والتقييم، أحتاج دراسة
+    # للسوق والفرصة» — قاعدةُ الحكم وجدولُ قوّة الجوانب والاعتراضُ عليه آليةُ
+    # تقييمٍ لا معلومةُ سوق؛ يبقى للعميل ما يُحسَم قبل الالتزام وخطتُه.
+    "decision_mechanics",
 )
 
 
@@ -466,8 +470,11 @@ def condition_texts(ed: object, lang: str = "ar") -> "list | None":
             text = _I.t("cond_pillar_missing", lang, pillar=label, parts=parts)
             closure = _I.t("cond_closure_missing", lang, parts=parts)
         elif kind == "pillar_weak":
-            text = _I.t("cond_pillar_weak", lang, pillar=label,
-                        pct=it.get("pct"))
+            _plain = f"cond_weak_plain_{it.get('pillar')}"
+            text = (_I.t(_plain, lang)
+                    if client_metric_privacy() and _plain in _I.TERMS
+                    else _I.t("cond_pillar_weak", lang, pillar=label,
+                              pct=it.get("pct")))
             closure = _I.t("cond_closure_weak", lang, pillar=label)
         else:
             continue

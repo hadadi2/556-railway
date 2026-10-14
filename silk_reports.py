@@ -4622,19 +4622,24 @@ def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
     if dr and _verdict_tone(_resolve_vtxt(dr)) != _verdict_tone(ed.get("verdict")):
         return
 
-    doc.add_heading(basis["head"], level=2)
-    if basis.get("rule_line"):
+    # طلب المالك 2026-10-14: آليةُ التقييم (القاعدة، جدول قوّة الجوانب،
+    # الاعتراض) تخرج من نسخة العميل؛ يبقى ما يُحسَم قبل الالتزام وخطتُه.
+    mech = "decision_mechanics" not in _client_hidden(view)
+    if mech:
+        doc.add_heading(basis["head"], level=2)
+    if mech and basis.get("rule_line"):
         doc.add_paragraph(basis["rule_line"])
     # الموجة الرابعة: سطرُ «X من 100 وتحقّقنا من Y%» مقياسٌ داخليّ — يُسقَط
     # كاملاً حين تُعلِن القائمةُ إخفاءَ الدرجة (لا «—» ولا نسبةٌ عارية).
     if basis.get("score_line") and "score" not in _client_hidden(view):
         doc.add_paragraph(basis["score_line"])
-    _add_table(doc, [basis["col_pillar"], basis["col_strength"],
-                     basis["col_note"]],
-               [[r["name"],
-                 (f"{r['strength_pct']}%" if r["strength_pct"] is not None
-                  else basis["not_computed"]),
-                 r["note"]] for r in basis.get("pillars") or []])
+    if mech:
+        _add_table(doc, [basis["col_pillar"], basis["col_strength"],
+                         basis["col_note"]],
+                   [[r["name"],
+                     (f"{r['strength_pct']}%" if r["strength_pct"] is not None
+                      else basis["not_computed"]),
+                     r["note"]] for r in basis.get("pillars") or []])
     if basis.get("conditions"):
         doc.add_heading(basis["conditions_head"], level=2)
         for c in basis["conditions"]:
@@ -4648,7 +4653,7 @@ def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
                      ("condition", "action", "owner", "window", "output",
                       "gate")] for p in basis["plan"]],
                    widths=[1.2, 3, 2, 1.8, 2, 2.5])
-    if basis.get("counter_case_line"):
+    if mech and basis.get("counter_case_line"):
         doc.add_heading(basis["counter_case_head"], level=2)
         doc.add_paragraph(_client_sanitize(basis["counter_case_line"], lang))
 

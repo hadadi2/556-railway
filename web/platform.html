@@ -3322,14 +3322,17 @@ function viewReportBtn(s) {
          (`silk_render.decision_basis`) — لا حسابَ ولا تسميةَ ولا تعريبَ في
          JS، فلا تنشأ خريطةٌ ثانية تتباعد عن مصدرها. */
       const _b = (v.decision && v.decision.basis) || null;
+      /* طلب المالك 2026-10-14: آليةُ التقييم (القاعدة/جدول القوّة/الاعتراض)
+         تخرج من نسخة العميل — نفسُ قائمة docx (`decision_mechanics`). */
+      const _mech = !_hide("decision_mechanics");
       if (_b) {
-        html += "<label>" + esc(_b.head) + "</label>";
-        if (_b.rule_line)
+        if (_mech) html += "<label>" + esc(_b.head) + "</label>";
+        if (_mech && _b.rule_line)
           html += '<p class="hint" style="margin:0 0 8px">' +
                   esc(_b.rule_line) + "</p>";
         if (_b.score_line && !_hide("score"))
           html += '<p style="margin:0 0 10px">' + esc(_b.score_line) + "</p>";
-        const prows = Array.isArray(_b.pillars) ? _b.pillars : [];
+        const prows = _mech && Array.isArray(_b.pillars) ? _b.pillars : [];
         if (prows.length) {
           html += '<div class="tbl"><table><thead><tr><th>' +
             esc(_b.col_pillar) + "</th><th>" + esc(_b.col_strength) +
@@ -3351,7 +3354,7 @@ function viewReportBtn(s) {
         if (conds.length)
           html += '<div class="rlimits"><b>' + esc(_b.conditions_head) +
             "</b>" + conds.map((c) => "• " + esc(c)).join("<br>") + "</div>";
-        if (_b.counter_case_line)
+        if (_mech && _b.counter_case_line)
           html += "<label>" + esc(_b.counter_case_head) + "</label>" +
             '<p style="margin:0 0 10px">' + esc(_b.counter_case_line) + "</p>";
       }
