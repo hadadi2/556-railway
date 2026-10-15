@@ -819,6 +819,49 @@ def lead_relevant_to_product(lead: object, hs_code: object = None,
     return ok, why
 
 
+#: الدرس ٢٩٦ (دراسة قهوة البحرين): «قائمة العملاء» حملت مقاهيَ ومحامصَ
+#: ومورّدَ مكائن — منافذُ ضيافةٍ تبيع للمستهلك، ومورّدُ معدّاتٍ لا يشتري
+#: المنتج، ومحمصةٌ محلية **تنافس** مصدّرَ البنّ المحمّص لا تستورده. القائمةُ
+#: قائمةُ مستوردين/موزّعين؛ هؤلاء يُسقَطون بسببٍ مسمّى (فئةً أو اسماً).
+_LEAD_NOT_BUYER_ACTIVITY = {
+    "cafe": "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع",
+    "coffee shop": "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع",
+    "espresso bar": "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع",
+    "restaurant": "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع",
+    "coffee machine supplier": "مورّدُ معدّاتٍ لا يشتري المنتج",
+    "kitchen supply store": "مورّدُ معدّاتٍ لا يشتري المنتج",
+    "restaurant supply store": "مورّدُ معدّاتٍ لا يشتري المنتج",
+}
+_LEAD_NOT_BUYER_NAME_RE = __import__("re").compile(
+    r"\b(?:caf[eé]|coffee\s*shop|espresso\s*bar)\b|مقهى|كافيه|كافيتيريا",
+    __import__("re").IGNORECASE)
+#: محمصةٌ محلية منافسٌ لمصدّر البنّ المحمّص (0901.21/22) — لا مشترٍ له.
+_ROASTER_RE = __import__("re").compile(r"\broast(?:er|ers|ery|ing)\b|محمص",
+                                       __import__("re").IGNORECASE)
+
+
+def lead_local_competitor(lead: dict, hs_code: object) -> str:
+    """محمصةٌ محلية لمصدّر البنّ المحمّص — منافسٌ لا مستورد (الدرس ٢٩٦).
+
+    خارج `lead_product_fit` عمداً: «دراسة السوق» تُبقيها في جدول الجهات بدور
+    «منافس» (`silk_study_entities`)؛ قائمةُ المستوردين/الموزّعين وحدَها تُسقطها."""
+    key = _activity_key_of(lead)
+    if (_hs_digits(hs_code).startswith("09012") and key not in _ACTIVITY_CATEGORY_FREE
+            and _ROASTER_RE.search(_lead_text(lead))):
+        return "محمصةٌ محلية تنافس المنتج المحمّص لا تستورده"
+    # الاسمُ وحدَه («… Café») قرينةُ منفذ ضيافة في **قائمة المستوردين** فقط
+    # (مراجعة §58): «Café Najjar» علامةُ بنٍّ تبقى في جدول جهات الدراسة.
+    if not key and _LEAD_NOT_BUYER_NAME_RE.search(str((lead or {}).get("name") or "")):
+        return "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع"
+    return ""
+
+
+def _lead_not_buyer(lead: dict, hs_code: object) -> str:
+    """سببُ أنّ الرابط ليس مستورداً/موزّعاً للمنتج — من **فئته المُدرَجة**
+    وحدَها (تصنيفُ المصدر موثوق؛ الاسمُ وحدَه لا يكفي هنا) — أو `""`."""
+    return _LEAD_NOT_BUYER_ACTIVITY.get(_activity_key_of(lead), "")
+
+
 def lead_product_fit(lead: object, hs_code: object = None, product: str = "",
                      market_iso3: str = "") -> tuple:
     """(يُبقى؟، سببُ الإسقاط، حالةُ الدليل) — تقرير ٧ §4.4 فوق الدرس ٢٦٣.
@@ -839,6 +882,9 @@ def lead_product_fit(lead: object, hs_code: object = None, product: str = "",
     if key in _ACTIVITY_NON_TRADE:
         return False, (f"نشاطُ «{activity_label_ar(key)}» مقدّمُ خدمةٍ لا "
                        "طرفٌ تجاريّ يشتري أو يوزّع"), ""
+    why_not = _lead_not_buyer(lead, hs_code)
+    if why_not:
+        return False, why_not, ""
     code = _hs_digits(hs_code)
     fam = _ACTIVITY_HS_CHAPTERS.get(key)
     if fam and len(code) >= 2:

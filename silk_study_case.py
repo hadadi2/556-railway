@@ -44,8 +44,81 @@ def _findings(dr: dict, mission: str) -> list[dict]:
     return out
 
 
-def _indicator(dr: dict, words: tuple[str, ...], lo: float, hi: float) -> dict | None:
-    """أحدث نقطة رقمية بسنة بنيوية تحمل إحدى الكلمات في ملاحظتها."""
+#: الدرس ٢٩٦ (بوّابة المالك ٣): ادّعاءٌ اقتصاديٌّ كليٌّ حادّ لا يُنشَر بلا
+#: مصدرٍ رسميٍّ للمؤشر نفسِه. «انكماش 11.3% لعام 2026» في دراسة قهوة البحرين
+#: جاء من مطابقة الكلمة العارية «النمو» (تطابق نموَّ الواردات والمركّب) بينما
+#: رقمُ IMF الحقيقيّ لم يكن قابلاً للاختيار (بلا `data_year`).
+GDP_SHARP_ABS = 5.0
+_GDP_WORDS = ("نمو الناتج", "GDP growth", "NGDP_RPCH", "real GDP")
+
+
+def _land_route(iso3: str) -> dict:
+    """الدرس ٢٩٦: سوقٌ برّية (جسر الملك فهد للبحرين) لا تُكتب «شحناً بحرياً
+    من موانئ المملكة» — المسارُ من الجغرافيا (`silk_charter`)."""
+    try:
+        from silk_charter import determine_transport_mode
+        land = determine_transport_mode(iso3).get("mode") == "land"
+    except Exception:  # noqa: BLE001
+        land = False
+    route = None
+    if land:
+        route = ("عبر جسر الملك فهد من المنطقة الشرقية" if str(iso3).upper() == "BHR"
+                 else "عبر المنافذ البرية المشتركة")
+    return {"land": land, "land_route": route}
+
+
+def _macro_gdp(dr: dict) -> dict | None:
+    """نموُّ الناتج الحقيقيّ — IMF WEO أوّلاً، وغيرُه بكلمات المؤشر نفسِه فقط؛
+    وقيمةٌ حادّة (|ق| > 5%) من غير IMF/البنك الدولي فجوةٌ لا تهديدٌ منشور."""
+    import datetime as _dt
+    official = None
+    other = None
+    for mission in ("demographics_economy", "risk_news", "logistics", "trade_flow"):
+        for f in _findings(dr, mission):
+            v, note, y = f.get("value"), str(f.get("note") or ""), f.get("data_year")
+            src = str(f.get("source") or "")
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or not isinstance(y, int):
+                continue
+            if not any(w.lower() in note.lower() for w in _GDP_WORDS) or not (-30 <= float(v) <= 30):
+                continue
+            row = {"value": float(v), "year": y, "source": src,
+                   "forecast": y >= _dt.date.today().year or "تنبؤ" in note or "تقدير" in note}
+            is_official = "IMF" in src or "World Bank" in src or "البنك الدولي" in src
+            slot = official if is_official else other
+            # السنةُ الفعلية المكتملة قبل التنبؤ؛ ثم الأحدث.
+            if slot is None or (not row["forecast"], y) > (not slot["forecast"], slot["year"]):
+                if is_official:
+                    official = row
+                else:
+                    other = row
+    if official:
+        return official
+    if other and abs(other["value"]) <= GDP_SHARP_ABS:
+        return other
+    return None
+
+
+def _indicator(dr: dict, words: tuple[str, ...], lo: float, hi: float,
+               year: "int | None" = None) -> dict | None:
+    """أحدث نقطة رقمية بسنة بنيوية تحمل إحدى الكلمات في ملاحظتها.
+
+    `year` (الدرس ٢٩٦، مراجعة §58): التضخمُ بسنة النموّ نفسِها حين تُرصَد —
+    وإلا جملةٌ واحدة تقرن نموَّ 2024 الفعليّ بتضخّمِ تنبؤٍ لعام 2027."""
+    if year is not None:
+        same = _indicator(dr, words, lo, hi)
+        pinned = None
+        for mission in ("risk_news", "demographics_economy", "logistics", "trade_flow"):
+            for f in _findings(dr, mission):
+                v, note = f.get("value"), str(f.get("note") or "")
+                if (f.get("data_year") == year and isinstance(v, (int, float))
+                        and not isinstance(v, bool) and any(w in note for w in words)
+                        and lo <= float(v) <= hi):
+                    pinned = {"value": float(v), "year": year,
+                              "source": str(f.get("source") or "")}
+                    break
+            if pinned:
+                break
+        return pinned or (same if same and same["year"] <= year else None)
     best = None
     for mission in ("risk_news", "demographics_economy", "logistics", "trade_flow"):
         for f in _findings(dr, mission):
@@ -337,8 +410,9 @@ def build_case(found: dict, *, product_short: str | None = None,
 
     # ── المؤشرات العامة ──────────────────────────────────────────────────
     fx = _indicator(dr, ("سعر الصرف", "PA.NUS.FCRF", "صرف"), 0.01, 100000)
-    gdp = _indicator(dr, ("نمو الناتج", "GDP growth", "النمو"), -30, 30)
-    inf = _indicator(dr, ("التضخم", "inflation"), -10, 200)
+    gdp = _macro_gdp(dr)
+    inf = _indicator(dr, ("التضخم", "inflation"), -10, 200,
+                     year=gdp["year"] if gdp else None)
     lpi = _indicator(dr, ("LPI", "الأداء اللوجستي"), 1, 5)
     wgi = _indicator(dr, ("PV.EST", "الاستقرار السياسي"), -3, 3)
 
@@ -420,7 +494,8 @@ def build_case(found: dict, *, product_short: str | None = None,
                     "segment": segment, "halal_relevant": None, "base_word": product_short or product,
                     "raw_input_word": None},
         "market": {"iso3": iso3, "iso2": iso2, "name_ar": name_ar, "nisba_f": _nisba(iso3)[0],
-                   "nisba_m": _nisba(iso3)[1], "capital_port": None},
+                   "nisba_m": _nisba(iso3)[1], "capital_port": None,
+                   **_land_route(iso3)},
         "prepared": {"year": today.year, "month": today.month, "collected_on": today.isoformat()},
         "imports": {"source": "UN Comtrade", "source_line": f"تصريحات الاستيراد لدى {name_ar}، قاعدة بيانات UN Comtrade.",
                     "series": series, "unit_value_first": reliable[0]["unit_value"] if reliable else None,
@@ -435,6 +510,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                "avg_rate": fx["value"] if fx else None, "range_years": None, "range_pct": None,
                "source": "البنك الدولي"},
         "macro": {"year": gdp["year"] if gdp else None, "gdp_growth_pct": gdp["value"] if gdp else None,
+                  "gdp_forecast": bool(gdp and gdp.get("forecast")),
                   "inflation_pct": inf["value"] if inf else None},
         "governance": {"available": wgi is not None, "pv_est": wgi["value"] if wgi else None},
         "logistics": {"lpi": lpi["value"] if lpi else None, "lpi_year": lpi["year"] if lpi else None, "sea_days_word": None},

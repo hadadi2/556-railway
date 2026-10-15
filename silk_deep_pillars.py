@@ -583,11 +583,19 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
         saudi_share = s_top
     # الدرس 290 (مراجعة §58): حجمُ السوق من سلسلة الواردات عند سنة الأساس — مرشّحٌ من سنةٍ
     # جزئية (مرآة ناقصة) أو نثرٍ لسنة أخرى لا يصير TAM بينما الرسم والدفتر على سنة الأساس.
-    _series_pts = [p for p in (import_series(missions).get("series") or []) if not p.get("partial")]
+    _series = import_series(missions)
+    _series_pts = [p for p in (_series.get("series") or []) if not p.get("partial")]
     _tam = float(_series_pts[-1]["value"]) if _series_pts else _numeric(trade, "tam_usd")
+    # الدرس ٢٩٦ (قرار المالك «fix it all» 2026-10-15): عمودُ القرار يقرأ مركّبَ
+    # السلسلة المرسومة نفسَه الذي يقرؤه السجلُّ والنصّ — رقمٌ ملتقَطٌ من نثر
+    # البعثة كان يُعرَض أو يغيب فيُطبَع «غير متاح» والسلسلةُ تعطيه. النثرُ
+    # احتياطٌ فقط. خطُّ الأساس حُدِّث بقراره (nadec_yemen_dairy: السوق
+    # 0.363→0.483، الحكم ثابت).
+    _cagr = _series.get("cagr_pct")
     market = {
         "tam_usd": _tam,
-        "import_cagr_pct": _numeric(trade, "import_cagr_pct"),
+        "import_cagr_pct": (_cagr if _cagr is not None
+                            else _numeric(trade, "import_cagr_pct")),
         "gdp_per_capita_usd": _numeric(econ, "gdp_per_capita_usd"),
         "saudi_share_pct": saudi_share,
     }
@@ -856,10 +864,18 @@ def import_series(missions: dict) -> dict:
     full = [p for p in series if not p["partial"]]
     years_missing = sorted(y for y in missing if y not in best)
     growth = cagr = None
-    if len(full) >= 2:
+    # الدرس ٢٩٦ (دراسة قهوة البحرين): «نمو 213% ومركّب 21%» قاعدتُهما سنةُ
+    # مرآةٍ أقدم، بينما السلسلةُ المباشرة 2019–2024 تعطي نحو 13.7%. النموُّ من
+    # تصريحات السوق نفسِها حين تكفي (نقطتان)، والمرآةُ احتياطٌ لا قاعدة.
+    direct = [p for p in full if not p.get("mirrored")]
+    # المراجعة الذاتية §58: المباشرةُ قاعدةٌ فقط حين تنتهي عند سنة الأساس —
+    # وإلا يُعرَض نموُّ 2019–2022 بجوار حجم سوق 2024.
+    basis = (direct if len(direct) >= 2 and full
+             and direct[-1]["year"] == full[-1]["year"] else full)
+    if len(basis) >= 2:
         try:
             from silk_trend import cagr_pct, growth_pct
-            pairs = [(p["year"], p["value"]) for p in full]
+            pairs = [(p["year"], p["value"]) for p in basis]
             growth, cagr = growth_pct(pairs), cagr_pct(pairs)
         except Exception:  # noqa: BLE001 — النموُّ تحسينٌ لا شرط
             growth = cagr = None

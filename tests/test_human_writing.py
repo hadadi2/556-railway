@@ -220,7 +220,9 @@ def test_the_client_table_uses_natural_headings_and_a_real_ledger():
     قطّ؛ الآن يقرأ `view["ledger"]` ويعنون «ما لم نعرفه بعد | كيف تعرفه»."""
     from gen_client_report_sample import build_sample_view
     cells = _client_cells(build_sample_view("ar"))
-    assert "ما لم نعرفه بعد" in cells and "كيف تعرفه" in cells
+    # الدرس ٢٩٦: عمودُ «كيف تعرفه» يُطبَع حين يحمل سبيلاً واحداً على الأقل؛
+    # كلُّه «—» = يُسقَط (بلاغ المالك: «جدول كيف تعرفه الفارغ»).
+    assert "ما لم نعرفه بعد" in cells
     assert not (_STATUS_LABELS & set(cells))
     assert any("لا يستند إلا إلى مصادر غير رسمية" in c for c in cells)
 

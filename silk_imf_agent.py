@@ -130,9 +130,11 @@ def imf_indicator(iso3: str, metric: str, year: int | None = None) -> DataPoint:
     req_tag = (f" (السنة المطلوبة {year} غير متاحة — أحدث متاح {yr})"
                if year is not None and yr != year else "")
     conf = 0.6 if is_estimate else 0.85
+    # الدرس ٢٩٦: السنةُ بنيويةٌ (`data_year`) لا في الملاحظة وحدها — قارئُ
+    # الدراسة يشترطها، فكان رقمُ IMF الصحيح لا يُختار أبداً ويفوز رقمٌ آخر.
     return DataPoint(round(float(val), 3), "IMF WEO", conf,
                      f"{label} — {iso} سنة {yr} (IMF DataMapper)"
-                     f"{est_tag}{req_tag}", _today())
+                     f"{est_tag}{req_tag}", _today(), data_year=int(yr))
 
 
 def _record_failure(iso: str, code: str, detail: str) -> None:

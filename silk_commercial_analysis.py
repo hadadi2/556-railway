@@ -630,8 +630,20 @@ def fill_insights(dr: dict, put, *, hs_code=None, market_iso3: str = "",
         n_re = sum(1 for r in rows if r.get("reexporter_likely"))
         n_prod = sum(1 for r in rows if r.get("reexporter_likely") is False)
         n_unknown = len(rows) - n_re - n_prod
-        summary = (f"{n_prod} منتج و{n_re} معيد تصدير مرجَّح"
-                   + (f" و{n_unknown} لم يُقيَّم" if n_unknown else ""))
+        # الدرس ٢٩٦: «2 منتج و0 معيد تصدير» — العددُ والمعدودُ بمطابقة العربية.
+        from silk_narrative import count_sentence as _cs
+        parts = []
+        if n_prod:
+            parts.append(_cs(n_prod, "منتج", "منتجان", "منتجين", "منتجاً"))
+        if n_re:
+            parts.append(_cs(n_re, "معيد تصدير مرجَّح", "معيدا تصدير مرجَّحان",
+                             "معيدي تصدير مرجَّحين", "معيدَ تصدير مرجَّحاً"))
+        if n_unknown:
+            parts.append(_cs(n_unknown, "مورّد", "مورّدان", "مورّدين", "مورّداً")
+                         + " لم يُقيَّم")
+        summary = " و".join(parts)
+        if n_prod and not n_re:
+            summary += " — لا معيدَ تصدير مرجَّحاً بين كبار المورّدين"
         put(L.insight_entry(
             "supplier_nature", summary, grade=L.INFERENCE,
             basis=("top_supplier_share_pct",), items=[dict(r) for r in rows],

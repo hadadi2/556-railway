@@ -110,6 +110,13 @@ self-review catches what hermetic tests structurally cannot.
 `docs/LESSONS.md` بنفس الجلسة + أنشئ اختبار قفل **قبل** الفكس نفسه (test-first
 lock) + اربطه بمرساة في `tests/test_lessons_enforcement.py`.
 
+**بلاغُ المالك لا يعود (الدرس ٢٩٦):** كلُّ عبارةٍ يرفضها المالك في دراسةٍ مسلَّمة
+تُضاف صفّاً إلى `data/owner_flags_l1.csv` (نمط + مثال يطابقه + السبب) — يقرؤه
+فحصُ مسوّدة الكاتب والبوّابةُ النهائية والاختبار. وقبل وسم أيّ إصلاحٍ لدراسةٍ
+بلّغ عنها «جاهزاً» يُعاد بناءُ مستندها الفعليّ بالشيفرة الجديدة:
+`python3 tools/audit_study_reports.py --study N --client` على Railway — العيّنةُ
+الاصطناعية وحدَها ليست دليلاً على دراسة المالك.
+
 ## Commands
 
 ```bash

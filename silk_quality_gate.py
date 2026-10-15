@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
+import functools
 import re
 
 log = logging.getLogger(__name__)
@@ -1178,8 +1179,18 @@ def _check_reversed_route(view: dict) -> list[dict]:
     if not text or not iso3:
         return []
     names = set(_market_route_names(iso3)) | {_norm_ar(n) for n in _PORT_AR.get(iso3, ())}
+    try:
+        from silk_charter import determine_transport_mode
+        land = determine_transport_mode(iso3).get("mode") == "land"
+    except Exception:  # noqa: BLE001
+        land = False
     for rx in (_ROUTE_AR_RE, _ROUTE_EN_RE, _ROUTE_ARROW_RE):
         for m in rx.finditer(text):
+            # الدرس ٢٩٦: «البحرين – الدمام» وصفُ منفذٍ برّيّ (جسر الملك فهد) لا
+            # اتجاه — الشرطةُ بلا سهمٍ لا تُقرأ اتجاهاً في سوقٍ برّية.
+            if land and rx is _ROUTE_ARROW_RE and not any(
+                    a in m.group(0) for a in ("→", "->", "←")):
+                continue
             origin = _norm_ar(m.group(1)).lower()
             if any(n and n in origin for n in names):
                 span = " ".join(m.group(0).split())
@@ -2331,6 +2342,196 @@ def _check_language_quality(text: str, lang: str = "ar") -> list[dict]:
     return out
 
 
+# ── الدرس ٢٩٦ (بوّابة المالك ١): تسميةُ حقلٍ أو اسمُ وكيلٍ بدل القيمة ──────
+# دراسة قهوة البحرين: «يسجل مستنتج من أرقام مرصودة» و«تبلغ مستنتج من أرقام
+# مرصودة» (رمزُ **حالة** في خانة **قيمة** — وصفٌ ظهر بدل الرقم)، و`reach_agent`
+# في نصّ العميل. كلاهما بنيةٌ داخلية لا لغةُ قارئ ⇒ حاجبُ تسليم.
+_STATUS_PHRASES_PLAIN = ("مستنتج من ارقام مرصودة", "متاح من مصدر موثق",
+                         "مقدر بافتراض معلن", "متاح من مصادر غير رسمية",
+                         "متاح من بيانات الدول الشريكة",
+                         "متاح من مصدر رسمي بثقة منخفضة",
+                         "inferred from observed figures",
+                         "available from a documented source",
+                         "estimated under a declared assumption")
+_VALUE_VERB_PLAIN = (r"(?:ي|ت)?سجل(?:ت)?|(?:ي|ت)?بلغ(?:ت)?|(?:ي|ت)صل\s+الي|"
+                     r"وصل(?:ت)?\s+الي|قدر(?:ه|ها)|بنسبة|بقيمة|بمعدل|"
+                     r"records?|recorded|reach(?:es|ed)?|stands?\s+at")
+_STATUS_AS_VALUE_RE = re.compile(
+    r"(?<![\w])[وف]?(?:" + _VALUE_VERB_PLAIN + r")\s*[:：]?\s*(?:"
+    + "|".join(re.escape(_norm_ar(p)) for p in _STATUS_PHRASES_PLAIN) + r")",
+    re.IGNORECASE)
+#: معرّفٌ برمجيّ (snake_case أو اسمُ صنفِ وكيل) خارج رابطٍ أو بريد — لا مكانَ
+#: له في نثر عميل بأيّ لغة.
+_CODE_IDENT_RE = re.compile(
+    r"(?<![\w./@-])(?:[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Za-z]+Agent)(?![\w@-])")
+_URLISH_RE = re.compile(r"(?:https?://|www\.)\S+|\S+@\S+|\S+\.(?:com|net|org|"
+                        r"gov|bh|sa|ae|io)\S*", re.IGNORECASE)
+
+
+def _check_field_label_as_value(text: str, idents: bool = True) -> list[dict]:
+    """`status_label_as_value` + `agent_name_leak` (الدرس ٢٩٦، حاجبان):
+    تسميةُ حالةٍ في خانة قيمة، أو معرّفٌ برمجيّ/اسمُ وكيل في نصّ العميل.
+
+    `idents=False` على نصّ الكاتب الخام: أسماءُ الأدوات فيه يعيد صياغتَها
+    مُطهِّرُ العميل (حارسُها `mission_key_leak` قابلٌ للإصلاح) — المعرّفُ
+    يُحجَب على **المستند النهائي** وحدَه، بعد التطهير."""
+    if not text:
+        return []
+    findings: list[dict] = []
+    plain = _norm_ar(text)
+    m = _STATUS_AS_VALUE_RE.search(plain)
+    if m:
+        findings.append({
+            "check": "status_label_as_value", "repairable": False,
+            "note": (f"تسميةُ حالة معطى ظهرت بدل قيمته: «{m.group(0)}» — "
+                     "قالبٌ لم يُملأ بالقيمة؛ لا يُسلَّم")})
+    if not idents:
+        return findings
+    body = _URLISH_RE.sub(" ", text)
+    hits = list(dict.fromkeys(x.group(0) for x in _CODE_IDENT_RE.finditer(body)))
+    if hits:
+        findings.append({
+            "check": "agent_name_leak", "repairable": False,
+            "note": ("معرّفٌ برمجيّ أو اسمُ وكيل في نصّ العميل: "
+                     + "، ".join(f"«{h}»" for h in hits[:4]))})
+    return findings
+
+
+# ── الدرس ٢٩٦ («كل مرة تظهر نفس المشاكل — أوجد حلاً نهائياً»): سجلُّ بلاغات المالك ──
+# كلُّ عبارةٍ رفضها المالك في دراسةٍ مسلَّمة تصير صفّاً في `data/owner_flags_l1.csv`
+# (نمطٌ + مثالٌ يطابقه + السبب + الأسواق إن خصّت). السجلُّ الواحد يقرؤه:
+# (١) فحصُ مسوّدة الكاتب فتُعاد قبل الملء، (٢) بوّابةُ المستند النهائي فلا تُسلَّم،
+# (٣) أداةُ إعادة التشغيل على كلّ الدراسات المخزَّنة (`tools/audit_study_reports.py
+# --client`)، (٤) اختبارٌ يمسح العيّنات الملتزَمة. العيبُ الذي بلّغ عنه المالك
+# مرّةً لا يعود إليه — يُلتقط عند الكاتب أو يُحجب قبل التسليم.
+@functools.lru_cache(maxsize=1)
+def owner_flags() -> tuple:
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "owner_flags_l1.csv")
+    out = []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                out.append({**r, "rx": re.compile(r["pattern"], re.IGNORECASE),
+                            "markets": frozenset((r.get("markets") or "").split())})
+    except OSError:
+        return ()
+    return tuple(out)
+
+
+def owner_flag_hits(text: str, market_iso3: str = "") -> list:
+    """[(صفّ السجلّ، المقتطف)] — المطابقةُ على نصٍّ بلا تشكيل."""
+    plain = _strip_ar_diacritics(str(text or ""))
+    iso = str(market_iso3 or "").upper()
+    hits = []
+    for row in owner_flags():
+        if row["markets"] and iso not in row["markets"]:
+            continue
+        m = row["rx"].search(plain)
+        if m:
+            hits.append((row, m.group(0)))
+    return hits
+
+
+def _check_owner_flags(text: str, market_iso3: str = "") -> list[dict]:
+    return [{"check": "owner_flagged_phrase", "repairable": False,
+             "note": (f"عبارةٌ رفضها المالك سابقاً (الدرس {row['lesson']}، "
+                      f"{row['id']}): «{snip[:80]}» — {row['why']}")}
+            for row, snip in owner_flag_hits(text, market_iso3)]
+
+
+# ── الدرس ٢٩٦ (بوّابة المالك ٣): الادّعاءُ الحادّ لا يُنشَر بلا سنده ──────────
+# «انكماش 11.3% لعام 2026» تهديداً رئيسياً، و«إلزامية شهادة الحلال منذ ديسمبر
+# 2024 (القرار 61/2024)» شرطاً مسبقاً في الملخّص — كلاهما بلا مصدرٍ رسميٍّ في
+# الحقائق. الحادُّ: انكماش/نموّ كليّ > 5%، أو اشتراطٌ إلزاميّ برقم قرارٍ أو
+# تاريخ سريان. السندُ: حقيقةٌ في البعثات تحمل القيمة (من IMF/البنك الدولي) أو
+# رقمَ القرار (برابطٍ أو جهةٍ رسمية).
+_SHARP_MACRO_RE = re.compile(
+    r"(انكماش\w*|نمو\w*|contraction|growth)[^.\n؛]{0,60}?(?<![\d.,])(\d{1,2}(?:[.,]\d+)?)\s*[%٪]",
+    re.IGNORECASE)
+_MACRO_CTX_RE = re.compile(r"الاقتصاد|الناتج|GDP|economy", re.IGNORECASE)
+_MANDATE_RE = re.compile(r"إلزامي\w*|يُ?شترط|mandatory|compulsory", re.IGNORECASE)
+_DECREE_RE = re.compile(
+    r"(?:القرار|قرار|رقم|decision|resolution|decree)\s*(?:رقم\s*)?[(]?\s*"
+    r"(\d{1,4}\s*/\s*\d{2,4})|منذ\s+(?:يناير|فبراير|مارس|أبريل|مايو|يونيو|"
+    r"يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر)\s+(20\d\d)", re.IGNORECASE)
+_OFFICIAL_SRC_RE = re.compile(r"IMF|World Bank|البنك الدولي|صندوق النقد", re.IGNORECASE)
+
+
+def _all_mission_rows(dr: dict) -> list:
+    rows = []
+    for m in ((dr or {}).get("missions") or {}).values():
+        for f in ((m or {}).get("findings") if isinstance(m, dict) else None) or []:
+            if isinstance(f, dict):
+                rows.append(f)
+                rows += [r for r in (f.get("raw_evidence") or []) if isinstance(r, dict)]
+    return rows
+
+
+def _check_sharp_claim_unverified(view: dict) -> list[dict]:
+    """`sharp_claim_unverified` (حاجب): ادّعاءٌ كليٌّ حادّ أو اشتراطٌ إلزاميٌّ
+    جديد في نصّ التقرير بلا حقيقةٍ رسميةٍ تسنده في البعثات."""
+    dr = (view or {}).get("deep_research") or {}
+    text = ((dr.get("report") or {}).get("text") or "") if isinstance(dr, dict) else ""
+    if not text:
+        return []
+    rows = _all_mission_rows(dr)
+    findings: list[dict] = []
+    for m in _SHARP_MACRO_RE.finditer(text):
+        try:
+            pct = float(m.group(2).replace(",", "."))
+        except ValueError:
+            continue
+        span = m.group(0)
+        # الموضوعُ اقتصادٌ كليّ لا وارداتٌ/سوق (مراجعة §58: «رغم تباطؤ الاقتصاد،
+        # سجّل نمو الواردات 21%» رقمٌ موثّقٌ من كومتريد لا ادّعاءٌ كليّ).
+        if pct <= 5.0 or re.search(r"الواردات|الصادرات|السوق|المبيعات|الطلب|"
+                                   r"imports|exports|market|sales", span, re.I) \
+                or not _MACRO_CTX_RE.search(text[max(0, m.start() - 25):m.end()]):
+            continue
+        if "انكماش" not in m.group(1) and "contraction" not in m.group(1).lower() \
+                and pct <= 12.0:
+            continue
+        backed = any(
+            isinstance(r.get("value"), (int, float)) and not isinstance(r.get("value"), bool)
+            and abs(abs(float(r["value"])) - pct) <= 0.15
+            and _OFFICIAL_SRC_RE.search(str(r.get("source") or ""))
+            for r in rows)
+        if not backed:
+            findings.append({
+                "check": "sharp_claim_unverified", "repairable": False,
+                "note": (f"ادّعاءٌ اقتصاديٌّ كليٌّ حادّ بلا مؤشرٍ رسميٍّ يسنده: "
+                         f"«{' '.join(m.group(0).split())[:90]}» — يُتحقق منه "
+                         "(IMF/البنك الدولي) قبل النشر")})
+            break
+    for sent in re.split(r"(?<=[.؛!؟\n])", text):
+        if not _MANDATE_RE.search(sent):
+            continue
+        ds = list(_DECREE_RE.finditer(sent))
+        if not ds:
+            continue
+        if re.search(r"https?://", sent):
+            continue
+        # رقمُ القرار أدقُّ سنداً من سنة السريان — يُفضَّل حين يُذكر.
+        d = next((x for x in ds if x.group(1)), ds[0])
+        token = re.sub(r"\s+", "", d.group(1) or d.group(2) or "")
+        backed = any(
+            token and token in re.sub(r"\s+", "", f"{r.get('note') or ''} {r.get('value') or ''}")
+            and (str(r.get("url") or "").strip() or re.search(
+                r"\.gov|gac\.org|gso\.org|IMF|World Bank|وزارة|هيئة",
+                str(r.get("source") or ""), re.IGNORECASE))
+            for r in rows)
+        if not backed:
+            findings.append({
+                "check": "sharp_claim_unverified", "repairable": False,
+                "note": ("اشتراطٌ إلزاميٌّ برقم قرارٍ أو تاريخ سريان بلا مصدرٍ "
+                         f"رسميٍّ في الحقائق: «{' '.join(sent.split())[:110]}» — "
+                         "يُوثَّق برابطٍ رسميّ أو يُذكر «يلزم التحقق منه»")})
+            break
+    return findings
+
+
 def run_client_artifact_text_gate(text: str, lang: str = "ar",
                                   view: dict | None = None) -> list[dict]:
     """WP-7 §3 — بوابة نصّ المُنتَج النهائي: تُشغَّل على النص الكامل
@@ -2342,6 +2543,9 @@ def run_client_artifact_text_gate(text: str, lang: str = "ar",
     if not text:
         return findings
     findings += _check_client_scaffold_leak(text)
+    findings += _check_field_label_as_value(text)
+    findings += _check_owner_flags(text, str(((view or {}).get("market") or {})
+                                            .get("iso3") or ""))
     _plain = _strip_ar_diacritics(text)
     for ph in _ARTIFACT_HARD_PLACEHOLDERS:
         if _strip_ar_diacritics(ph) in _plain:
@@ -2715,6 +2919,10 @@ FAIL_TRIGGER_CHECKS = frozenset({
     # الدرس ٢٦٢: رمزُ سجلٍّ داخليٌّ غيرُ مملوء وصل نصاً مُصيَّراً — بنيةٌ
     # داخلية لا تصل عميلاً بأيّ حال، فحاجبٌ بلا راية.
     "ledger_token_unbound",
+    # الدرس ٢٩٦ (قرار المالك): معطىً في السجلّ يُعلَن «غير متاح» — حاجبٌ بلا
+    # راية بعد إصلاح جملة الكاتب؛ ورمزُ حالةٍ أو اسمُ وكيلٍ في خانة قيمة.
+    "ledger_status_mismatch", "status_label_as_value", "agent_name_leak",
+    "sharp_claim_unverified", "owner_flagged_phrase",
 })
 
 
@@ -2818,11 +3026,17 @@ NON_LITERAL_FLAGGED_BLOCKERS: dict = {
 DELIVERY_FABRICATION = frozenset({
     "derived_number_has_inputs", "reference_to_nonexistent_figure",
     "hs_code_as_value", "evidence_body_numeric_contradiction",
-    "ledger_value_mismatch"})
+    "ledger_value_mismatch",
+    # الدرس ٢٩٦ (قرار المالك): نفيُ معطىً مرصود («غير متاح» وهو في السجلّ)
+    # اختلاقٌ بالنفي — يُصلَح أوّلاً، والباقي يحجب.
+    "ledger_status_mismatch",
+    # والادّعاءُ الحادّ بلا سندٍ رسميّ (انكماشٌ كليّ > 5%، قرارٌ إلزاميّ برقم).
+    "sharp_claim_unverified"})
 DELIVERY_INTERNAL_TOKENS = frozenset({
     "ledger_token_unbound", "placeholder_leak", "internal_plumbing_leak",
     "mission_key_leak", "english_field_leak", "env_var_leak", "tool_use_leak",
-    "facts_list_leak", "raw_confidence", "client_scaffold_leak"})
+    "facts_list_leak", "raw_confidence", "client_scaffold_leak",
+    "status_label_as_value", "agent_name_leak", "owner_flagged_phrase"})
 DELIVERY_SYSTEM_LANGUAGE = frozenset({
     "system_language_leak", "claude_mention", "research_track_leak",
     "ops_warning_leak"})
@@ -7280,6 +7494,17 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_placeholder_leak(combined_text, _lang)
     findings += _check_gaps_closing_contradiction(dr)
     findings += _check_internal_plumbing_leak(text)
+    findings += _check_field_label_as_value(text, idents=False)
+    # على النصّ **بعد** مُطهِّر العميل (مراجعة §58): ما يعيد المُطهِّرُ صياغتَه
+    # («فشل البعثات»، «reach_agent») لا يحجب تقريراً سيُسلَّم نظيفاً.
+    try:
+        from silk_reports import _client_sanitize
+        _owner_txt = _client_sanitize(text, _lang)
+    except Exception:  # noqa: BLE001
+        _owner_txt = text
+    findings += _check_owner_flags(_owner_txt, str((view.get("market") or {})
+                                                   .get("iso3") or ""))
+    findings += _check_sharp_claim_unverified(view)
     # ── الموجة ٠: اللغة — قناتان منفصلتان تماماً ──────────────────────────
     # (١) **الاتساق** حاجزٌ ⇒ يدخل `findings` ويقع في `FAIL_TRIGGER_CHECKS`.
     # (٢) **الجودة** تحذيريّةٌ ⇒ قناةٌ خاصّة بها (`language_quality`) لا

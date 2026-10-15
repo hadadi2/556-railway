@@ -75,7 +75,7 @@ def test_missing_components_are_one_short_condition():
     conds = R._flip_conditions("conditional", False, {}, "ماليزيا",
                                missing_components=[f"c{n}" for n in range(10)])
     comp = [c for c in conds if "إعادة تقييم القرار" in c["condition"]]
-    assert len(comp) == 1 and "7 مكوّنات أخرى" in comp[0]["condition"]
+    assert len(comp) == 1 and "سبعة مكوّنات أخرى" in comp[0]["condition"]
     assert comp[0]["condition"].count("إعادة تقييم") == 1
     line = SR._T("gap_flip_condition", "ar", condition=comp[0]["condition"],
                  closes_via=comp[0]["closes_via"])

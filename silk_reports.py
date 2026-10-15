@@ -2752,7 +2752,10 @@ _CLIENT_TOOL_NAMES = (
     "comtrade_imports", "comtrade_competitors", "worldbank_indicator",
     "wits_tariff", "trends_interest", "faostat_supply", "web_search",
     "gdelt_news", "openalex_search", "channels_importers", "lookup_reference",
-    "eurostat_eu_signals")
+    "eurostat_eu_signals",
+    # الدرس ٢٩٦: أدواتٌ ومزوّدُ بحثٍ بأسمائها البرمجية وصلت نصّ العميل.
+    "itc_market_access", "imf_indicator", "trends_context",
+    "read_product_pages")
 
 # أسماء المزوّدين الداخليين — عقد المالك الصريح (بلاغ UK الحي، 2026-07-17):
 # لا يُسمّى مزوّد بيانات داخلي/مدفوع لعميل نهائي إطلاقاً (Volza/Explee/Serper/
@@ -2892,6 +2895,10 @@ _CLIENT_SANITIZE = [
     (re.compile(r"\|\s*الدليل\s*\|"), "| التوثيق |"),  # خلية عمود الجدول القديم
     (re.compile(r"مطبَّع(?:ةً|ة|اً|ًا)?\s+لكل\s+(?:كيلوغرام|كجم|كيلو|وحدة)"),
      "محسوبةً بسعر الكيلوغرام الواحد للمقارنة العادلة"),
+    # الدرس ٢٩٦: مزوّدُ البحث باسمه البرمجيّ («reach_agent»/«Agent Reach»)
+    # وصل العميل — يُقال «بحث الويب» (قبل قاعدة أسماء الأدوات).
+    (re.compile(r"(?:Web\s*Search\s*\(\s*)?(?:Exa\s+via\s+)?(?:Agent\s*Reach|"
+                r"Tavily|agent_reach|reach_agent)(?:\s*\))?", re.I), "بحث الويب"),
     (re.compile(r"\b(?:" + "|".join(_CLIENT_TOOL_NAMES) + r")\b"),
      "السجلّات الرسمية"),
     (re.compile(r"من\s+السجلّات الرسمية"), "من السجلّات الرسمية"),
@@ -2903,6 +2910,14 @@ _CLIENT_SANITIZE = [
     # §2.2 (أمر العمل الرئيس): لا تُنسَب الحقائق لمسارات بحث داخلية — الصياغة
     # المحايدة «جمع البيانات» تحلّ محل «بعثة»/«مسار بحث». صيغ المثنى/الضمير
     # المتصل لـ"بعثة" (ة→ت نحوياً) تُحوَّل قبل الصيغتين المفردة/الجمع أدناه.
+    # الدرس ٢٩٦: «فشل البعثات» كانت تصير «فشل عمليات جمع البيانات» — لغةُ
+    # نظامٍ عن آلية البناء؛ تُستبدل قبل قاعدة «بعثات» أدناه.
+    (re.compile(r"(?:فشل|إخفاق)\s+(?:بعض\s+)?(?:ال)?بعث\w*"),
+     "تعذّر جمع بعض البيانات"),
+    (re.compile(r"(?:فشل|إخفاق)\s+(?:بعض\s+)?عمليات\s+جمع\s+البيانات"),
+     "تعذّر جمع بعض البيانات"),
+    (re.compile(r"(?:عدد\s+)?(?:ال)?مؤشرات\s+(?:ال)?مرصودة\s+(?:ال)?مساهمة[^.\n،]*"),
+     "المؤشرات المرصودة"),
     (re.compile(r"بعثت\w*"), "جمع البيانات"),
     (re.compile(r"بعثات"), "عمليات جمع البيانات"),
     (re.compile(r"بعثة"), "جمع البيانات"),
@@ -4220,8 +4235,17 @@ def _client_price_observations(doc, dr: dict, lang: str = "ar") -> None:
         # المفتاحُ من النصّ الكامل قبل الاقتطاع — رصدان يختلفان بعد ١٦٠ حرفاً
         # (متجرٌ أو عبوةٌ أخرى) ليسا مكرّرين (مراجعة §58).
         key = (" ".join(raw.split()).casefold(), reason)
-        if key in seen:        # الرصدُ نفسُه مرّتين يُطبَع مرّة
+        if key in seen:
             continue
+        # الدرس ٢٩٦: رصدان يختلفان بعد حدّ الاقتطاع كانا يُطبعان جملةً واحدةً
+        # حرفياً — العميل يرى تكراراً. الثاني يُطبَع بنصّه الأطول حتى يظهر
+        # ما يميّزه (المتجر/العبوة)، فيبقى الرصدان (مراجعة §58) بلا تكرار.
+        head = body.split(" — ")[0]
+        if any(x.split(" — ")[0] == head for x in lines):
+            longer = _lang_safe(_client_sanitize(_client_prose(raw, 600), lang), lang)
+            if not longer or any(x.split(" — ")[0] == longer for x in lines):
+                continue
+            body = longer + body[len(head):]
         seen.add(key)
         lines.append(body)
     if not lines:
@@ -6304,10 +6328,10 @@ def _clean_leads(leads: list, dr: dict) -> list:
             lead = dict(lead)
             lead["named_in_report"] = True
         # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الحصانةُ كانت تتجاوز
-        # **كلَّ** المصافي لا مِصفاةَ النشاط وحدَها — فجهةٌ يسمّيها المتنُ
-        # بعنوانٍ في دولةٍ أخرى أو بلا أيّ اتصالٍ كانت تُعرَض. الحصانةُ
-        # مقصورةٌ على النشاط: التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ
-        # صحّةِ عنوانٍ ولا وجودِ اتصال.
+        # **كلَّ** المصافي — فجهةٌ يسمّيها المتنُ بعنوانٍ في دولةٍ أخرى كانت
+        # تُعرَض. التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ صحّةِ عنوان. وبقرار
+        # المالك (الدرس ٢٩٦) تبقى الجهةُ المسمّاة **بلا اتصال** مرشّحاً يحتاج
+        # تحققاً — توصيةٌ بجهةٍ غائبةٍ عن قائمتها أسوأ من صفٍّ بلا هاتف.
         # تقرير ٧ §4.4: التسميةُ في المتن ليست دليلَ صلة — مِصفاةُ النشاط
         # تسري على الجهة المسمّاة أيضاً (كانت حصانتُها تُبقي ما تُسقطه).
         if _scoped and not lead_activity_allowed(lead.get("category")):
@@ -6317,7 +6341,11 @@ def _clean_leads(leads: list, dr: dict) -> list:
         if not nm or not looks_like_name(nm):          # البند ٥: نثر/بلا اسم
             dropped.append({"name": raw_name, "why": "ليس اسمَ كِيان"})
             continue
-        if _is_filler_lead(lead):                        # البند ٦: حشو
+        if _is_filler_lead(lead) and not named:          # البند ٦: حشو
+            # الدرس ٢٩٦: بابُ الدخول الذي يرشّحه المتن («Ashraf FMCG») كان
+            # يُسقَط من القائمة لأنه بلا اتصالٍ مرصود — فتوصي الدراسةُ بجهةٍ
+            # غائبةٍ عن قائمتها. يبقى مرشّحاً يحتاج تحققاً (`EVIDENCE_NAMED`)
+            # بلا اتصالٍ مختلَق؛ وبقيةُ المصافي (الجغرافيا والصلة) تسري عليه.
             dropped.append({"name": nm, "why": "بلا أيّ وسيلة اتصال"})
             continue
         if _address_wrong_geo(lead.get("address"), iso3, tnames):  # البند ٤
@@ -6328,6 +6356,10 @@ def _clean_leads(leads: list, dr: dict) -> list:
         # أو نشاطٌ متخصّصٌ بمنتجٍ آخر) يُسقِط حتى الجهةَ المسمّاة؛ وما بقي
         # منها بلا دليلِ تخصّصٍ يُعرَض «مرشّحاً يحتاج تحققاً» لا مشترياً مؤكَّداً.
         _ok, _why, _status = lead_product_fit(lead, _hs, _product, iso3)
+        if _ok:
+            from silk_style_contract import lead_local_competitor
+            _why = lead_local_competitor(lead, _hs)
+            _ok = not _why
         if not _ok:
             dropped.append({"name": nm, "why": _why})
             continue
@@ -6626,8 +6658,17 @@ def _docx_gaps_table(doc, view: dict, lang: str = "ar", *,
         for r, c in shown:
             what = c[0]
             if r.get("status_code") == weak:
-                what = _clean(what + _WEAK_CLIENT_SUFFIX.get(lang, "")) or what
+                # الدرس ٢٩٦: المرآةُ والمصدرُ الرسميّ منخفضُ الثقة ليسا «غير رسميين».
+                suffix = (_WEAK_CLIENT_SUFFIX.get(lang, "")
+                          if r.get("weak_reason", "unofficial") == "unofficial"
+                          else " — " + _FL._WEAK_PHRASES[r["weak_reason"]][
+                              1 if lang == "en" else 0])
+                what = _clean(what + suffix) or what
             body.append([what, c[1]])
+        # الدرس ٢٩٦: عمودُ «كيف تعرفه» كلُّه «—» جدولٌ فارغٌ في نظر العميل —
+        # يُسقَط العمود ويبقى ما لم نعرفه وحده.
+        if all(str(b[1]).strip() in ("", "—", "-") for b in body):
+            head, body = head[:1], [b[:1] for b in body]
         _add_table(doc, head, body)
     else:
         _add_table(doc, head, [c for _r, c in shown])
