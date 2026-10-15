@@ -596,7 +596,7 @@ for _c in ("claude_mention", "english_field_leak", "env_var_leak",
            "ops_warning_leak", "raw_confidence", "research_track_leak",
            "system_language_leak", "tool_use_leak",
            # الدرس ٢٩٦: تسميةُ حالةٍ بدل قيمة، ومعرّفٌ برمجيّ/اسمُ وكيل.
-           "status_label_as_value", "agent_name_leak"):
+           "status_label_as_value", "agent_name_leak", "owner_flagged_phrase"):
     _CLIENT_REASONS.setdefault(_c, _INTERNAL_TEXT_REASON)
 for _c in ("derived_number_has_inputs", "hs_code_as_value"):
     _CLIENT_REASONS.setdefault(_c, _FABRICATION_REASON)

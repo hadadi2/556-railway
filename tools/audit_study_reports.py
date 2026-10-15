@@ -15,6 +15,8 @@
     python3 tools/audit_study_reports.py --json          # مخرَج مهيكل
     python3 tools/audit_study_reports.py --study 6       # دراسةٌ بعينها
     python3 tools/audit_study_reports.py --headings      # عيّنةُ أسطر العناوين
+    python3 tools/audit_study_reports.py --client        # مستندُ العميل الفعليّ + سجلّ بلاغات المالك
+    python3 tools/audit_study_reports.py --study 11 --dump   # نصُّ مستند العميل كاملاً
 
 Read-only review of every factory study report: rebuilds each view and runs
 the delivery gate twice (raw vs. heading-canonicalized) so a block caused by
@@ -129,8 +131,37 @@ def _heading_lines(text: str, limit: int = 12) -> list:
     return out
 
 
+def client_text(view: dict) -> tuple:
+    """(نصُّ مستند العميل كما يُبنى الآن، ملاحظاتُ بوّابته النهائية) — الدرس ٢٩٦.
+
+    «كل مرة تظهر نفس المشاكل»: الإصلاحُ كان يُثبَت على عيّناتٍ اصطناعية فقط؛
+    هذا يعيد بناءَ **مستند العميل الفعليّ** لكلّ دراسةٍ مخزَّنة بالشيفرة الحالية
+    ويشغّل عليه البوّابةَ النهائية وسجلَّ بلاغات المالك — قبل أن يراه المالك.
+    """
+    import tempfile
+    import silk_quality_gate as Q
+    from silk_reports import render_client_docx
+    from docx import Document
+    findings: list = []
+    with tempfile.TemporaryDirectory() as d:
+        out = os.path.join(d, "client.docx")
+        try:
+            render_client_docx(view, out)
+        except RuntimeError as e:          # البوّابةُ النهائية رفضت البناء
+            findings.append({"check": "artifact_refused", "note": str(e)[:300]})
+            return "", findings
+        doc = Document(out)
+        parts = [p.text for p in doc.paragraphs]
+        parts += [c.text for t in doc.tables for r in t.rows for c in r.cells]
+        text = "\n".join(x for x in parts if x.strip())
+    lang = view.get("report_language") or "ar"
+    findings += Q.run_client_artifact_text_gate(text, lang, view)
+    return text, findings
+
+
 def review(platform_db: str, engine_db: str, only: "int | None",
-           show_headings: bool) -> list:
+           show_headings: bool, client: bool = False,
+           dump: bool = False) -> list:
     import silk_ai_judge as judge
     import silk_render
 
@@ -171,6 +202,15 @@ def review(platform_db: str, engine_db: str, only: "int | None",
                 judge.canonicalize_section_headings = _orig
         except Exception as e:  # noqa: BLE001 — تدقيقٌ لا يسقط على دراسة
             row["gate_error"] = f"{type(e).__name__}: {e}"
+        if client:
+            try:
+                text, cf = client_text(silk_render.build_view(blob, lang))
+                row["client_findings"] = [f"{f.get('check')}: {f.get('note')}"
+                                          for f in cf]
+                if dump:
+                    row["client_text"] = text
+            except Exception as e:  # noqa: BLE001
+                row["client_error"] = f"{type(e).__name__}: {e}"
         row["status"] = "ok"
         report.append(row)
     return report
@@ -204,6 +244,12 @@ def _print(rows: list) -> None:
               f"{g.get('verdict')} / {drivers}")
         for ln in r.get("heading_lines") or []:
             print(f"        | {ln}")
+        for ln in r.get("client_findings") or []:
+            print(f"        ✗ {ln[:160]}")
+        if r.get("client_error"):
+            print(f"        ! {r['client_error']}")
+        if r.get("client_text"):
+            print(r["client_text"])
     print("-" * 78)
     print(f"دراسات: {len(rows)} · محجوبة التنزيل: {blocked} · "
           f"شفاها تطبيعُ العناوين: {healed}")
@@ -216,13 +262,19 @@ def main() -> int:
     ap.add_argument("--study", type=int)
     ap.add_argument("--headings", action="store_true")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--client", action="store_true",
+                    help="ابنِ مستندَ العميل الفعليّ وشغّل عليه البوّابة النهائية "
+                         "وسجلَّ بلاغات المالك (الدرس ٢٩٦)")
+    ap.add_argument("--dump", action="store_true",
+                    help="مع --client: اطبع نصَّ مستند العميل كاملاً")
     args = ap.parse_args()
     pdb, edb = _platform_db(args.platform_db), _engine_db(args.db)
     for p in (pdb, edb):
         if not os.path.exists(p):
             print(f"قاعدة غير موجودة: {p}", file=sys.stderr)
             return 2
-    rows = review(pdb, edb, args.study, args.headings)
+    rows = review(pdb, edb, args.study, args.headings,
+                  client=args.client or args.dump, dump=args.dump)
     if args.json:
         print(json.dumps(rows, ensure_ascii=False, indent=2))
     else:

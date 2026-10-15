@@ -4235,8 +4235,16 @@ def _client_price_observations(doc, dr: dict, lang: str = "ar") -> None:
         # المفتاحُ من النصّ الكامل قبل الاقتطاع — رصدان يختلفان بعد ١٦٠ حرفاً
         # (متجرٌ أو عبوةٌ أخرى) ليسا مكرّرين (مراجعة §58).
         key = (" ".join(raw.split()).casefold(), reason)
-        if key in seen:        # الرصدُ نفسُه مرّتين يُطبَع مرّة
+        if key in seen:
             continue
+        # الدرس ٢٩٦: رصدان يختلفان بعد حدّ الاقتطاع كانا يُطبعان جملةً واحدةً
+        # حرفياً — العميل يرى تكراراً. الثاني يُطبَع بنصّه الأطول حتى يظهر
+        # ما يميّزه (المتجر/العبوة)، فيبقى الرصدان (مراجعة §58) بلا تكرار.
+        if any(x.startswith(body.split(" — ")[0]) for x in lines):
+            longer = _lang_safe(_client_sanitize(_client_prose(raw, 600), lang), lang)
+            if not longer or any(x.startswith(longer) for x in lines):
+                continue
+            body = longer + body[len(body.split(" — ")[0]):]
         seen.add(key)
         lines.append(body)
     if not lines:

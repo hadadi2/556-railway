@@ -417,6 +417,8 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
             # المنتج (لا لفظَ دينيّ في فئةٍ لا صلةَ للدين بها) — بيانٌ مرافقٌ
             # لا مفتاحُ حقيقةٍ يُعرَض.
             "hs_code": str(result.get("hs_code") or "") or None,
+            "market_iso3": str(((result.get("market") or {}) if isinstance(
+                result.get("market"), dict) else {}).get("iso3") or "") or None,
             "entries": {e["key"]: e for e in ordered},
             "order": [k[0] for k in KEYS], "gaps": gaps,
             "repairs": [], "findings": [], "stale": []}
@@ -464,6 +466,7 @@ def _fill_from_research(dr: dict, put, result: dict | None = None) -> None:
                                   winner=(_hhi_winner(missions)
                                           if key == "hhi" else None))))
     _fill_series(missions, put)
+    _fill_requirements_from_table(result or {}, put)
     put(_entry("population", None, note="لا يُقرأ عدد السكان من البعثات"))
     # الموجة د-٢: استنتاجاتُ التحليل التجاري من الاكتشافات المخزَّنة (نقيّة).
     try:
@@ -474,6 +477,29 @@ def _fill_from_research(dr: dict, put, result: dict | None = None) -> None:
                           product_card=ctx.get("product_card"))
     except Exception as e:  # noqa: BLE001 — استنتاجٌ متعذّر = فجوةٌ معلنة
         put(_entry("cost_advantage", None, note=f"تعذّر التحليل التجاري: {e}"))
+
+
+def _fill_requirements_from_table(result: dict, put) -> None:
+    """عددُ البنود من **الجدول الذي يُطبَع** (الدرس ٢٩٦): «ثمانية بنود» في
+    النصّ بجوار جدولٍ من سبعة صفوف — العددُ كان يُعَدّ من اكتشافات البعثة
+    والجدولُ من مرجع الاشتراطات. مرجعٌ بلا صفوفٍ لهذا السوق = يبقى العدُّ
+    الأول (لا صفرَ مختلَق)."""
+    iso3 = str((result.get("market") or {}).get("iso3") or "") \
+        if isinstance(result.get("market"), dict) else ""
+    if not iso3:
+        return
+    try:
+        import silk_render
+        rows = [r for r in silk_render._requirements_safe(result)
+                if isinstance(r, dict) and not r.get("gap")
+                and str(r.get("item") or "").strip()]
+    except Exception:  # noqa: BLE001 — مرجعٌ مساعد
+        return
+    if rows:
+        put(_entry("requirements_count", len(rows),
+                   source="Silk L1 requirements reference", confidence=0.8,
+                   origin="customs_requirements",
+                   note="عدد صفوف جدول الاشتراطات المطبوع"))
 
 
 def _hhi_winner(missions: dict):
@@ -1200,6 +1226,15 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
                           "الحالةُ وصفٌ لا رقم؛ اكتب القيمة بصيغتك أو اذكر "
                           f"الحالة في جملة مستقلة: «{_sentence_at(draft, m.start())}»")
     stripped = TOKEN_RE.sub(" ", draft)
+    # الدرس ٢٩٦: سجلُّ بلاغات المالك يُعيد المسوّدةَ قبل الملء — العبارةُ التي
+    # رفضها المالك مرّةً لا تصل البوّابة أصلاً (تُعاد بسببها للكاتب).
+    try:
+        from silk_quality_gate import owner_flag_hits
+        for row, snip in owner_flag_hits(stripped, (ledger or {}).get("market_iso3") or ""):
+            issues.append(f"عبارةٌ رفضها المالك ({row['why']}): «{snip[:80]}» — "
+                          "أعد صياغة الجملة بلا هذا المعنى")
+    except Exception:  # noqa: BLE001 — حارسٌ إضافيّ لا شرطُ مسوّدة
+        pass
     for sent in _religious_sentences_in_neutral_category(stripped, ledger):
         issues.append("لفظٌ دينيّ في تقرير فئةٍ لا صلةَ للدين بها (تصنيف فصل "
                       "HS) — احذفه أو استبدله بالمعطى التجاري المقصود: «"

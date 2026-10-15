@@ -228,7 +228,7 @@
     "insufficient_pillars": true,
     "pillar_values": {
       "competition": 1.0,
-      "market": 0.363,
+      "market": 0.483,
       "profit": null,
       "regulatory": null,
       "risk": null

@@ -276,3 +276,87 @@ def test_study_template_has_a_land_route_and_a_forecast_variant():
     tpl = open(os.path.join(_ROOT, "data", "study_templates_ar.yaml"),
                encoding="utf-8").read()
     assert "when: logistics_land" in tpl and "when: macro_forecast" in tpl
+
+
+# ── «fix it all»: المحرّك والعدّ والتكرار ─────────────────────────────────────
+
+def test_decision_engine_reads_the_series_cagr():
+    """قرار المالك: عمودُ السوق يقرأ مركّبَ السلسلة نفسَه الذي يقرؤه النصّ."""
+    import silk_deep_pillars as P
+    rows = [{"value": v, "data_year": y, "source": "UN Comtrade", "confidence": 0.9,
+             "note": "إجمالي واردات السوق"}
+            for y, v in ((2019, 4.81e6), (2024, 9.17e6))]
+    dr = {"missions": {"trade_flow": {"findings": rows}}}
+    pi = P.build_pillar_inputs(dr)
+    flat = {k: v for g in pi.values() if isinstance(g, dict) for k, v in g.items()}
+    assert flat["import_cagr_pct"] == P.import_series(dr["missions"])["cagr_pct"]
+
+
+def test_requirements_count_is_the_printed_table_rows():
+    """«ثمانية بنود» بجوار جدولٍ من سبعة — العددُ من صفوف الجدول نفسِه."""
+    import silk_render as R
+    result = {"market": {"iso3": "BHR"}, "hs_code": "090121",
+              "deep_research": {"missions": {"customs_requirements": {"findings": [
+                  {"value": f"بند {i}", "note": "x"} for i in range(8)]}}}}
+    rows = [r for r in R._requirements_safe(result) if not r.get("gap")]
+    led = L.build_ledger(result)
+    assert rows and led["entries"]["requirements_count"]["value"] == len(rows)
+
+
+def test_the_same_printed_price_line_appears_once():
+    import silk_reports as R
+    from docx import Document
+    base = "سعر رف قهوة محمصة 250 غ " + "و" * 200
+    dr = {"price_rows": [{"value": "3.2 BHD", "note": base + " متجر أ"},
+                         {"value": "3.2 BHD", "note": base + " متجر ب"}]}
+    doc = Document()
+    R._client_price_observations(doc, dr, "ar")
+    bullets = [p.text for p in doc.paragraphs if p.style.name == "List Bullet"]
+    assert len(bullets) == len(set(bullets))
+
+
+# ── «كل مرة تظهر نفس المشاكل»: سجلُّ بلاغات المالك ───────────────────────────
+
+def test_every_owner_flag_matches_its_own_example():
+    rows = Q.owner_flags()
+    assert len(rows) >= 10
+    for r in rows:
+        iso = sorted(r["markets"])[0] if r["markets"] else ""
+        assert Q.owner_flag_hits(r["example"], iso), r["id"]
+
+
+def test_owner_flags_block_delivery_and_return_drafts_to_the_writer():
+    f = Q._check_owner_flags("ميناء خليفة نقطة الدخول الوحيدة.", "BHR")
+    assert f and Q.delivery_blockers(f)
+    assert not Q._check_owner_flags("ميناء خليفة نقطة الدخول الوحيدة.", "SGP")
+    led = {"entries": {}, "market_iso3": "BHR"}
+    assert any("رفضها المالك" in i for i in L.draft_issues(
+        "قدّرنا العبور قياساً على شحنات من إثيوبيا.", led))
+
+
+def test_no_committed_sample_carries_an_owner_flagged_phrase():
+    from docx import Document
+    sdir = os.path.join(_ROOT, "samples")
+    for name in os.listdir(sdir):
+        if name.startswith("kuwait_peanut_butter"):
+            continue          # طبعةٌ تاريخيةٌ مثبَّتة قبل الإصلاح (samples/README.md)
+        path = os.path.join(sdir, name)
+        if name.endswith(".md"):
+            text = open(path, encoding="utf-8").read()
+        elif name.endswith(".docx"):
+            d = Document(path)
+            text = "\n".join([p.text for p in d.paragraphs] + [
+                c.text for t in d.tables for r in t.rows for c in r.cells])
+        else:
+            continue
+        assert not Q.owner_flag_hits(text, "BHR"), name
+
+
+def test_replay_tool_rebuilds_the_real_client_document():
+    """الأداةُ تبني مستندَ العميل الفعليّ من نتيجةٍ مخزَّنة وتفحصه — الرتبةُ
+    التي كانت غائبة: الإصلاحُ يُثبَت على الدراسة نفسِها لا على عيّنة."""
+    sys.path.insert(0, os.path.join(_ROOT, "tools"))
+    import audit_study_reports as A
+    from gen_client_report_sample import build_sample_view
+    text, findings = A.client_text(build_sample_view("ar"))
+    assert len(text) > 500 and isinstance(findings, list)

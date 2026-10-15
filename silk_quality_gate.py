@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
+import functools
 import re
 
 log = logging.getLogger(__name__)
@@ -2396,6 +2397,50 @@ def _check_field_label_as_value(text: str, idents: bool = True) -> list[dict]:
     return findings
 
 
+# ── الدرس ٢٩٦ («كل مرة تظهر نفس المشاكل — أوجد حلاً نهائياً»): سجلُّ بلاغات المالك ──
+# كلُّ عبارةٍ رفضها المالك في دراسةٍ مسلَّمة تصير صفّاً في `data/owner_flags_l1.csv`
+# (نمطٌ + مثالٌ يطابقه + السبب + الأسواق إن خصّت). السجلُّ الواحد يقرؤه:
+# (١) فحصُ مسوّدة الكاتب فتُعاد قبل الملء، (٢) بوّابةُ المستند النهائي فلا تُسلَّم،
+# (٣) أداةُ إعادة التشغيل على كلّ الدراسات المخزَّنة (`tools/audit_study_reports.py
+# --client`)، (٤) اختبارٌ يمسح العيّنات الملتزَمة. العيبُ الذي بلّغ عنه المالك
+# مرّةً لا يعود إليه — يُلتقط عند الكاتب أو يُحجب قبل التسليم.
+@functools.lru_cache(maxsize=1)
+def owner_flags() -> tuple:
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "owner_flags_l1.csv")
+    out = []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                out.append({**r, "rx": re.compile(r["pattern"], re.IGNORECASE),
+                            "markets": frozenset((r.get("markets") or "").split())})
+    except OSError:
+        return ()
+    return tuple(out)
+
+
+def owner_flag_hits(text: str, market_iso3: str = "") -> list:
+    """[(صفّ السجلّ، المقتطف)] — المطابقةُ على نصٍّ بلا تشكيل."""
+    plain = _strip_ar_diacritics(str(text or ""))
+    iso = str(market_iso3 or "").upper()
+    hits = []
+    for row in owner_flags():
+        if row["markets"] and iso not in row["markets"]:
+            continue
+        m = row["rx"].search(plain)
+        if m:
+            hits.append((row, m.group(0)))
+    return hits
+
+
+def _check_owner_flags(text: str, market_iso3: str = "") -> list[dict]:
+    return [{"check": "owner_flagged_phrase", "repairable": False,
+             "note": (f"عبارةٌ رفضها المالك سابقاً (الدرس {row['lesson']}، "
+                      f"{row['id']}): «{snip[:80]}» — {row['why']}")}
+            for row, snip in owner_flag_hits(text, market_iso3)]
+
+
 # ── الدرس ٢٩٦ (بوّابة المالك ٣): الادّعاءُ الحادّ لا يُنشَر بلا سنده ──────────
 # «انكماش 11.3% لعام 2026» تهديداً رئيسياً، و«إلزامية شهادة الحلال منذ ديسمبر
 # 2024 (القرار 61/2024)» شرطاً مسبقاً في الملخّص — كلاهما بلا مصدرٍ رسميٍّ في
@@ -2495,6 +2540,8 @@ def run_client_artifact_text_gate(text: str, lang: str = "ar",
         return findings
     findings += _check_client_scaffold_leak(text)
     findings += _check_field_label_as_value(text)
+    findings += _check_owner_flags(text, str(((view or {}).get("market") or {})
+                                            .get("iso3") or ""))
     _plain = _strip_ar_diacritics(text)
     for ph in _ARTIFACT_HARD_PLACEHOLDERS:
         if _strip_ar_diacritics(ph) in _plain:
@@ -2871,7 +2918,7 @@ FAIL_TRIGGER_CHECKS = frozenset({
     # الدرس ٢٩٦ (قرار المالك): معطىً في السجلّ يُعلَن «غير متاح» — حاجبٌ بلا
     # راية بعد إصلاح جملة الكاتب؛ ورمزُ حالةٍ أو اسمُ وكيلٍ في خانة قيمة.
     "ledger_status_mismatch", "status_label_as_value", "agent_name_leak",
-    "sharp_claim_unverified",
+    "sharp_claim_unverified", "owner_flagged_phrase",
 })
 
 
@@ -2985,7 +3032,7 @@ DELIVERY_INTERNAL_TOKENS = frozenset({
     "ledger_token_unbound", "placeholder_leak", "internal_plumbing_leak",
     "mission_key_leak", "english_field_leak", "env_var_leak", "tool_use_leak",
     "facts_list_leak", "raw_confidence", "client_scaffold_leak",
-    "status_label_as_value", "agent_name_leak"})
+    "status_label_as_value", "agent_name_leak", "owner_flagged_phrase"})
 DELIVERY_SYSTEM_LANGUAGE = frozenset({
     "system_language_leak", "claude_mention", "research_track_leak",
     "ops_warning_leak"})
@@ -7444,6 +7491,8 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_gaps_closing_contradiction(dr)
     findings += _check_internal_plumbing_leak(text)
     findings += _check_field_label_as_value(text, idents=False)
+    findings += _check_owner_flags(text, str((view.get("market") or {}).get("iso3")
+                                            or ""))
     findings += _check_sharp_claim_unverified(view)
     # ── الموجة ٠: اللغة — قناتان منفصلتان تماماً ──────────────────────────
     # (١) **الاتساق** حاجزٌ ⇒ يدخل `findings` ويقع في `FAIL_TRIGGER_CHECKS`.

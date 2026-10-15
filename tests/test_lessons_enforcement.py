@@ -2755,6 +2755,9 @@ _SYMBOL_ANCHORS_EXTRA = [
                                    "def _check_sharp_claim_unverified"]),
     (296, "silk_study_case.py", ["def _macro_gdp", "def _land_route"]),
     (296, "silk_missions.py", ["def transport_route_context"]),
+    (296, "silk_quality_gate.py", ["def owner_flags", "def _check_owner_flags"]),
+    (296, "data/owner_flags_l1.csv", ["sole_entry_port_land_market", "status_label_as_value"]),
+    (296, "tools/audit_study_reports.py", ["def client_text", "--client"]),
     (296, "tests/test_lesson296_bahrain_coffee_review.py", [
         "def test_status_token_in_a_value_slot_is_filled_with_the_value",
         "def test_value_in_ledger_declared_unavailable_blocks_even_without_diacritics",

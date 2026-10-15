@@ -583,14 +583,19 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
         saudi_share = s_top
     # الدرس 290 (مراجعة §58): حجمُ السوق من سلسلة الواردات عند سنة الأساس — مرشّحٌ من سنةٍ
     # جزئية (مرآة ناقصة) أو نثرٍ لسنة أخرى لا يصير TAM بينما الرسم والدفتر على سنة الأساس.
-    _series_pts = [p for p in (import_series(missions).get("series") or []) if not p.get("partial")]
+    _series = import_series(missions)
+    _series_pts = [p for p in (_series.get("series") or []) if not p.get("partial")]
     _tam = float(_series_pts[-1]["value"]) if _series_pts else _numeric(trade, "tam_usd")
-    # الدرس ٢٩٦: مركّبُ السلسلة يصل السجلَّ والنصّ (`silk_fact_ledger._fill_series`)
-    # لا عمودَ القرار — إدخالُه هنا يحرّك درجةَ عمود السوق في خطّ الأساس
-    # المجمَّد (nadec_yemen_dairy 0.363→0.483)، وتحديثُه قرارُ مالكٍ معلَّق.
+    # الدرس ٢٩٦ (قرار المالك «fix it all» 2026-10-15): عمودُ القرار يقرأ مركّبَ
+    # السلسلة المرسومة نفسَه الذي يقرؤه السجلُّ والنصّ — رقمٌ ملتقَطٌ من نثر
+    # البعثة كان يُعرَض أو يغيب فيُطبَع «غير متاح» والسلسلةُ تعطيه. النثرُ
+    # احتياطٌ فقط. خطُّ الأساس حُدِّث بقراره (nadec_yemen_dairy: السوق
+    # 0.363→0.483، الحكم ثابت).
+    _cagr = _series.get("cagr_pct")
     market = {
         "tam_usd": _tam,
-        "import_cagr_pct": _numeric(trade, "import_cagr_pct"),
+        "import_cagr_pct": (_cagr if _cagr is not None
+                            else _numeric(trade, "import_cagr_pct")),
         "gdp_per_capita_usd": _numeric(econ, "gdp_per_capita_usd"),
         "saudi_share_pct": saudi_share,
     }
