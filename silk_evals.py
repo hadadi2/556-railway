@@ -514,6 +514,16 @@ def structural_checks(result: dict, case: dict) -> dict:
         if hits:
             failures.append(f"شارات/أعمدة إسناد في المتن: {hits}")
 
+    # الدرس ٢٩٧: عباراتُ بلاغات المالك (`data/owner_flags_l1.csv`) لا تعود في
+    # المستند المُصيَّر — نفسُ السجلّ الذي يقرؤه الكاتبُ والبوّابة.
+    if struct.get("no_owner_flags"):
+        import silk_quality_gate as _Q
+        iso3 = str((result.get("market") or {}).get("iso3") or "")
+        hits = [row["id"] for row, _snip in _Q.owner_flag_hits(text, iso3)]
+        checks["no_owner_flags"] = {"hits": hits, "passed": not hits}
+        if hits:
+            failures.append(f"عبارات رفضها المالك في المتن: {hits}")
+
     if struct.get("references_integrity"):
         ok, detail = _references_integrity(result, text)
         checks["references_integrity"] = {"passed": ok, "detail": detail}

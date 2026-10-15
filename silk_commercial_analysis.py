@@ -383,8 +383,16 @@ def augment_supplier_nature(report, hs_code: str, market, year=None,
         row["exports_usd"], row["imports_usd"] = exp, imp
         row["status"] = f"X:{st_x} M:{st_m}"
         partial = partial or "no_budget" in (st_x, st_m)
-        if row["world_top_exporter"] is False and exp is not None and imp is not None:
-            row["reexporter_likely"] = imp >= exp
+        # الدرس ٢٩٧: قاعدةٌ واحدة مع جدول المراكز (`reexport_hubs_l1.csv`) الذي
+        # تقرؤه الدراسة — كبيرُ مصدّري العالم كان «منتجاً» دائماً ولو كانت
+        # وارداتُه من البند نفسِه ≥ صادراته (ألمانيا/بلجيكا في القهوة والكاكاو).
+        try:
+            from silk_study_case import reexport_hubs
+            _hub = iso3 in reexport_hubs()
+        except Exception:  # noqa: BLE001
+            _hub = False
+        if exp is not None and imp is not None:
+            row["reexporter_likely"] = (imp >= exp) or (_hub and imp >= 0.5 * exp)
         elif row["world_top_exporter"] is True:
             row["reexporter_likely"] = False
         if row["reexporter_likely"] and budget.has():

@@ -840,7 +840,14 @@ _ROASTER_RE = __import__("re").compile(r"\broast(?:er|ers|ery|ing)\b|محمص",
                                        __import__("re").IGNORECASE)
 
 
-def lead_local_competitor(lead: dict, hs_code: object) -> str:
+_MAKER_RE = __import__("re").compile(
+    # مصنّعٌ **للمنتج النهائيّ** فقط — المطاحنُ والمحامصُ والمخابزُ تشتري الخامَ
+    # (محمصةٌ مشترٍ للبنّ الأخضر، مطحنةٌ للقمح)، فلا تُعَدّ منافساً بالكلمة وحدها.
+    r"\b(?:factory|factories|manufactur\w*|creamery)\b|مصنع|مصانع|معمل",
+    __import__("re").IGNORECASE)
+
+
+def lead_local_competitor(lead: dict, hs_code: object, product: str = "") -> str:
     """محمصةٌ محلية لمصدّر البنّ المحمّص — منافسٌ لا مستورد (الدرس ٢٩٦).
 
     خارج `lead_product_fit` عمداً: «دراسة السوق» تُبقيها في جدول الجهات بدور
@@ -849,6 +856,15 @@ def lead_local_competitor(lead: dict, hs_code: object) -> str:
     if (_hs_digits(hs_code).startswith("09012") and key not in _ACTIVITY_CATEGORY_FREE
             and _ROASTER_RE.search(_lead_text(lead))):
         return "محمصةٌ محلية تنافس المنتج المحمّص لا تستورده"
+    # الدرس ٢٩٧: مصنّعٌ محليٌّ **للمنتج نفسِه** (مصنع طحينة لمصدّر طحينة، معمل
+    # ألبان لمصدّر ألبان) منافسٌ لا مستورد — كانت قاعدةُ البنّ وحدَها.
+    # الاسمُ والفئةُ وحدَهما (مراجعة §58): وصفُ مستوردٍ «من كبار المصنّعين»
+    # لا يجعله مصنّعاً.
+    _ident = " ".join(str((lead or {}).get(k) or "") for k in ("name", "category")).lower()
+    if key not in _ACTIVITY_CATEGORY_FREE and _MAKER_RE.search(_ident):
+        own = _product_specific_words(str(hs_code or ""), str(product or ""))
+        if any(_word_in(_ident, w) for w in own):
+            return "مصنّعٌ محليٌّ للمنتج نفسِه — منافسٌ لا مستورد"
     # الاسمُ وحدَه («… Café») قرينةُ منفذ ضيافة في **قائمة المستوردين** فقط
     # (مراجعة §58): «Café Najjar» علامةُ بنٍّ تبقى في جدول جهات الدراسة.
     if not key and _LEAD_NOT_BUYER_NAME_RE.search(str((lead or {}).get("name") or "")):

@@ -2239,8 +2239,7 @@ def mount(app) -> bool:
         # الموجة ٠: لغة التقرير من **لقطة الدراسة** حصراً — لا من إعداد
         # المصنع الحيّ ولا من ترويسة ولا من لغة الواجهة.
         lang = fsettings.study_report_language(row)
-        view = engine_bridge.sanitize_client_brief(
-            engine_bridge.strip_cost_keys(build_view(found, lang)))
+        view = engine_bridge.factory_client_view(found, lang)
 
         import silk_export_gate as _eg
         # نثرُ الاحتياط يُحضَّر هنا أيضاً — كان يُولَّد على مسار المشغّل وحدَه،

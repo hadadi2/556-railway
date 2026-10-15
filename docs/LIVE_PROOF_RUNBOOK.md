@@ -316,3 +316,22 @@ research_missions: 0`)** — الملخّص يُعلن ذلك صراحةً، و�
 | ٣ | حلقة الإثبات مُغلَقة: عيّنة حقيقية + حالة ذهبية برقم موثّق يدوياً + سجلّ قرارات محدَّث |
 | الاسترداد | تشغيلةٌ فشل كاتبُها تُستردّ من `writer_partial` بأمرٍ واحد تحت ١$ (`tools/recover_and_verify.py`) مع تحقّق التصدير الثلاثيّ |
 | ٥ | خرجُ المرحلة-A الحقيقي (`tools/export_captured.py`، قراءةٌ فقط) يُغلِق بوّابة قياس محرك دراسة السوق — أو يُعلن صراحةً أنها لا تزال مفتوحة بلا دراساتٍ مكتملة |
+
+## إعادة بناء دراسة المالك بعد النشر (الدرس ٢٩٧)
+
+العيّنةُ الاصطناعية ليست دليلاً على دراسة المالك. قبل وسم إصلاحِ دراسةٍ مبلَّغٍ عنها «جاهزاً»:
+
+```bash
+# داخل الخدمة (railway ssh):
+python3 tools/audit_study_reports.py --study N --client          # البوّابة + بلاغات المالك على المستند الفعليّ
+python3 tools/audit_study_reports.py --study N --dump            # نصُّ مستند العميل كاملاً
+# من خارج الخادم (بمفتاح API، قراءةٌ محضة بلا نداءٍ مدفوع):
+curl -H "X-API-Key: $SILK_API_KEY" "$HOST/ops/audit-studies?study=N&dump=1"
+# أو على نتيجةٍ نُزِّلت:
+curl -H "X-API-Key: $SILK_API_KEY" "$HOST/analyses/<aid>" > a.json
+python3 tools/audit_study_reports.py --blob-file a.json --dump
+```
+
+الإقلاعُ على الإنتاج يعيد بناءَ كلّ الدراسات بعد ~٣ دقائق ويسجّل المحجوبَ منها
+(`delivery_blocked_after_deploy` في `/ops`). فحصُ ما بعد النشر:
+`python3 tools/post_deploy_smoke.py "$HOST" --fail-on-blocked`.

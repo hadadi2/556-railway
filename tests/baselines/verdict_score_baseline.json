@@ -1,4 +1,21 @@
 {
+  "bahrain_coffee": {
+    "computed_pillars": 2,
+    "engine_confidence": null,
+    "engine_score": null,
+    "engine_verdict": "",
+    "insufficient_pillars": true,
+    "pillar_values": {
+      "competition": null,
+      "market": 0.684,
+      "profit": null,
+      "regulatory": 1.0,
+      "risk": null
+    },
+    "view_confidence": null,
+    "view_verdict": "CONDITIONAL-GO",
+    "view_verdict_label": "دخول مشروط"
+  },
   "dza_peanut_butter": {
     "computed_pillars": null,
     "engine_confidence": 0.6,

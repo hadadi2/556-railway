@@ -275,6 +275,8 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="X-API-Key if auth is enabled (default: $SILK_LIVE_API_KEY)")
     ap.add_argument("--analyze-product", default="زبدة الفول السوداني",
                     help="اسم منتج المسح السريع الحيّ (خطوة /analyze)")
+    ap.add_argument("--fail-on-blocked", action="store_true",
+                    help="أفشِل الفحص إن كانت دراساتٌ مخزَّنة محجوبة التسليم (الدرس ٢٩٧)")
     ap.add_argument("--skip-analyze", action="store_true",
                     help="تخطَّ خطوة /analyze الحيّة (مثلاً بيئة بلا شبكة مصادر)")
     ap.add_argument("--platform-email",
@@ -402,6 +404,22 @@ def main() -> int:
                     fails.append(f"analysis_id={qid} لا يظهر في «بحوثي السابقة»")
                 else:
                     print(f"  ✓ id={qid} يظهر في «بحوثي السابقة»")
+
+    # الدرس ٢٩٧: تنزيلٌ محجوب كان يُطبع «~» ويمرّ — فنشرٌ تُحجَب فيه كلُّ
+    # الدراسات القديمة يخرج أخضر. `--fail-on-blocked` يعدّها من نقطة
+    # التدقيق ويُفشِل الفحص إن وُجدت.
+    if args.fail_on_blocked:
+        st4, ab = _get(base, "/ops/audit-studies?client=1", key)
+        if st4 != 200:
+            fails.append(f"/ops/audit-studies: HTTP {st4}")
+        else:
+            rows = json.loads(ab).get("studies") or []
+            blocked = [r.get("study") for r in rows if r.get("status") == "ok" and (
+                (r.get("gate") or {}).get("blocked") or r.get("client_blockers"))]
+            if blocked:
+                fails.append(f"{len(blocked)} دراسة مخزَّنة محجوبة التسليم: {blocked[:20]}")
+            else:
+                print(f"  ✓ {len(rows)} دراسة مخزَّنة — لا محجوبَ تسليم")
 
     if fails:
         return _finish(fails)

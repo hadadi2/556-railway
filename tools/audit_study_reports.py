@@ -17,6 +17,8 @@
     python3 tools/audit_study_reports.py --headings      # عيّنةُ أسطر العناوين
     python3 tools/audit_study_reports.py --client        # مستندُ العميل الفعليّ + سجلّ بلاغات المالك
     python3 tools/audit_study_reports.py --study 11 --dump   # نصُّ مستند العميل كاملاً
+    python3 tools/audit_study_reports.py --blob-file a.json --client  # نتيجةٌ نُزِّلت من GET /analyses/{id}
+    curl -H "X-API-Key: …" "$HOST/ops/audit-studies?study=11&dump=1"  # من خارج الخادم
 
 Read-only review of every factory study report: rebuilds each view and runs
 the delivery gate twice (raw vs. heading-canonicalized) so a block caused by
@@ -131,6 +133,14 @@ def _heading_lines(text: str, limit: int = 12) -> list:
     return out
 
 
+def factory_view(blob: dict, lang: str, analysis_id: "int | None" = None) -> dict:
+    """عرضُ المصنع نفسُه + النثرُ البديل المخزَّن — بلا أيّ نداءٍ مدفوع."""
+    from silk_platform.engine_bridge import factory_client_view
+    # النثرُ البديل المخزَّن (`client_fallback_prose`) يرافق النتيجةَ أصلاً؛ لا
+    # تحضيرَ هنا (بلا ذكاءٍ اصطناعيّ يكون التحضيرُ بلا أثر).
+    return factory_client_view(blob, lang)
+
+
 def client_text(view: dict) -> tuple:
     """(نصُّ مستند العميل كما يُبنى الآن، ملاحظاتُ بوّابته النهائية) — الدرس ٢٩٦.
 
@@ -161,7 +171,9 @@ def client_text(view: dict) -> tuple:
 
 def review(platform_db: str, engine_db: str, only: "int | None",
            show_headings: bool, client: bool = False,
-           dump: bool = False) -> list:
+           dump: bool = False, raw_compare: bool = True) -> list:
+    """`raw_compare=False` داخل الخادم (مراجعة §58): مقارنةُ النصّ الخام تبدّل
+    دالّةً عامّة مؤقّتاً — آمنةٌ في سطر أوامر، خطرةٌ مع طلباتٍ متزامنة."""
     import silk_ai_judge as judge
     import silk_render
 
@@ -190,23 +202,33 @@ def review(platform_db: str, engine_db: str, only: "int | None",
         if show_headings:
             row["heading_lines"] = _heading_lines(raw_text)
         try:
-            # (أ) البوّابةُ على العرض كما يراه الإنتاجُ اليوم (مُطبَّعاً).
-            row["gate"] = _gate(silk_render.build_view(blob, lang))
+            # (أ) البوّابةُ على العرض **كما يراه المصنعُ** (الدرس ٢٩٧: نفسُ
+            #     تهيئة سطح المصنع، والنثرُ البديل المخزَّن بلا نداء نموذج).
+            fview = factory_view(blob, lang, int(aid))
+            row["gate"] = _gate(fview)
             # (ب) وعلى النصّ **الخام** بتعطيل التطبيع مؤقّتاً — فيظهر بالضبط
             #     أيُّ حجبٍ كان سببُه شكلَ سطرِ العنوان وأيُّه عيبُ محتوىً.
-            _orig = judge.canonicalize_section_headings
-            try:
-                judge.canonicalize_section_headings = lambda t, l="ar": t
-                row["gate_raw"] = _gate(silk_render.build_view(blob, lang))
-            finally:
-                judge.canonicalize_section_headings = _orig
+            if raw_compare:
+                _orig = judge.canonicalize_section_headings
+                try:
+                    judge.canonicalize_section_headings = lambda t, l="ar": t
+                    row["gate_raw"] = _gate(silk_render.build_view(blob, lang))
+                finally:
+                    judge.canonicalize_section_headings = _orig
         except Exception as e:  # noqa: BLE001 — تدقيقٌ لا يسقط على دراسة
             row["gate_error"] = f"{type(e).__name__}: {e}"
         if client:
             try:
-                text, cf = client_text(silk_render.build_view(blob, lang))
+                import silk_quality_gate as _Q
+                text, cf = client_text(fview if "fview" in locals()
+                                       else factory_view(blob, lang, int(aid)))
                 row["client_findings"] = [f"{f.get('check')}: {f.get('note')}"
                                           for f in cf]
+                # ما يمنع التسليم فعلاً (مراجعة §58) — الملاحظاتُ الاستشارية لا تُعَدّ حجباً.
+                row["client_blockers"] = [
+                    f"{f.get('check')}: {f.get('note')}"
+                    for f in (_Q.delivery_blockers(cf)
+                              + [x for x in cf if x.get("check") == "artifact_refused"])]
                 if dump:
                     row["client_text"] = text
             except Exception as e:  # noqa: BLE001
@@ -267,7 +289,22 @@ def main() -> int:
                          "وسجلَّ بلاغات المالك (الدرس ٢٩٦)")
     ap.add_argument("--dump", action="store_true",
                     help="مع --client: اطبع نصَّ مستند العميل كاملاً")
+    ap.add_argument("--blob-file",
+                    help="نتيجةُ تحليلٍ مخزَّنة بصيغة JSON (من GET /analyses/{id}) — "
+                         "إعادةُ التشغيل بلا قواعد ولا railway ssh (الدرس ٢٩٧)")
     args = ap.parse_args()
+    if args.blob_file:
+        with open(args.blob_file, encoding="utf-8") as fh:
+            blob = json.load(fh)
+        lang = blob.get("report_language") or "ar"
+        view = factory_view(blob, lang, blob.get("analysis_id"))
+        text, cf = client_text(view)
+        out = {"gate": _gate(view), "client_findings": [
+            f"{f.get('check')}: {f.get('note')}" for f in cf]}
+        if args.dump:
+            out["client_text"] = text
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 0
     pdb, edb = _platform_db(args.platform_db), _engine_db(args.db)
     for p in (pdb, edb):
         if not os.path.exists(p):

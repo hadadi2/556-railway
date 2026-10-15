@@ -67,6 +67,14 @@ _INTERNAL_AUDIT_KEYS = frozenset({"render_repairs", "run_token"})
 _CLIENT_BRIEF_JARGON = re.compile(r"\s*\((?:product_card|deep_research)\)")
 
 
+def factory_client_view(found: dict, lang: str = "ar") -> dict:
+    """عرضُ العميل كما يراه المصنعُ بالضبط — مصدرٌ واحد لسطح المصنع ولأداة
+    إعادة التشغيل (الدرس ٢٩٧: كانت الأداةُ تبني عرضاً خاماً فيختلف حكمُها
+    عن حكم المصنع). نقيّ بلا نداء نموذج؛ النثرُ البديل يُحضَّر عند المستدعي."""
+    from silk_render import build_view
+    return sanitize_client_brief(strip_cost_keys(build_view(found, lang)))
+
+
 def sanitize_client_brief(view: dict) -> dict:
     """نقِّ نصوص العميل من معرّفات الشيفرة الداخلية — presentation only.
 

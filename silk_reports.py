@@ -5729,8 +5729,10 @@ def render_academic_docx(view: dict, path: str) -> str:
     _artifact_text = "\n".join(
         [p.text for p in doc.paragraphs]
         + [c.text for t in doc.tables for row in t.rows for c in row.cells])
+    # الدرس ٢٩٧: باللغة والسوق — بلاغاتُ المالك الخاصّة بسوقٍ كانت تسقط هنا.
     _artifact_findings = _qg.delivery_blockers(
-        _qg.run_client_artifact_text_gate(_artifact_text))
+        _qg.run_client_artifact_text_gate(
+            _artifact_text, lang=(view.get("report_language") or "ar"), view=view))
     if _artifact_findings:
         raise ClientArtifactGateError(
             "رفضت بوابة نصّ المُنتَج النهائي تسليم التقرير الأكاديمي: "
@@ -5933,9 +5935,15 @@ def render_docx(view: dict, path: str) -> str:
     tr = top_m.get("trend") or {}
     if tr.get("growth_pct") is not None or tr.get("cagr_pct") is not None:
         from silk_narrative import growth_phrase
+        # الدرس ٢٩٧: النافذةُ بسنواتها — «سنوات الدراسة» كانت تُخفي أنّ هذا
+        # النموّ (اتجاه كومتريد) نافذتُه غيرُ نافذة المركّب في القرار والتحليل.
+        _obs = [int(p.get("year")) for p in (tr.get("series") or [])
+                if isinstance(p, dict) and p.get("value") is not None
+                and str(p.get("year") or "").isdigit()]
+        _win = (f"{min(_obs)}–{max(_obs)}" if len(_obs) >= 2 else "سنوات الدراسة")
         doc.add_paragraph(growth_phrase(tr.get("cagr_pct"),
                                         tr.get("growth_pct"),
-                                        years="سنوات الدراسة"))
+                                        years=_win))
         doc.add_paragraph(f"المصدر: {tr.get('source') or 'UN Comtrade'}",
                           style="Intense Quote")
 
@@ -6140,6 +6148,23 @@ def render_docx(view: dict, path: str) -> str:
 
     _docx_deep_research(doc, view)
 
+    # الدرس ٢٩٧: ملفُّ /analyze كان بلا أيّ حارسٍ لنصّ المُنتَج النهائي —
+    # بلاغاتُ المالك وتسميةُ الحالة بدل القيمة واسمُ الوكيل تُرفَض هنا أيضاً.
+    import silk_quality_gate as _qg
+    _artifact_text = "\n".join(
+        [p.text for p in doc.paragraphs]
+        + [c.text for t in doc.tables for row in t.rows for c in row.cells])
+    _iso = str((view.get("market") or {}).get("iso3")
+               or ((view.get("markets") or [{}])[0] or {}).get("iso3") or "")
+    # التقريرُ الكلاسيكيّ يحمل أسماءَ أعلامٍ تشغيلية مشروعة («with_research»
+    # غير مفعّلة) — حارسُ المعرّف البرمجيّ للمستند العميليّ وحدَه هنا مطفأ.
+    _artifact_findings = (_qg._check_field_label_as_value(_artifact_text, idents=False)
+                          + _qg._check_owner_flags(_artifact_text, _iso))
+    if _artifact_findings:
+        raise ClientArtifactGateError(
+            "رفضت بوابة نصّ المُنتَج النهائي تسليم التقرير: "
+            + "؛ ".join(f["note"] for f in _artifact_findings[:5]),
+            findings=_artifact_findings)
     _finalize_rtl(doc)   # §4: اتجاه RTL صريح على كل فقرة/run قبل الحفظ
     doc.save(path)
     return path
@@ -6358,7 +6383,7 @@ def _clean_leads(leads: list, dr: dict) -> list:
         _ok, _why, _status = lead_product_fit(lead, _hs, _product, iso3)
         if _ok:
             from silk_style_contract import lead_local_competitor
-            _why = lead_local_competitor(lead, _hs)
+            _why = lead_local_competitor(lead, _hs, _product)
             _ok = not _why
         if not _ok:
             dropped.append({"name": nm, "why": _why})

@@ -1169,8 +1169,16 @@ def _cited_contract_fields(cited: list, primary_source: str = "") -> dict:
     urls.discard("")
     if len(urls) == 1:
         out["url"] = urls.pop()
-    years = [getattr(c, "data_year", None) for c in cited]
-    years = [y for y in years if isinstance(y, int)]
+    # الدرس ٢٩٧: سنةُ **تنبؤٍ** (IMF WEO للسنة الجارية/اللاحقة) لا تُورَّث
+    # «أحدثَ سنة» لاستنتاجٍ يستشهد بها مع أرقامٍ فعلية — كانت تفوز في كلّ
+    # مُنتقٍ يقدّم الأحدث. الفعليُّ أوّلاً؛ التنبؤُ وحدَه حين لا فعليَّ غيره.
+    def _is_forecast(c) -> bool:
+        n = str(getattr(c, "note", "") or "")
+        return "تنبؤ" in n or "تقدير/تنبؤ" in n or "forecast" in n.lower()
+    actual = [getattr(c, "data_year", None) for c in cited if not _is_forecast(c)]
+    actual = [y for y in actual if isinstance(y, int)]
+    years = actual or [y for y in (getattr(c, "data_year", None) for c in cited)
+                       if isinstance(y, int)]
     if years:
         out["data_year"] = max(years)
     return out

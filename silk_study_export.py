@@ -96,6 +96,8 @@ def study_markdown(found: dict, llm_fill=None) -> tuple[str, dict]:
     from silk_quality_gate import study_style_violations   # استشاري: لا يُسقط التصدير
     from silk_study_claims import build_claims
     return md, {"gaps": list(r.gaps), "llm_slots": list(r.llm_slots), "missing": list(r.missing),
+                "blockers": study_text_blockers(
+                    md, str((found.get("market") or {}).get("iso3") or "")),
                 "lint": study_style_violations(md, build_claims(case, kn),
                                                case["product"].get("exporter_type"))}
 
@@ -111,7 +113,15 @@ def _add_runs(par, text: str) -> None:
         par.add_run(text[pos:])
 
 
-def markdown_to_docx(md: str, path: str, lang: str = "ar") -> str:
+def study_text_blockers(text: str, market_iso3: str = "") -> list:
+    """الدرس ٢٩٧: نمطُ «دراسة السوق» كان يتجاوز كلَّ حرّاس العميل — بلاغاتُ
+    المالك وتسميةُ الحالة بدل القيمة واسمُ الوكيل تُفحَص على نصّه أيضاً."""
+    import silk_quality_gate as Q
+    return Q._check_field_label_as_value(text) + Q._check_owner_flags(text, market_iso3)
+
+
+def markdown_to_docx(md: str, path: str, lang: str = "ar",
+                     market_iso3: str = "") -> str:
     """Markdown الدراسة → Word: العناوين والتسميات العريضة والجداول الخمسة حرفياً."""
     try:
         from docx import Document
@@ -152,10 +162,17 @@ def markdown_to_docx(md: str, path: str, lang: str = "ar") -> str:
     hits = R._client_forbidden_hits(blob, lang)
     if hits:
         raise R.ReportGateError("تصدير الدراسة يحوي مصطلحاً ممنوعاً: " + "؛ ".join(hits[:5]))
+    blockers = study_text_blockers(blob, market_iso3)
+    if blockers:
+        # 409 `quality_gate_fail` لا 501 (مراجعة §58 — نفسُ عقد G-04).
+        raise R.ClientArtifactGateError(
+            "تصدير الدراسة لم يجتز فحص التسليم: "
+            + "؛ ".join(f["note"][:120] for f in blockers[:3]), findings=blockers)
     doc.save(path)
     return path
 
 
 def study_docx(found: dict, path: str) -> tuple[str, dict]:
     md, meta = study_markdown(found)
-    return markdown_to_docx(md, path), meta
+    iso3 = str((found.get("market") or {}).get("iso3") or "")
+    return markdown_to_docx(md, path, market_iso3=iso3), meta

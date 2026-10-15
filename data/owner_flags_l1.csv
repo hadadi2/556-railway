@@ -9,3 +9,8 @@ sole_entry_port_land_market,296,BHR JOR IRQ YEM ARE QAT KWT OMN,(?:نقطة|من
 transit_by_analogy,296,,قياسا?\s+على\s+(?:شحنات|الشحن)\s+من,قياساً على شحنات من إثيوبيا,زمن عبور مقدّر بالقياس على دولة أخرى
 comtrade_unofficial,296,,"(?:Comtrade|كومتريد)[^.\n]{0,60}غير\s+رسمي",UN Comtrade (مصادر غير رسمية),بيانات كومتريد رسمية ولو كانت مرآة
 reverse_flow_flip,296,,"التدفق\s+المعاكس[^.\n]{0,80}(?:يقلب|تقلب|مؤشر)",التدفق المعاكس مؤشر قد يقلب الحكم,التبادل العكسي ليس دليلاً على تراجع الطلب
+failed_collection_en,297,,\b(?:failed\s+missions?|data\s+collection\s+(?:failed|failures?))\b,Data collection failed for two areas,system language about how the report was built
+sole_entry_port_land_market_en,297,BHR JOR IRQ YEM ARE QAT KWT OMN,\b(?:sole|only)\s+(?:entry\s+point|port\s+of\s+entry|point\s+of\s+entry)\b,Khalifa port is the only entry point,"land-linked market — the first route is overland, not a single port"
+transit_by_analogy_en,297,,\bby\s+analogy\s+(?:with|to)\s+shipments\s+from\b,10-14 days by analogy with shipments from Ethiopia,transit time estimated from another country's shipments
+comtrade_unofficial_en,297,,"Comtrade[^.\n]{0,60}\bunofficial\b",UN Comtrade (unofficial sources),Comtrade data is official even when mirrored
+reverse_flow_flip_en,297,,"\breverse\s+flow[^.\n]{0,80}\b(?:flip|indicator)",the reverse flow is an indicator that could flip the verdict,reverse trade is not evidence of falling demand

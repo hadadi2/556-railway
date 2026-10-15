@@ -34,12 +34,25 @@ _TIER_A_MARKERS = (
     "imf", "gazette", "official gazette", "wits",
     "كومتريد", "الجمارك", "بنك مركزي", "البنك الدولي", "صندوق النقد",
     "الجريدة الرسمية",
-    # الدرس ٢٩٦: الجهاتُ الخليجيةُ والحكوميةُ الرسمية كانت تسقط إلى C
-    # فتُوصَف «غير رسمية» (أمانة مجلس التعاون، هيئة التقييس الخليجية).
-    "gcc secretariat", "gcc-stat", "gso", "gcc standardization",
-    "gulf accreditation", "ministry of", "مجلس التعاون", "هيئة التقييس",
-    "مركز الاعتماد الخليجي", "وزارة",
 )
+#: الدرس ٢٩٧: جهاتٌ حكوميةٌ/خليجيةٌ رسمية تُقرأ من **اسم المصدر وحده** — في
+#: الملاحظة كانت ترفع خبراً («أعلنت وزارة …») إلى درجة A.
+_TIER_A_SOURCE_ONLY = (
+    "gcc secretariat", "gcc-stat", "gcc standardization",
+    "gulf accreditation", "ministry of", "مجلس التعاون", "هيئة التقييس",
+    "مركز الاعتماد الخليجي", "وزارة", "الهيئة العامة للجمارك", "gso",
+    # منظّماتٌ دولية رسمية كانت تسقط إلى C («WTO» + «الاتحاد الأوروبي» = C).
+    "wto", "world trade organization", "eurostat", "faostat", "fao",
+    "itc macmap", "market access map",
+)
+#: كلماتٌ لاتينيةٌ قصيرة تطابَق بحدّ كلمة (الدرس ٢٩٧: «gso» داخل «kingsoft»،
+#: «wits»/«imf» داخل كلماتٍ أطول).
+_WORD_BOUNDED = frozenset({"gso", "wits", "imf", "wto", "fao"})
+#: اتحاداتٌ **رسمية** لا جمعياتُ مصالح — «اتحاد» العارية كانت تُسقط تعرفةَ
+#: الاتحاد الجمركي الخليجي 0% إلى X «غير رسمية» (الدرس ٢٩٧).
+_OFFICIAL_UNION_RE = __import__("re").compile(
+    r"الاتحاد\s+(?:الجمركي|الأوروبي|الاوروبي|الاقتصادي)|الاتحادية|"
+    r"european union|customs union|eurostat", __import__("re").IGNORECASE)
 _TIER_B_MARKERS = (
     "industry report", "trade press", "registry", "commercial registry",
     "trade registry", "تقرير قطاعي", "الصحافة التجارية", "سجل تجاري",
@@ -58,8 +71,15 @@ _INTEREST_BEARING_MARKERS = (
 
 
 def _has_marker(text: str, markers: tuple) -> bool:
+    import re as _re
     low = (text or "").lower()
-    return any(m in low for m in markers)
+    for m in markers:
+        if m in _WORD_BOUNDED:
+            if _re.search(rf"(?<![a-z]){_re.escape(m)}(?![a-z])", low):
+                return True
+        elif m in low:
+            return True
+    return False
 
 
 def classify_tier(source_name: str, note: str = "", *,
@@ -72,7 +92,13 @@ def classify_tier(source_name: str, note: str = "", *,
     دليل سوق»). الافتراض عند غياب أيّ إشارة هو C — لا نمنح A/B ثقةً
     افتراضية لمصدرٍ غير معروف."""
     combined = f"{source_name or ''} {note or ''}"
-    if interest_bearing is True or _has_marker(combined, _INTEREST_BEARING_MARKERS):
+    # الدرس ٢٩٧: المصدرُ الرسميُّ **باسمه** يعلو قرينةَ المصلحة في ملاحظته،
+    # والاتحاداتُ الرسمية (الجمركي الخليجي/الأوروبي/الاتحادية) ليست جمعيات.
+    if interest_bearing is not True and (
+            _has_marker(source_name, _TIER_A_MARKERS + _TIER_A_SOURCE_ONLY)):
+        return "A"
+    if interest_bearing is True or _has_marker(
+            _OFFICIAL_UNION_RE.sub(" ", combined), _INTEREST_BEARING_MARKERS):
         return "X"
     if _has_marker(combined, _TIER_A_MARKERS):
         return "A"

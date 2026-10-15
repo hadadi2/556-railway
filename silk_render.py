@@ -3967,7 +3967,8 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
     }
     if len(full) >= 2 and s.get("growth_pct") is not None:
         g = float(s["growth_pct"])
-        y0, y1 = full[0]["year"], full[-1]["year"]
+        # الدرس ٢٩٧: النافذةُ التي حُسب عليها الرقمُ فعلاً لا كلُّ السلسلة.
+        y0, y1 = (s.get("basis_years") or [full[0]["year"], full[-1]["year"]])
         has_cagr = s.get("cagr_pct") is not None
         out["growth_line"] = _I.t(
             "imports_growth_line" if has_cagr else "imports_growth_line_nocagr",

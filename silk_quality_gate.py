@@ -1151,7 +1151,11 @@ def _market_route_names(iso3: str) -> tuple:
                 if r and r[0].strip().upper() == iso3 and len(r) > 2:
                     port = " ".join(r[2].split()).lower()
                     names.add(port)
-                    names.update(w for w in port.split() if len(w) > 3 and w != "port")
+                    # الدرس ٢٩٧: كلماتُ الميناء العامّة («mina» من «MINA ASH
+                    # SHUAYBAH») ليست اسمَ السوق — «Mina Salman → Dammam» في
+                    # دراسة الكويت كانت تُقرأ مساراً معكوساً.
+                    names.update(w for w in port.split() if len(w) > 3 and w not in
+                                 _GENERIC_PORT_WORDS)
     except Exception:  # noqa: BLE001
         pass
     return tuple(n for n in names if n)
@@ -1166,6 +1170,11 @@ _ROUTE_EN_RE = re.compile(
     r"(?i)\bfrom\s+([A-Za-z .'-]{2,40}?)\s+to\s+(?:the\s+port\s+of\s+)?(jeddah|dammam)\b")
 _ROUTE_ARROW_RE = re.compile(
     r"([A-Za-z\u0600-\u06FF .'-]{2,30}?)\s*(?:→|->|–|—|-|←)\s*(جد[ةه]|الدمام|Jeddah|Dammam)\b")
+
+
+_GENERIC_PORT_WORDS = frozenset({"port", "mina", "minaa", "jabal", "jebel",
+                                 "harbor", "harbour", "terminal", "bandar",
+                                 "khalifa", "king", "sultan", "sheikh", "shaikh"})
 
 
 def _check_reversed_route(view: dict) -> list[dict]:
@@ -1963,11 +1972,15 @@ def _annual_import_series(dr: dict) -> dict:
     # نفسُ قاعدة `silk_deep_pillars.import_series` الذي يقرؤه الرسم والدفتر.
     try:
         from silk_deep_pillars import import_series
-        partial = {int(p["year"]) for p in (import_series(dr.get("missions") or {})
-                                             .get("series") or []) if p.get("partial")}
+        _s = import_series(dr.get("missions") or {})
+        partial = {int(p["year"]) for p in (_s.get("series") or []) if p.get("partial")}
+        # الدرس ٢٩٧: سنواتُ أساسٍ خارج نافذة النموّ المعتمدة (مرآةٌ أقدم) لا
+        # تُختبر — السجلُّ لا يستعملها فانقلابُ إشارتها ليس تناقضاً معروضاً.
+        by = _s.get("basis_years")
     except Exception:  # noqa: BLE001
-        partial = set()
-    return {y: v for y, v in series.items() if y not in partial}
+        partial, by = set(), None
+    return {y: v for y, v in series.items() if y not in partial
+            and (not by or by[0] <= y <= by[1])}
 
 
 def _check_cagr_sign_flips_under_base_year(dr: dict) -> list[dict]:
@@ -2352,7 +2365,13 @@ _STATUS_PHRASES_PLAIN = ("مستنتج من ارقام مرصودة", "متاح 
                          "متاح من مصدر رسمي بثقة منخفضة",
                          "inferred from observed figures",
                          "available from a documented source",
-                         "estimated under a declared assumption")
+                         "estimated under a declared assumption",
+                         # الدرس ٢٩٧: مرآةٌ إنجليزيةٌ كاملة لعبارات الحالة الفعلية،
+                         # و«غير متاح» بعد فعل قيمة («يبلغ غير متاح») جملةٌ مكسورة.
+                         "available from partner-country (mirror) data",
+                         "available from an official source with low confidence",
+                         "available from unofficial sources only",
+                         "غير متاح")
 _VALUE_VERB_PLAIN = (r"(?:ي|ت)?سجل(?:ت)?|(?:ي|ت)?بلغ(?:ت)?|(?:ي|ت)صل\s+الي|"
                      r"وصل(?:ت)?\s+الي|قدر(?:ه|ها)|بنسبة|بقيمة|بمعدل|"
                      r"records?|recorded|reach(?:es|ed)?|stands?\s+at")
@@ -2366,6 +2385,19 @@ _CODE_IDENT_RE = re.compile(
     r"(?<![\w./@-])(?:[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Za-z]+Agent)(?![\w@-])")
 _URLISH_RE = re.compile(r"(?:https?://|www\.)\S+|\S+@\S+|\S+\.(?:com|net|org|"
                         r"gov|bh|sa|ae|io)\S*", re.IGNORECASE)
+
+
+def _strings_of(obj, _depth: int = 0) -> list:
+    """كلُّ النصوص داخل بنيةٍ متداخلة (قائمة/قاموس) — لسطوح العرض."""
+    if _depth > 4 or obj is None:
+        return []
+    if isinstance(obj, str):
+        return [obj]
+    if isinstance(obj, dict):
+        return [s for v in obj.values() for s in _strings_of(v, _depth + 1)]
+    if isinstance(obj, (list, tuple)):
+        return [s for v in obj for s in _strings_of(v, _depth + 1)]
+    return []
 
 
 def _check_field_label_as_value(text: str, idents: bool = True) -> list[dict]:
@@ -2454,8 +2486,10 @@ _MACRO_CTX_RE = re.compile(r"الاقتصاد|الناتج|GDP|economy", re.IGNO
 _MANDATE_RE = re.compile(r"إلزامي\w*|يُ?شترط|mandatory|compulsory", re.IGNORECASE)
 _DECREE_RE = re.compile(
     r"(?:القرار|قرار|رقم|decision|resolution|decree)\s*(?:رقم\s*)?[(]?\s*"
-    r"(\d{1,4}\s*/\s*\d{2,4})|منذ\s+(?:يناير|فبراير|مارس|أبريل|مايو|يونيو|"
-    r"يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر)\s+(20\d\d)", re.IGNORECASE)
+    r"(\d{1,4}\s*/\s*\d{2,4})|(?:منذ|since|from|effective)\s+(?:يناير|فبراير|مارس|"
+    r"أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر|January|February|"
+    r"March|April|May|June|July|August|September|October|November|December)\s+"
+    r"(20\d\d)", re.IGNORECASE)
 _OFFICIAL_SRC_RE = re.compile(r"IMF|World Bank|البنك الدولي|صندوق النقد", re.IGNORECASE)
 
 
@@ -2474,7 +2508,12 @@ def _check_sharp_claim_unverified(view: dict) -> list[dict]:
     جديد في نصّ التقرير بلا حقيقةٍ رسميةٍ تسنده في البعثات."""
     dr = (view or {}).get("deep_research") or {}
     text = ((dr.get("report") or {}).get("text") or "") if isinstance(dr, dict) else ""
-    if not text:
+    # الدرس ٢٩٧: النثرُ البديل (نموذجٌ أيضاً) يُفحَص كنصّ الكاتب، والأرقامُ
+    # العربية-الهندية تُطبَّع قبل المطابقة.
+    if isinstance(dr, dict):
+        text = "\n".join([text] + _strings_of(dr.get("client_fallback_prose")))
+    text = text.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩٫", "0123456789."))
+    if not text.strip():
         return []
     rows = _all_mission_rows(dr)
     findings: list[dict] = []
@@ -7292,7 +7331,7 @@ def consecutive_clean_runs(check: str, n: int = 3, *,
             "ready": streak >= n}
 
 
-def _ledger_findings(view: dict) -> list[dict]:
+def _ledger_findings(view: dict, text: "str | None" = None) -> list[dict]:
     """ملاحظاتُ سجلّ الحقائق على النصّ المُصيَّر — قائمةٌ فارغة بلا سجلّ.
 
     تُستدعى على المسارين (بـ`deep_research` وبدونه): تقريرُ /analyze كان
@@ -7303,7 +7342,8 @@ def _ledger_findings(view: dict) -> list[dict]:
     try:
         import silk_fact_ledger as _FL
         import silk_reports
-        text = silk_reports.render_markdown(view)
+        if text is None:
+            text = silk_reports.render_markdown(view)
         return _FL.check(view, text)
     except Exception as exc:  # noqa: BLE001 — الفحصُ إضافةٌ لا شرطُ حكم
         log.warning("ledger check skipped: %s", exc)
@@ -7325,7 +7365,24 @@ def run_quality_gate(view: dict) -> dict:
         # على نصّها المُصيَّر، **والحكمُ يُحسَب من ملاحظاته** بنفس قاعدة
         # المسار العميق: تثبيتُ PASS هنا كان يجعل الحاجبَ عاجزاً عن الحجب
         # على المسار الذي أُضيف من أجله (مراجعة §58).
-        _lf = _ledger_findings(view)
+        # الدرس ٢٩٧: /analyze يمرّ على حرّاس الدرس ٢٩٦ أيضاً — على النصّ
+        # المُصيَّر **مرّةً واحدة** يتشاركه فحصُ السجلّ (مراجعة §58).
+        _atxt = None
+        try:
+            import silk_reports as _SR
+            _atxt = _SR.render_markdown(view) if view.get("ledger") else None
+        except Exception:  # noqa: BLE001
+            _atxt = None
+        _lf = _ledger_findings(view, _atxt)
+        try:
+            import silk_reports as _SR
+            _atxt = _atxt if _atxt is not None else _SR.render_markdown(view)
+            _iso = str((view.get("market") or {}).get("iso3") or ((
+                view.get("markets") or [{}])[0] or {}).get("iso3") or "")
+            _lf += _check_field_label_as_value(_atxt, idents=False) \
+                + _check_owner_flags(_atxt, _iso)
+        except Exception as exc:  # noqa: BLE001 — فحصٌ إضافيّ لا شرطُ حكم
+            log.warning("analyze lesson-296 checks skipped: %s", exc)
         _severe = [f for f in _lf if not f["repairable"]]
         return {"verdict": (FAIL if any(
             f["check"] in effective_fail_triggers() for f in _severe)
@@ -7436,6 +7493,15 @@ def run_quality_gate(view: dict) -> dict:
     _surface += [str(x) for x in (dr.get("limits") or [])]
     findings += [dict(f, note=f["note"] + " — على سطح العرض (لوحة/شروط/حدود)")
                  for f in _check_absence_vocabulary("\n".join(_surface))]
+    # الدرس ٢٩٧: شاشةُ المصنع تعرض الموجزَ والأساسَ والشروطَ والحدودَ والنثرَ
+    # البديل — كان فحصُ البلاغات وتسميةِ الحالة يقرأ نصَّ الكاتب وحده.
+    _screen = list(_surface) + _strings_of(view.get("brief")) \
+        + _strings_of(dr.get("client_fallback_prose"))
+    _screen_txt = "\n".join(x for x in _screen if x)
+    findings += [dict(f, note=f["note"] + " — على سطح العرض")
+                 for f in (_check_field_label_as_value(_screen_txt, idents=False)
+                           + _check_owner_flags(_screen_txt, str(
+                               (view.get("market") or {}).get("iso3") or "")))]
     findings += _check_decimal_precision(text)
     findings += _check_sentence_length(text)
     findings += _check_decision_numbers_present(text)

@@ -219,7 +219,21 @@ def test_the_client_table_uses_natural_headings_and_a_real_ledger():
     """كان الجدولُ يُغذّى بـ`dr.get("ledger")` — فارغٌ دائماً — فلا يُطبَع
     قطّ؛ الآن يقرأ `view["ledger"]` ويعنون «ما لم نعرفه بعد | كيف تعرفه»."""
     from gen_client_report_sample import build_sample_view
-    cells = _client_cells(build_sample_view("ar"))
+    view = build_sample_view("ar")
+    # الدرس ٢٩٧: عددُ بنود الاشتراطات صار محسوباً من جدول المحرّك (لا «غير
+    # رسمي») فخلت العيّنةُ من صفٍّ ضعيف — يُحقَن بندٌ ضعيفٌ من مصدرٍ غير رسمي
+    # ليبقى عقدُ العناوين الطبيعية مقيساً، ويُقفَل أنّ الاشتراطاتِ لم تعد فيه.
+    assert not any(g.get("what") == "بنود الاشتراطات"
+                   for g in view["ledger"]["gaps_table"])
+    led = view["ledger"]
+    led["entries"]["tariff_applied_pct"] = {
+        "key": "tariff_applied_pct", "status": "weak", "value": 5.0,
+        "source": "مدوّنة تجارية", "note": "منشورٌ غير رسمي"}
+    led["gaps"].append({"key": "tariff_applied_pct",
+                        "label_ar": "الرسوم الجمركية المطبَّقة",
+                        "label_en": "applied tariff", "status": "weak",
+                        "note": "منشورٌ غير رسمي", "source": "مدوّنة تجارية"})
+    cells = _client_cells(view)
     # الدرس ٢٩٦: عمودُ «كيف تعرفه» يُطبَع حين يحمل سبيلاً واحداً على الأقل؛
     # كلُّه «—» = يُسقَط (بلاغ المالك: «جدول كيف تعرفه الفارغ»).
     assert "ما لم نعرفه بعد" in cells

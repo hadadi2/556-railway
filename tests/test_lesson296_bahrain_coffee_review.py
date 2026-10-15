@@ -272,7 +272,7 @@ def test_web_candidates_are_not_cut_by_maps_leads():
 def test_study_template_has_a_land_route_and_a_forecast_variant():
     import silk_study_case as C
     assert C._land_route("BHR") == {"land": True,
-                                    "land_route": "عبر جسر الملك فهد من المنطقة الشرقية"}
+                                    "land_route": "عبر جسر الملك فهد من المنطقة الشرقية (الخبر)"}
     tpl = open(os.path.join(_ROOT, "data", "study_templates_ar.yaml"),
                encoding="utf-8").read()
     assert "when: logistics_land" in tpl and "when: macro_forecast" in tpl

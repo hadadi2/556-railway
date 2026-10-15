@@ -29,6 +29,8 @@ _STUDY_RENDER_422 = {
                "لم يُستهلك أي رصيد إضافي. أعد المحاولة لاحقاً أو اطلب التقرير العادي.",
 }
 
+#: أنماطُ الكتابة التي تُخزَّن مع السجلّ وتتبعها التصديرات (الدرس ٢٩٧).
+_STORED_STYLES = ("decision", "academic")
 log = logging.getLogger(__name__)
 
 _PIP_HINT = "FastAPI/uvicorn not installed — run: pip install fastapi uvicorn"
@@ -672,6 +674,13 @@ def create_app():
         silk_collectors.start_scheduler()
     except Exception as _e:  # noqa: BLE001
         log.warning("refresh scheduler not started: %s", _e)
+    # الدرس ٢٩٧: تدقيقُ ما بعد النشر — الدراساتُ المخزَّنة التي صار حارسٌ جديد
+    # يحجبها تُكتشف عند الإقلاع وتُسجَّل في /ops، لا حين ينقر المصنع.
+    try:
+        import silk_collectors
+        silk_collectors.start_post_deploy_audit()
+    except Exception as _e:  # noqa: BLE001
+        log.warning("post-deploy audit not started: %s", _e)
 
     # النسخ الاحتياطي الدوري (SILK_BACKUP_HOURS، مطفأ افتراضاً — قرار مالك):
     # نفس نمط خيط التحديث أعلاه، ولنفس سبب «خدمة واحدة على الوحدة». يدوياً:
@@ -3540,6 +3549,25 @@ def create_app():
                         "cost_usd_by_stage": eco.get("cost_usd_by_stage")})
         return _json({"studies": out})
 
+    @app.get("/ops/audit-studies")
+    def ops_audit_studies(request: Request, study: "int | None" = None,
+                          client: int = 1, dump: int = 0):
+        """الدرس ٢٩٧ — أعد بناءَ مستند العميل لدراسةٍ مخزَّنة (أو للكلّ) بالشيفرة
+        الحالية وشغّل عليه بوّابةَ التسليم وسجلَّ بلاغات المالك. قراءةٌ محضة
+        بلا أيّ نداءٍ مدفوع (النثرُ البديل المخزَّن وحده) — نفسُ أداة
+        `tools/audit_study_reports.py`، فتُستعمل من خارج الخادم بلا `railway ssh`."""
+        _require_key(request)
+        _rate_limit(request)
+        import silk_collectors
+        mod = silk_collectors.load_study_audit()
+        pdb, edb = mod._platform_db(None), mod._engine_db(None)
+        for p_ in (pdb, edb):
+            if not os.path.exists(p_):
+                raise HTTPException(status_code=404, detail=f"قاعدة غير موجودة: {os.path.basename(p_)}")
+        rows = mod.review(pdb, edb, study, False, client=bool(client) or bool(dump),
+                          dump=bool(dump) and study is not None, raw_compare=False)
+        return _json({"studies": rows})
+
     @app.get("/ops/backup")
     def ops_backup(request: Request):
         """شغّل نسخاً احتياطياً الآن وأعِد المانيفست — سطح مشغّل محروس.
@@ -3796,9 +3824,12 @@ def create_app():
         # ترتيب/نبرة تقرير العميل فقط — نفس النموذج القانوني ونفس بوابة
         # التسليم أعلاه ونفس مُطهِّرات العميل؛ صفر نداء كلود إضافي.
         # أسلوب مخزَّن مع السجل (إعادة توليد أكاديمية سابقة) = الافتراضي.
+        # الدرس ٢٩٧: نمطُ «دراسة السوق» (الذي يتجاوز بوّابةَ التسليم) يُختار
+        # **صراحةً** بالاستعلام فقط — قيمةٌ مخزَّنة لا تحوّل التصديرَ الافتراضي إليه.
+        _stored_style = str((view.get("deep_research") or {})
+                            .get("report_style") or "").lower()
         style = (str(request.query_params.get("style") or "").lower()
-                 or str((view.get("deep_research") or {})
-                        .get("report_style") or "").lower())
+                 or (_stored_style if _stored_style in _STORED_STYLES else ""))
         # نمط «دراسة السوق» (P1-3): لا حجب — فجوة البيانات بندٌ في «ما لم يتسنّ
         # توثيقه» ومحرك القوالب يحمل حراسه (نائب/مصطلح ممنوع) بنفسه.
         if is_research and not internal and style != "study":
@@ -3891,9 +3922,12 @@ def create_app():
         # HF4.2: علِّم النموذجَ بالجمهور — سطرُ إفصاح التنقية للمدقّق فقط.
         view["internal"] = internal
         is_research = bool(view.get("deep_research"))
+        # الدرس ٢٩٧: نمطُ «دراسة السوق» (الذي يتجاوز بوّابةَ التسليم) يُختار
+        # **صراحةً** بالاستعلام فقط — قيمةٌ مخزَّنة لا تحوّل التصديرَ الافتراضي إليه.
+        _stored_style = str((view.get("deep_research") or {})
+                            .get("report_style") or "").lower()
         style = (str(request.query_params.get("style") or "").lower()
-                 or str((view.get("deep_research") or {})
-                        .get("report_style") or "").lower())
+                 or (_stored_style if _stored_style in _STORED_STYLES else ""))
         if is_research and not internal and style != "study":
             _block_client_export_if_gate_failed(
                 view, analysis_id, found, "pdf", request)
@@ -3965,6 +3999,7 @@ def create_app():
             raise HTTPException(status_code=404,
                                 detail=f"analysis {analysis_id} not found")
         from silk_render import build_view
+        import silk_reports
         from silk_reports import render_markdown
         from fastapi.responses import PlainTextResponse
         _style = str(request.query_params.get("style") or "").lower()
@@ -3972,10 +4007,25 @@ def create_app():
             if _style == "study" and found.get("deep_research"):
                 from silk_study_export import study_markdown
                 text, _meta = study_markdown(found)
+                if _meta.get("blockers"):
+                    from silk_reports import ClientArtifactGateError
+                    raise ClientArtifactGateError(
+                        "تصدير الدراسة لم يجتز فحص التسليم: " + "؛ ".join(
+                            f["note"][:120] for f in _meta["blockers"][:3]),
+                        findings=_meta["blockers"])
             else:
-                text = render_markdown(build_view(found))
+                _md_view = build_view(found)
+                # الدرس ٢٩٧: Markdown بلا بوّابة عميل — نفسُ حجب report.docx.
+                if found.get("deep_research") and str(
+                        request.query_params.get("internal") or "").lower() not in (
+                        "1", "true", "yes"):
+                    _block_client_export_if_gate_failed(
+                        _md_view, analysis_id, found, "md", request)
+                text = render_markdown(_md_view)
         except _StudyRenderError:
             raise HTTPException(status_code=422, detail=_STUDY_RENDER_422)
+        except silk_reports.ClientArtifactGateError as exc:
+            raise _operator_artifact_gate_409(exc, analysis_id, "md")
         except RuntimeError as e:
             # نفس عقد report.docx (البند أعلاه): تناقض حكمٍ أو تسريبٌ يستحيل
             # تنقيته يُفشِل التوليد داخلياً — 501 نظيف لا 500 غير مُدار.
@@ -4105,6 +4155,15 @@ def create_app():
         if found is None:
             raise HTTPException(status_code=404,
                                 detail=f"analysis {analysis_id} not found")
+        # الدرس ٢٩٧ (مراجعة §58): حكمُ تسليمِ التقرير **المخزَّن** يُقرأ قبل أيّ
+        # تحديثٍ لبيانات البعثات — لا على التقرير القديم فوق بياناتٍ جديدة.
+        _prior_deliverable = None
+        if ((found.get("deep_research") or {}).get("report") or {}).get("report"):
+            try:
+                import silk_export_gate as _EGR
+                _prior_deliverable = not _EGR.is_blocked(_EGR.evaluate(_view(found)))
+            except Exception:  # noqa: BLE001
+                _prior_deliverable = None
         dr = found.get("deep_research")
         if not dr:
             raise HTTPException(
@@ -4162,6 +4221,8 @@ def create_app():
         # الأسلوب يُخزَّن مع السجل فتتبعه التصديرات افتراضياً.
         regen_style = str(request.query_params.get("style") or "").lower() \
             or None
+        if regen_style not in (None, *_STORED_STYLES):
+            regen_style = None             # الدرس ٢٩٧: لا يُخزَّن نمطٌ مجهول
         # نفسُ عقد `resume` (يمرّ ويُوسَم): إعادةُ التوليد تُعيد استعمال
         # `found["hs_code"]` المخزَّن بلا أيّ فحص — فتُعيد كتابةَ تقريرٍ كاملٍ
         # على رمزٍ ربّما صار خاطئاً. الوسمُ يُحفَظ مع السجلّ فيظهر في الحدود.
@@ -4212,9 +4273,19 @@ def create_app():
             except Exception as _we:  # noqa: BLE001 — البذرة تحسينٌ لا شرط
                 log.warning("writer_partial seed unreadable on regen for %s: %s",
                             analysis_id, _we)
+        # الدرس ٢٩٧: إعادةُ التوليد كانت تشغّل الكاتبَ **بلا سجلّ** — فلا
+        # تُعاد مسوّدتُه على رمزٍ مشوَّه ولا على عبارةٍ رفضها المالك.
+        try:
+            import silk_fact_ledger as _FLR
+            _regen_ledger = _FLR.build_ledger(
+                found, (found.get("report_language") or "ar"))
+        except Exception as _le:  # noqa: BLE001 — السجلُّ تحسينٌ لا شرط
+            log.warning("regen ledger build skipped for %s: %s", analysis_id, _le)
+            _regen_ledger = None
         report_out = write_reviewed_report(
             mission_reports, analyst_summary, verdict,
             found.get("product", ""), market_name, trace_id=trace_id,
+            ledger=_regen_ledger,
             hs_code=found.get("hs_code"), hs_confirmation=hs_conf_regen,
             style=regen_style, seed_draft=_seed_regen,
             importer_leads=dr.get("importer_leads"), product_card=found.get("product_card"),
@@ -4273,12 +4344,15 @@ def create_app():
                                    "السابق محفوظ كما هو دون تغيير."),
                           "failure_reason": _strip_internal_plumbing(
                               report_out.get("failure_reason") or "")})
+        # الدرس ٢٩٧: لا نطمس تقريراً **قابلاً للتسليم** بتقريرٍ تحجبه البوّابة.
+        _prior_node_saved = found["deep_research"].get("report")
         found["deep_research"]["report"] = report_out
         if regen_style:
             found["deep_research"]["report_style"] = regen_style
         found["analysis_id"] = analysis_id
         found["view"] = _view(found)
-        _attach_quality_gate(found, trace_id)
+        # التحديثاتُ المدفوعة تُحفَظ نقاطَ تفتيشٍ **قبل** أيّ رجوعٍ مبكر — لا يُعاد
+        # دفعُها لأنّ التقرير الجديد لم يجتز الفحص (مراجعة §58).
         for _status_key, _mission in (("trend_refresh", "demand_trends"),
                                      ("price_refresh", "pricing_scout")):
             if (dr.get(_status_key) or {}).get("status") == "completed":
@@ -4290,6 +4364,20 @@ def create_app():
                 "analyst_out": dr["analyst"],
                 "analyst_input": dr["analysis_refresh"]["analyst_input"]},
                 status="succeeded", market_iso3=(found.get("market") or {}).get("iso3"))
+        if _prior_deliverable:
+            try:
+                import silk_export_gate as _EGR
+                _dec = _EGR.evaluate(found["view"])
+                if _EGR.is_blocked(_dec):
+                    found["deep_research"]["report"] = _prior_node_saved
+                    found["view"] = _view(found)
+                    return _json({"report": None, "regenerated": False,
+                                  "note": ("التقرير الجديد لم يجتز فحص التسليم؛ "
+                                           "التقرير السابق القابل للتسليم محفوظ كما هو."),
+                                  "fail_drivers": _dec.get("fail_drivers") or []})
+            except Exception as _ge:  # noqa: BLE001 — الحارسُ إضافةٌ لا شرط
+                log.warning("regen delivery guard skipped for %s: %s", analysis_id, _ge)
+        _attach_quality_gate(found, trace_id)
         silk_storage.save_analysis(found, analysis_id=analysis_id)
         return _json(found)
 

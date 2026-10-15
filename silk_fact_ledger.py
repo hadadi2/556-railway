@@ -133,7 +133,9 @@ KEYS: tuple = (
           engine_computed=True),
     _fact("requirements_count", "بنود الاشتراطات", "entry requirements", "",
           ("بنود الاشتراطات", "قائمة الاشتراطات", "entry requirements"),
-          mandatory=True, self_describing=True, numeric_check=False),
+          # الدرس ٢٩٧: عددُ صفوف الجدول المطبوع حسابٌ حتميّ — لا «مصادر غير رسمية».
+          mandatory=True, self_describing=True, numeric_check=False,
+          engine_computed=True),
     _fact("competitor_prices", "أسعار المنافسين", "competitor prices", "",
           ("أسعار المنافسين", "competitor prices"), numeric_check=False,
           writer_hidden=True),
@@ -399,6 +401,10 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
             _fill_from_research(dr, put, result)
         else:
             _fill_from_analyze(row, put)
+            # الدرس ٢٩٧: /analyze يعدّ البنودَ من الجدول المطبوع أيضاً.
+            _fill_requirements_from_table(
+                {**result, "market": result.get("market") or row.get("market")
+                 or {"iso3": row.get("iso3")}}, put)
     except Exception:  # noqa: BLE001 — عطل استخراج = فجوات معلنة لا كسر
         pass
     _fill_decision(row, result, put)
@@ -486,7 +492,7 @@ def _fill_requirements_from_table(result: dict, put) -> None:
     الأول (لا صفرَ مختلَق)."""
     iso3 = str((result.get("market") or {}).get("iso3") or "") \
         if isinstance(result.get("market"), dict) else ""
-    if not iso3:
+    if not iso3 or not result.get("hs_code"):
         return
     try:
         import silk_render
@@ -553,8 +559,13 @@ def _attribution(missions: dict, mission: str, metric: str,
         raw = _g(f, "value")
         num = _num(raw if not isinstance(raw, dict) else None)
         blob = f"{_g(f, 'note', '')} {raw if isinstance(raw, str) else ''}"
-        hit = (num is not None and abs(num - float(value)) < 1e-6) or \
-            (f"{value:g}" in blob)
+        # الدرس ٢٩٧: المطابقةُ النصّية بحدّ رقمٍ وبقيمةٍ ذات دلالة — «0» أو «7»
+        # كانا «يطابقان» أيَّ ملاحظةٍ فيها «2017» أو «HS0901» فيرث المعطى
+        # مصدراً ودرجةً خاطئين.
+        txt = f"{value:g}"
+        hit = (num is not None and abs(num - float(value)) < 1e-6) or (
+            (abs(float(value)) >= 100 or "." in txt)
+            and re.search(rf"(?<![\d.]){re.escape(txt)}(?![\d])", blob) is not None)
         if not hit:
             continue
         src = str(_g(f, "source", "") or "")
@@ -588,19 +599,19 @@ def _fill_series(missions: dict, put) -> None:
                confidence=0.9, note="أحدث سنة كاملة مرصودة في سلسلة الواردات",
                origin="trade_flow", items=[dict(p) for p in pts]))
     g = _num(series.get("growth_pct"))
+    by = series.get("basis_years") or []
     put(_entry("import_growth_pct", g, source="UN Comtrade", confidence=0.9,
-               origin="trade_flow",
-               note=("نمو الواردات بين أول وآخر سنة كاملة مرصودة" if g is not None
-                     else "يتطلب سنتين مرصودتين")))
+               origin="trade_flow", year=(by[-1] if by else None),
+               note=((f"نمو الواردات {by[0]}–{by[-1]}" if by else
+                      "نمو الواردات بين أول وآخر سنة كاملة مرصودة")
+                     if g is not None else "يتطلب سنتين مرصودتين")))
     # الدرس ٢٩٦: النموُّ المركّب من السلسلة نفسِها بمصدرها — كان يُقرأ من نثر
     # البعثة فتفشل مطابقةُ الإسناد ويُوسَم «من مصادر غير رسمية فقط»، أو يغيب
     # فيُعلَن «غير متاح» بينما السلسلةُ المرسومة تعطيه.
     c = _num(series.get("cagr_pct"))
     if c is not None:
-        direct = [p for p in full if not p.get("mirrored")]
-        basis = (direct if len(direct) >= 2 and direct[-1]["year"] == full[-1]["year"]
-                 else full)
-        yrs = sorted(int(p["year"]) for p in basis)
+        # الدرس ٢٩٧: النافذةُ من `import_series` نفسِه — لا قاعدةٌ ثانية هنا.
+        yrs = by or [int(full[0]["year"]), int(full[-1]["year"])]
         put(_entry("import_cagr_pct", c, source="UN Comtrade", confidence=0.9,
                    origin="trade_flow", year=yrs[-1],
                    note=f"محسوب من سلسلة الواردات {yrs[0]}–{yrs[-1]}"))

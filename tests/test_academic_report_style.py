@@ -174,7 +174,8 @@ def test_write_reviewed_report_passes_style_to_both_writer_calls():
     body = src.split("def write_reviewed_report(")[1]
     # الدرس ٢٦٢: صار للكاتب ثلاثةُ مواضعِ نداءٍ — المسوّدة، وتنقيحُ مخالفات
     # سجلّ الحقائق، وتنقيحُ المراجع. الأسلوبُ يُمرَّر في ثلاثتها بلا استثناء.
-    assert body.count("style=style") == 3
+    # الدرس ٢٩٧: رابعٌ — التنقيحُ الحرِج بعد المراجعة (بلاغاتُ المالك وخاناتُ الحالة).
+    assert body.count("style=style") == 4
 
 
 def test_regenerate_endpoint_wires_style_and_persists_it():

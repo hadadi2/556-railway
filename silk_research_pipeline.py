@@ -64,7 +64,9 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
     def _default_report_style() -> str:
         """نمط الكتابة الافتراضي للتوليد — `SILK_REPORT_STYLE` (طلب المالك:
         الافتراضي "decision"). يبقى الأسلوب الأكاديمي خياراً صريحاً فقط."""
-        return (os.environ.get("SILK_REPORT_STYLE", "decision") or "decision").strip().lower()
+        v = (os.environ.get("SILK_REPORT_STYLE", "decision") or "decision").strip().lower()
+        # الدرس ٢٩٧: قيمةٌ خارج القائمة («study») لا تُخزَّن نمطاً للسجلّ.
+        return v if v in ("decision", "academic") else "decision"
 
     def _research_budget_status(economics: dict) -> dict:
         """حالة الميزانية على مستوى التشغيلة كاملة — P1، حادثة نفاد
@@ -583,6 +585,8 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
             # نمط الكتابة (طلب المالك): يُمرَّر للكاتب فيبدّل عقد السجل اللغوي
             # وحده (الأكاديمي مقابل التجاري) — نفس الأقسام/الحكم/قواعد الصدق.
             eff_report_style = (report_style or _default_report_style())
+            if eff_report_style not in ("decision", "academic"):
+                eff_report_style = _default_report_style()
             if ai_ok and early_halted:
                 # الموجة ٨: لا كاتب فوق نتيجة محسومة «بيانات غير كافية» —
                 # الرسالة بلغة الزائر وأرقامها من قرار المحرك نفسه، وسبيل
@@ -683,10 +687,17 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
                 # الدرس ٢٦٢ — السجلُّ يُبنى **قبل** الكاتب: فتُكتب الخلاصةُ
                 # وكلُّ قسمٍ على الحقائق نفسِها التي ستُعرَض، والرموزُ الستة
                 # تصل الموجّه. صفرُ نداءٍ إضافي؛ عطلُه يُبقي السلوكَ كما كان.
+                # الدرس ٢٩٧: السوقُ ورمزُ HS وبطاقةُ المنتج تصل سجلَّ الكاتب —
+                # بدونها كان عددُ البنود يُعَدّ من غير جدول الاشتراطات المطبوع،
+                # وتسقط بلاغاتُ المالك الخاصّة بالسوق ومحورُ فئة المنتج.
                 _ledger = _build_ledger_safe(
                     {"deep_research": {"missions": mission_reports},
                      "markets": [{"decision": _deep_decision or {}}],
-                     "regulatory": _deep_reg or {}}, lang)
+                     "regulatory": _deep_reg or {},
+                     "market": {"iso3": getattr(market_ref, "iso3", None),
+                                "name_en": getattr(market_ref, "name_en", None)},
+                     "hs_code": hs_code,
+                     "product_card": product_card_dict}, lang)
                 report_out = _saved_report if _saved_report is not None else (
                     write_reviewed_report(
                     mission_reports, analyst_input.get("summary", ""), verdict,

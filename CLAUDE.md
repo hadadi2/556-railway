@@ -114,14 +114,17 @@ lock) + اربطه بمرساة في `tests/test_lessons_enforcement.py`.
 تُضاف صفّاً إلى `data/owner_flags_l1.csv` (نمط + مثال يطابقه + السبب) — يقرؤه
 فحصُ مسوّدة الكاتب والبوّابةُ النهائية والاختبار. وقبل وسم أيّ إصلاحٍ لدراسةٍ
 بلّغ عنها «جاهزاً» يُعاد بناءُ مستندها الفعليّ بالشيفرة الجديدة:
-`python3 tools/audit_study_reports.py --study N --client` على Railway — العيّنةُ
-الاصطناعية وحدَها ليست دليلاً على دراسة المالك.
+`python3 tools/audit_study_reports.py --study N --client` على Railway، أو من خارجه
+`GET /ops/audit-studies?study=N&dump=1` (بمفتاح API)، أو `--blob-file` على نتيجةٍ
+نُزِّلت من `GET /analyses/{id}` — العيّنةُ الاصطناعية وحدَها ليست دليلاً على
+دراسة المالك. والإقلاعُ على الإنتاج يعيد بناءَ كلّ الدراسات ويسجّل المحجوبَ منها
+في `/ops` (`silk_collectors.post_deploy_audit`، الدرس ٢٩٧).
 
 ## Commands
 
 ```bash
 pip install -r requirements.txt pytest httpx   # httpx is test-only (TestClient)
-python3 -m pytest tests/ -q                    # full hermetic suite (~7-8 min, ~4,000 tests, no network needed)
+python3 -m pytest tests/ -q                    # full hermetic suite (~10-11 min locally, ~15 in CI, ~6,500 tests, no network needed)
 python3 -m pytest tests/test_wave0_security.py -q                    # one file
 python3 -m pytest tests/test_smoke.py::test_resolver_real_hs_codes -q  # one test
 uvicorn api:app --host 0.0.0.0 --port 8000     # API + dashboard (web/ served at /)

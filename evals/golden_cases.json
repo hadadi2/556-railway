@@ -18,7 +18,8 @@
       "references_integrity": true,
       "no_truncation_artifacts": true,
       "plausibility_reconciled": true,
-      "gap_rate_max": 0.3
+      "gap_rate_max": 0.3,
+      "no_owner_flags": true
     },
     "verified_at": "2026-07-23",
     "verified_by": "Claude Code — بوّابة بنيوية (أقسام/نظافة متن/سلامة مراجع/سقف فجوات). أرقام مرجعية حيّة (expected) مؤجّلة لبيئةٍ بمفتاح: تُملأ يدوياً من UN Comtrade بعد أوّل تشغيلة حيّة.",
@@ -43,7 +44,8 @@
       "references_integrity": true,
       "no_truncation_artifacts": true,
       "plausibility_reconciled": true,
-      "gap_rate_max": 0.3
+      "gap_rate_max": 0.3,
+      "no_owner_flags": true
     },
     "verified_at": "2026-07-23",
     "verified_by": "Claude Code — بوّابة بنيوية. سوق متقدّمة خارج الخليج تُمرِّن سلسلة التعريفة WITS → WTO.",
@@ -68,7 +70,8 @@
       "references_integrity": true,
       "no_truncation_artifacts": true,
       "plausibility_reconciled": true,
-      "gap_rate_max": 0.45
+      "gap_rate_max": 0.45,
+      "no_owner_flags": true
     },
     "verified_at": "2026-07-23",
     "verified_by": "Claude Code — بوّابة بنيوية. سوق نامية ضعيفة التبليغ التجاري تُمرِّن بيانات المرآة والمسارات المشتقّة.",
@@ -93,10 +96,32 @@
       "references_integrity": true,
       "no_truncation_artifacts": true,
       "plausibility_reconciled": true,
-      "gap_rate_max": 0.35
+      "gap_rate_max": 0.35,
+      "no_owner_flags": true
     },
     "verified_at": "2026-07-23",
     "verified_by": "Claude Code — بوّابة بنيوية. فئة منتج مختلفة (تمور، فاكهة مجفّفة) خارج الأغذية المصنّعة تُمرِّن محرّك اشتراطات الدخول على فصل HS مختلف.",
     "notes": "فئة منتج مختلفة (تمور HS 080410 لا زبدة مصنّعة 200811) وسوقٌ كبيرةٌ نامية — يُمرِّن اشتراطات الدخول ومسارات مختلفة. سقف 0.35 (بين السهلة والصعبة). أوّليّ يُضيَّق بعد الأساس الحيّ."
+  },
+  {
+    "key": "bahrain_roasted_coffee",
+    "product": "قهوة محمصة",
+    "market": "البحرين",
+    "hs_code": "090121",
+    "origin": "SAU",
+    "structural": {
+      "required_sections": [
+        "القرار وأساسه",
+        "السوق بالأرقام",
+        "مسار الدخول"
+      ],
+      "clean_body": true,
+      "no_truncation_artifacts": true,
+      "no_owner_flags": true,
+      "gap_rate_max": 0.3
+    },
+    "verified_at": "2026-10-15",
+    "verified_by": "Claude Code — الدرس ٢٩٧: حالةُ الدراسة التي قيّمها المالك 7/10؛ بوّابة بنيوية + سجلّ بلاغات المالك. أرقامٌ مرجعية حيّة مؤجّلة لبيئةٍ بمفتاح.",
+    "notes": "سوقٌ برّية (جسر الملك فهد)، مرآةٌ أقدم من السلسلة المباشرة، تعرفةُ الاتحاد الجمركي الخليجي 0%."
   }
 ]

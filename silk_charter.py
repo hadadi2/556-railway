@@ -57,6 +57,23 @@ def _simple_tokens(text: str) -> set:
     return {t.lower() for t in _TOKEN_RE.findall(text or "") if len(t) > 1}
 
 
+def land_route(market_iso3: "str | None", lang: str = "ar") -> "str | None":
+    """المنفذُ البرّيّ المسمّى لسوقٍ ملاصقة — من `data/land_crossings_l1.csv`
+    (الدرس ٢٩٧: كانت البحرين وحدها مسمّاةً والبقيةُ «المنافذ المشتركة»)."""
+    import csv
+    iso = str(market_iso3 or "").upper()
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data",
+                        "land_crossings_l1.csv")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                if row.get("iso3") == iso:
+                    return row.get("route_en" if lang == "en" else "route_ar") or None
+    except OSError:
+        return None
+    return None
+
+
 def determine_transport_mode(market_iso3: str | None) -> dict:
     """وسيلةُ النقل من الجغرافيا — لا افتراض بحري تلقائي (القاعدة ١).
 
