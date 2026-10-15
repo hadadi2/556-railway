@@ -1976,11 +1976,11 @@ def _annual_import_series(dr: dict) -> dict:
         partial = {int(p["year"]) for p in (_s.get("series") or []) if p.get("partial")}
         # الدرس ٢٩٧: سنواتُ أساسٍ خارج نافذة النموّ المعتمدة (مرآةٌ أقدم) لا
         # تُختبر — السجلُّ لا يستعملها فانقلابُ إشارتها ليس تناقضاً معروضاً.
-        by = _s.get("basis_years")
+        by = set(_s.get("basis_year_set") or [])
     except Exception:  # noqa: BLE001
-        partial, by = set(), None
+        partial, by = set(), set()
     return {y: v for y, v in series.items() if y not in partial
-            and (not by or by[0] <= y <= by[1])}
+            and (not by or y in by)}
 
 
 def _check_cagr_sign_flips_under_base_year(dr: dict) -> list[dict]:
@@ -2445,16 +2445,31 @@ def owner_flags() -> tuple:
     try:
         with open(path, encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
-                out.append({**r, "rx": re.compile(r["pattern"], re.IGNORECASE),
+                out.append({**r, "rx": re.compile(_flag_norm(r["pattern"]),
+                                                  re.IGNORECASE),
                             "markets": frozenset((r.get("markets") or "").split())})
     except OSError:
         return ()
     return tuple(out)
 
 
+_FLAG_ZW_RE = re.compile("[\u200b-\u200f\u2060\ufeff\u00ad]")
+_FLAG_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "0123456789" * 2)
+
+
+def _flag_norm(s: object) -> str:
+    """تطبيعُ سجلّ البلاغات — على النصّ **والنمط** معاً (الدرس ٢٩٨): بلا تشكيلٍ
+    ولا تطويلٍ ولا محارفَ صفرية العرض، وألفٌ/تاءٌ/ياءٌ موحَّدة، وأرقامٌ هندية
+    ← لاتينية. «يسـجل» و«و١ مكونات» و«فشل‌عمليات» كانت تعبر السجلّ."""
+    t = _strip_ar_diacritics(str(s or ""))
+    t = _FLAG_ZW_RE.sub(" ", _AR_TATWEEL_RE.sub("", t))
+    t = _AR_ALEF_RE.sub("ا", t).replace("ة", "ه").replace("ى", "ي")
+    return t.translate(_FLAG_DIGITS)
+
+
 def owner_flag_hits(text: str, market_iso3: str = "") -> list:
-    """[(صفّ السجلّ، المقتطف)] — المطابقةُ على نصٍّ بلا تشكيل."""
-    plain = _strip_ar_diacritics(str(text or ""))
+    """[(صفّ السجلّ، المقتطف)] — المطابقةُ على نصٍّ مطبَّعٍ (`_flag_norm`)."""
+    plain = _flag_norm(text)
     iso = str(market_iso3 or "").upper()
     hits = []
     for row in owner_flags():
@@ -2464,6 +2479,16 @@ def owner_flag_hits(text: str, market_iso3: str = "") -> list:
         if m:
             hits.append((row, m.group(0)))
     return hits
+
+
+def _view_iso3(view) -> str:
+    """رمزُ السوق: `market.iso3` ثمّ أوّلُ صفٍّ في `markets` (الدرس ٢٩٨ — صفوفُ
+    السجلّ المقيّدة بسوقٍ كانت تُتخطّى بصمتٍ حين يخلو `market`)."""
+    view = view if isinstance(view, dict) else {}
+    dr = view.get("deep_research") if isinstance(view.get("deep_research"), dict) else {}
+    return str((view.get("market") or {}).get("iso3")
+               or (dr.get("market") or {}).get("iso3")
+               or ((view.get("markets") or [{}])[0] or {}).get("iso3") or "").upper()
 
 
 def _check_owner_flags(text: str, market_iso3: str = "") -> list[dict]:
@@ -2479,14 +2504,28 @@ def _check_owner_flags(text: str, market_iso3: str = "") -> list[dict]:
 # الحقائق. الحادُّ: انكماش/نموّ كليّ > 5%، أو اشتراطٌ إلزاميّ برقم قرارٍ أو
 # تاريخ سريان. السندُ: حقيقةٌ في البعثات تحمل القيمة (من IMF/البنك الدولي) أو
 # رقمَ القرار (برابطٍ أو جهةٍ رسمية).
+# الدرس ٢٩٨: أفعالُ الانكماش كلُّها لا المصدرُ وحده («انكمش الاقتصاد 11.3%»،
+# «تراجع الناتج»، "contracted by", "shrank") كانت تعبر الفحص.
 _SHARP_MACRO_RE = re.compile(
-    r"(انكماش\w*|نمو\w*|contraction|growth)[^.\n؛]{0,60}?(?<![\d.,])(\d{1,2}(?:[.,]\d+)?)\s*[%٪]",
+    r"(انكماش\w*|انكمش\w*|تراجع\w*|هبط\w*|نمو\w*|contract\w*|shr[iu]nk\w*|"
+    r"declin\w*|growth|grew)[^.\n؛]{0,60}?(?<![\d.,])(\d{1,2}(?:[.,]\d+)?)\s*[%٪]",
     re.IGNORECASE)
+_SHRINK_RE = re.compile(r"انكم|تراجع|هبط|contract|shr[iu]nk|declin", re.IGNORECASE)
+#: بدايةُ كلّ فعلٍ مرشّح — تُجرَّب المطابقةُ من كلٍّ منها فلا يبتلع فعلٌ تُخطّي
+#: (نموٌّ ≤12%) فعلَ انكماشٍ بعده (مراجعة §58).
+_SHARP_VERB_RE = re.compile(
+    r"انكماش|انكمش|تراجع|هبط|نمو|contract|shr[iu]nk|declin|growth|grew", re.IGNORECASE)
+#: موضوعاتٌ ليست اقتصاداً كلياً وإن جاورته («تراجعت أسعار التجزئة 9%»).
+_NOT_MACRO_RE = re.compile(
+    r"الواردات|الصادرات|السوق|المبيعات|الطلب|أسعار|سعر|الشحن|الإنتاج|الاستهلاك|"
+    r"الحصة|حصة|الرسوم|التعرفة|imports|exports|market|sales|prices?|freight|"
+    r"production|consumption|share|tariff", re.IGNORECASE)
 _MACRO_CTX_RE = re.compile(r"الاقتصاد|الناتج|GDP|economy", re.IGNORECASE)
 _MANDATE_RE = re.compile(r"إلزامي\w*|يُ?شترط|mandatory|compulsory", re.IGNORECASE)
 _DECREE_RE = re.compile(
-    r"(?:القرار|قرار|رقم|decision|resolution|decree)\s*(?:رقم\s*)?[(]?\s*"
-    r"(\d{1,4}\s*/\s*\d{2,4})|(?:منذ|since|from|effective)\s+(?:يناير|فبراير|مارس|"
+    r"(?:القرار|قرار|رقم|decision|resolution|decree)(?:\s+[^\s\d/]+){0,2}?\s*"
+    r"(?:رقم|No\.?)?\s*[(]?\s*"
+    r"(\d{1,4}\s*/\s*\d{2,4}|\d{1,4}\s+(?:لسنة|لعام|of)\s+\d{4})|(?:منذ|since|from|effective)\s+(?:يناير|فبراير|مارس|"
     r"أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر|January|February|"
     r"March|April|May|June|July|August|September|October|November|December)\s+"
     r"(20\d\d)", re.IGNORECASE)
@@ -2503,21 +2542,49 @@ def _all_mission_rows(dr: dict) -> list:
     return rows
 
 
-def _check_sharp_claim_unverified(view: dict) -> list[dict]:
+def _official_rows(obj, _depth: int = 0) -> list:
+    """كلُّ قاموسٍ يحمل `value` و`source` داخل العرض — سندُ الادّعاء الحادّ حين
+    لا بعثات (مسار /analyze، نمط الدراسة)."""
+    if _depth > 6:
+        return []
+    out = []
+    if isinstance(obj, dict):
+        if "value" in obj and "source" in obj:
+            out.append(obj)
+        for v in obj.values():
+            if isinstance(v, (dict, list)):
+                out += _official_rows(v, _depth + 1)
+    elif isinstance(obj, list):
+        for v in obj[:400]:
+            if isinstance(v, (dict, list)):
+                out += _official_rows(v, _depth + 1)
+    return out
+
+
+def _check_sharp_claim_unverified(view: dict, text: "str | None" = None) -> list[dict]:
     """`sharp_claim_unverified` (حاجب): ادّعاءٌ كليٌّ حادّ أو اشتراطٌ إلزاميٌّ
-    جديد في نصّ التقرير بلا حقيقةٍ رسميةٍ تسنده في البعثات."""
+    جديد في نصّ التقرير بلا حقيقةٍ رسميةٍ تسنده في البعثات.
+
+    `text` (الدرس ٢٩٨): نصٌّ صريحٌ لسطحٍ آخر (نصّ /analyze، شاشة المصنع، نمط
+    الدراسة، جواب /ask) يُفحَص بالسند نفسه بدل نصّ الكاتب."""
     dr = (view or {}).get("deep_research") or {}
-    text = ((dr.get("report") or {}).get("text") or "") if isinstance(dr, dict) else ""
-    # الدرس ٢٩٧: النثرُ البديل (نموذجٌ أيضاً) يُفحَص كنصّ الكاتب، والأرقامُ
-    # العربية-الهندية تُطبَّع قبل المطابقة.
-    if isinstance(dr, dict):
+    if not isinstance(dr, dict):
+        dr = {}
+    if text is None:
+        text = (dr.get("report") or {}).get("text") or ""
+        # الدرس ٢٩٧: النثرُ البديل (نموذجٌ أيضاً) يُفحَص كنصّ الكاتب.
         text = "\n".join([text] + _strings_of(dr.get("client_fallback_prose")))
-    text = text.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩٫", "0123456789."))
+    # الأرقامُ العربية-الهندية تُطبَّع قبل المطابقة.
+    text = str(text or "").translate(str.maketrans("٠١٢٣٤٥٦٧٨٩٫", "0123456789."))
     if not text.strip():
         return []
     rows = _all_mission_rows(dr)
+    if not rows:
+        rows = _official_rows(view)
     findings: list[dict] = []
-    for m in _SHARP_MACRO_RE.finditer(text):
+    _macro_ms = [m for m in (_SHARP_MACRO_RE.match(text, v.start())
+                              for v in _SHARP_VERB_RE.finditer(text)) if m]
+    for m in _macro_ms:
         try:
             pct = float(m.group(2).replace(",", "."))
         except ValueError:
@@ -2525,12 +2592,10 @@ def _check_sharp_claim_unverified(view: dict) -> list[dict]:
         span = m.group(0)
         # الموضوعُ اقتصادٌ كليّ لا وارداتٌ/سوق (مراجعة §58: «رغم تباطؤ الاقتصاد،
         # سجّل نمو الواردات 21%» رقمٌ موثّقٌ من كومتريد لا ادّعاءٌ كليّ).
-        if pct <= 5.0 or re.search(r"الواردات|الصادرات|السوق|المبيعات|الطلب|"
-                                   r"imports|exports|market|sales", span, re.I) \
+        if pct <= 5.0 or _NOT_MACRO_RE.search(span) \
                 or not _MACRO_CTX_RE.search(text[max(0, m.start() - 25):m.end()]):
             continue
-        if "انكماش" not in m.group(1) and "contraction" not in m.group(1).lower() \
-                and pct <= 12.0:
+        if not _SHRINK_RE.search(m.group(1)) and pct <= 12.0:
             continue
         backed = any(
             isinstance(r.get("value"), (int, float)) and not isinstance(r.get("value"), bool)
@@ -2544,7 +2609,8 @@ def _check_sharp_claim_unverified(view: dict) -> list[dict]:
                          f"«{' '.join(m.group(0).split())[:90]}» — يُتحقق منه "
                          "(IMF/البنك الدولي) قبل النشر")})
             break
-    for sent in re.split(r"(?<=[.؛!؟\n])", text):
+    # لا قطعَ عند نقطةٍ عشرية ولا بعد «No.» (الدرس ٢٩٨: "Decree No. 61/2024" كانت تنشطر).
+    for sent in re.split(r"(?<=[.؛!؟\n])(?<!No\.)(?<!no\.)(?!\d)", text):
         if not _MANDATE_RE.search(sent):
             continue
         ds = list(_DECREE_RE.finditer(sent))
@@ -2571,6 +2637,26 @@ def _check_sharp_claim_unverified(view: dict) -> list[dict]:
     return findings
 
 
+def strip_flagged_sentences(text: str, view: "dict | None" = None) -> str:
+    """الدرس ٢٩٨: الشاشةُ لا تُحجَب (المصنع يرى تقريره) لكنها لا تعرض جملةً رفضها
+    المالك أو ادّعاءً حادّاً بلا سند — تُسقَط الجملةُ وحدَها ويبقى ما حولها."""
+    if not text:
+        return text
+    iso = _view_iso3(view)
+    out = []
+    for line in str(text).split("\n"):
+        # صفُّ جدولٍ يُسقَط كاملاً لا نصفاً (مراجعة §58 — خليّةٌ تنتهي بنقطة).
+        parts = ([line] if line.lstrip().startswith("|")
+                 else re.split(r"(?<=[.؛!؟])(?<!No\.)(?!\d)", line))
+        kept = [p_ for p_ in parts if not (
+            owner_flag_hits(p_, iso)
+            or (p_.strip() and _check_sharp_claim_unverified(view or {}, p_)))]
+        if parts and not "".join(kept).strip() and line.strip():
+            continue
+        out.append("".join(kept))
+    return "\n".join(out)
+
+
 def run_client_artifact_text_gate(text: str, lang: str = "ar",
                                   view: dict | None = None) -> list[dict]:
     """WP-7 §3 — بوابة نصّ المُنتَج النهائي: تُشغَّل على النص الكامل
@@ -2583,8 +2669,7 @@ def run_client_artifact_text_gate(text: str, lang: str = "ar",
         return findings
     findings += _check_client_scaffold_leak(text)
     findings += _check_field_label_as_value(text)
-    findings += _check_owner_flags(text, str(((view or {}).get("market") or {})
-                                            .get("iso3") or ""))
+    findings += _check_owner_flags(text, _view_iso3(view))
     _plain = _strip_ar_diacritics(text)
     for ph in _ARTIFACT_HARD_PLACEHOLDERS:
         if _strip_ar_diacritics(ph) in _plain:
@@ -7377,10 +7462,9 @@ def run_quality_gate(view: dict) -> dict:
         try:
             import silk_reports as _SR
             _atxt = _atxt if _atxt is not None else _SR.render_markdown(view)
-            _iso = str((view.get("market") or {}).get("iso3") or ((
-                view.get("markets") or [{}])[0] or {}).get("iso3") or "")
             _lf += _check_field_label_as_value(_atxt, idents=False) \
-                + _check_owner_flags(_atxt, _iso)
+                + _check_owner_flags(_atxt, _view_iso3(view)) \
+                + _check_sharp_claim_unverified(view, _atxt)
         except Exception as exc:  # noqa: BLE001 — فحصٌ إضافيّ لا شرطُ حكم
             log.warning("analyze lesson-296 checks skipped: %s", exc)
         _severe = [f for f in _lf if not f["repairable"]]
@@ -7500,8 +7584,8 @@ def run_quality_gate(view: dict) -> dict:
     _screen_txt = "\n".join(x for x in _screen if x)
     findings += [dict(f, note=f["note"] + " — على سطح العرض")
                  for f in (_check_field_label_as_value(_screen_txt, idents=False)
-                           + _check_owner_flags(_screen_txt, str(
-                               (view.get("market") or {}).get("iso3") or "")))]
+                           + _check_owner_flags(_screen_txt, _view_iso3(view))
+                           + _check_sharp_claim_unverified(view, _screen_txt))]
     findings += _check_decimal_precision(text)
     findings += _check_sentence_length(text)
     findings += _check_decision_numbers_present(text)
@@ -7568,8 +7652,7 @@ def run_quality_gate(view: dict) -> dict:
         _owner_txt = _client_sanitize(text, _lang)
     except Exception:  # noqa: BLE001
         _owner_txt = text
-    findings += _check_owner_flags(_owner_txt, str((view.get("market") or {})
-                                                   .get("iso3") or ""))
+    findings += _check_owner_flags(_owner_txt, _view_iso3(view))
     findings += _check_sharp_claim_unverified(view)
     # ── الموجة ٠: اللغة — قناتان منفصلتان تماماً ──────────────────────────
     # (١) **الاتساق** حاجزٌ ⇒ يدخل `findings` ويقع في `FAIL_TRIGGER_CHECKS`.

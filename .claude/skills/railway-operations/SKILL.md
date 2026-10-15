@@ -81,7 +81,9 @@ row outside the allowlist — the panel structurally cannot smuggle a key.
    deploy; resume or mark them.
 4. Only if sources look broken: ONE call to `GET /diagnostics` (live probes).
 5. Stored studies under the new code (lesson 297): ~3 min after boot the
-   post-deploy audit logs `delivery_blocked_after_deploy` in `/ops` for every
+   post-deploy audit shows counts in `/health` → `post_deploy_audit` (details:
+   `GET /ops/audit-studies?last=1`) and logs `delivery_blocked_after_deploy` in
+   `/ops/last-errors` for every
    stored study the current gates would now block. Inspect one with
    `GET /ops/audit-studies?study=N&dump=1` (read-only, no paid call) and
    regenerate blocked reports (`POST /analyses/{id}/report`, cents) before the

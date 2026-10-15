@@ -3581,7 +3581,11 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
         if fixed and not _writer_incomplete(fixed, lang):
             fixed = _decision_language(fixed)
             _after = _ledger_draft_issues(fixed, ledger)
-            if len(_after) < len(_ledger_unresolved):
+            _crit_after = [i for i in _after
+                           if "رفضها المالك" in i or "حيث تلزم القيمة" in i]
+            # الدرس ٢٩٨: القبولُ بانخفاض **الحرِج** نفسِه وألّا يزيد المجموع —
+            # تنقيحٌ يُصلح رقمين ويُبقي عبارةَ المالك كان يُقبَل.
+            if len(_crit_after) < len(_critical) and len(_after) <= len(_ledger_unresolved):
                 draft, _ledger_unresolved = fixed, _after
                 _post_review_revised = True
     out = {"report": draft, "review_cycles": cycles,

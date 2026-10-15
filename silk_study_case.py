@@ -385,8 +385,8 @@ def build_case(found: dict, *, product_short: str | None = None,
                # الدرس ٢٩٧: وسمُ المرآة يرافق النقطة — شكلُ الاتجاه وآخرُ تغيّرٍ
                # سنويّ كانا يخلطان المرآة بالمباشر بلا تمييز.
                "mirrored": bool(p.get("mirrored")),
-               "in_growth_window": bool(not imp.get("basis_years") or
-                                        imp["basis_years"][0] <= p["year"] <= imp["basis_years"][1])}
+               "in_growth_window": bool(not imp.get("basis_year_set") or
+                                        int(p["year"]) in imp["basis_year_set"])}
               for p in imp.get("series") or []]
     # الوزن (إن وُجد) من نقاط «صافي الوزن» بسنة بنيوية
     for f in _findings(dr, "trade_flow"):

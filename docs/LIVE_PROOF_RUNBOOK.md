@@ -333,5 +333,6 @@ python3 tools/audit_study_reports.py --blob-file a.json --dump
 ```
 
 الإقلاعُ على الإنتاج يعيد بناءَ كلّ الدراسات بعد ~٣ دقائق ويسجّل المحجوبَ منها
-(`delivery_blocked_after_deploy` في `/ops`). فحصُ ما بعد النشر:
+(`delivery_blocked_after_deploy` في `/ops/last-errors`، والأعدادُ في `/health`
+→ `post_deploy_audit`، والتفصيل `GET /ops/audit-studies?last=1`). فحصُ ما بعد النشر:
 `python3 tools/post_deploy_smoke.py "$HOST" --fail-on-blocked`.

@@ -1143,7 +1143,7 @@ def _prices(row: dict) -> list:
 
 
 def _client_leads(bundle, market, product: str = "", hs_code: object = None,
-                  report_text: str = ""):
+                  report_text: str = "", missions: "dict | None" = None):
     """The browser and document exports must show the same validated rows.
 
     الدرس ٢٦٣: المنتجُ ورمزُه ومتنُ التقرير يمرّون أيضاً — مِصفاةُ الصلة
@@ -1151,8 +1151,10 @@ def _client_leads(bundle, market, product: str = "", hs_code: object = None,
     """
     from silk_reports import _clean_leads
     result = dict(bundle or {"leads": [], "path": "gap"})
+    # الدرس ٢٩٨: البعثاتُ تمرّ أيضاً — بابُ الدخول الذي يسمّيه المتنُ من بعثة
+    # القنوات يُضاف للقائمة هنا (العرضُ واللوحة) لا في مستند Word وحده.
     ctx = {"market": market or {}, "product": product, "hs_code": hs_code,
-           "report": {"text": report_text}}
+           "report": {"text": report_text}, "missions": missions or {}}
     result["leads"] = _clean_leads(result.get("leads") or [], ctx)
     # أسبابُ الإسقاط تحمل أسماءَ جهاتٍ مرفوضةٍ وتعليلاً داخلياً — **عددُها
     # وحدَه** يصل العرض (يقرؤه المدقّق)، لا القائمةُ نفسُها (مراجعة §58).
@@ -3846,7 +3848,8 @@ def _deep_research_view(result: dict, lang: str = "ar",
             dr.get("importer_leads"), result.get("market"),
             product=str(result.get("product") or ""),
             hs_code=result.get("hs_code"),
-            report_text=_report_text_glossed),
+            report_text=_report_text_glossed,
+            missions=dr.get("missions") if isinstance(dr.get("missions"), dict) else None),
         # مصدرُ الرمز حين حُسِم آلياً — يصل **عرضَ البحث العميق** لا الحدودَ
         # وحدها: تقريرُ العميل (المُسلَّم الفعليّ) يبني أقسامَه من
         # `deep_research` لا من `limits`، فوضعُه في الحدود وحدها أخرجه من
@@ -4936,6 +4939,18 @@ def analysis_context(result: dict, max_chars: int = 6000) -> str:
              f"{view.get('data_year', view.get('year'))}")
     for b in view.get("brief") or []:
         L.append(f"الخلاصة: {b}")
+    # الدرس ٢٩٨ (بوّابة المالك ب): أرقامُ سجلّ الحقائق **أوّلاً** — السياقُ
+    # يُقصّ عند ٦٠٠٠ محرف، فرقمٌ في السجلّ كان يسقط ويجيب كلود «غير متوفر».
+    try:
+        import silk_fact_ledger as _FL
+        for k, e in list(((view.get("ledger") or {}).get("entries") or {}).items())[:30]:
+            if not isinstance(e, dict) or e.get("value") is None \
+                    or e.get("status") not in ("observed", "weak", "estimate"):
+                continue
+            label = e.get("label_ar") or k
+            L.append(f"سجلّ الحقائق — {label}: {_FL.render_value(e, 'ar')}")
+    except Exception:  # noqa: BLE001 — السياقُ يُبنى ولو تعذّر السجلّ
+        pass
     # R2 (تفعيل الدردشة فوق الدراسة العميقة): analysis_context كان يقرأ شكل
     # /analyze حصراً (top فارغ للدراسة العميقة إذ markets=[])، فتُجيب دردشة
     # «اسأل عن الدراسة» من سياق شبه فارغ للدراسات الرئيسية. هنا نضيف تأريض

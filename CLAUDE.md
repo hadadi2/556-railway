@@ -80,7 +80,7 @@ no sufficient evidence). لا ادعاء بقراءة سجلّات لم تُقر
 
 ## قوانين غير قابلة للكسر · unbreakable rules (اقرأ أولاً · read first)
 
-السجلّ الكامل (٢٦٠ درساً، كل واحد بأداة إنفاذ) في `docs/LESSONS.md`، مُنفَّذ
+السجلّ الكامل (298 درساً، كل واحد بأداة إنفاذ) في `docs/LESSONS.md`، مُنفَّذ
 ميكانيكياً عبر `tests/test_lessons_enforcement.py`. اقرأ البنود المرتبطة بالمسار
 المتأثر عند الحاجة. الخمسة الأحرج ثابتة في كل تغيير:
 
@@ -118,7 +118,8 @@ lock) + اربطه بمرساة في `tests/test_lessons_enforcement.py`.
 `GET /ops/audit-studies?study=N&dump=1` (بمفتاح API)، أو `--blob-file` على نتيجةٍ
 نُزِّلت من `GET /analyses/{id}` — العيّنةُ الاصطناعية وحدَها ليست دليلاً على
 دراسة المالك. والإقلاعُ على الإنتاج يعيد بناءَ كلّ الدراسات ويسجّل المحجوبَ منها
-في `/ops` (`silk_collectors.post_deploy_audit`، الدرس ٢٩٧).
+في `/health` (`post_deploy_audit`) و`/ops/last-errors` (`silk_collectors.post_deploy_audit`،
+الدرسان ٢٩٧–٢٩٨)؛ التفصيل `GET /ops/audit-studies?last=1`.
 
 ## Commands
 

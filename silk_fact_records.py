@@ -94,8 +94,12 @@ def classify_tier(source_name: str, note: str = "", *,
     combined = f"{source_name or ''} {note or ''}"
     # الدرس ٢٩٧: المصدرُ الرسميُّ **باسمه** يعلو قرينةَ المصلحة في ملاحظته،
     # والاتحاداتُ الرسمية (الجمركي الخليجي/الأوروبي/الاتحادية) ليست جمعيات.
+    # الدرس ٢٩٨: إلا إن حمل **الاسمُ نفسُه** قرينةَ مصلحة («غرفة البحرين —
+    # بيانات الجمارك»، «جمعية المنتجين / وزارة الزراعة») — فهو X كما كان.
     if interest_bearing is not True and (
-            _has_marker(source_name, _TIER_A_MARKERS + _TIER_A_SOURCE_ONLY)):
+            _has_marker(source_name, _TIER_A_MARKERS + _TIER_A_SOURCE_ONLY)) \
+            and not _has_marker(_OFFICIAL_UNION_RE.sub(" ", source_name or ""),
+                                _INTEREST_BEARING_MARKERS):
         return "A"
     if interest_bearing is True or _has_marker(
             _OFFICIAL_UNION_RE.sub(" ", combined), _INTEREST_BEARING_MARKERS):

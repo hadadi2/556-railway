@@ -1212,6 +1212,23 @@ def create_app():
                     "(نفس عائلة بلاغ «زبدة الفول السوداني»)")
         except Exception as _e:  # noqa: BLE001 — تشخيص لا شرط
             log.debug("hs_classifier health section skipped: %s", _e)
+        # الدرس ٢٩٨: نتيجةُ تدقيق ما بعد النشر مرئيةٌ هنا (أعدادٌ فقط) — دراسةٌ
+        # مخزَّنة صارت محجوبةً بحارسٍ جديد يراها المالكُ قبل أن ينقر المصنع.
+        try:
+            import silk_collectors as _sc
+            _pda = dict(_sc.LAST_POST_DEPLOY_AUDIT)
+            health["post_deploy_audit"] = (
+                {k: _pda.get(k) for k in ("ran_at", "studies", "blocked",
+                                          "unverifiable", "error") if k in _pda}
+                or {"status": "not_run"})
+            if _pda.get("blocked") or _pda.get("unverifiable") or _pda.get("error"):
+                _warnings.append(
+                    f"تدقيق ما بعد النشر: {_pda.get('blocked') or 0} دراسة مخزَّنة "
+                    f"محجوبة التسليم و{_pda.get('unverifiable') or 0} تعذّر "
+                    "التحقق منها" + (" — التدقيق نفسه فشل" if _pda.get("error") else "")
+                    + " — التفاصيل: GET /ops/audit-studies?last=1")
+        except Exception as _e:  # noqa: BLE001 — تشخيص لا شرط
+            log.debug("post-deploy audit health section skipped: %s", _e)
         unprotected = _unprotected_paid_keys()
         if unprotected:
             _warnings.append(
@@ -3551,7 +3568,8 @@ def create_app():
 
     @app.get("/ops/audit-studies")
     def ops_audit_studies(request: Request, study: "int | None" = None,
-                          client: int = 1, dump: int = 0):
+                          client: int = 1, dump: int = 0, last: int = 0,
+                          limit: int = 25, after: int = 0):
         """الدرس ٢٩٧ — أعد بناءَ مستند العميل لدراسةٍ مخزَّنة (أو للكلّ) بالشيفرة
         الحالية وشغّل عليه بوّابةَ التسليم وسجلَّ بلاغات المالك. قراءةٌ محضة
         بلا أيّ نداءٍ مدفوع (النثرُ البديل المخزَّن وحده) — نفسُ أداة
@@ -3559,14 +3577,25 @@ def create_app():
         _require_key(request)
         _rate_limit(request)
         import silk_collectors
+        # الدرس ٢٩٨: `last=1` نتيجةُ تدقيق الإقلاع المحفوظة بلا إعادة بناء؛
+        # وبلا `study` تُعاد صفحةٌ (`limit`≤100 بعد `after`) لا كلُّ الدراسات
+        # دفعةً واحدة — مئاتُ المستندات المتزامنة كانت تحبس الخادم دقائق.
+        if last:
+            return _json({"last_post_deploy_audit":
+                          dict(silk_collectors.LAST_POST_DEPLOY_AUDIT) or {"status": "not_run"}})
         mod = silk_collectors.load_study_audit()
         pdb, edb = mod._platform_db(None), mod._engine_db(None)
         for p_ in (pdb, edb):
             if not os.path.exists(p_):
                 raise HTTPException(status_code=404, detail=f"قاعدة غير موجودة: {os.path.basename(p_)}")
+        _limit = None if study is not None else max(1, min(int(limit or 25), 100))
         rows = mod.review(pdb, edb, study, False, client=bool(client) or bool(dump),
-                          dump=bool(dump) and study is not None, raw_compare=False)
-        return _json({"studies": rows})
+                          dump=bool(dump) and study is not None, raw_compare=False,
+                          limit=_limit, after=int(after or 0))
+        out = {"studies": rows}
+        if _limit is not None and len(rows) == _limit:
+            out["next_after"] = rows[-1].get("study")
+        return _json(out)
 
     @app.get("/ops/backup")
     def ops_backup(request: Request):
@@ -3785,9 +3814,21 @@ def create_app():
             raise HTTPException(status_code=404,
                                 detail=f"analysis {analysis_id} not found")
         from silk_render import build_view
-        from silk_reports import render_brief
+        import silk_reports
+        import silk_quality_gate as _QG
         from fastapi.responses import PlainTextResponse
-        return PlainTextResponse(render_brief(build_view(found)))
+        _bv = build_view(found)
+        text = silk_reports.render_brief(_bv)
+        # الدرس ٢٩٨: المختصرُ كان السطحَ الوحيد بلا أيّ حارس عميل.
+        _bad = (_QG._check_field_label_as_value(text, idents=False)
+                + _QG._check_owner_flags(text, _QG._view_iso3(_bv))
+                + _QG._check_sharp_claim_unverified(_bv, text))
+        if _bad:
+            raise _operator_artifact_gate_409(silk_reports.ClientArtifactGateError(
+                "رفضت بوابة نصّ المُنتَج النهائي تسليم المختصر: "
+                + "؛ ".join(f["note"] for f in _bad[:5]), findings=_bad),
+                analysis_id, "brief")
+        return PlainTextResponse(text)
 
     @app.get("/analyses/{analysis_id}/report.docx")
     def report_docx(analysis_id: int, request: Request):
@@ -4015,13 +4056,21 @@ def create_app():
                         findings=_meta["blockers"])
             else:
                 _md_view = build_view(found)
+                _md_internal = str(request.query_params.get("internal") or "").lower() \
+                    in ("1", "true", "yes")
                 # الدرس ٢٩٧: Markdown بلا بوّابة عميل — نفسُ حجب report.docx.
-                if found.get("deep_research") and str(
-                        request.query_params.get("internal") or "").lower() not in (
-                        "1", "true", "yes"):
+                if found.get("deep_research") and not _md_internal:
                     _block_client_export_if_gate_failed(
                         _md_view, analysis_id, found, "md", request)
                 text = render_markdown(_md_view)
+                # الدرس ٢٩٨: Markdown /analyze — نفسُ حاجبات ملفّ Word.
+                if not found.get("deep_research") and not _md_internal:
+                    _md_bad = silk_reports.analyze_artifact_findings(_md_view, text)
+                    if _md_bad:
+                        raise silk_reports.ClientArtifactGateError(
+                            "رفضت بوابة نصّ المُنتَج النهائي تسليم التقرير: "
+                            + "؛ ".join(f["note"] for f in _md_bad[:5]),
+                            findings=_md_bad)
         except _StudyRenderError:
             raise HTTPException(status_code=422, detail=_STUDY_RENDER_422)
         except silk_reports.ClientArtifactGateError as exc:
@@ -4525,6 +4574,16 @@ def create_app():
         # يستخدم رمز حكم خام بنفسه؛ نفس مُطهِّر طبقة العرض (مرة واحدة).
         if out.get("answer"):
             out["answer"] = _strip_internal_plumbing(out["answer"])
+            # الدرس ٢٩٨: الجوابُ نصُّ نموذجٍ يصل العميل — عبارةٌ رفضها المالك أو
+            # ادّعاءٌ حادٌّ بلا سند لا يُعرَض؛ يُحجَب بملاحظةٍ صريحة لا بصمت.
+            import silk_quality_gate as _QG
+            _bad = (_QG._check_owner_flags(out["answer"], _QG._view_iso3(found))
+                    + _QG._check_sharp_claim_unverified(found, out["answer"]))
+            if _bad:
+                log.warning("ask answer withheld: %s", [b_["note"][:80] for b_ in _bad])
+                return _json({"answer": None,
+                              "note": "حُجب الجواب لأنه تضمّن ادعاءً غير موثّق في "
+                                      "هذه الدراسة — أعد صياغة السؤال"})
         return _json(out)
 
     class OutcomeRequest(BaseModel):

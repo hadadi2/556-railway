@@ -415,7 +415,10 @@ def looks_like_name(s: str) -> bool:
     words = n.split()
     if len(words) > _MAX_NAME_WORDS or len(n) > _MAX_NAME_CHARS:
         return False
-    if re.search(r"[.!?؟:؛](\s|$)", n) or ". " in n:
+    # الدرس ٢٩٨: لاحقةٌ قانونيةٌ منقوطة («Ashraf FMCG W.L.L.») ليست ترقيمَ جملة.
+    n_chk = re.sub(r"(?i)[\s,]*(?:w\.l\.l\.?|l\.l\.c\.?|ltd\.?|inc\.?|co\.?|"
+                   r"b\.s\.c\.?|est\.?)\s*$", "", n)
+    if re.search(r"[.!?؟:؛](\s|$)", n_chk) or ". " in n_chk:
         return False
     # عبارةٌ إنجليزية ابتدائية (فعل/أداة) => جملةٌ لا اسم.
     if re.match(r"(?i)^(the |a |an |it |they |this |these |there |we |our |"

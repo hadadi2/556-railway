@@ -69,7 +69,8 @@ def _columns(con: sqlite3.Connection, table: str) -> set:
     return {r["name"] for r in con.execute(f"PRAGMA table_info({table})")}
 
 
-def _studies(path: str, only: "int | None") -> list:
+def _studies(path: str, only: "int | None", limit: "int | None" = None,
+             after: int = 0) -> list:
     con = _ro(path)
     try:
         cols = _columns(con, "studies")
@@ -80,6 +81,9 @@ def _studies(path: str, only: "int | None") -> list:
         if only is not None:
             sql += " WHERE id = ?"
             rows = con.execute(sql + " ORDER BY id", (only,)).fetchall()
+        elif limit:
+            rows = con.execute(sql + " WHERE id > ? ORDER BY id LIMIT ?",
+                               (int(after or 0), int(limit))).fetchall()
         else:
             rows = con.execute(sql + " ORDER BY id").fetchall()
     finally:
@@ -150,13 +154,17 @@ def client_text(view: dict) -> tuple:
     """
     import tempfile
     import silk_quality_gate as Q
-    from silk_reports import render_client_docx
+    from silk_reports import render_client_docx, render_docx
     from docx import Document
     findings: list = []
     with tempfile.TemporaryDirectory() as d:
         out = os.path.join(d, "client.docx")
+        # المستندُ نفسُه الذي يبنيه سطحُ المصنع (`silk_platform/api.py` — PDF):
+        # بحثٌ عميق ⇒ مستندُ العميل؛ وإلا ⇒ `render_docx` (الدرس ٢٩٧ ب: كانت
+        # كلُّ دراسةٍ غير عميقة تُعَدّ «محجوبة» لأنّ مستندَ العميل يرفضها بناءً).
+        _render = render_client_docx if view.get("deep_research") else render_docx
         try:
-            render_client_docx(view, out)
+            _render(view, out)
         except RuntimeError as e:          # البوّابةُ النهائية رفضت البناء
             findings.append({"check": "artifact_refused", "note": str(e)[:300]})
             return "", findings
@@ -171,14 +179,15 @@ def client_text(view: dict) -> tuple:
 
 def review(platform_db: str, engine_db: str, only: "int | None",
            show_headings: bool, client: bool = False,
-           dump: bool = False, raw_compare: bool = True) -> list:
+           dump: bool = False, raw_compare: bool = True,
+           limit: "int | None" = None, after: int = 0) -> list:
     """`raw_compare=False` داخل الخادم (مراجعة §58): مقارنةُ النصّ الخام تبدّل
     دالّةً عامّة مؤقّتاً — آمنةٌ في سطر أوامر، خطرةٌ مع طلباتٍ متزامنة."""
     import silk_ai_judge as judge
     import silk_render
 
     report = []
-    for st in _studies(platform_db, only):
+    for st in _studies(platform_db, only, limit, after):
         row = {"study": st.get("id"), "product": st.get("product"),
                "market": st.get("market_pref"), "state": st.get("state")}
         aid = st.get("analysis_id")
@@ -201,6 +210,7 @@ def review(platform_db: str, engine_db: str, only: "int | None",
             judge.canonicalize_section_headings(raw_text, lang))
         if show_headings:
             row["heading_lines"] = _heading_lines(raw_text)
+        fview = None    # لا يرث عرضَ الدراسة السابقة إن فشل بناءُ هذه (الدرس ٢٩٧ ب)
         try:
             # (أ) البوّابةُ على العرض **كما يراه المصنعُ** (الدرس ٢٩٧: نفسُ
             #     تهيئة سطح المصنع، والنثرُ البديل المخزَّن بلا نداء نموذج).
@@ -220,7 +230,7 @@ def review(platform_db: str, engine_db: str, only: "int | None",
         if client:
             try:
                 import silk_quality_gate as _Q
-                text, cf = client_text(fview if "fview" in locals()
+                text, cf = client_text(fview if fview is not None
                                        else factory_view(blob, lang, int(aid)))
                 row["client_findings"] = [f"{f.get('check')}: {f.get('note')}"
                                           for f in cf]
@@ -236,6 +246,11 @@ def review(platform_db: str, engine_db: str, only: "int | None",
         row["status"] = "ok"
         report.append(row)
     return report
+
+
+def unverifiable(row: dict) -> bool:
+    """دراسةٌ تعذّر إعادةُ بنائها ليست «سليمة» — تُعَدّ وتُسجَّل لا تُسقَط (الدرس ٢٩٧ ب)."""
+    return bool(row.get("gate_error") or row.get("client_error"))
 
 
 def _print(rows: list) -> None:

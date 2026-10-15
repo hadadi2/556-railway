@@ -1060,13 +1060,16 @@ function renderDeepResearch(v){
   // يطبعها md وWord وتقريرُ العميل (`view.ledger.critical_questions`)،
   // محسوبةً بالكود لا بكتابة النموذج؛ «كيف تعرفه» للسؤال غير المُجاب وحدَه.
   var qrows=((v.ledger||{}).critical_questions)||[];
+  /* الدرس ٢٩٨: عمودُ «كيف تعرفه» كلُّه «—» يُسقَط كما في المستند المُصدَّر */
+  var qhow=function(q){return q.answered?"—":(q.how||"—")};
+  var keepHow=qrows.some(function(q){var h=String(qhow(q)).trim();return h&&h!=="—"&&h!=="-"});
   if(qrows.length){html+='<div class="bcard" style="margin:18px 0"><h3>أسئلتك الحاسمة قبل القرار</h3>'
     +'<table style="width:100%;font-size:12.5px"><thead><tr>'
     +'<th style="text-align:start">السؤال</th>'
     +'<th style="text-align:start">الجواب</th>'
-    +'<th style="text-align:start">كيف تعرفه</th></tr></thead><tbody>'
+    +(keepHow?'<th style="text-align:start">كيف تعرفه</th>':'')+'</tr></thead><tbody>'
     +qrows.map(function(q){return '<tr><td>'+esc(q.question)+'</td><td>'
-      +esc(q.answer)+'</td><td>'+esc(q.answered?"—":(q.how||"—"))+'</td></tr>'}).join("")
+      +esc(q.answer)+'</td>'+(keepHow?'<td>'+esc(qhow(q))+'</td>':'')+'</tr>'}).join("")
     +'</tbody></table></div>'}
   // الحدود — جدولٌ واحدٌ يفرّق «لم يُعرَف بعد» عن «من مصادر غير رسمية» (الدرس ٢٦٤).
   // الصفوفُ من `view.ledger.gaps_table` — نفسُها التي يطبعها md وWord، فلا

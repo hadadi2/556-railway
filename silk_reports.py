@@ -6154,12 +6154,13 @@ def render_docx(view: dict, path: str) -> str:
     _artifact_text = "\n".join(
         [p.text for p in doc.paragraphs]
         + [c.text for t in doc.tables for row in t.rows for c in row.cells])
-    _iso = str((view.get("market") or {}).get("iso3")
-               or ((view.get("markets") or [{}])[0] or {}).get("iso3") or "")
     # التقريرُ الكلاسيكيّ يحمل أسماءَ أعلامٍ تشغيلية مشروعة («with_research»
     # غير مفعّلة) — حارسُ المعرّف البرمجيّ للمستند العميليّ وحدَه هنا مطفأ.
-    _artifact_findings = (_qg._check_field_label_as_value(_artifact_text, idents=False)
-                          + _qg._check_owner_flags(_artifact_text, _iso))
+    # الدرس ٢٩٨: والتصديرُ الداخليّ للمدقّق (`internal`) متاحٌ دائماً — هو ما
+    # يُشخَّص به المحجوب؛ وحاجبُ السجلّ («غير متاح» والسجلُّ يحمل القيمة)
+    # يعمل هنا أيضاً لا على سطح المصنع وحده.
+    _artifact_findings = [] if view.get("internal") else \
+        analyze_artifact_findings(view, _artifact_text)
     if _artifact_findings:
         raise ClientArtifactGateError(
             "رفضت بوابة نصّ المُنتَج النهائي تسليم التقرير: "
@@ -6168,6 +6169,17 @@ def render_docx(view: dict, path: str) -> str:
     _finalize_rtl(doc)   # §4: اتجاه RTL صريح على كل فقرة/run قبل الحفظ
     doc.save(path)
     return path
+
+
+def analyze_artifact_findings(view: dict, text: str) -> list:
+    """حاجباتُ نصّ مُنتَج /analyze النهائي (docx وMarkdown) — الدرسان ٢٩٧–٢٩٨:
+    بلاغاتُ المالك، وتسميةُ الحالة بدل القيمة، و«غير متاح» والسجلُّ يحمل
+    القيمة، والادّعاءُ الحادّ بلا سند."""
+    import silk_quality_gate as _qg
+    return (_qg._check_field_label_as_value(text, idents=False)
+            + _qg._check_owner_flags(text, _qg._view_iso3(view))
+            + _qg.delivery_blockers(_qg._ledger_findings(view, text))
+            + _qg._check_sharp_claim_unverified(view, text))
 
 
 def _md_cell(x: object) -> str:
@@ -6330,6 +6342,7 @@ def _clean_leads(leads: list, dr: dict) -> list:
     from silk_style_contract import lead_activity_allowed
     _body = (((dr.get("report") or {}).get("text") or "")
              if isinstance(dr.get("report"), dict) else "")
+    _body_key = " ".join(_body.lower().split())
     # الدرس ٢٦٣: فئةُ المنتج ورمزُه يصلان المِصفاة — المحورُ الثاني الذي
     # كان ناقصاً (نشاطٌ مُدرَجٌ يخدم فئةً أخرى). أسبابُ الإسقاط تُجمَع
     # للمدقّق ولا تصل العميل.
@@ -6348,7 +6361,9 @@ def _clean_leads(leads: list, dr: dict) -> list:
         nm = (lead.get("name") or "").strip()
         # الدرس ٢٦٣ (مراجعة §58، الموضع الثاني): كانت الحصانةُ نفسُها
         # مشروطةً بالراية أيضاً — فتُحذَف بلا راية جهةٌ يوصي بها المتن.
-        named = bool(nm and len(nm) >= 4 and nm in _body)
+        # الدرس ٢٩٨: مطابقةٌ بلا حساسية حالةٍ وبلا اللاحقة القانونية
+        # («Ashraf FMCG W.L.L.» في القائمة = «Ashraf FMCG» في المتن).
+        named = bool(nm and len(nm) >= 4 and _key_in(_lead_key(nm), _body_key))
         if named:
             lead = dict(lead)
             lead["named_in_report"] = True
@@ -6397,11 +6412,77 @@ def _clean_leads(leads: list, dr: dict) -> list:
             lead["category_raw"] = lead["category"]
             lead["category"] = activity_label_ar(lead["category"])
         out.append(lead)
+    # الدرس ٢٩٨: بابُ دخولٍ يسمّيه المتنُ **ومصدرُه في بعثة القنوات** لكنه غائبٌ
+    # عن قائمة الروابط (Ashraf FMCG) يُضاف مرشّحاً يحتاج تحققاً — بلا اتصالٍ
+    # مختلَق، وبالمصافي نفسِها (شكلُ الاسم، والمنافسُ المحلّي).
+    _have = {_lead_key(x.get("name") or "") for x in out} \
+        | {_lead_key(str(d.get("name") or "")) for d in dropped}
+    from silk_style_contract import lead_local_competitor as _llc
+    for nm in _entry_door_names(dr):
+        k = _lead_key(nm)
+        if not k or k in _have or not _key_in(k, _body_key) \
+                or not looks_like_name(nm) or not _ENTITY_NAME_RE.match(nm):
+            continue
+        cand = {"name": nm, "address": "", "phone": "", "email": "",
+                "website": "", "named_in_report": True,
+                "evidence_status": EVIDENCE_NAMED, "source": "report_body"}
+        # المصافي نفسُها: الاسمُ في دولةٍ أخرى («Carrefour UAE»)، والصلةُ بالمنتج،
+        # والمنافسُ المحلّي.
+        if _address_wrong_geo(nm, iso3, tnames) or _llc(cand, _hs, _product) \
+                or not lead_product_fit(cand, _hs, _product, iso3)[0]:
+            continue
+        _have.add(k)
+        out.append(cand)
     if dropped:
         # قناةُ مدقّقٍ بحتة: تُكتَب على **سياق النداء** لا على `deep_research`
         # المخزَّن/المعروض (مراجعة §58 — أسماءُ جهاتٍ مرفوضةٍ وأسبابٌ عربيةٌ
         # داخلية كانت ترحل في JSON عرضِ العميل وتُلتزَم في المدوّنات).
         dr["leads_dropped"] = dropped
+    return out
+
+
+_LEGAL_SUFFIX_RE = re.compile(
+    r"[\s,.-]+(?:w\.?\s?l\.?\s?l\.?|l\.?\s?l\.?\s?c\.?|ltd\.?|limited|inc\.?|co\.?|"
+    r"company|est\.?|establishment|b\.?s\.?c\.?|ش\.?\s?م\.?\s?ب\.?|ذ\.?\s?م\.?\s?م\.?)\s*$",
+    re.IGNORECASE)
+
+
+def _lead_key(name: str) -> str:
+    """مفتاحُ مطابقة اسم الجهة: بلا حالةٍ ولا لاحقةٍ قانونية ولا فراغٍ زائد."""
+    raw = " ".join(str(name or "").split())
+    k = raw
+    for _ in range(2):
+        k = _LEGAL_SUFFIX_RE.sub("", k).strip(" ,.-")
+    # الاسمُ نفسُه إن لم يبقَ منه بعد اللاحقة ما يكفي (مراجعة §58: Tesco/Sysco).
+    k = k if len(k) >= 4 else raw.strip(" ,.-")
+    return k.lower() if len(k) >= 4 else ""
+
+
+def _key_in(key: str, body_key: str) -> bool:
+    """الاسمُ كلمةً كاملةً في المتن لا جزءاً من كلمة («cost» ليست «Costco»)."""
+    return bool(key) and re.search(r"(?<![\w])" + re.escape(key) + r"(?![\w])",
+                                   body_key) is not None
+
+
+#: بابُ دخولٍ يُضاف من المتن **كياناً مسمّى** فقط: اسمُ علمٍ لاتينيّ أو صدرُ
+#: كيانٍ عربيّ — لا وصفُ قناة («موزّعون»، «سلاسل الهايبرماركت»).
+_ENTITY_NAME_RE = re.compile(
+    r"^(?:[A-Z0-9][\w&'.-]*)(?:\s+[A-Z0-9&][\w&'.-]*)*$|"
+    r"^(?:شركة|مؤسسة|مجموعة|مصنع)\s+\S+")
+
+
+def _entry_door_names(dr: dict) -> list:
+    """أسماءُ أبواب الدخول من بعثة القنوات (`[entry_door]`) — نصوصٌ لا أرقام."""
+    m = ((dr.get("missions") or {}).get("channels_importers")
+         if isinstance(dr.get("missions"), dict) else None) or {}
+    rows = (m.get("findings") if isinstance(m, dict)
+            else getattr(m, "findings", None)) or []
+    out = []
+    for f in rows:
+        val = f.get("value") if isinstance(f, dict) else getattr(f, "value", None)
+        note = f.get("note") if isinstance(f, dict) else getattr(f, "note", "")
+        if isinstance(val, str) and "[entry_door]" in str(note or "") and val.strip():
+            out.append(val.strip())
     return out
 
 
@@ -6752,13 +6833,15 @@ def _questions_md(view: dict, lang: str = "ar") -> list:
         return []
     head = (["Question", "Answer", "How to find out"] if lang == "en"
             else ["السؤال", "الجواب", "كيف تعرفه"])
+    hows = ["—" if r.get("answered") else str(r.get("how") or "—") for r in rows]
+    # الدرس ٢٩٨: عمودُ «كيف تعرفه» كلُّه «—» يُسقَط هنا أيضاً (لا في Word وحده).
+    keep_how = any(h.strip() not in ("", "—", "-") for h in hows)
+    head = head if keep_how else head[:2]
     out = [f"## {QUESTIONS_TITLE.get(lang, QUESTIONS_TITLE['ar'])}", "",
-           "| " + " | ".join(head) + " |", "|" + "|".join(["---"] * 3) + "|"]
-    for r in rows:
-        how = "—" if r.get("answered") else str(r.get("how") or "—")
-        out.append("| " + " | ".join(
-            str(c).replace("|", "／") for c in
-            (r["question"], r.get("answer") or "", how)) + " |")
+           "| " + " | ".join(head) + " |", "|" + "|".join(["---"] * len(head)) + "|"]
+    for r, how in zip(rows, hows):
+        cells = (r["question"], r.get("answer") or "") + ((how,) if keep_how else ())
+        out.append("| " + " | ".join(str(c).replace("|", "／") for c in cells) + " |")
     out.append("")
     return out
 

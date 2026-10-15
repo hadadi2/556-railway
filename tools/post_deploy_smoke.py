@@ -409,16 +409,29 @@ def main() -> int:
     # الدراسات القديمة يخرج أخضر. `--fail-on-blocked` يعدّها من نقطة
     # التدقيق ويُفشِل الفحص إن وُجدت.
     if args.fail_on_blocked:
-        st4, ab = _get(base, "/ops/audit-studies?client=1", key)
-        if st4 != 200:
-            fails.append(f"/ops/audit-studies: HTTP {st4}")
-        else:
-            rows = json.loads(ab).get("studies") or []
+        # الدرس ٢٩٨: صفحاتٌ (`limit`/`after`) لا طلبٌ واحدٌ يبني كلَّ الدراسات،
+        # ودراسةٌ تعذّرت إعادةُ بنائها تُعَدّ لا تُسقَط.
+        rows, after, st4 = [], 0, 200
+        while True:
+            st4, ab = _get(base, f"/ops/audit-studies?client=1&limit=20&after={after}", key)
+            if st4 != 200:
+                fails.append(f"/ops/audit-studies: HTTP {st4}")
+                break
+            page = json.loads(ab)
+            rows += page.get("studies") or []
+            if not page.get("next_after"):
+                break
+            after = page["next_after"]
+        if st4 == 200:
             blocked = [r.get("study") for r in rows if r.get("status") == "ok" and (
                 (r.get("gate") or {}).get("blocked") or r.get("client_blockers"))]
+            unver = [r.get("study") for r in rows
+                     if r.get("gate_error") or r.get("client_error")]
             if blocked:
                 fails.append(f"{len(blocked)} دراسة مخزَّنة محجوبة التسليم: {blocked[:20]}")
-            else:
+            if unver:
+                fails.append(f"{len(unver)} دراسة تعذّرت إعادةُ بنائها: {unver[:20]}")
+            if not (blocked or unver):
                 print(f"  ✓ {len(rows)} دراسة مخزَّنة — لا محجوبَ تسليم")
 
     if fails:
