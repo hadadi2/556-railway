@@ -2483,8 +2483,12 @@ def _check_sharp_claim_unverified(view: dict) -> list[dict]:
             pct = float(m.group(2).replace(",", "."))
         except ValueError:
             continue
-        if pct <= 5.0 or not _MACRO_CTX_RE.search(
-                text[max(0, m.start() - 60):m.end()]):
+        span = m.group(0)
+        # الموضوعُ اقتصادٌ كليّ لا وارداتٌ/سوق (مراجعة §58: «رغم تباطؤ الاقتصاد،
+        # سجّل نمو الواردات 21%» رقمٌ موثّقٌ من كومتريد لا ادّعاءٌ كليّ).
+        if pct <= 5.0 or re.search(r"الواردات|الصادرات|السوق|المبيعات|الطلب|"
+                                   r"imports|exports|market|sales", span, re.I) \
+                or not _MACRO_CTX_RE.search(text[max(0, m.start() - 25):m.end()]):
             continue
         if "انكماش" not in m.group(1) and "contraction" not in m.group(1).lower() \
                 and pct <= 12.0:
@@ -7491,8 +7495,15 @@ def run_quality_gate(view: dict) -> dict:
     findings += _check_gaps_closing_contradiction(dr)
     findings += _check_internal_plumbing_leak(text)
     findings += _check_field_label_as_value(text, idents=False)
-    findings += _check_owner_flags(text, str((view.get("market") or {}).get("iso3")
-                                            or ""))
+    # على النصّ **بعد** مُطهِّر العميل (مراجعة §58): ما يعيد المُطهِّرُ صياغتَه
+    # («فشل البعثات»، «reach_agent») لا يحجب تقريراً سيُسلَّم نظيفاً.
+    try:
+        from silk_reports import _client_sanitize
+        _owner_txt = _client_sanitize(text, _lang)
+    except Exception:  # noqa: BLE001
+        _owner_txt = text
+    findings += _check_owner_flags(_owner_txt, str((view.get("market") or {})
+                                                   .get("iso3") or ""))
     findings += _check_sharp_claim_unverified(view)
     # ── الموجة ٠: اللغة — قناتان منفصلتان تماماً ──────────────────────────
     # (١) **الاتساق** حاجزٌ ⇒ يدخل `findings` ويقع في `FAIL_TRIGGER_CHECKS`.

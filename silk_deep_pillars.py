@@ -868,7 +868,10 @@ def import_series(missions: dict) -> dict:
     # مرآةٍ أقدم، بينما السلسلةُ المباشرة 2019–2024 تعطي نحو 13.7%. النموُّ من
     # تصريحات السوق نفسِها حين تكفي (نقطتان)، والمرآةُ احتياطٌ لا قاعدة.
     direct = [p for p in full if not p.get("mirrored")]
-    basis = direct if len(direct) >= 2 else full
+    # المراجعة الذاتية §58: المباشرةُ قاعدةٌ فقط حين تنتهي عند سنة الأساس —
+    # وإلا يُعرَض نموُّ 2019–2022 بجوار حجم سوق 2024.
+    basis = (direct if len(direct) >= 2 and full
+             and direct[-1]["year"] == full[-1]["year"] else full)
     if len(basis) >= 2:
         try:
             from silk_trend import cagr_pct, growth_pct

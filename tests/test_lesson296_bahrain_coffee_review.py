@@ -360,3 +360,53 @@ def test_replay_tool_rebuilds_the_real_client_document():
     from gen_client_report_sample import build_sample_view
     text, findings = A.client_text(build_sample_view("ar"))
     assert len(text) > 500 and isinstance(findings, list)
+
+
+# ── المراجعة الذاتية §58 قبل الدمج — كلُّ ملاحظةٍ بقفل ─────────────────────────
+
+def test_review_import_growth_near_the_word_economy_is_not_macro():
+    assert not Q._check_sharp_claim_unverified(_view(
+        "رغم تباطؤ الاقتصاد، سجّل نمو الواردات 21% خلال الفترة."))
+
+
+def test_review_status_window_stops_at_the_sentence_and_at_a_stated_value():
+    e = L._entry("saudi_share_pct", 3.5, source="UN Comtrade", confidence=0.9)
+    led = {"ledger": _led(saudi_share_pct=e)}
+    assert not [f for f in L.check(led, "الحصة السعودية 3.5%. تعذّر تحديد سعر الرف.")
+                if f["check"] == "ledger_status_mismatch"]
+    text, rep = L.repair("تستحوذ السعودية على 3% من السوق ولم يُرصد سعر رف مثبت.",
+                         _led(saudi_share_pct=e), kinds=("status",))
+    assert not rep and "سعر رف" in text
+
+
+def test_review_brand_named_cafe_stays_in_study_entities():
+    from silk_style_contract import lead_local_competitor, lead_product_fit
+    lead = {"name": "Café Najjar", "category": ""}
+    assert lead_product_fit(lead, "090121", "قهوة محمصة", "BHR")[0] is True
+    assert lead_local_competitor(lead, "090121")          # خارج قائمة المستوردين فقط
+
+
+def test_review_short_maps_list_keeps_every_web_candidate():
+    import silk_gmaps as G
+    names = [f"Distributor {i}" for i in range(10)]
+    merged = G._merge_web_candidates([{"name": "Alpha Co"}, {"name": "Beta Co"}], names)
+    assert len(merged) == 12
+
+
+def test_review_growth_window_ends_at_the_base_year():
+    import silk_deep_pillars as P
+    rows = [{"value": v, "data_year": y, "source": src, "confidence": 0.9,
+             "note": "إجمالي واردات السوق"}
+            for y, v, src in ((2019, 4e6, "UN Comtrade"), (2022, 6e6, "UN Comtrade"),
+                              (2024, 9e6, "UN Comtrade (mirror)"))]
+    s = P.import_series({"trade_flow": {"findings": rows}})
+    assert s["growth_pct"] == 125.0                       # 2019→2024 لا 2019→2022
+
+
+def test_review_study_inflation_follows_the_gdp_year():
+    import silk_study_case as C
+    dr = {"missions": {"demographics_economy": {"findings": [
+        {"value": 2.8, "data_year": 2024, "source": "IMF WEO", "note": "نمو الناتج المحلي"},
+        {"value": 1.1, "data_year": 2024, "source": "IMF WEO", "note": "التضخم"},
+        {"value": 3.9, "data_year": 2027, "source": "IMF WEO", "note": "التضخم — تنبؤ"}]}}}
+    assert C._indicator(dr, ("التضخم",), -10, 200, year=2024)["value"] == 1.1

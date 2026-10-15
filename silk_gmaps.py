@@ -465,7 +465,7 @@ def _merge_web_candidates(leads: list, web_candidates: list) -> list:
     # الدرس ٢٩٦: مرشّحو الويب (موزّعو بعثة القنوات) كانوا يُلحَقون **بعد**
     # ١٥ رابطَ خرائط ثمّ يُقصّ الطرف — فيسقط الموزّعُ الذي يوصي به المتن
     # وتبقى المقاهي. يُحجَز لهم حتى ثلث القائمة قبل القصّ.
-    keep = min(len(extra), max(_TOP_N // 3, 1))
+    keep = min(len(extra), max(_TOP_N // 3, _TOP_N - len(merged), 1))
     return merged[:_TOP_N - keep] + extra[:keep] if keep else merged[:_TOP_N]
 
 

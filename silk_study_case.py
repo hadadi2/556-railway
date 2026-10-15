@@ -98,8 +98,27 @@ def _macro_gdp(dr: dict) -> dict | None:
     return None
 
 
-def _indicator(dr: dict, words: tuple[str, ...], lo: float, hi: float) -> dict | None:
-    """أحدث نقطة رقمية بسنة بنيوية تحمل إحدى الكلمات في ملاحظتها."""
+def _indicator(dr: dict, words: tuple[str, ...], lo: float, hi: float,
+               year: "int | None" = None) -> dict | None:
+    """أحدث نقطة رقمية بسنة بنيوية تحمل إحدى الكلمات في ملاحظتها.
+
+    `year` (الدرس ٢٩٦، مراجعة §58): التضخمُ بسنة النموّ نفسِها حين تُرصَد —
+    وإلا جملةٌ واحدة تقرن نموَّ 2024 الفعليّ بتضخّمِ تنبؤٍ لعام 2027."""
+    if year is not None:
+        same = _indicator(dr, words, lo, hi)
+        pinned = None
+        for mission in ("risk_news", "demographics_economy", "logistics", "trade_flow"):
+            for f in _findings(dr, mission):
+                v, note = f.get("value"), str(f.get("note") or "")
+                if (f.get("data_year") == year and isinstance(v, (int, float))
+                        and not isinstance(v, bool) and any(w in note for w in words)
+                        and lo <= float(v) <= hi):
+                    pinned = {"value": float(v), "year": year,
+                              "source": str(f.get("source") or "")}
+                    break
+            if pinned:
+                break
+        return pinned or (same if same and same["year"] <= year else None)
     best = None
     for mission in ("risk_news", "demographics_economy", "logistics", "trade_flow"):
         for f in _findings(dr, mission):
@@ -392,7 +411,8 @@ def build_case(found: dict, *, product_short: str | None = None,
     # ── المؤشرات العامة ──────────────────────────────────────────────────
     fx = _indicator(dr, ("سعر الصرف", "PA.NUS.FCRF", "صرف"), 0.01, 100000)
     gdp = _macro_gdp(dr)
-    inf = _indicator(dr, ("التضخم", "inflation"), -10, 200)
+    inf = _indicator(dr, ("التضخم", "inflation"), -10, 200,
+                     year=gdp["year"] if gdp else None)
     lpi = _indicator(dr, ("LPI", "الأداء اللوجستي"), 1, 5)
     wgi = _indicator(dr, ("PV.EST", "الاستقرار السياسي"), -3, 3)
 

@@ -849,18 +849,17 @@ def lead_local_competitor(lead: dict, hs_code: object) -> str:
     if (_hs_digits(hs_code).startswith("09012") and key not in _ACTIVITY_CATEGORY_FREE
             and _ROASTER_RE.search(_lead_text(lead))):
         return "محمصةٌ محلية تنافس المنتج المحمّص لا تستورده"
+    # الاسمُ وحدَه («… Café») قرينةُ منفذ ضيافة في **قائمة المستوردين** فقط
+    # (مراجعة §58): «Café Najjar» علامةُ بنٍّ تبقى في جدول جهات الدراسة.
+    if not key and _LEAD_NOT_BUYER_NAME_RE.search(str((lead or {}).get("name") or "")):
+        return "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع"
     return ""
 
 
 def _lead_not_buyer(lead: dict, hs_code: object) -> str:
-    """سببُ أنّ الرابط ليس مستورداً/موزّعاً للمنتج — أو `""`."""
-    key = _activity_key_of(lead)
-    if key in _LEAD_NOT_BUYER_ACTIVITY:
-        return _LEAD_NOT_BUYER_ACTIVITY[key]
-    name = str((lead or {}).get("name") or "")
-    if key not in _ACTIVITY_CATEGORY_FREE and _LEAD_NOT_BUYER_NAME_RE.search(name):
-        return "منفذُ ضيافةٍ يبيع للمستهلك لا مستوردٌ أو موزّع"
-    return ""
+    """سببُ أنّ الرابط ليس مستورداً/موزّعاً للمنتج — من **فئته المُدرَجة**
+    وحدَها (تصنيفُ المصدر موثوق؛ الاسمُ وحدَه لا يكفي هنا) — أو `""`."""
+    return _LEAD_NOT_BUYER_ACTIVITY.get(_activity_key_of(lead), "")
 
 
 def lead_product_fit(lead: object, hs_code: object = None, product: str = "",

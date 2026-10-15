@@ -4240,11 +4240,12 @@ def _client_price_observations(doc, dr: dict, lang: str = "ar") -> None:
         # الدرس ٢٩٦: رصدان يختلفان بعد حدّ الاقتطاع كانا يُطبعان جملةً واحدةً
         # حرفياً — العميل يرى تكراراً. الثاني يُطبَع بنصّه الأطول حتى يظهر
         # ما يميّزه (المتجر/العبوة)، فيبقى الرصدان (مراجعة §58) بلا تكرار.
-        if any(x.startswith(body.split(" — ")[0]) for x in lines):
+        head = body.split(" — ")[0]
+        if any(x.split(" — ")[0] == head for x in lines):
             longer = _lang_safe(_client_sanitize(_client_prose(raw, 600), lang), lang)
-            if not longer or any(x.startswith(longer) for x in lines):
+            if not longer or any(x.split(" — ")[0] == longer for x in lines):
                 continue
-            body = longer + body[len(body.split(" — ")[0]):]
+            body = longer + body[len(head):]
         seen.add(key)
         lines.append(body)
     if not lines:
@@ -6327,10 +6328,10 @@ def _clean_leads(leads: list, dr: dict) -> list:
             lead = dict(lead)
             lead["named_in_report"] = True
         # **المراجعةُ الذاتية للفرق (البند ٥٨)**: الحصانةُ كانت تتجاوز
-        # **كلَّ** المصافي لا مِصفاةَ النشاط وحدَها — فجهةٌ يسمّيها المتنُ
-        # بعنوانٍ في دولةٍ أخرى أو بلا أيّ اتصالٍ كانت تُعرَض. الحصانةُ
-        # مقصورةٌ على النشاط: التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ
-        # صحّةِ عنوانٍ ولا وجودِ اتصال.
+        # **كلَّ** المصافي — فجهةٌ يسمّيها المتنُ بعنوانٍ في دولةٍ أخرى كانت
+        # تُعرَض. التسميةُ في المتن دليلُ **صلةٍ** لا دليلُ صحّةِ عنوان. وبقرار
+        # المالك (الدرس ٢٩٦) تبقى الجهةُ المسمّاة **بلا اتصال** مرشّحاً يحتاج
+        # تحققاً — توصيةٌ بجهةٍ غائبةٍ عن قائمتها أسوأ من صفٍّ بلا هاتف.
         # تقرير ٧ §4.4: التسميةُ في المتن ليست دليلَ صلة — مِصفاةُ النشاط
         # تسري على الجهة المسمّاة أيضاً (كانت حصانتُها تُبقي ما تُسقطه).
         if _scoped and not lead_activity_allowed(lead.get("category")):

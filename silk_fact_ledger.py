@@ -598,7 +598,9 @@ def _fill_series(missions: dict, put) -> None:
     c = _num(series.get("cagr_pct"))
     if c is not None:
         direct = [p for p in full if not p.get("mirrored")]
-        yrs = sorted(int(p["year"]) for p in (direct if len(direct) >= 2 else full))
+        basis = (direct if len(direct) >= 2 and direct[-1]["year"] == full[-1]["year"]
+                 else full)
+        yrs = sorted(int(p["year"]) for p in basis)
         put(_entry("import_cagr_pct", c, source="UN Comtrade", confidence=0.9,
                    origin="trade_flow", year=yrs[-1],
                    note=f"محسوب من سلسلة الواردات {yrs[0]}–{yrs[-1]}"))
@@ -1603,7 +1605,13 @@ def _status_mismatch_near(plain: str, words: tuple) -> str:
         w0 = _strip_diacritics(w)
         for m in re.finditer(re.escape(w0), plain):
             win = plain[m.end():m.end() + _WINDOW].split("\n")[0]
-            if _ABSENCE_RE.search(win):
+            # المراجعة الذاتية §58: النافذةُ لا تعبر نهايةَ الجملة (وإلا لا يقدر
+            # الإصلاحُ الجُمَليّ عليها فتصير حجباً)، ورقمٌ مذكورٌ قبل الغياب
+            # يعني أنّ القيمة قيلت والغيابَ عن شيءٍ آخر («تستحوذ السعودية على
+            # 3% … ولم يُرصد سعر رف»).
+            win = re.split(r"(?<=[.؛!؟])(?![0-9٠-٩])", win)[0]
+            a = _ABSENCE_RE.search(win)
+            if a and not re.search(r"[0-9٠-٩]", win[:a.start()]):
                 return f"…{plain[max(0, m.start() - 20):m.end() + 30]}…"
     return ""
 
