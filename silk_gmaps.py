@@ -448,6 +448,7 @@ def _merge_web_candidates(leads: list, web_candidates: list) -> list:
         return leads
     have = {(l.get("name") or "").strip().lower() for l in leads}
     merged = list(leads)
+    extra: list = []
     for name in web_candidates:
         n = name.strip()
         low = n.lower()
@@ -457,11 +458,15 @@ def _merge_web_candidates(leads: list, web_candidates: list) -> list:
         if any(low in h or h in low for h in have if h):
             continue
         have.add(low)
-        merged.append({"name": n, "address": "", "phone": "", "email": "",
-                       "website": "", "rating": None, "review_count": None,
-                       "maps_link": "", "doc_level": _WEB_DOC_LEVEL,
-                       "source": "web_search"})
-    return merged[:_TOP_N]
+        extra.append({"name": n, "address": "", "phone": "", "email": "",
+                      "website": "", "rating": None, "review_count": None,
+                      "maps_link": "", "doc_level": _WEB_DOC_LEVEL,
+                      "source": "web_search"})
+    # الدرس ٢٩٦: مرشّحو الويب (موزّعو بعثة القنوات) كانوا يُلحَقون **بعد**
+    # ١٥ رابطَ خرائط ثمّ يُقصّ الطرف — فيسقط الموزّعُ الذي يوصي به المتن
+    # وتبقى المقاهي. يُحجَز لهم حتى ثلث القائمة قبل القصّ.
+    keep = min(len(extra), max(_TOP_N // 3, 1))
+    return merged[:_TOP_N - keep] + extra[:keep] if keep else merged[:_TOP_N]
 
 
 def _completed_job(queries):

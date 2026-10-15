@@ -4598,6 +4598,15 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    296: lambda: (
+        _needles("silk_fact_ledger.py", "def _in_value_slot")(),
+        _needles("silk_quality_gate.py", "def _check_sharp_claim_unverified",
+                 '"sharp_claim_unverified"})')(),
+        _needles("tests/test_lesson296_bahrain_coffee_review.py",
+                 "def test_gate_blocks_a_status_label_printed_as_a_value",
+                 "def test_mandatory_decree_without_official_source_blocks",
+                 "def test_bahrain_logistics_mission_gets_the_causeway_route")(),
+        _needles("tests/test_lessons_enforcement.py", "(296, ")()),
     295: lambda: (
         _needles("silk_fact_ledger.py", "def _drops_sentence")(),
         _needles("silk_quality_gate.py", "def delivery_blockers")(),

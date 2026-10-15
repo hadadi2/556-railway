@@ -107,9 +107,11 @@ KEYS: tuple = (
     _fact("import_growth_pct", "نمو الواردات", "imports growth", "%",
           ("نمو الواردات", "نمو السوق", "imports growth", "market growth")),
     _fact("import_cagr_pct", "معدل النمو السنوي المركّب", "import CAGR", "%",
-          ("معدل النمو السنوي المركّب", "نمو مركّب", "CAGR")),
+          ("معدل النمو السنوي المركّب", "نمو مركّب", "المعدل المركّب",
+           "النمو المركّب", "CAGR")),
     _fact("saudi_share_pct", "الحصة السعودية", "Saudi share", "%",
-          ("الحصة السعودية", "حصة السعودية", "تستحوذ السعودية", "Saudi share")),
+          ("الحصة السعودية", "حصة السعودية", "حصة المملكة", "تستحوذ السعودية",
+           "Saudi share")),
     _fact("hhi", "مؤشر تركّز المورّدين", "supplier concentration (HHI)", "",
           ("مؤشر التركّز", "تركّز المورّدين", "HHI")),
     _fact("top_supplier_share_pct", "حصة المورّد الأكبر", "top supplier share",
@@ -208,7 +210,9 @@ DERIVED_ALLOWED: tuple = (
 # مفردات الغياب التي يُسمَح بها لأي سطح — ما ليس هنا تحظره البوابة أصلاً.
 _ABSENCE_RE = re.compile(
     r"غير\s*متاح(?:ة)?|غير\s*محسوب(?:ة)?|لم\s*نتمكّن|لم\s*نتمكن|لم\s*يُرصد"
-    r"|لم\s*يرصد|غير\s*مرصود(?:ة)?|not\s+available|unavailable|not\s+computed",
+    r"|لم\s*يرصد|غير\s*مرصود(?:ة)?|not\s+available|unavailable|not\s+computed"
+    # الدرس ٢٩٦: «لا يمكن تحديد حصة السعودية» بينما التقرير يحدّدها 3.53%.
+    r"|لا\s*يمكن\s*تحديد|تعذّ?ر\s*(?:تحديد|حساب)|cannot\s+be\s+determined",
     re.IGNORECASE)
 _NUM_RE = re.compile(r"(?<![\w.])(\d{1,3}(?:[,\d]{0,12})(?:\.\d+)?)\s*(%|٪|مليون|مليار|ألف|million|billion)?")
 _YEAR_RE = re.compile(r"\b(20\d\d|19\d\d)\b")
@@ -562,6 +566,16 @@ def _fill_series(missions: dict, put) -> None:
                origin="trade_flow",
                note=("نمو الواردات بين أول وآخر سنة كاملة مرصودة" if g is not None
                      else "يتطلب سنتين مرصودتين")))
+    # الدرس ٢٩٦: النموُّ المركّب من السلسلة نفسِها بمصدرها — كان يُقرأ من نثر
+    # البعثة فتفشل مطابقةُ الإسناد ويُوسَم «من مصادر غير رسمية فقط»، أو يغيب
+    # فيُعلَن «غير متاح» بينما السلسلةُ المرسومة تعطيه.
+    c = _num(series.get("cagr_pct"))
+    if c is not None:
+        direct = [p for p in full if not p.get("mirrored")]
+        yrs = sorted(int(p["year"]) for p in (direct if len(direct) >= 2 else full))
+        put(_entry("import_cagr_pct", c, source="UN Comtrade", confidence=0.9,
+                   origin="trade_flow", year=yrs[-1],
+                   note=f"محسوب من سلسلة الواردات {yrs[0]}–{yrs[-1]}"))
 
 
 def _fill_from_analyze(row: dict, put) -> None:
@@ -684,6 +698,33 @@ def _value_text(entry: dict, lang: str) -> str:
     return fmt_number(v)
 
 
+#: سببُ «الضعف» يُقال بلغة قارئ وبصدق (الدرس ٢٩٦): بياناتُ المرآة من UN
+#: Comtrade **رسميةٌ** تصرّح بها الدولُ الشريكة، والمصدرُ الرسميّ بثقةٍ منخفضة
+#: ليس «غير رسميّ» — وصفُهما «من مصادر غير رسمية فقط» كان ادّعاءً خاطئاً.
+_WEAK_PHRASES = {
+    "mirror": ("من بيانات الدول الشريكة (بيانات مرآة)",
+               "from partner-country (mirror) data"),
+    "low_confidence": ("من مصدر رسمي بثقة منخفضة",
+                       "from an official source with low confidence"),
+    "unofficial": ("من مصادر غير رسمية فقط", "from unofficial sources only"),
+}
+
+
+def weak_reason(entry: dict) -> str:
+    """mirror | low_confidence | unofficial — لماذا البندُ ضعيفُ التوثيق."""
+    if entry.get("mirrored"):
+        return "mirror"
+    from silk_fact_records import classify_tier
+    if classify_tier(entry.get("source") or "", entry.get("note") or "") in ("A", "B"):
+        return "low_confidence"
+    return "unofficial"
+
+
+def weak_phrase(entry: dict, lang: str = "ar") -> str:
+    ar, en = _WEAK_PHRASES[weak_reason(entry)]
+    return en if lang == "en" else ar
+
+
 def render_value(entry: dict, lang: str = "ar") -> str:
     """القيمة بمصدرها — للرمز داخل جملة رقمية (`{{key}}`)."""
     st, key = entry["status"], entry["key"]
@@ -723,8 +764,7 @@ def render_value(entry: dict, lang: str = "ar") -> str:
                                 str(entry.get("year") or "")) if x)
     if st == WEAK:
         # لغةُ قارئ لا اسمُ حالة — الذيلُ يصل نصَّ العميل عبر الرمز المملوء.
-        body += (" — from unofficial sources only" if lang == "en"
-                 else " — من مصادر غير رسمية فقط")
+        body += " — " + weak_phrase(entry, lang)
     return f"{body} ({tail})" if tail else body
 
 
@@ -806,8 +846,7 @@ def render_status(entry: dict, lang: str = "ar") -> str:
     # و«تقدير» تسمياتٌ داخلية لا تصل العميل ولو عبر `{{status:key}}`.
     return {OBSERVED: ("available from a documented source" if en
                        else "متاح من مصدر موثّق"),
-            WEAK: ("available from unofficial sources only" if en
-                   else "متاح من مصادر غير رسمية فقط"),
+            WEAK: ("available " if en else "متاح ") + weak_phrase(entry, lang),
             MISSING: "not available" if en else "غير متاح",
             ESTIMATE: ("estimated under a declared assumption" if en
                        else "مُقدَّر بافتراض معلن"),
@@ -929,6 +968,25 @@ LEDGER_TOKEN_RULE_EN = (
     "sentence is sent back. Do not invent tokens.")
 
 
+#: خانةُ قيمةٍ قبل الرمز — «يسجل {{status:x}}»/«تبلغ {{status:x}}»: الكاتبُ
+#: كتب رمزَ **الحالة** حيث تلزم **القيمة**، فخرج للعميل «يسجل مستنتَج من أرقام
+#: مرصودة» (دراسة قهوة البحرين، الدرس ٢٩٦). الحالةُ وصفٌ لا قيمة.
+_VALUE_SLOT_RE = re.compile(
+    r"(?:\b[وف]?(?:ي|ت)?سجّ?ل(?:ت)?|\b[وف]?(?:ي|ت)?بلغ(?:ت)?|\b[وف]?(?:ي|ت)صل\s+إلى|"
+    r"\b[وف]?وصل(?:ت)?\s+إلى|\bقدر(?:ه|ها)|\bبنسبة|\bبقيمة|\bبمعدل|"
+    r"\brecords?|\brecorded|\breach(?:es|ed)?|\bstands?\s+at)[\s*:]*$",
+    re.IGNORECASE)
+
+
+def _in_value_slot(string: str, start: int) -> bool:
+    before = string[max(0, start - 30):start]
+    return bool(_VALUE_SLOT_RE.search(_strip_diacritics(before)))
+
+
+def _strip_diacritics(s: str) -> str:
+    return re.sub(r"[\u064B-\u0652\u0670]", "", s or "")
+
+
 def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
     """استبدل كل رمز بصيغته من السجلّ — يعيد (النص، {bound, unknown, used,
     dropped}).
@@ -961,6 +1019,8 @@ def bind(text: str, ledger: dict, lang: str = "ar") -> tuple:
         n += 1
         used.append(key)
         if is_status:
+            if e["status"] != MISSING and _in_value_slot(m.string, m.start()):
+                return render_value(e, lang)
             return render_status(e, lang)
         if as_sentence and not in_table:
             return render_sentence(e, lang)
@@ -1000,6 +1060,9 @@ def _drops_sentence(part: str, entries: dict) -> bool:
         e = entries.get(key)
         if e is None:
             return True
+        if (is_status and e["status"] == MISSING
+                and _in_value_slot(part, m.start())):
+            return True                    # «يسجل غير متاح» جملةٌ مكسورة
         if (not is_status and e["status"] == MISSING
                 and (key not in _SELF_DESCRIBING_KEYS
                      or key == "open_conditions")):
@@ -1131,6 +1194,11 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
         if key not in entries:
             issues.append(f"رمز غير مسرود في السجلّ «{{{{{key}}}}}» — احذفه أو "
                           "استعمل رمزاً من [LEDGER]")
+    for m in TOKEN_RE.finditer(draft):
+        if m.group(1) and m.group(2) in entries and _in_value_slot(draft, m.start()):
+            issues.append(f"رمز الحالة «{m.group(0)}» مكتوب حيث تلزم القيمة — "
+                          "الحالةُ وصفٌ لا رقم؛ اكتب القيمة بصيغتك أو اذكر "
+                          f"الحالة في جملة مستقلة: «{_sentence_at(draft, m.start())}»")
     stripped = TOKEN_RE.sub(" ", draft)
     for sent in _religious_sentences_in_neutral_category(stripped, ledger):
         issues.append("لفظٌ دينيّ في تقرير فئةٍ لا صلةَ للدين بها (تصنيف فصل "
@@ -1377,6 +1445,7 @@ def check(view: dict, text: str) -> list:
     ledger = (view or {}).get("ledger") or {}
     entries = ledger.get("entries") or {}
     findings: list = []
+    plain = _strip_diacritics(text)
     # **يُفحَص قبل أيّ شيء وبلا سجلّ** (مراجعة §58): تعذُّرُ بناء السجلّ هو
     # نفسُه الحالةُ التي يُتخطّى فيها الملء، فلو اشترط الفحصُ وجودَ سجلٍّ
     # لمرّت الرموزُ غيرُ المملوءة إلى العميل في الحالة الوحيدة التي تقع فيها.
@@ -1407,15 +1476,22 @@ def check(view: dict, text: str) -> list:
                     f"«{e['label_ar']}» تقديرٌ بنطاقٍ ({render_value(e)}) بينما "
                     f"النص يكتبه رقماً واحداً بلا نطاق قرب «…{bare[:60]}…»"))
             continue
+        if e["status"] != MISSING:
+            hit = _status_mismatch_near(plain, words)
+            if hit:
+                # الدرس ٢٩٦ (قرار المالك): قيمةٌ في السجلّ لا يصفها أيُّ قسمٍ
+                # «غير متاحة» — نفيٌ مختلَق؛ جملةُ الكاتب تُصلَح قبلها
+                # (`repair(kinds=("status",))`)، فالباقي عيبُ قسمٍ حتميّ يُحجَب.
+                findings.append(_finding(
+                    "ledger_status_mismatch",
+                    f"«{e['label_ar']}» مرصود في السجلّ ({render_value(e)}) "
+                    f"بينما النص يعلنه غير متاح قرب «{hit}»",
+                    always_block=True))
         for w in words:
             for m in re.finditer(re.escape(w), text):
                 win = text[m.end():m.end() + _WINDOW].split("\n")[0]
                 near = f"…{text[max(0, m.start() - 20):m.end() + 30]}…"
                 if e["status"] != MISSING and _ABSENCE_RE.search(win):
-                    findings.append(_finding(
-                        "ledger_status_mismatch",
-                        f"«{e['label_ar']}» مرصود في السجلّ ({render_value(e)}) "
-                        f"بينما النص يعلنه غير متاح قرب «{near}»"))
                     break
                 nm = _NUM_RE.search(win[:_VALUE_WINDOW])
                 if nm and e["status"] != MISSING:
@@ -1485,6 +1561,18 @@ def check(view: dict, text: str) -> list:
     return findings
 
 
+def _status_mismatch_near(plain: str, words: tuple) -> str:
+    """أوّلُ «غير متاح» يلي تسميةَ المعطى في نافذته — بلا تشكيل (الدرس ٢٩٦:
+    «المعدل المركب» بلا شدّة كان لا يطابق «مركّب» فيمرّ التعارض)."""
+    for w in words:
+        w0 = _strip_diacritics(w)
+        for m in re.finditer(re.escape(w0), plain):
+            win = plain[m.end():m.end() + _WINDOW].split("\n")[0]
+            if _ABSENCE_RE.search(win):
+                return f"…{plain[max(0, m.start() - 20):m.end() + 30]}…"
+    return ""
+
+
 def _distinct_tokens(s: str) -> list:
     return [w for w in re.findall(r"[\w؀-ۿ]{4,}", s) if w not in
             ("جانب", "غائب", "متاح", "قبل", "قرار", "نهائي", "مصادره")][:4]
@@ -1492,7 +1580,8 @@ def _distinct_tokens(s: str) -> list:
 
 # ── الإصلاح من السجلّ (وضع الإنفاذ) · repair ─────────────────────────────────
 
-def repair(text: str, ledger: dict, lang: str = "ar") -> tuple:
+def repair(text: str, ledger: dict, lang: str = "ar",
+           kinds: "tuple | None" = None) -> tuple:
     """أصلح النصَّ المُصيَّر من السجلّ قبل الحجب — إعادةُ صياغة **الجملة
     كاملة** (لا استبدال الرقم وحده، التعديل ٨): عدد الشروط بمطابقة العدد
     والمعدود، وإعلان غيابٍ لمعطىً مرصود. يعيد (النص، قائمة الإصلاحات).
@@ -1505,10 +1594,14 @@ def repair(text: str, ledger: dict, lang: str = "ar") -> tuple:
         return text, []
     entries = (ledger or {}).get("entries") or {}
     repairs: list = []
-    oc = entries.get("open_conditions") or {}
+    # `kinds` يحصر الإصلاح (الدرس ٢٩٦: إصلاحُ الحالة يعمل دائماً، والباقي
+    # تحت الإنفاذ وحده).
+    oc = (entries.get("open_conditions") or {}) if (
+        kinds is None or "open_conditions_count" in kinds) else {}
     actual = int(oc.get("value") or 0)
     out: list = []
-    claims = set(_unsourced_channel_claims(text))
+    claims = set(_unsourced_channel_claims(text)) if (
+        kinds is None or "channel_claim" in kinds) else set()
     for part in _SENT_SPLIT_RE.split(text):
         tail = "\n" if part.endswith("\n") else ""
         fixed = part
@@ -1529,7 +1622,9 @@ def repair(text: str, ledger: dict, lang: str = "ar") -> tuple:
             words = row.words
             if e["status"] == MISSING or not words or not row.numeric_check:
                 continue
-            if any(w in part for w in words) and _ABSENCE_RE.search(part):
+            if kinds is not None and "status" not in kinds:
+                break
+            if _status_mismatch_near(_strip_diacritics(part), words):
                 new = render_sentence(e, lang)
                 repairs.append({"kind": "status", "key": key,
                                 "before": part.strip(), "after": new})
@@ -1679,7 +1774,7 @@ def gaps_table(view: dict, lang: str = "ar") -> list:
     rows: list = []
     seen: set = set()
 
-    def add(what: str, status: str, how: str) -> None:
+    def add(what: str, status: str, how: str, weak: str = "") -> None:
         # قيمةٌ ليست نصّاً (رقمٌ تسرّب إلى `limits`) ليست فجوةً مقروءة.
         what = what.strip() if isinstance(what, str) else ""
         if not what or not any(c.isalpha() for c in what):
@@ -1699,7 +1794,8 @@ def gaps_table(view: dict, lang: str = "ar") -> list:
         short_how = clip_clause(how, _GAP_HOW_LIMIT) if how else "—"
         full = (what + " — " + how) if how else what
         rows.append({"what": short_what, "status": status, "how": short_how,
-                     "status_code": WEAK if status == lbl_weak else MISSING,
+                     "status_code": WEAK if (weak or status == lbl_weak) else MISSING,
+                     "weak_reason": weak,
                      # الصفُّ المُختصَر يحمل أصلَه كاملاً: الجدولُ فهرسٌ
                      # يُقرأ، والتفصيلُ يُطبَع تحته مرّةً — فلا سطرٌ يضيع.
                      "full": " ".join(full.split()),
@@ -1716,7 +1812,11 @@ def gaps_table(view: dict, lang: str = "ar") -> list:
         if g.get("status") != WEAK:
             continue
         label = g.get("label_en") if en else g.get("label_ar")
-        add(label, lbl_weak, _split_gap(g.get("note") or "")[1])
+        e = (ledger.get("entries") or {}).get(g.get("key")) or g
+        reason = weak_reason(e)
+        add(label, lbl_weak if reason == "unofficial" else
+            ("observed " if en else "مرصود ") + weak_phrase(e, lang),
+            _split_gap(g.get("note") or "")[1], weak=reason)
     # فجواتُ قسم الاقتصاد **لا تدخل** الجدول: القسمُ يطبعها بنصّها في
     # موضعها (وحجبُها هناك أعاد حادثةَ E-03 — غيابٌ صامتٌ بعد إعلان)،
     # فإدراجُها هنا يجعل التقريرَ يقول المعطى مرّتين بالصياغة نفسها —

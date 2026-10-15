@@ -1079,6 +1079,15 @@ PRICE_REASON_NEEDS_CHECK = "نتيجة بحث تحتاج تحققاً"
 PRICE_REASON_CURRENCY_UNRESOLVED = "عملة غير محسومة لهذا السوق"
 
 
+def _border_price_dp(dp: dict) -> bool:
+    """سعرُ حدودٍ/استيراد (كومتريد أو CIF/FOB) لا سعرُ رف — الدرس ٢٩٦."""
+    import silk_economics as _E
+    src = str(dp.get("source") or "").lower()
+    if "comtrade" in src or "كومتريد" in src:
+        return True
+    return _E.detect_price_level(dp.get("note"), "") in ("CIF", "FOB", "EXW")
+
+
 def _price_observation(dp: dict, hs_code: object = None,
                        market_ccy: str = "") -> dict:
     """صفُّ سعرٍ مرصود بحالته وحقوله المستخرَجة حتمياً — لا تخمين.
@@ -3010,6 +3019,19 @@ def _real_contact(v: object) -> bool:
     return sum(ch.isdigit() for ch in s) >= 5          # هاتف (أرقام كافية)
 
 
+def _others_ar(n: int) -> str:
+    """«مكوّنٌ آخر» / «مكوّنان آخران» / «ثلاثة مكوّنات أخرى» / «أحد عشر مكوّناً
+    آخر» — العددُ والمعدودُ والصفةُ بمطابقة العربية (الدرس ٢٩٦)."""
+    from silk_narrative import _AR_ONES, _AR_TEENS
+    if n == 1:
+        return "مكوّنٌ آخر"
+    if n == 2:
+        return "مكوّنان آخران"
+    if n <= 10:
+        return f"{_AR_ONES[n]} مكوّنات أخرى"
+    return f"{_AR_TEENS.get(n, str(n))} مكوّناً آخر"
+
+
 def _flip_conditions(verdict_tone: str, hs_flagged: bool,
                      importer_leads: dict, market_ar: str,
                      lang: str = "ar", missing_components=None) -> list[dict]:
@@ -3043,10 +3065,12 @@ def _flip_conditions(verdict_tone: str, hs_flagged: bool,
         # الدرس ٢٨٣ (المراجعةُ البصرية للعيّنة): مكوّناتٌ تُغلَق بالطريق نفسِه
         # شرطٌ واحد — كان كلُّ مكوّنٍ شرطاً بالذيل نفسِه حرفياً عشرَ مرّات.
         # ثلاثةٌ بالاسم والباقي عدداً، فيبقى السطرُ قصيراً في كلّ موجز.
-        shown = comps[:3]
+        # «و1 مكوّنات أخرى» (بلاغ المالك، الدرس ٢٩٦): باقٍ واحدٌ يُسمّى باسمه،
+        # والعددُ يُكتب بمطابقة العربية لا رقماً أمام جمع.
+        shown = comps if len(comps) <= 4 else comps[:3]
         rest = len(comps) - len(shown)
         if lang == "ar":
-            label = _parts_ar(shown) + (f" و{rest} مكوّنات أخرى" if rest else "")
+            label = _parts_ar(shown) + (f" و{_others_ar(rest)}" if rest else "")
             cond = f"استكمال بيانات {label} وإعادة تقييم القرار"
         else:
             label = ", ".join(str(c).replace("_", " ") for c in shown) + (
@@ -3771,10 +3795,14 @@ def _deep_research_view(result: dict, lang: str = "ar",
         # #13 ص14: سقالة الاستشهاد الخام بلغت رف العميل («[مرجع سوق] مبني
         # على: مرجع locale»، «HS040120…, USD») — الملاحظة تُنظَّف للعرض
         # وصفُّ المرجع الداخلي الخالص يُسقَط (انظر `_clean_price_row_note`).
+        # الدرس ٢٩٦: متوسطُ استيراد كومتريد (سعر حدود) ليس «سعراً مرصوداً على
+        # الرف» — كان يُطبع تحت عنوان الرف فيناقض «لا سعر رف مثبت».
         "price_rows": [
             row for row in (
-                _price_observation(_dp(x), result.get("hs_code"), _mkt_ccy)
-                for x in ((missions.get("pricing_scout") or {}).get("findings") or []))
+                _price_observation(d, result.get("hs_code"), _mkt_ccy)
+                for d in (_dp(x) for x in (
+                    (missions.get("pricing_scout") or {}).get("findings") or []))
+                if not _border_price_dp(d))
             if (row["note"] or row["value"] is not None)
             and _is_price_row(row["value"], row["note"])],
         "price_unlock": PRICE_UNLOCK_LINE,

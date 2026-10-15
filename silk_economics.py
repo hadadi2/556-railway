@@ -1725,8 +1725,14 @@ def economics_view(dr: dict, product_card: dict | None = None,
     for st, n_ in excluded.items():
         gaps.append(f"استُبعد {n_} سعر رف {_why[st]}")
     if excluded and not retail_rows:
-        gaps.append("لا سعر رف لمنتج مكافئ ومثبت مرصود بعد — الحل العكسي "
-                    "معلّق حتى يُرصد واحد")
+        # الدرس ٢٩٦: الجملةُ تسمّي علاقتَها بالأسعار المعروضة في قسم المنافسة
+        # (مؤشراتٌ لم تُثبَّت) — كانت تُقرأ نفياً لوجود أيّ سعر بجوار خمسة أسعار.
+        _kinds = "، و".join(
+            k for st, k in (("needs_verification", "مؤشراتٌ من نتائج بحث لم تُثبَّت"),
+                            ("non_equivalent", "لمنتجات غير مكافئة"))
+            if st in excluded)
+        gaps.append("لا سعر رف لمنتج مكافئ ومثبت مرصود بعد — الأسعار المعروضة "
+                    f"{_kinds}، فالحل العكسي معلّق حتى يُثبَّت سعرٌ واحد")
     anchor = None
     local_ccy = market_currency(market_iso3)
     if retail_rows:

@@ -243,7 +243,8 @@ def test_a_net_importer_of_inputs_is_never_given_the_advantage():
 def test_a_reexporter_is_excluded_from_direct_competitors():
     led = _view("netherlands_honey")["ledger"]["entries"]
     sn = led["supplier_nature"]
-    assert sn["status"] == L.INFERENCE and "1 معيد تصدير" in sn["value"]
+    # الدرس ٢٩٦: العددُ بمطابقة العربية («معيد تصدير مرجَّح واحد» لا «1 معيد»).
+    assert sn["status"] == L.INFERENCE and "معيد تصدير مرجَّح واحد" in sn["value"]
     bel = next(r for r in sn["items"] if r["iso3"] == "BEL")
     assert bel["reexporter_likely"] is True and bel["actual_source"]["iso3"] == "UKR"
     direct = led["direct_competitor_share_pct"]

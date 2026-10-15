@@ -34,6 +34,11 @@ _TIER_A_MARKERS = (
     "imf", "gazette", "official gazette", "wits",
     "كومتريد", "الجمارك", "بنك مركزي", "البنك الدولي", "صندوق النقد",
     "الجريدة الرسمية",
+    # الدرس ٢٩٦: الجهاتُ الخليجيةُ والحكوميةُ الرسمية كانت تسقط إلى C
+    # فتُوصَف «غير رسمية» (أمانة مجلس التعاون، هيئة التقييس الخليجية).
+    "gcc secretariat", "gcc-stat", "gso", "gcc standardization",
+    "gulf accreditation", "ministry of", "مجلس التعاون", "هيئة التقييس",
+    "مركز الاعتماد الخليجي", "وزارة",
 )
 _TIER_B_MARKERS = (
     "industry report", "trade press", "registry", "commercial registry",

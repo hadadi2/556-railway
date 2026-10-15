@@ -898,6 +898,31 @@ def _augment_competitors_structured(report: AgentReport, hs_code: str,
             break
 
 
+def transport_route_context(market_iso3: "str | None") -> str:
+    """سطرُ المسار البرّي لبعثة اللوجستيات والكاتب — من الجغرافيا لا من النموذج.
+
+    الدرس ٢٩٦ (دراسة قهوة البحرين): البعثةُ قرأت جدولَ الموانئ وحده فكتبت
+    «ميناء خليفة نقطة الدخول الوحيدة» وقدّرت العبور ١٠–١٤ يوماً قياساً على
+    إثيوبيا — متجاهلةً جسرَ الملك فهد. `silk_charter.determine_transport_mode`
+    كان يحسب «برّي» ثم لا يصل أحداً. `""` للأسواق البحرية (لا تغيير)."""
+    try:
+        from silk_charter import determine_transport_mode
+        mode = determine_transport_mode(market_iso3)
+    except Exception:  # noqa: BLE001 — سياقٌ إضافيّ لا شرط تشغيل
+        return ""
+    if mode.get("mode") != "land":
+        return ""
+    iso = str(market_iso3 or "").upper()
+    if iso == "BHR":
+        route = ("المسار الطبيعي برّي بالشاحنات عبر جسر الملك فهد من المنطقة "
+                 "الشرقية (الدمام/الخبر)، والعبور بالساعات لا بالأيام")
+    else:
+        route = "المسار الطبيعي برّي بالشاحنات عبر المنفذ الحدودي المشترك"
+    return (f"[مسار الشحن] السوق متصلة بالسعودية برّاً: {route}. الميناء "
+            "البحري مسارٌ بديل لا «نقطة الدخول الوحيدة». لا تقدّر زمن عبور "
+            "بالقياس على شحنات من دولة أخرى؛ ما لم يُرصد بمصدر يُعلن فجوة.")
+
+
 def run_all_missions(market: MarketRef, product: str = "",
                      hs_code: str | None = None,
                      product_card: dict | None = None,
@@ -931,12 +956,16 @@ def run_all_missions(market: MarketRef, product: str = "",
     if to_run:
         reports.pop("opportunity_gaps", None)
     card_ctx = _product_card_context(product_card)
+    route_ctx = transport_route_context(getattr(market, "iso3", None))
 
     def _run_one(key: str) -> AgentReport:
         agent = LLMMissionAgent(MISSIONS[key])
+        ctx = card_ctx
+        if key == "logistics" and route_ctx:
+            ctx = "\n".join(x for x in (card_ctx, route_ctx) if x)
         return agent.run({"market": market, "product": product,
                           "hs_code": hs_code, "budget": _budget_for(key),
-                          "instruction": "", "extra_context": card_ctx,
+                          "instruction": "", "extra_context": ctx,
                           # السقف الجداري داخل الحلقة (تدقيق البند ١): مهلة
                           # `wait` أدناه تتخلّى عن نتيجة البعثة البطيئة لكنها
                           # لا توقف خيطها — بلا هذا السقف يواصل نداءات كلود

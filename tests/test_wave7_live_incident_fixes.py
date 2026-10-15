@@ -387,4 +387,5 @@ def test_writer_prompt_requires_narrative_intersections_and_reasoned_verdict():
     # تحديث قفل معلن (البند ٤): «أقوى الأسباب بأرقامها» — الأطروحة باقية
     # والعدد الصلب زال لصالح سقف الكلمات.
     assert "أقوى الأسباب بأرقامها" in src
-    assert "يقلبان الحكم" in src
+    # الدرس ٢٩٦ (قرار المالك): «المؤشران» صار «المؤشرات … من الشروط المحسوبة».
+    assert "التي قد تقلب الحكم" in src

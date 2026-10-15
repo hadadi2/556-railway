@@ -585,6 +585,9 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
     # جزئية (مرآة ناقصة) أو نثرٍ لسنة أخرى لا يصير TAM بينما الرسم والدفتر على سنة الأساس.
     _series_pts = [p for p in (import_series(missions).get("series") or []) if not p.get("partial")]
     _tam = float(_series_pts[-1]["value"]) if _series_pts else _numeric(trade, "tam_usd")
+    # الدرس ٢٩٦: مركّبُ السلسلة يصل السجلَّ والنصّ (`silk_fact_ledger._fill_series`)
+    # لا عمودَ القرار — إدخالُه هنا يحرّك درجةَ عمود السوق في خطّ الأساس
+    # المجمَّد (nadec_yemen_dairy 0.363→0.483)، وتحديثُه قرارُ مالكٍ معلَّق.
     market = {
         "tam_usd": _tam,
         "import_cagr_pct": _numeric(trade, "import_cagr_pct"),
@@ -856,10 +859,15 @@ def import_series(missions: dict) -> dict:
     full = [p for p in series if not p["partial"]]
     years_missing = sorted(y for y in missing if y not in best)
     growth = cagr = None
-    if len(full) >= 2:
+    # الدرس ٢٩٦ (دراسة قهوة البحرين): «نمو 213% ومركّب 21%» قاعدتُهما سنةُ
+    # مرآةٍ أقدم، بينما السلسلةُ المباشرة 2019–2024 تعطي نحو 13.7%. النموُّ من
+    # تصريحات السوق نفسِها حين تكفي (نقطتان)، والمرآةُ احتياطٌ لا قاعدة.
+    direct = [p for p in full if not p.get("mirrored")]
+    basis = direct if len(direct) >= 2 else full
+    if len(basis) >= 2:
         try:
             from silk_trend import cagr_pct, growth_pct
-            pairs = [(p["year"], p["value"]) for p in full]
+            pairs = [(p["year"], p["value"]) for p in basis]
             growth, cagr = growth_pct(pairs), cagr_pct(pairs)
         except Exception:  # noqa: BLE001 — النموُّ تحسينٌ لا شرط
             growth = cagr = None

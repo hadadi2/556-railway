@@ -110,15 +110,19 @@ def _ledger_repair_before_gate(view: dict) -> None:
     """
     try:
         import silk_fact_ledger as _FL
-        if not _FL.enforce() or not isinstance(view, dict):
+        if not isinstance(view, dict):
             return
         ledger = view.get("ledger") or {}
         dr = view.get("deep_research") or {}
         rep = dr.get("report") if isinstance(dr.get("report"), dict) else None
         if not ledger or not rep or not rep.get("text"):
             return
+        # الدرس ٢٩٦ (قرار المالك): جملةٌ تعلن «غير متاح» لمعطىً في السجلّ
+        # تُصلَح **دائماً** (حاجبُها لم يعد خلف الإنفاذ)؛ بقيةُ الإصلاحات
+        # تبقى تحت الإنفاذ كما قرّر المالك.
         fixed, repairs = _FL.repair(rep["text"], ledger,
-                                    view.get("report_language") or "ar")
+                                    view.get("report_language") or "ar",
+                                    kinds=None if _FL.enforce() else ("status",))
         if repairs:
             rep["text"] = fixed
             ledger["repairs"] = list(ledger.get("repairs") or []) + repairs
@@ -590,10 +594,26 @@ _FABRICATION_REASON = {
 for _c in ("claude_mention", "english_field_leak", "env_var_leak",
            "facts_list_leak", "internal_plumbing_leak", "mission_key_leak",
            "ops_warning_leak", "raw_confidence", "research_track_leak",
-           "system_language_leak", "tool_use_leak"):
+           "system_language_leak", "tool_use_leak",
+           # الدرس ٢٩٦: تسميةُ حالةٍ بدل قيمة، ومعرّفٌ برمجيّ/اسمُ وكيل.
+           "status_label_as_value", "agent_name_leak"):
     _CLIENT_REASONS.setdefault(_c, _INTERNAL_TEXT_REASON)
 for _c in ("derived_number_has_inputs", "hs_code_as_value"):
     _CLIENT_REASONS.setdefault(_c, _FABRICATION_REASON)
+_CLIENT_REASONS.setdefault("ledger_status_mismatch", {
+    "ar": "قسمٌ في التقرير يصف معطىً مرصوداً بأنه غير متاح، فلم نُسلّمه. "
+          "يُغلقه: إعادة التوليد — يُكتب المعطى بقيمته المرصودة.",
+    "en": "A section calls an observed figure unavailable, so we did not "
+          "deliver it. Fix: regenerate — the figure is written with its "
+          "observed value."})
+_CLIENT_REASONS.setdefault("sharp_claim_unverified", {
+    "ar": "في التقرير ادّعاءٌ حادّ (اقتصاديٌّ كليّ أو اشتراطٌ إلزاميّ) بلا "
+          "مصدرٍ رسميّ يسنده، فلم نُسلّمه. يُغلقه: إعادة التوليد — يُوثَّق "
+          "الادّعاء بمصدره أو يُذكر بوصفه بنداً يلزم التحقق منه.",
+    "en": "The report makes a sharp claim (macroeconomic or a mandatory "
+          "requirement) with no official source behind it, so we did not "
+          "deliver it. Fix: regenerate — the claim is sourced or stated as "
+          "something to verify."})
 _CLIENT_REASONS.setdefault("gate_crash", {
     "ar": "تعذّر فحص التقرير قبل تسليمه بسبب خلل من جهتنا. يُغلقه: تواصل "
           "معنا وسنُعيد إصداره.",
