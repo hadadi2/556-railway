@@ -134,6 +134,26 @@ def test_report_docx_downloads_a_real_openable_document_no_501(server):
     assert text.strip()                                 # مستند غير فارغ فعلاً
 
 
+def test_bahrain_coffee_codex_exports_clean_over_real_http(server):
+    """الدرس ٢٩٨: مدوّنةُ بلاغ المالك (قهوة البحرين) تُصدَّر عبر الخادم الحقيقيّ
+    — Word وMarkdown بلا حجبٍ وبلا أيّ عبارةٍ رفضها المالك، وجسرُ الملك فهد
+    مذكور. الهرمتيّ وحدَه كان يثبتها (تدقيق الفجوات)."""
+    import silk_quality_gate as Q
+    assert server.bahrain_id
+    st, body, _ = _get(server.base_url, f"/analyses/{server.bahrain_id}/report.md")
+    assert st == 200, body[:400]
+    md = body.decode("utf-8", "replace")
+    assert "جسر الملك فهد" in md
+    assert not Q.owner_flag_hits(md, "BHR")
+    st, body, _ = _get(server.base_url, f"/analyses/{server.bahrain_id}/report.docx")
+    assert st == 200, body[:400]
+    from docx import Document
+    doc = Document(io.BytesIO(body))
+    text = "\n".join([p.text for p in doc.paragraphs]
+                     + [c.text for t in doc.tables for r in t.rows for c in r.cells])
+    assert text.strip() and not Q.owner_flag_hits(text, "BHR")
+
+
 def test_missing_analysis_export_is_404_not_a_fabricated_success(server):
     """المبدأ المؤسِّس على مستوى HTTP: تحليل غير موجود = 404 صريح، لا مستند
     فارغ مُختلَق."""

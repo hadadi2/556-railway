@@ -879,8 +879,16 @@ def import_series(missions: dict) -> dict:
             growth, cagr = growth_pct(pairs), cagr_pct(pairs)
         except Exception:  # noqa: BLE001 — النموُّ تحسينٌ لا شرط
             growth = cagr = None
+    # الدرس ٢٩٧: نافذةُ النموّ الفعلية تُعاد مع الرقم — كان العرضُ يكتب
+    # «2016–2024» (تشمل المرآة) بجوار رقمٍ حُسب على المباشر 2019–2024.
+    basis_years = ([int(basis[0]["year"]), int(basis[-1]["year"])]
+                   if len(basis) >= 2 else None)
+    # الدرس ٢٩٨: سنواتُ أساسِ النموّ نفسُها لا طرفاها — سنةُ مرآةٍ **بين**
+    # طرفَي سلسلةٍ مباشرة ليست في نافذة النموّ وإن وقعت ضمن مداها.
+    basis_set = sorted({int(p["year"]) for p in basis}) if len(basis) >= 2 else []
     return {"series": series, "years_missing": years_missing,
-            "growth_pct": growth, "cagr_pct": cagr}
+            "growth_pct": growth, "cagr_pct": cagr, "basis_years": basis_years,
+            "basis_year_set": basis_set}
 
 
 def base_year(missions: dict) -> "int | None":

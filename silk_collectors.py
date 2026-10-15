@@ -461,6 +461,110 @@ def start_scheduler():
     return t
 
 
+def load_study_audit():
+    """وحدةُ `tools/audit_study_reports.py` — أداةُ إعادة التشغيل نفسُها تخدم
+    الخادمَ (الدرس ٢٩٧): مصدرٌ واحد للأداة والنقطة وتدقيقِ ما بعد النشر."""
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools",
+                        "audit_study_reports.py")
+    spec = importlib.util.spec_from_file_location("audit_study_reports", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+#: آخرُ نتيجةٍ لتدقيق ما بعد النشر — أعدادٌ تقرؤها `/health` (الدرس ٢٩٨: كانت
+#: النتيجةُ في حلقة سجلٍّ من ٢٠٠ صفّ لا يقرؤها أحد، والصمتُ ملتبس بين
+#: «سليم» و«لم يعمل» و«انهار»).
+LAST_POST_DEPLOY_AUDIT: dict = {}
+
+
+def post_deploy_audit() -> dict:
+    """أعد بناءَ كلّ دراسةٍ مخزَّنة بالشيفرة الحالية وسجّل المحجوبَ منها.
+
+    الدرس ٢٩٧: بعد كلّ نشرٍ قد تصير دراساتٌ قديمة محجوبةً بحارسٍ جديد،
+    فلا يعرف المشغّلُ إلا حين ينقر المصنع. هنا تُكتشف عند الإقلاع وتُسجَّل في
+    سجلّ المشغّل (`/ops/last-errors`) وتُعرَض أعدادُها في `/health` — حسابٌ
+    محضٌ بلا أيّ نداءٍ مدفوع."""
+    mod = load_study_audit()
+    pdb, edb = mod._platform_db(None), mod._engine_db(None)
+    if not (os.path.exists(pdb) and os.path.exists(edb)):
+        return {"skipped": "no databases"}
+    rows = mod.review(pdb, edb, None, False, client=True, raw_compare=False)
+    blocked = [{"study": r.get("study"),
+                "drivers": (r.get("gate") or {}).get("fail_drivers") or [],
+                "client": [c.split(":")[0] for c in (r.get("client_blockers") or [])]}
+               for r in rows if r.get("status") == "ok" and (
+                   (r.get("gate") or {}).get("blocked") or r.get("client_blockers"))]
+    # دراسةٌ تعذّرت إعادةُ بنائها ليست سليمة — تُعَدّ وتُسجَّل (الدرس ٢٩٨).
+    unverifiable = [r.get("study") for r in rows if mod.unverifiable(r)]
+    _remember_audit(len(rows), [b["study"] for b in blocked], unverifiable)
+    if blocked or unverifiable:
+        try:
+            import silk_ops_log
+            silk_ops_log.record_error(
+                "delivery_blocked_after_deploy",
+                f"{len(blocked)} دراسة مخزَّنة لا تجتاز فحص التسليم بالشيفرة "
+                f"الحالية و{len(unverifiable)} تعذّرت إعادةُ بنائها — أعد "
+                "توليد تقاريرها قبل أن ينقر المصنع",
+                context={"studies": blocked[:50],
+                         "unverifiable": unverifiable[:50]})
+        except Exception as e:  # noqa: BLE001 — السجلّ قناةٌ جانبية
+            log.warning("post-deploy audit ops log skipped: %s", e)
+        log.warning("post-deploy audit: %d blocked, %d unverifiable: %s %s",
+                    len(blocked), len(unverifiable),
+                    [b["study"] for b in blocked][:20], unverifiable[:20])
+    return {"studies": len(rows), "blocked": blocked,
+            "unverifiable": unverifiable}
+
+
+def _remember_audit(studies: int, blocked: list, unverifiable: list,
+                    error: str = "") -> None:
+    LAST_POST_DEPLOY_AUDIT.clear()
+    LAST_POST_DEPLOY_AUDIT.update({
+        "ran_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "studies": studies, "blocked": len(blocked),
+        "unverifiable": len(unverifiable),
+        "blocked_studies": list(blocked)[:50],
+        "unverifiable_studies": list(unverifiable)[:50],
+        **({"error": error[:200]} if error else {})})
+
+
+def start_post_deploy_audit():
+    """خيطٌ واحدٌ بعد الإقلاع — يعمل على الإنتاج (`SILK_REQUIRE_PERSISTENT_DATA_DIR=1`)
+    أو بـ`SILK_POST_DEPLOY_AUDIT=1` صراحة، ويُطفأ بـ`=0`. الاختبارات والتطوير
+    لا تتأثر."""
+    flag = os.environ.get("SILK_POST_DEPLOY_AUDIT", "").strip()
+    on = flag == "1" or (flag != "0" and os.environ.get(
+        "SILK_REQUIRE_PERSISTENT_DATA_DIR", "").strip() == "1")
+    if not on or os.environ.get("SILK_HERMETIC"):
+        return None
+    import threading
+    delay = float(os.environ.get("SILK_POST_DEPLOY_AUDIT_DELAY_S", "180") or 180)
+
+    def _run() -> None:
+        time.sleep(delay)
+        try:
+            out = post_deploy_audit()
+            log.info("post-deploy audit done: %s studies, %s blocked",
+                     out.get("studies"), len(out.get("blocked") or []))
+        except Exception as e:  # noqa: BLE001 — تدقيقٌ لا يُسقط الخادم
+            log.warning("post-deploy audit failed: %s", e)
+            _remember_audit(0, [], [], error=f"{type(e).__name__}: {e}")
+            try:
+                import silk_ops_log
+                silk_ops_log.record_error(
+                    "post_deploy_audit_failed",
+                    "تعذّر تدقيقُ الدراسات المخزَّنة بعد النشر — لا يُعرف هل "
+                    "تجتاز فحصَ التسليم", context={"error": str(e)[:200]})
+            except Exception:  # noqa: BLE001
+                pass
+
+    t = threading.Thread(target=_run, daemon=True, name="silk-post-deploy-audit")
+    t.start()
+    return t
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     print("silk_collectors —", refresh())

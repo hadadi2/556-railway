@@ -295,7 +295,7 @@ blocks:
   # الدرس ٢٩٦: سنةٌ جارية أو لاحقة = تقديرُ صندوق النقد لا رقمٌ «مسجَّل».
   - text: "**الاقتصاد الكلي:** سجل الاقتصاد {market_nisba_m} {dir:macro_gdp:نمواً|انكماشاً} بنسبة {macro_gdp_abs:pct1} في عام {macro_year} مع تضخم بنسبة {macro_inf:pct1}{c:inflation_read}."
     when: "macro_forecast == false"
-  - text: "**الاقتصاد الكلي:** تُقدّر توقعات صندوق النقد الدولي أن يسجل الاقتصاد {market_nisba_m} {dir:macro_gdp:نمواً|انكماشاً} بنسبة {macro_gdp_abs:pct1} في عام {macro_year} مع تضخم بنسبة {macro_inf:pct1}{c:inflation_read}، وهي توقعات قابلة للمراجعة لا أرقام فعلية."
+  - text: "**الاقتصاد الكلي:** تُقدّر توقعات {macro_source} أن يسجل الاقتصاد {market_nisba_m} {dir:macro_gdp:نمواً|انكماشاً} بنسبة {macro_gdp_abs:pct1} في عام {macro_year} مع تضخم بنسبة {macro_inf:pct1}{c:inflation_read}، وهي توقعات قابلة للمراجعة لا أرقام فعلية."
     when: macro_forecast
   - text: "{k:s7_commodity}"
   - text: "**مؤشرات الحوكمة:** لم تُدرج مؤشرات الاستقرار السياسي وسيادة القانون الصادرة عن {fx_source} في هذه النسخة لتعذر استرجاعها وقت الإعداد، وهي مؤشرات منشورة للعموم تُستكمل في المراجعة التالية.{c:gov_stability}"

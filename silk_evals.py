@@ -494,9 +494,21 @@ def gap_rate(result: dict) -> tuple:
 def structural_checks(result: dict, case: dict) -> dict:
     """بوّابة بنيوية هرمتية — {passed, checks, failures}. لا نموذج، لا مفتاح."""
     struct = case.get("structural") or {}
-    text, headers, cells = _rendered_client_body(result)
     checks: dict = {}
     failures: list[str] = []
+    try:
+        text, headers, cells = _rendered_client_body(result)
+    except Exception as exc:  # noqa: BLE001 — رفضُ البوّابة نتيجةُ تقييمٍ لا انهيار
+        # الدرس ٢٩٨: مستندٌ رفضته البوّابة لعبارةٍ رفضها المالك كان يُسقط
+        # التقييمَ باستثناءٍ فلا يُبلَّغ `no_owner_flags` أبداً.
+        found = [f for f in (getattr(exc, "findings", None) or []) if isinstance(f, dict)]
+        owner = [f.get("note", "")[:80] for f in found
+                 if f.get("check") == "owner_flagged_phrase"]
+        if struct.get("no_owner_flags"):
+            checks["no_owner_flags"] = {"hits": owner, "passed": not owner}
+        checks["artifact"] = {"passed": False, "detail": str(exc)[:300]}
+        failures.append(f"رفضت البوّابة المستند: {str(exc)[:200]}")
+        return {"passed": False, "checks": checks, "failures": failures}
 
     req = struct.get("required_sections") or []
     missing = [s for s in req if s not in text]
@@ -513,6 +525,16 @@ def structural_checks(result: dict, case: dict) -> dict:
         checks["clean_body"] = {"hits": hits, "passed": not hits}
         if hits:
             failures.append(f"شارات/أعمدة إسناد في المتن: {hits}")
+
+    # الدرس ٢٩٧: عباراتُ بلاغات المالك (`data/owner_flags_l1.csv`) لا تعود في
+    # المستند المُصيَّر — نفسُ السجلّ الذي يقرؤه الكاتبُ والبوّابة.
+    if struct.get("no_owner_flags"):
+        import silk_quality_gate as _Q
+        iso3 = str((result.get("market") or {}).get("iso3") or "")
+        hits = [row["id"] for row, _snip in _Q.owner_flag_hits(text, iso3)]
+        checks["no_owner_flags"] = {"hits": hits, "passed": not hits}
+        if hits:
+            failures.append(f"عبارات رفضها المالك في المتن: {hits}")
 
     if struct.get("references_integrity"):
         ok, detail = _references_integrity(result, text)

@@ -13,7 +13,7 @@
 # CI-only, pinned like the production requirements: an unpinned pytest could
 # turn CI red (or change its semantics) with zero repo changes.
 
-# مُشغّل الحزمة الهرمتية — الإصدار المُثبَت أخضرَ عليه 3,999 اختباراً.
+# مُشغّل الحزمة الهرمتية — الإصدار المُثبَت أخضرَ عليه ٦٤٠٠+ اختبار (الدرس ٢٩٧).
 pytest==9.1.1
 
 # عميل HTTP الذي يحتاجه `fastapi.testclient.TestClient` (اختبارات فقط).

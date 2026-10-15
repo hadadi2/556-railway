@@ -1323,11 +1323,20 @@ class LogisticsAgent(ResearchAgent):
         else:
             src = _src("World Bank", 0.85)
         if hours is not None:
+            # الدرس ٢٩٧: سوقٌ ملاصقة تُنقَل برّاً — الملاحظةُ تسمّي المنفذ لا «البحري».
+            try:
+                from silk_charter import determine_transport_mode, land_route
+                _land = determine_transport_mode(iso3).get("mode") == "land"
+                _route = land_route(iso3) if _land else None
+            except Exception:  # noqa: BLE001
+                _land, _route = False, None
+            _leg = (f"زمن النقل البرّي {_route}" if _land and _route else
+                    "زمن النقل البرّي" if _land else "زمن الشحن البحري/الجوي")
             F.append(_f("lead_time_days", round(float(hours) / 24, 1), [src],
                         unit="يوم", modeled=True,
                         formula="زمن امتثال الحدود للاستيراد (IC.IMP.TMBC، ساعات) ÷ 24",
-                        note="زمن التخليص الحدودي فقط — لا يشمل زمن الشحن البحري/"
-                             "الجوي (ذاك في الطبقة المدفوعة مع مسار الشحن)"))
+                        note=f"زمن التخليص الحدودي فقط — لا يشمل {_leg} "
+                             "(ذاك في الطبقة المدفوعة مع مسار الشحن)"))
         else:
             gaps.append("lead_time_days: زمن امتثال الحدود (IC.IMP.TMBC) غير "
                         "متاح — شغّل جامع worldbank (tools/refresh.py)")

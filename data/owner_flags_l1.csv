@@ -1,11 +1,19 @@
-id,lesson,markets,pattern,example,why
-status_label_as_value,296,,(?:يسجل|تسجل|سجل|سجلت|يبلغ|تبلغ|بلغ|بلغت)\s+(?:مستنتج|متاح من|مقدر بافتراض),يسجل مستنتج من أرقام مرصودة,تسمية حالة المعطى ظهرت بدل قيمته
-agent_identifier,296,,\b(?:reach_agent|agent_reach)\b,المصدر reach_agent,اسم وكيل/مزوّد برمجي في نص العميل
-failed_collection,296,,فشل\s+(?:بعض\s+)?(?:عمليات\s+جمع\s+البيانات|البعثات),فشل عمليات جمع البيانات,لغة نظام عن آلية البناء
-contributing_count,296,,المؤشرات\s+المرصودة\s+المساهمة,عدد المؤشرات المرصودة المساهمة 97,عدّاد داخلي بلا معنى للقارئ
-digit_plural_others,296,,و\s?1\s+مكونات\s+أخرى,و1 مكونات أخرى,عدد ومعدود بلا مطابقة
-digit_producer_count,296,,\b\d+\s+منتج\s+و\s?\d+\s+معيد\s+تصدير,2 منتج و0 معيد تصدير,عدد ومعدود بلا مطابقة
-sole_entry_port_land_market,296,BHR JOR IRQ YEM ARE QAT KWT OMN,(?:نقطة|منفذ)\s+(?:ال)?دخول\s+(?:ال)?وحيد,ميناء خليفة نقطة الدخول الوحيدة,سوقٌ متصلة بالسعودية برّاً — المسار الأول برّي لا ميناءٌ وحيد
-transit_by_analogy,296,,قياسا?\s+على\s+(?:شحنات|الشحن)\s+من,قياساً على شحنات من إثيوبيا,زمن عبور مقدّر بالقياس على دولة أخرى
-comtrade_unofficial,296,,"(?:Comtrade|كومتريد)[^.\n]{0,60}غير\s+رسمي",UN Comtrade (مصادر غير رسمية),بيانات كومتريد رسمية ولو كانت مرآة
-reverse_flow_flip,296,,"التدفق\s+المعاكس[^.\n]{0,80}(?:يقلب|تقلب|مؤشر)",التدفق المعاكس مؤشر قد يقلب الحكم,التبادل العكسي ليس دليلاً على تراجع الطلب
+id,lesson,markets,pattern,example,why,near_miss
+status_label_as_value,296,,(?:يسجل|تسجل|سجل|سجلت|يبلغ|تبلغ|بلغ|بلغت)\s+(?:مستنتج|متاح من|مقدر بافتراض),يسجل مستنتج من أرقام مرصودة,تسمية حالة المعطى ظهرت بدل قيمته,القيمة مستنتجة من أرقام مرصودة في الجدول
+agent_identifier,296,,\b(?:reach|agent)[_-](?:agent|reach)\b,المصدر reach_agent,اسم وكيل/مزوّد برمجي في نص العميل,وكيل الوصول إلى الأسواق
+failed_collection,296,,فشل\s+(?:بعض\s+)?(?:عمليات\s+(?:جمع\s+البيانات|الجمع)|جمع\s+البيانات|البعثات),فشل عمليات جمع البيانات,لغة نظام عن آلية البناء,لم تُرصد بيانات الحصة السعودية بمصدر
+contributing_count,296,,(?:المؤشرات|مؤشرا)\s+(?:ال)?مرصود[ةه]?\s+(?:ال)?مساهم[ةه],عدد المؤشرات المرصودة المساهمة 97,عدّاد داخلي بلا معنى للقارئ,المؤشرات المرصودة في هذا القسم ثلاثة
+digit_plural_others,296,,و\s?[12]\s+(?:مكونات|عناصر|بنود|مؤشرات)\s+(?:اخري|أخرى),و1 مكونات أخرى,عدد ومعدود بلا مطابقة,وثلاثة مكونات أخرى
+digit_producer_count,296,,\b\d+\s+منتج\s+و\s?\d+\s+معيد\s+تصدير,2 منتج و0 معيد تصدير,عدد ومعدود بلا مطابقة,منتجان ولا معيد تصدير
+sole_entry_port_land_market,296,BHR JOR IRQ YEM ARE QAT KWT OMN,(?:(?:نقطة|منفذ|بوابة|ميناء)\s+(?:ال)?دخول\s+(?:ال)?وحيد|(?:ال)?(?:منفذ|نقطة|بوابة|ميناء)\s+(?:ال)?(?:رئيسي\s+و)?(?:ال)?وحيد(?:ة)?\s+(?:لل|ل)?دخول|(?:ال)?(?:منفذ|بوابة)\s+(?:ال)?رئيسي[ةه]?\s+و(?:ال)?وحيد),ميناء خليفة نقطة الدخول الوحيدة,سوقٌ متصلة بالسعودية برّاً — المسار الأول برّي لا ميناءٌ وحيد,ميناء خليفة منفذ بحري بديل للدخول
+transit_by_analogy,296,,قياسا?\s+علي\s+(?:ال)?(?:شحنات|شحن)\s+(?:من|في),قياساً على شحنات من إثيوبيا,زمن عبور مقدّر بالقياس على دولة أخرى,مدة العبور غير مرصودة بمصدر
+comtrade_unofficial,296,,"(?:Comtrade|كومتريد)[^.\n]{0,60}(?:غير\s+رسمي|ليست?\s+رسمي)|(?:غير\s+رسمي[ةه]?|مصادر\s+غير\s+رسمي[ةه]?)[^.\n]{0,30}\(?\s*(?:UN\s+)?Comtrade",UN Comtrade (مصادر غير رسمية),بيانات كومتريد رسمية ولو كانت مرآة,UN Comtrade (بيانات رسمية من الدول الشريكة)
+reverse_flow_flip,296,,"(?:التدفق|التبادل)\s+(?:المعاكس|العكسي)[^.\n]{0,80}(?:يقلب|تقلب|مؤشر)",التدفق المعاكس مؤشر قد يقلب الحكم,التبادل العكسي ليس دليلاً على تراجع الطلب,التدفق المعاكس صغير ولا يغيّر الحكم
+failed_collection_en,297,,\b(?:failed\s+missions?|data[\s-]collection\s+(?:failed|failures?))\b,Data collection failed for two areas,system language about how the report was built,Data collection covered two areas
+sole_entry_port_land_market_en,297,BHR JOR IRQ YEM ARE QAT KWT OMN,\b(?:sole|only|main\s+and\s+only)\s+(?:entry\s+point|port\s+of\s+entry|point\s+of\s+entry|gateway)\b,Khalifa port is the only entry point,"land-linked market — the first route is overland, not a single port",Khalifa port is an alternative entry point
+transit_by_analogy_en,297,,\bby\s+analogy\s+(?:with|to)\s+shipments\s+from\b,10-14 days by analogy with shipments from Ethiopia,transit time estimated from another country's shipments,transit time is not observed from a source
+comtrade_unofficial_en,297,,"Comtrade[^.\n]{0,60}\b(?:unofficial|non-official)\b|\b(?:unofficial|non-official)\s+sources?[^.\n]{0,30}Comtrade",UN Comtrade (unofficial sources),Comtrade data is official even when mirrored,UN Comtrade (official partner-country data)
+reverse_flow_flip_en,297,,"\breverse\s+flow[^.\n]{0,80}\b(?:flip|indicator)",the reverse flow is an indicator that could flip the verdict,reverse trade is not evidence of falling demand,the reverse flow is small and does not change the verdict
+contributing_count_en,298,,\b\d+\s+contributing\s+(?:observed\s+)?indicators\b|\bcontributing\s+observed\s+indicators\b,97 contributing indicators,internal counter meaningless to the reader,three indicators feed this section
+digit_plural_others_en,298,,\band\s+1\s+other\s+components\b,Saudi share and 1 other components,number and noun do not agree,Saudi share and one other component
+brand_origin_italian_as_swiss,298,,"\b(?:Lavazza|Illy)\b(?:\s+(?:and|&)\s+(?:Lavazza|Illy)\b)?\s*[(،,-]?\s*(?:Swiss|Switzerland)|(?:لافاتسا|لافازا|ايلي)(?:\s+و\s*(?:لافاتسا|لافازا|ايلي))?\s*[(،,-]?\s*(?:ال)?سويسر",Lavazza (Switzerland),Lavazza and Illy are Italian brands; brand origin must not be guessed,Lavazza (Italy) and Nespresso (Switzerland)

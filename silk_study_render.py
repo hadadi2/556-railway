@@ -224,6 +224,7 @@ class Renderer:
             "fx_range_years": c["fx"]["range_years"], "fx_range_pct": c["fx"]["range_pct"], "fx_source": c["fx"]["source"],
             "macro_year": c["macro"]["year"], "macro_gdp": c["macro"]["gdp_growth_pct"], "macro_inf": c["macro"]["inflation_pct"],
             "macro_forecast": bool(c["macro"].get("gdp_forecast")),
+            "macro_source": c["macro"].get("gdp_source_word") or "المصادر المتاحة",
             "gov_available": c["governance"]["available"],
             "lpi": c["logistics"]["lpi"], "lpi_year": c["logistics"]["lpi_year"], "sea_days": c["logistics"]["sea_days_word"],
             "port": c["market"]["capital_port"],
@@ -379,6 +380,16 @@ class Renderer:
             if num not in allowed and num.replace(",", "") not in allowed and not any(num == f"{v:g}" for v in
                     (x for x in self.ctx.values() if isinstance(x, (int, float)) and not isinstance(x, bool))):
                 return f"رقم لم يُمرَّر: {num}"
+        # الدرس ٢٩٧: بلاغاتُ المالك وتسميةُ الحالة بدل القيمة تُفحَص **حتى على
+        # النصّ المخزَّن** — عبارةٌ رفضها المالك لا تُسلَّم لأنّها مُلئت قبل رفضها.
+        try:
+            import silk_quality_gate as _Q
+            _iso = str((self.case.get("market") or {}).get("iso3") or "")
+            _hits = _Q._check_field_label_as_value(txt) + _Q._check_owner_flags(txt, _iso)
+        except Exception:  # noqa: BLE001
+            _hits = []
+        if _hits:
+            return _hits[0]["note"][:120]
         # P5-1: فحوص الأسلوب والاتساق نفسها التي يطبّقها linter على الدراسة كاملة.
         if not self.recheck:
             return None        # نص مخزَّن اجتاز الفحوص عند ملئه — التصدير لا يُسقطه بقواعد أحدث

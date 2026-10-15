@@ -2265,7 +2265,7 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         "أدرِجه ضمن الإلزامية تحفّظاً (لا تخمين طبقة). ثم التعريفة "
         "المطبَّقة وعضوية الاتفاقيات من tariffs_agreements. **الطبقة "
         "الإلزامية هي بوابة الأهلية — أيّ بند فيها يسبق كل ما عداه.**\n"
-        "٨. اللوجستيات وسلسلة الإمداد: أفضل ميناء ملائم ومؤشر أداء "
+        "٨. اللوجستيات وسلسلة الإمداد: أفضل منفذ دخول (ميناء أو معبر برّي) ومؤشر أداء "
         "اللوجستيات من logistics، وأنواع قنوات التوزيع المتاحة (موزّع/"
         "تجزئة/تجارة إلكترونية) من channels_importers. **حدّد صراحةً "
         "القناة الأولى الموصى بها لمصدّر سعودي جديد ولماذا** (أسلوب "
@@ -3517,6 +3517,7 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
             break
         draft = _decision_language(fixed)
         _ledger_budget -= 1
+    _post_ledger_draft = draft
     for cycles in range(1, max(1, max_cycles) + 1):
         _stage("reviewer")
         review = review_report(draft, mission_reports, trace_id=trace_id,
@@ -3556,6 +3557,37 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
     # فكانت `ledger_unresolved` واللقطةُ تصفان مسوّدةً لم تُسلَّم. تُعاد
     # القراءةُ هنا على النصّ النهائيّ فعلاً — قياسٌ بلا نداءٍ إضافيّ.
     _ledger_unresolved = _ledger_draft_issues(draft, ledger)
+    # الدرس ٢٩٧: تنقيحُ المراجع قد يُعيد عبارةً رفضها المالك أو رمزَ حالةٍ في
+    # خانة قيمة — كانت تُلتقط عند التصدير **بعد الدفع**. ما بقي من ميزانية
+    # السجلّ يُصرَف على تنقيحٍ واحدٍ لهاتين العائلتين وحدهما، ويُقبَل فقط إن
+    # اكتمل وقلّت المخالفات.
+    _critical = [i for i in _ledger_unresolved
+                 if "رفضها المالك" in i or "حيث تلزم القيمة" in i]
+    _post_review_revised = False
+    if _critical and draft != _post_ledger_draft and _ledger_budget > 0:
+        # مراجعة §58: الرفضُ يُسجَّل كحلقة السجلّ، والنتيجةُ تُوسَم — نداءُ كاتبٍ
+        # مدفوعٌ بعد موافقة المراجع لا يمرّ بلا أثر في السجلّ.
+        _record_ledger_reject(_critical, trace_id)
+        _stage("writer")
+        fixed = deep_report(mission_reports, analyst_summary, verdict, product,
+                            market_name, review_notes=_critical,
+                            trace_id=trace_id, hs_code=hs_code,
+                            hs_confirmation=hs_confirmation, style=style,
+                            lang=lang, product_card=product_card,
+                            on_attempt=lambda: _stage("writer"),
+                            revision_draft=draft,
+                            entry_decision=entry_decision, ledger=ledger,
+                            analyst_by_category=analyst_by_category)
+        if fixed and not _writer_incomplete(fixed, lang):
+            fixed = _decision_language(fixed)
+            _after = _ledger_draft_issues(fixed, ledger)
+            _crit_after = [i for i in _after
+                           if "رفضها المالك" in i or "حيث تلزم القيمة" in i]
+            # الدرس ٢٩٨: القبولُ بانخفاض **الحرِج** نفسِه وألّا يزيد المجموع —
+            # تنقيحٌ يُصلح رقمين ويُبقي عبارةَ المالك كان يُقبَل.
+            if len(_crit_after) < len(_critical) and len(_after) <= len(_ledger_unresolved):
+                draft, _ledger_unresolved = fixed, _after
+                _post_review_revised = True
     out = {"report": draft, "review_cycles": cycles,
            "unresolved_notes": notes, "review_status": review_status}
     # الدرس ٢٦٢: لقطةُ الرموز التي استعملها الكاتب فعلاً — تُخزَّن مع التقرير
@@ -3568,6 +3600,9 @@ def write_reviewed_report(mission_reports: dict, analyst_summary: str,
             log.warning("ledger snapshot skipped: %s", _se)
     if _ledger_unresolved:
         out["ledger_unresolved"] = list(_ledger_unresolved)
+    if _post_review_revised:
+        # النصُّ المسلَّم ليس ما وافق عليه المراجع حرفياً — يُعلَن للمشغّل.
+        out["post_review_revision"] = True
     return out
 
 

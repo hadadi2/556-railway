@@ -80,6 +80,15 @@ row outside the allowlist — the panel structurally cannot smuggle a key.
 3. Check for orphaned runs: `GET /analyses` for status `running` older than the
    deploy; resume or mark them.
 4. Only if sources look broken: ONE call to `GET /diagnostics` (live probes).
+5. Stored studies under the new code (lesson 297): ~3 min after boot the
+   post-deploy audit shows counts in `/health` → `post_deploy_audit` (details:
+   `GET /ops/audit-studies?last=1`) and logs `delivery_blocked_after_deploy` in
+   `/ops/last-errors` for every
+   stored study the current gates would now block. Inspect one with
+   `GET /ops/audit-studies?study=N&dump=1` (read-only, no paid call) and
+   regenerate blocked reports (`POST /analyses/{id}/report`, cents) before the
+   factory clicks. `tools/post_deploy_smoke.py HOST --fail-on-blocked` fails
+   the smoke when any are blocked.
 
 ## 5. Env-var quick reference (full docs in `.env.example`)
 

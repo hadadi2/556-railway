@@ -91,7 +91,9 @@ def _raw_musd(r: dict) -> float:
 
 
 def series_shape(series: list[dict]) -> dict:
-    rows = [r for r in (series or []) if r.get("value_musd") is not None and r.get("complete", True)]
+    rows = [r for r in (series or []) if r.get("value_musd") is not None and r.get("complete", True)
+            # الدرس ٢٩٧: الشكلُ على نافذة النموّ المعتمدة نفسِها (مرآةٌ أقدم خارجها).
+            and r.get("in_growth_window", True)]
     vals = [(r["year"], r["value_musd"]) for r in rows]
     raw = [_raw_musd(r) for r in rows]
     if len(vals) < 2:

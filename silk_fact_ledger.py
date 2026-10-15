@@ -133,7 +133,9 @@ KEYS: tuple = (
           engine_computed=True),
     _fact("requirements_count", "بنود الاشتراطات", "entry requirements", "",
           ("بنود الاشتراطات", "قائمة الاشتراطات", "entry requirements"),
-          mandatory=True, self_describing=True, numeric_check=False),
+          # الدرس ٢٩٧: عددُ صفوف الجدول المطبوع حسابٌ حتميّ — لا «مصادر غير رسمية».
+          mandatory=True, self_describing=True, numeric_check=False,
+          engine_computed=True),
     _fact("competitor_prices", "أسعار المنافسين", "competitor prices", "",
           ("أسعار المنافسين", "competitor prices"), numeric_check=False,
           writer_hidden=True),
@@ -214,6 +216,18 @@ _ABSENCE_RE = re.compile(
     # الدرس ٢٩٦: «لا يمكن تحديد حصة السعودية» بينما التقرير يحدّدها 3.53%.
     r"|لا\s*يمكن\s*تحديد|تعذّ?ر\s*(?:تحديد|حساب)|cannot\s+be\s+determined",
     re.IGNORECASE)
+#: الدرس ٢٩٨: صيغُ غيابٍ أعمّ («غير معروفة»، «N/A») تُعَدّ **ملاصقةً للتسمية**
+#: وحدَها — في النافذة كلّها كانت تصف شيئاً آخر («واردات السوق كبيرة وأسماء
+#: المستوردين غير معروفة») فتحجب جملةً سليمة (مراجعة §58).
+_ABSENCE_ADJ_RE = re.compile(
+    r"^\W{0,4}(?:(?:هي|هو|تبقى|يبقى|ما\s*زال(?:ت)?)\s+)?(?:لا\s*تتو[فا]ر\s*(?:لدينا\s*)?"
+    r"(?:بيانات|أرقام)|غير\s*معروف(?:ة)?|N/?A(?![\w/])|no\s+data\b|"
+    r"could\s+not\s+be\s+(?:estimated|determined|computed))", re.IGNORECASE)
+
+
+def _absence(win: str):
+    """مطابقةُ الغياب في نافذةٍ بعد التسمية — العامّةُ أينما وقعت، والأعمُّ ملاصقة."""
+    return _ABSENCE_RE.search(win) or _ABSENCE_ADJ_RE.search(win)
 _NUM_RE = re.compile(r"(?<![\w.])(\d{1,3}(?:[,\d]{0,12})(?:\.\d+)?)\s*(%|٪|مليون|مليار|ألف|million|billion)?")
 _YEAR_RE = re.compile(r"\b(20\d\d|19\d\d)\b")
 _WINDOW = 70
@@ -399,6 +413,10 @@ def build_ledger(result: dict, lang: str = "ar") -> dict:
             _fill_from_research(dr, put, result)
         else:
             _fill_from_analyze(row, put)
+            # الدرس ٢٩٧: /analyze يعدّ البنودَ من الجدول المطبوع أيضاً.
+            _fill_requirements_from_table(
+                {**result, "market": result.get("market") or row.get("market")
+                 or {"iso3": row.get("iso3")}}, put)
     except Exception:  # noqa: BLE001 — عطل استخراج = فجوات معلنة لا كسر
         pass
     _fill_decision(row, result, put)
@@ -486,7 +504,7 @@ def _fill_requirements_from_table(result: dict, put) -> None:
     الأول (لا صفرَ مختلَق)."""
     iso3 = str((result.get("market") or {}).get("iso3") or "") \
         if isinstance(result.get("market"), dict) else ""
-    if not iso3:
+    if not iso3 or not result.get("hs_code"):
         return
     try:
         import silk_render
@@ -553,8 +571,16 @@ def _attribution(missions: dict, mission: str, metric: str,
         raw = _g(f, "value")
         num = _num(raw if not isinstance(raw, dict) else None)
         blob = f"{_g(f, 'note', '')} {raw if isinstance(raw, str) else ''}"
-        hit = (num is not None and abs(num - float(value)) < 1e-6) or \
-            (f"{value:g}" in blob)
+        # الدرس ٢٩٧: المطابقةُ النصّية بحدّ رقمٍ وبقيمةٍ ذات دلالة — «0» أو «7»
+        # كانا «يطابقان» أيَّ ملاحظةٍ فيها «2017» أو «HS0901» فيرث المعطى
+        # مصدراً ودرجةً خاطئين.
+        txt = f"{value:g}"
+        # الدرس ٢٩٨: فاصلُ الآلاف جزءٌ من الرقم («1,150» و«150,000» ليسا 150)،
+        # وقيمةٌ بشكل سنةٍ لا تُطابَق نصّياً (2017 طنّاً ≠ «سنة 2017»).
+        _yearish = float(value).is_integer() and 1900 <= abs(float(value)) <= 2100
+        hit = (num is not None and abs(num - float(value)) < 1e-6) or (
+            (abs(float(value)) >= 100 or "." in txt) and not _yearish
+            and re.search(rf"(?<![\d.,]){re.escape(txt)}(?![\d]|[.,]\d)", blob) is not None)
         if not hit:
             continue
         src = str(_g(f, "source", "") or "")
@@ -588,19 +614,19 @@ def _fill_series(missions: dict, put) -> None:
                confidence=0.9, note="أحدث سنة كاملة مرصودة في سلسلة الواردات",
                origin="trade_flow", items=[dict(p) for p in pts]))
     g = _num(series.get("growth_pct"))
+    by = series.get("basis_years") or []
     put(_entry("import_growth_pct", g, source="UN Comtrade", confidence=0.9,
-               origin="trade_flow",
-               note=("نمو الواردات بين أول وآخر سنة كاملة مرصودة" if g is not None
-                     else "يتطلب سنتين مرصودتين")))
+               origin="trade_flow", year=(by[-1] if by else None),
+               note=((f"نمو الواردات {by[0]}–{by[-1]}" if by else
+                      "نمو الواردات بين أول وآخر سنة كاملة مرصودة")
+                     if g is not None else "يتطلب سنتين مرصودتين")))
     # الدرس ٢٩٦: النموُّ المركّب من السلسلة نفسِها بمصدرها — كان يُقرأ من نثر
     # البعثة فتفشل مطابقةُ الإسناد ويُوسَم «من مصادر غير رسمية فقط»، أو يغيب
     # فيُعلَن «غير متاح» بينما السلسلةُ المرسومة تعطيه.
     c = _num(series.get("cagr_pct"))
     if c is not None:
-        direct = [p for p in full if not p.get("mirrored")]
-        basis = (direct if len(direct) >= 2 and direct[-1]["year"] == full[-1]["year"]
-                 else full)
-        yrs = sorted(int(p["year"]) for p in basis)
+        # الدرس ٢٩٧: النافذةُ من `import_series` نفسِه — لا قاعدةٌ ثانية هنا.
+        yrs = by or [int(full[0]["year"]), int(full[-1]["year"])]
         put(_entry("import_cagr_pct", c, source="UN Comtrade", confidence=0.9,
                    origin="trade_flow", year=yrs[-1],
                    note=f"محسوب من سلسلة الواردات {yrs[0]}–{yrs[-1]}"))
@@ -1274,12 +1300,12 @@ def draft_issues(draft: str, ledger: dict, lang: str = "ar") -> list:
                     and not _DEFINITION_RE.search(win[:nm_m.start()])
                     and not _other_key_between(win[:nm_m.start()], key)
                     and not _is_bare_year(nm_m, key))
-                if _ABSENCE_RE.search(win.split("\n")[0]) or wrote_number:
+                if _absence(win.split("\n")[0]) or wrote_number:
                     issues.append(f"«{e['label_ar']}» رمزٌ إلزامي — لا تكتب قيمته "
                                   f"ولا حالته؛ اكتب {{{{{key}}}}} في: «{sent}»")
                     break
                 continue
-            if e["status"] != MISSING and _ABSENCE_RE.search(win):
+            if e["status"] != MISSING and _absence(win):
                 issues.append(f"«{e['label_ar']}» مرصود في السجلّ "
                               f"({render_value(e, lang)}) لكن الجملة تعلنه غير "
                               f"متاح — أعد صياغتها أو اكتب {{{{status:{key}}}}}: «{sent}»")
@@ -1528,7 +1554,7 @@ def check(view: dict, text: str) -> list:
             for m in re.finditer(re.escape(w), text):
                 win = text[m.end():m.end() + _WINDOW].split("\n")[0]
                 near = f"…{text[max(0, m.start() - 20):m.end() + 30]}…"
-                if e["status"] != MISSING and _ABSENCE_RE.search(win):
+                if e["status"] != MISSING and _absence(win):
                     break
                 nm = _NUM_RE.search(win[:_VALUE_WINDOW])
                 if nm and e["status"] != MISSING:
@@ -1610,7 +1636,7 @@ def _status_mismatch_near(plain: str, words: tuple) -> str:
             # يعني أنّ القيمة قيلت والغيابَ عن شيءٍ آخر («تستحوذ السعودية على
             # 3% … ولم يُرصد سعر رف»).
             win = re.split(r"(?<=[.؛!؟])(?![0-9٠-٩])", win)[0]
-            a = _ABSENCE_RE.search(win)
+            a = _absence(win)
             if a and not re.search(r"[0-9٠-٩]", win[:a.start()]):
                 return f"…{plain[max(0, m.start() - 20):m.end() + 30]}…"
     return ""

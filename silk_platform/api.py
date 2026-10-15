@@ -2239,8 +2239,7 @@ def mount(app) -> bool:
         # الموجة ٠: لغة التقرير من **لقطة الدراسة** حصراً — لا من إعداد
         # المصنع الحيّ ولا من ترويسة ولا من لغة الواجهة.
         lang = fsettings.study_report_language(row)
-        view = engine_bridge.sanitize_client_brief(
-            engine_bridge.strip_cost_keys(build_view(found, lang)))
+        view = engine_bridge.factory_client_view(found, lang)
 
         import silk_export_gate as _eg
         # نثرُ الاحتياط يُحضَّر هنا أيضاً — كان يُولَّد على مسار المشغّل وحدَه،
@@ -2325,6 +2324,14 @@ def mount(app) -> bool:
         if isinstance(_rep, dict) and _rep.get("text"):
             import silk_reports as _sr
             _rep["text"] = _sr.client_screen_text(_rep["text"], _lang)
+            # الدرس ٢٩٨: ما يحجبه التسليمُ لا يُعرَض على الشاشة أيضاً.
+            import silk_quality_gate as _qg
+            _rep["text"] = _qg.strip_flagged_sentences(_rep["text"], view)
+        if isinstance(view.get("brief"), list):
+            import silk_quality_gate as _qg
+            view["brief"] = [b_ for b_ in (_qg.strip_flagged_sentences(x, view)
+                                           if isinstance(x, str) else x
+                                           for x in view["brief"]) if b_]
         return {"study": {k: row.get(k) for k in
                           ("id", "product", "market_pref", "hs_code", "state",
                            "run_started_at", "run_finished_at",

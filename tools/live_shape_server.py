@@ -49,6 +49,7 @@ sys.path.insert(0, _ROOT)
 sys.path.insert(0, os.path.join(_ROOT, "tools"))
 
 from canonical_netherlands import netherlands_research_blob  # noqa: E402
+from canonical_bahrain_coffee import bahrain_coffee_research_blob  # noqa: E402
 
 
 # R8 (TEST-1ب): صمّاماتٌ تُطفَأ في `tests/conftest.py` للسرعة — لا ترثها عمليةُ الخادم.
@@ -65,6 +66,9 @@ def _free_port() -> int:
     return port
 
 
+BAHRAIN_ID = 0
+
+
 def seed_db(db_path: str) -> tuple[int, int]:
     """ابذر ملف SQLite بالمدوّنة القانونية: صفّ مكتمل (تقرير كامل + تصدير)
     وصفّ جارٍ (شارة تقدّم «جارٍ التشغيل…» + زرّ استئناف في الشريط الجانبي).
@@ -75,6 +79,11 @@ def seed_db(db_path: str) -> tuple[int, int]:
     المخطّط الفعلي."""
     import silk_storage
     silk_storage.init_db(db_path)
+    # الدرس ٢٩٨: مدوّنةُ قهوة البحرين (بلاغ المالك) صفٌّ أقدم — تُصدَّر عبر
+    # الخادم الحقيقيّ في الرتبة ٢ لا في الاختبارات الهرمتية وحدها.
+    global BAHRAIN_ID
+    BAHRAIN_ID = silk_storage.save_analysis(bahrain_coffee_research_blob(),
+                                            path=db_path)
     completed_id = silk_storage.save_analysis(
         netherlands_research_blob(), path=db_path)
     # صفّ جارٍ — يُظهر مسار التقدّم الحيّ في الشريط الجانبي (شارة + استئناف)
@@ -151,6 +160,7 @@ class LiveShapeServer:
         self.platform_db = os.path.join(self._tmp, "platform.db")
         self.completed_id = 0
         self.running_id = 0
+        self.bahrain_id = 0
         self._proc: subprocess.Popen | None = None
 
     def _env(self) -> dict:
@@ -289,6 +299,7 @@ class LiveShapeServer:
         """ابذر المخازن المؤقّتة مرّةً — مفصولٌ عن الإقلاع (R2) كي يُعاد تشغيل
         الخادم على **نفس** البيانات في تمرين إعادة النشر."""
         self.completed_id, self.running_id = seed_db(self.db_path)
+        self.bahrain_id = BAHRAIN_ID
         if self.platform:
             self._seed_platform()
         if self.prerun_flags:

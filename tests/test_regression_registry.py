@@ -4598,6 +4598,20 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    298: lambda: (
+        _needles("silk_quality_gate.py", "def _flag_norm", "def strip_flagged_sentences")(),
+        _needles("silk_collectors.py", "LAST_POST_DEPLOY_AUDIT")(),
+        _needles("tests/test_lesson298_gap_closure.py",
+                 "def test_a_study_that_fails_to_build_never_inherits_the_previous_view",
+                 "def test_sharp_claims_are_checked_on_every_surface")(),
+        _needles("tests/test_lessons_enforcement.py", "(298, ")()),
+    297: lambda: (
+        _needles("silk_fact_records.py", "_OFFICIAL_UNION_RE")(),
+        _needles("silk_collectors.py", "def post_deploy_audit")(),
+        _needles("tests/test_lesson297_gap_closure.py",
+                 "def test_factory_screen_surfaces_are_checked",
+                 "def test_bahrain_codex_delivers_clean_and_each_owner_phrase_is_blocked")(),
+        _needles("tests/test_lessons_enforcement.py", "(297, ")()),
     296: lambda: (
         _needles("silk_fact_ledger.py", "def _in_value_slot")(),
         _needles("silk_quality_gate.py", "def _check_sharp_claim_unverified",
