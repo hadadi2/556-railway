@@ -131,10 +131,10 @@ def test_client_quality_summary_warn_branch_is_reachable():
     مثقل بالملاحظات كان يُعلن للمصنع نجاحاً نظيفاً."""
     s = EG.client_quality_summary(
         {"verdict": QG.WARN, "blocking": [1, 2]}, "ar")
-    assert "ملاحظات" in s["note"], s
+    assert "لم تكتمل بياناتها" in s["note"], s     # الدرس ٢٩٥: صياغةُ قارئ
     s_en = EG.client_quality_summary(
         {"verdict": QG.WARN, "blocking": []}, "en")
-    assert "notes" in s_en["note"], s_en
+    assert "incomplete" in s_en["note"], s_en
     clean = EG.client_quality_summary({"verdict": "PASS", "blocking": []}, "ar")
     assert "ملاحظات" not in clean["note"]
 

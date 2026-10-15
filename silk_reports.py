@@ -2943,6 +2943,17 @@ _CLIENT_SANITIZE = [
     # حارسُ لغة الخوارزمية (_client_assert_clean) بـ501. تُحوَّل هنا لمفردة
     # توثيق تجارية — الأحكام الرقمية تبقى للملحق/التصدير التشغيلي فقط.
     (re.compile(r"الدرجة الرقمية|النتيجة الرقمية"), "التقييم"),
+    # الدرس ٢٩٥: عبارةُ «بدرجة ثقة …» كاملةً تُحذف قبل تعريب «درجة الثقة» —
+    # كان يبقى «الحكم مراقبة السوق بدرجة (التوثيق).» (قرار المالك: لا تعني
+    # القارئَ درجةُ الثقة). «بدرجة كبيرة» ونحوها لا تُمَسّ: الحذفُ يشترط «ثقة».
+    (re.compile(r"[ \t]*بدرجة\s+ثقة(?:\s+(?:(?:مسقوفة|عالية|متوسطة|منخفضة)"
+                r"(?:\s+جد(?:اً|ا))?|[0-9٠-٩]+(?:[.,٫][0-9٠-٩]+)*"
+                r"(?:\s*(?:[%٪]|بالمئة|في المئة))?))*"
+                r"(?:\s*\((?:confidence|درجة الثقة)\))?"
+                r"(?:\s*\(\s*[\u200e\u200f]?[0-9٠-٩]+(?:[.,٫][0-9٠-٩]+)?\s*[%٪]"
+                r"\s*[\u200e\u200f]?\))?"),
+     ""),
+    (re.compile(r"[ \t]*بدرجة\s*\((?:confidence|درجة الثقة|التوثيق)\)"), ""),
     # WS10 (قرار المالك): لا مصطلح «مستوى التوثيق» في متن العميل — يُعرَّب المصطلح
     # الخوارزمي المتسرّب لكلمة محايدة «التوثيق» (لا رُتبة، لا عمود، لا شارة).
     (re.compile(r"درجة الثقة"), "التوثيق"),
@@ -3467,6 +3478,28 @@ def _parse_writer_sections_numbered(
     if cur_title is not None:
         sections.append((cur_num, cur_title, cur_body))
     return sections
+
+
+def client_screen_text(report_text: object, lang: str = "ar") -> str:
+    """نصُّ الكاتب كما يُعرَض على شاشة المصنع — **بنفس قرار docx العميل**
+    (الدرس ٢٩٥): الأقسامُ التي يُسقِطها التقرير (المنهجية والملاحق، خانتها
+    `None` في `_CLIENT_SECTION_BY_ORDINAL`) تُسقَط هنا أيضاً، وكلُّ سطرٍ يمرّ
+    بمُطهِّر العميل. كانت الشاشة تعرض «اثنتا عشرة بعثة بحث… فكاتب التقرير
+    بدورتَي مراجعة» بينما Word يُسقِطها. نصٌّ بلا عناوين مرقّمة يُطهَّر كاملاً."""
+    text = str(report_text or "")
+    sections = _parse_writer_sections_numbered(text)
+    if not sections:
+        return "\n".join(_client_sanitize(ln, lang) if ln.strip() else ln
+                         for ln in text.split("\n"))
+    out: list[str] = []
+    for num, title, body in sections:
+        if _client_section_for(num, title) is None:
+            continue
+        out.append(f"## {num}. {_client_sanitize(title, lang)}"
+                   if num is not None else f"## {_client_sanitize(title, lang)}")
+        out += [_client_sanitize(ln, lang) if ln.strip() else ln
+                for ln in body]
+    return "\n".join(out)
 
 
 def _client_render_body_block(doc, lines: list[str],
@@ -4622,19 +4655,24 @@ def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
     if dr and _verdict_tone(_resolve_vtxt(dr)) != _verdict_tone(ed.get("verdict")):
         return
 
-    doc.add_heading(basis["head"], level=2)
-    if basis.get("rule_line"):
+    # طلب المالك 2026-10-14: آليةُ التقييم (القاعدة، جدول قوّة الجوانب،
+    # الاعتراض) تخرج من نسخة العميل؛ يبقى ما يُحسَم قبل الالتزام وخطتُه.
+    mech = "decision_mechanics" not in _client_hidden(view)
+    if mech:
+        doc.add_heading(basis["head"], level=2)
+    if mech and basis.get("rule_line"):
         doc.add_paragraph(basis["rule_line"])
     # الموجة الرابعة: سطرُ «X من 100 وتحقّقنا من Y%» مقياسٌ داخليّ — يُسقَط
     # كاملاً حين تُعلِن القائمةُ إخفاءَ الدرجة (لا «—» ولا نسبةٌ عارية).
     if basis.get("score_line") and "score" not in _client_hidden(view):
         doc.add_paragraph(basis["score_line"])
-    _add_table(doc, [basis["col_pillar"], basis["col_strength"],
-                     basis["col_note"]],
-               [[r["name"],
-                 (f"{r['strength_pct']}%" if r["strength_pct"] is not None
-                  else basis["not_computed"]),
-                 r["note"]] for r in basis.get("pillars") or []])
+    if mech:
+        _add_table(doc, [basis["col_pillar"], basis["col_strength"],
+                         basis["col_note"]],
+                   [[r["name"],
+                     (f"{r['strength_pct']}%" if r["strength_pct"] is not None
+                      else basis["not_computed"]),
+                     r["note"]] for r in basis.get("pillars") or []])
     if basis.get("conditions"):
         doc.add_heading(basis["conditions_head"], level=2)
         for c in basis["conditions"]:
@@ -4648,7 +4686,7 @@ def _client_decision_basis(doc, view: dict, lang: str = "ar") -> None:
                      ("condition", "action", "owner", "window", "output",
                       "gate")] for p in basis["plan"]],
                    widths=[1.2, 3, 2, 1.8, 2, 2.5])
-    if basis.get("counter_case_line"):
+    if mech and basis.get("counter_case_line"):
         doc.add_heading(basis["counter_case_head"], level=2)
         doc.add_paragraph(_client_sanitize(basis["counter_case_line"], lang))
 
@@ -4878,8 +4916,10 @@ def render_client_docx(view: dict, path: str) -> str:
     _artifact_text = "\n".join(
         [p.text for p in doc.paragraphs]
         + [c.text for t in doc.tables for row in t.rows for c in row.cells])
-    _artifact_findings = _qg.run_client_artifact_text_gate(
-        _artifact_text, lang=lang, view=view)
+    # الدرس ٢٩٥: الملفُّ يُرفَض على العائلات الثلاث وحدها (اختلاق، رموز
+    # داخلية، لغة نظام) — كحكم التسليم في `silk_export_gate` حرفياً.
+    _artifact_findings = _qg.delivery_blockers(_qg.run_client_artifact_text_gate(
+        _artifact_text, lang=lang, view=view))
     if _artifact_findings:
         raise ClientArtifactGateError(
             "رفضت بوابة نصّ المُنتَج النهائي تسليم تقرير العميل: "
@@ -5665,7 +5705,8 @@ def render_academic_docx(view: dict, path: str) -> str:
     _artifact_text = "\n".join(
         [p.text for p in doc.paragraphs]
         + [c.text for t in doc.tables for row in t.rows for c in row.cells])
-    _artifact_findings = _qg.run_client_artifact_text_gate(_artifact_text)
+    _artifact_findings = _qg.delivery_blockers(
+        _qg.run_client_artifact_text_gate(_artifact_text))
     if _artifact_findings:
         raise ClientArtifactGateError(
             "رفضت بوابة نصّ المُنتَج النهائي تسليم التقرير الأكاديمي: "

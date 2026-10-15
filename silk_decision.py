@@ -759,8 +759,8 @@ def counter_case(decision: dict) -> dict:
               for k, v in pillars.items()
               if isinstance((v or {}).get("value"), (int, float))]
     if not scored:
-        return {"case": "لا جوانب محسوبة تُبنى منها حجة مضادة — البيانات "
-                        "غير كافية أصلاً.",
+        return {"case": "لا توجد جوانب محسوبة يُبنى عليها اعتراض، فالبيانات "
+                        "غير كافية.",
                 "rebuttal": ""}
     # البند 8 (أمر إصلاح المحرّك): «أقوى الأعمدة X وأضعفها X» بعمودٍ واحد
     # جملةٌ تناقض نفسها (تقرير #11 طبعها حرفياً) — القالب يشترط عمودين
@@ -772,32 +772,37 @@ def counter_case(decision: dict) -> dict:
     weakest = min(scored, key=lambda t: t[1])
     strongest = max(scored, key=lambda t: t[1])
     conds = decision.get("conditions") or []
+    # صياغةُ قارئ (طلب المالك 2026-10-14): اعتراضٌ ثمّ ردٌّ عليه بلغةٍ بشرية
+    # — لا «أقوى حجة ضد…/لماذا لم تُعتمد» ولا مصطلحَ قياسٍ داخلي.
+    weak_name = _AR.get(weakest[0], weakest[0])
+    strong_name = _AR.get(strongest[0], strongest[0])
     if verdict == "GO":
-        case = (f"أقوى حجة ضد المضيّ: أضعف الجوانب «{_AR.get(weakest[0], weakest[0])}» "
-                f"عند {round(weakest[1] * 100)}%"
-                + (f"، مع {len(conds)} شرطاً مفتوحاً" if conds else "")
-                + " — لو كان هذا العمود هو الحاكم وحده لتغيّر القرار.")
-        rebuttal = (f"لماذا لم تُعتمد: الدرجة الموزونة "
-                    f"{_pct(decision.get('score'))} تجاوزت عتبة المضيّ "
-                    f"({_pct(_GO)}) عبر الأعمدة مجتمعة بأوزانها المعلنة، "
-                    f"والثقة {_pct(decision.get('confidence'))} فوق الحد "
-                    "الأدنى — جانب ضعيف واحد لا يعكس القرار ما لم يبلغ "
-                    "بوابة الخطر الحرجة.")
+        case = (f"قد يُعترض على الدخول بضعف «{weak_name}» "
+                f"({round(weakest[1] * 100)}%)"
+                + (f" وبقاء شروط مفتوحة عددها {len(conds)}" if conds else "")
+                + "، فلو حُكم بهذا الجانب وحده لتغيّر القرار.")
+        rebuttal = (f"لكنّ قوة الفرصة في مجموع الجوانب بلغت "
+                    f"{_pct(decision.get('score'))} وتجاوزت حدّ الدخول "
+                    f"({_pct(_GO)})، وثقتنا في التقييم "
+                    f"{_pct(decision.get('confidence'))} فوق الحد الأدنى. "
+                    "ولا يغيّر جانبٌ ضعيف واحد القرار ما لم يبلغ مستوى "
+                    "خطر حرجاً.")
     elif verdict == "NO-GO":
-        case = (f"أقوى حجة ضد الرفض: أقوى الجوانب "
-                f"«{_AR.get(strongest[0], strongest[0])}» عند "
-                f"{round(strongest[1] * 100)}% يشير إلى فرصة قائمة.")
-        rebuttal = (f"لماذا لم تُعتمد: الدرجة الموزونة "
-                    f"{_pct(decision.get('score'))} دون عتبة الرفض "
-                    f"({_pct(_NOGO)}) أو أطلقت بوابة الخطر الحرجة — جانب "
-                    "قوي واحد لا يعوّض بنية القرار الكاملة.")
+        case = (f"قد يُعترض على عدم الدخول بأن «{strong_name}» قوي "
+                f"({round(strongest[1] * 100)}%) ويدل على فرصة قائمة.")
+        score = decision.get("score")
+        why = (f"لأن قوة الفرصة في مجموع الجوانب "
+               f"({_pct(decision.get('score'))}) دون حدّ الرفض ({_pct(_NOGO)})"
+               if isinstance(score, (int, float)) and score < _NOGO
+               else "لأن السوق أظهر خطراً حرجاً")
+        rebuttal = (f"لكنّ الحكم بقي على عدم الدخول {why}، وجانبٌ قوي "
+                    "واحد لا يعوّض الصورة كاملة.")
     else:
-        case = (f"أقوى حجة ضد الدخول المشروط: من جهةٍ أقوى الجوانب "
-                f"«{_AR.get(strongest[0], strongest[0])}» "
-                f"({round(strongest[1] * 100)}%) يدعم مضيّاً كاملاً، ومن جهةٍ "
-                f"أضعفها «{_AR.get(weakest[0], weakest[0])}» "
-                f"({round(weakest[1] * 100)}%) يدعم رفضاً.")
-        rebuttal = ("لماذا لم تُعتمد أيٌّ منهما: الدرجة في النطاق الشرطي "
-                    "والشروط المفتوحة مسماة — الحسم قبل إغلاقها التزام "
-                    "بلا أساس.")
+        case = (f"يمكن قراءة هذا الحكم في اتجاهين: «{strong_name}» أقوى "
+                f"الجوانب ({round(strongest[1] * 100)}%) ويدعم الدخول "
+                f"الكامل، و«{weak_name}» أضعفها "
+                f"({round(weakest[1] * 100)}%) ويدعم عدم الدخول.")
+        rebuttal = ("لم نأخذ بأيٍّ من الاتجاهين، لأن التقييم الكلي يقع في "
+                    "نطاق الدخول المشروط، والقرار النهائي ينتظر استيفاء "
+                    "الشروط المحددة.")
     return {"case": case, "rebuttal": rebuttal}

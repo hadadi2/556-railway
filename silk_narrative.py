@@ -1199,11 +1199,12 @@ def growth_phrase(cagr_pct: object, growth_pct: object = None,
     bits = []
     if growth_pct is not None:
         arrow = "نمو" if float(growth_pct) >= 0 else "انكماش"
-        bits.append(f"{arrow} إجمالي {fmt_pct(abs(float(growth_pct)))}"
-                    + (f" عبر {years}" if years else ""))
+        bits.append(f"{arrow} بنسبة {fmt_pct(abs(float(growth_pct)))}"
+                    + (f" خلال {years}" if years else ""))
     if cagr_pct is not None:
-        bits.append(f"بمعدل نمو سنوي مركّب {fmt_pct(cagr_pct)}")
-    return " ".join(bits)
+        bits.append((f"بمتوسط سنوي مركّب {fmt_pct(cagr_pct)}" if bits
+                     else f"متوسط نمو سنوي مركّب {fmt_pct(cagr_pct)}"))
+    return "، ".join(bits)
 
 
 def translate_gaps(gaps: list) -> list[str]:

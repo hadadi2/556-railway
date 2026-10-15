@@ -57,26 +57,21 @@ _OWNER_PAYLOAD_CHECKS = ("style_connector_excess", "style_repeated_key_figure",
                          "style_repeated_key_figure", "trends_hollow_completion")
 
 
-def test_study12_shaped_defects_block_the_client_export():
-    """direct reproduction: نفس شكل حمولة 409 التي تسلّمها المالك —
-    FAIL، وblocked_checks تضم الأسماء الأربعة (الرقم المفتاحي مرتين)."""
+def test_study12_shaped_defects_are_delivered_with_notes():
+    """الدرس ٢٩٥ (قرار المالك): عيوبُ أسلوبٍ (أدوات ربط، رقمٌ مكرّر، بعثةٌ
+    جوفاء) ملاحظاتٌ لا حجب — حكمُ البوّابة الكامل يبقى FAIL للمشغّل في
+    `gate_verdict`، والتسليمُ يمضي."""
     dec = EG.evaluate(_study12_shaped_view())
-    assert dec["verdict"] == "FAIL"
-    assert EG.is_blocked(dec)
-    got = EG.factory_detail(dec["digest"], "ar")["blocked_checks"]
+    assert dec["gate_verdict"] == "FAIL"
+    assert dec["verdict"] != "FAIL" and not EG.is_blocked(dec)
+    found = [f["check"] for f in dec["findings"]]
     for name in set(_OWNER_PAYLOAD_CHECKS):
-        assert got.count(name) >= _OWNER_PAYLOAD_CHECKS.count(name), (name, got)
+        assert name in found, (name, found)
 
 
-def test_connector_excess_is_the_only_driver_among_the_four():
-    """من الأسماء الأربعة، `style_connector_excess` وحده يقود FAIL —
-    الرقم المفتاحي المكرّر (3–4) وبعثة الاتجاهات الجوفاء ملاحظتان حاجبتان
-    غير قائدتين (خارج `_REGRESSION_GUARD_FIRED` و`FAIL_TRIGGER_CHECKS`)."""
+def test_style_findings_never_drive_a_delivery_block():
     dec = EG.evaluate(_study12_shaped_view())
-    drivers = dec["fail_drivers"]
-    assert "style_connector_excess" in drivers
-    assert "style_repeated_key_figure" not in drivers
-    assert "trends_hollow_completion" not in drivers
+    assert dec["fail_drivers"] == []
 
 
 def test_part_b_compliant_text_passes_the_export_gate():
@@ -90,33 +85,27 @@ def test_part_b_compliant_text_passes_the_export_gate():
 
 
 def test_trends_hollow_completion_blocks_nothing_alone():
-    """البعثة الجوفاء وحدها (بلا عيوب أسلوبية) ملاحظة منهجية حاجبة في
-    القائمة لكنها لا تقلب الحكم FAIL — التنزيل لا يُحجَب بسببها."""
+    """البعثة الجوفاء وحدها ملاحظةٌ منهجية — التنزيل لا يُحجَب بسببها."""
     view = R.build_view(netherlands_research_blob(), "ar")
     view["deep_research"].setdefault("missions", {})["demand_trends"] = \
         dict(_HOLLOW_TRENDS_MISSION)
     dec = EG.evaluate(view)
     assert dec["verdict"] != "FAIL"
-    assert "trends_hollow_completion" in [
-        f["check"] for f in dec["blocking"]]
+    assert "trends_hollow_completion" in [f["check"] for f in dec["findings"]]
     assert "trends_hollow_completion" not in dec["fail_drivers"]
 
 
-def test_fail_drivers_field_is_additive_only():
-    """الحقل إضافي: الشكل القائم للحمولتين لا يتغيّر بلا تمريره، ويظهر
-    مقصوصاً كسلاسل عند تمريره — على السطحين (مشغّل/مصنع)."""
+def test_fail_drivers_reach_the_operator_only():
+    """الدرس ٢٩٥: المعرّفاتُ لحمولة المشغّل وحدها — حمولةُ المصنع جملٌ فقط."""
     digest = [{"check": "style_connector_excess", "note": "n"},
               {"check": "trends_hollow_completion", "note": "n"}]
-    plain_op = EG.operator_detail(digest)
-    plain_fc = EG.factory_detail(digest, "ar")
-    assert "fail_drivers" not in plain_op and "fail_drivers" not in plain_fc
+    assert "fail_drivers" not in EG.operator_detail(digest)
     op = EG.operator_detail(digest, fail_drivers=["style_connector_excess"])
     fc = EG.factory_detail(digest, "ar",
                            fail_drivers=["style_connector_excess"])
     assert op["fail_drivers"] == ["style_connector_excess"]
-    assert fc["fail_drivers"] == ["style_connector_excess"]
-    assert fc["blocked_checks"] == ["style_connector_excess",
-                                    "trends_hollow_completion"]
+    assert "fail_drivers" not in fc and "blocked_checks" not in fc
+    assert fc["fail_driver_reasons"] and fc["blocked_reasons"]
 
 
 def test_gate_crash_fail_still_names_a_driver():

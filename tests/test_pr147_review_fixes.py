@@ -246,5 +246,8 @@ def test_decision_section_always_has_a_basis_paragraph(tmp_path):
     paras = [p.text for p in Document(out).paragraphs]
     i = paras.index("التوصية: مراقبة السوق")
     following = [p for p in paras[i + 1:i + 3] if p.strip()]
-    assert following and "درجة ثقة" in following[0]
+    # الدرس ٢٩٥ (قرار المالك «لا تعنيني درجة الثقة»): فقرةُ الأساس قائمة
+    # بلا عبارة الثقة ولا بقاياها.
+    assert following and "تصدر هذه الدراسة حكمها" in following[0]
+    assert "درجة ثقة" not in following[0] and "%" not in following[0]
     assert "ادخل السوق فوراً" not in "\n".join(paras)

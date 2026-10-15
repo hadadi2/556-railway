@@ -131,7 +131,9 @@ def test_g04_factory_block_message_is_client_language_not_infrastructure():
         # ولا تُسرَّب نصوصُ الملاحظات الداخلية — أسماءُ الفحوص فقط.
         blob = json.dumps(detail, ensure_ascii=False)
         assert "LLMMissionAgent" not in blob and "لغةٌ داخلية" not in blob
-        assert detail["blocked_checks"] == ["agent_failed"]
+        # الدرس ٢٩٥: لا معرّفَ فحصٍ للمصنع — جملةُ الزائر وحدها.
+        assert "blocked_checks" not in detail and "agent_failed" not in blob
+        assert detail["blocked_reasons"]
 
 
 def test_g02_factory_read_surface_is_told_the_gate_verdict():
@@ -144,7 +146,7 @@ def test_g02_factory_read_surface_is_told_the_gate_verdict():
         s = eg.client_quality_summary({"verdict": verdict, "blocking": []},
                                       "ar")
         assert s["verdict"] == verdict and s["note"]
-        assert ("لم يجتز" in s["note"]) is must
+        assert ("لم نُسلِّم" in s["note"]) is must      # الدرس ٢٩٥
 
 
 # ══════════════════════════════════════════════════════════════════════════

@@ -345,10 +345,10 @@ def test_the_client_report_shows_what_the_decision_rests_on(tmp_path):
     """**الحادثة:** صفرُ ذكرٍ للأعمدة أو القاعدة أو الحجّة المضادّة."""
     lines = _docx_lines(_view(jury_state="full", engine="NO-GO"), tmp_path)
     blob = "\n".join(lines)
-    assert "على أيّ أساس صدر هذا الحكم" in blob
-    assert "قاعدة الحكم مُعلنة قبل النظر في الأرقام" in blob
+    assert "كيف وصلنا إلى هذا الحكم" in blob
+    assert "وضعنا قاعدة الحكم قبل النظر في الأرقام" in blob
     assert "جاذبية السوق" in blob and "شدة المنافسة" in blob
-    assert "أقوى ما يُقال ضدّ هذا الحكم" in blob
+    assert "أقوى اعتراض على هذا الحكم" in blob
 
 
 def test_an_uncomputed_pillar_is_declared_with_what_it_needs(tmp_path):
@@ -377,7 +377,7 @@ def test_the_basis_section_removes_itself_when_no_decision_was_computed(
     """قسمٌ بلا مادّة يُسقِط نفسَه — لا هيكلَ فارغ يوحي بحسابٍ لم يجرِ."""
     blob = "\n".join(_docx_lines(_view(jury_state="full", engine=None),
                                  tmp_path))
-    assert "على أيّ أساس صدر هذا الحكم" not in blob
+    assert "كيف وصلنا إلى هذا الحكم" not in blob
 
 
 def test_the_basis_section_is_authored_in_english_too():
@@ -549,8 +549,8 @@ def test_the_verdict_structure_valve_still_turns_the_layer_off(tmp_path):
             os.environ.pop("SILK_VERDICT_STRUCTURE_ENABLED", None)
         else:
             os.environ["SILK_VERDICT_STRUCTURE_ENABLED"] = prev
-    assert "قاعدة الحكم مُعلنة قبل النظر في الأرقام" not in blob
-    assert "أقوى ما يُقال ضدّ هذا الحكم" not in blob
+    assert "وضعنا قاعدة الحكم قبل النظر في الأرقام" not in blob
+    assert "أقوى اعتراض على هذا الحكم" not in blob
 
 
 def test_one_confidence_number_in_one_document(tmp_path):
@@ -577,7 +577,7 @@ def test_the_counter_case_heading_never_stands_alone(tmp_path):
     """قسمٌ بلا متن هو الهيكلُ الفارغ الذي تمنعه الدالةُ بنصّ توثيقها."""
     lines = _docx_lines(_view(engine="NO-GO", lang="en"), tmp_path) \
         if False else _docx_lines(_view(engine="NO-GO"), tmp_path)
-    for head in ("أقوى ما يُقال ضدّ هذا الحكم", "ما يجب إغلاقه قبل الالتزام"):
+    for head in ("أقوى اعتراض على هذا الحكم", "ما يجب حسمه قبل الالتزام"):
         if head in lines:
             i = lines.index(head)
             assert i + 1 < len(lines) and lines[i + 1] != "", f"عنوانٌ يتيم: {head}"
@@ -587,7 +587,7 @@ def test_the_named_conditions_promised_by_the_rule_are_actually_printed(
         tmp_path):
     """قاعدةُ الحكم تَعِد بشروطٍ «مسمّاة أدناه» — فلتكن أدناه فعلاً."""
     blob = "\n".join(_docx_lines(_view(engine="NO-GO"), tmp_path))
-    assert "ما يجب إغلاقه قبل الالتزام" in blob
+    assert "ما يجب حسمه قبل الالتزام" in blob
     assert "لم يُحسب بعد" in blob   # البند ٣: صياغة العميل
 
 

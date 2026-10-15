@@ -41,7 +41,7 @@ def test_counter_case_for_go_names_weakest_pillar():
            "conditions": []}
     cc = D.counter_case(dec)
     assert "أمان السوق" in cc["case"]          # أضعف عمود مسمّى
-    assert "لماذا لم تُعتمد" in cc["rebuttal"]
+    assert "تجاوزت حدّ الدخول" in cc["rebuttal"]
 
 
 def test_counter_case_for_nogo_names_strongest_pillar():

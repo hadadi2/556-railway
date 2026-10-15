@@ -451,7 +451,7 @@ def build_sample_view(lang: str = "ar") -> dict:
         res["deep_research"]["report"]["report"] = REPORT_TEXT_EN
     # ── الموجة Z (§10.6 + البند Z-06) — العيّنةُ تُظهِر ما تغيّر فعلاً ──────
     # كانت `markets: []` فيسقط `top` كلُّه، فلا يظهر في العيّنة الملتزَمة قسمُ
-    # «على أيّ أساس صدر هذا الحكم» (نفسُ درس البند ١٠٤).
+    # «كيف وصلنا إلى هذا الحكم» (نفسُ درس البند ١٠٤).
     import silk_deep_pillars as _DP
     from silk_requirements_agent import regulatory_state as _reg_state
     _dr = res["deep_research"]

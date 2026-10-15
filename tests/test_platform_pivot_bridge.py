@@ -158,7 +158,8 @@ def test_engine_failure_reverts_to_draft_and_releases_quota(env, monkeypatch):
     # (رطانة)؛ رسالة عميل + التفصيل المنقّح، والصنف الكامل في سجل التشغيل.
     assert "RuntimeError" not in (row["run_error"] or "")
     assert "تعذّر إكمال الدراسة" in (row["run_error"] or "")
-    assert "engine exploded" in (row["run_error"] or "")
+    # الدرس ٢٩٥: نصُّ الاستثناء لا يصل المصنع — يبقى في سجل التشغيل.
+    assert "engine exploded" not in (row["run_error"] or "")
     assert row["launched_by_user_id"] is None            # حصّة المستخدم تحرّرت
     assert _month_count(env["fac"]["account_id"]) == 0   # وحصّة الحساب أُرجعت
 

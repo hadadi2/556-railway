@@ -167,12 +167,14 @@ def test_allowed_derived_number_is_not_flagged():
 
 # ── ٦) الملء: لا «غير متاح» وسط جملة كُتبت لرقم ────────────────────────────
 
-def test_missing_fact_replaces_the_whole_line_not_the_slot():
+def test_missing_fact_drops_its_sentence_not_the_slot():
+    """قرار المالك 2026-10-14 (الدرس ٢٩٥): معطىً ناقص ⇒ تُحذَف جملتُه كاملة
+    — لا «غير متاح» وسط جملةٍ كُتبت لرقم ولا جملةَ غيابٍ بديلة."""
     led = _ledger_with("tariff_applied_pct", None, note="لا تعرفة")
-    out, _ = L.bind("- بلغت الرسوم الجمركية {{tariff_applied_pct}} هذا العام.",
-                    led)
-    assert out == "- الرسوم الجمركية المطبَّقة غير متاح."
-    assert "هذا العام" not in out
+    out, info = L.bind("- بلغت الرسوم الجمركية {{tariff_applied_pct}} هذا العام.",
+                       led)
+    assert out == ""
+    assert info["dropped"] == ["بلغت الرسوم الجمركية {{tariff_applied_pct}} هذا العام."]
 
 
 def test_status_token_renders_a_word_not_a_number():
@@ -351,15 +353,16 @@ def test_a_real_value_contradiction_still_fires():
 
 # ── ١٤) حصادُ المراجعة الذاتية (§58) — سبعُ ملاحظاتٍ مقفولة ────────────────
 
-def test_a_missing_value_replaces_its_sentence_not_the_paragraph():
-    """المراجعة #1: كان السطرُ كلُّه يُستبدَل فتُبتَر فقرةٌ كاملة."""
+def test_a_missing_value_drops_its_sentence_not_the_paragraph():
+    """المراجعة #1: كان السطرُ كلُّه يُستبدَل فتُبتَر فقرةٌ كاملة؛ والآن تُحذَف
+    الجملةُ الناقصة وحدها (الدرس ٢٩٥)."""
     led = _ledger_with("tariff_applied_pct", None, note="لا تعرفة")
     line = ("السوق واعد. الرسوم الجمركية {{tariff_applied_pct}}. "
             "والخطوة التالية اعتماد المصنع.")
     out, _ = L.bind(line, led)
     assert out.startswith("السوق واعد.")
     assert "والخطوة التالية اعتماد المصنع." in out
-    assert "الرسوم الجمركية المطبَّقة غير متاح." in out
+    assert "الرسوم الجمركية" not in out and "غير متاح" not in out
 
 
 def test_a_table_row_keeps_its_columns():

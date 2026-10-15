@@ -340,7 +340,7 @@ def test_c7_reader_wording_is_not_replaced_by_engine_measurement_language():
     assert conds.strip(), "لوحةُ الأساس بلا شروط — المسارُ لم يُشغَّل"
     for leak in ("log10", "متوسط المتاح من", "مقسوماً على"):
         assert leak not in conds, leak
-    assert "عالِجه قبل الالتزام" in conds or "أكمِلها" in conds, conds
+    assert "عالِج هذا الضعف قبل الالتزام" in conds or "أكمِل" in conds, conds
 
 
 def test_c7_basis_exposes_both_counts_and_they_agree():

@@ -171,7 +171,8 @@ def test_gate_refusal_reverts_with_declared_arabic_reason(env, monkeypatch):
     assert eb.wait_idle()
     row = _study_row(s["id"])
     assert row["state"] == "draft"
-    assert "ANTHROPIC_API_KEY" in row["run_error"]
+    # الدرس ٢٩٥ (قرار المالك): لا اسمَ مفتاح خادمٍ على سطح المصنع.
+    assert "ANTHROPIC_API_KEY" not in row["run_error"] and row["run_error"]
     # لا رطانة أصناف استثناءات في سطح المصنع.
     assert "HTTPException" not in row["run_error"]
     assert "DeepRunRefused" not in row["run_error"]

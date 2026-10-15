@@ -188,6 +188,10 @@ CLIENT_HIDDEN_METRICS: tuple = (
     "confidence",             # درجةُ ثقة الحكم تسميةً ونسبةً
     "verification",           # نسبةُ التحقّق من البيانات وقسمُ التغطية
     "component_confidence",   # عمودُ «كم تحقّقنا منه» لكلّ مكوّن
+    # طلب المالك 2026-10-14: «لا تعنيني درجة الثقة والتقييم، أحتاج دراسة
+    # للسوق والفرصة» — قاعدةُ الحكم وجدولُ قوّة الجوانب والاعتراضُ عليه آليةُ
+    # تقييمٍ لا معلومةُ سوق؛ يبقى للعميل ما يُحسَم قبل الالتزام وخطتُه.
+    "decision_mechanics",
 )
 
 
@@ -466,8 +470,11 @@ def condition_texts(ed: object, lang: str = "ar") -> "list | None":
             text = _I.t("cond_pillar_missing", lang, pillar=label, parts=parts)
             closure = _I.t("cond_closure_missing", lang, parts=parts)
         elif kind == "pillar_weak":
-            text = _I.t("cond_pillar_weak", lang, pillar=label,
-                        pct=it.get("pct"))
+            _plain = f"cond_weak_plain_{it.get('pillar')}"
+            text = (_I.t(_plain, lang)
+                    if client_metric_privacy() and _plain in _I.TERMS
+                    else _I.t("cond_pillar_weak", lang, pillar=label,
+                              pct=it.get("pct")))
             closure = _I.t("cond_closure_weak", lang, pillar=label)
         else:
             continue
@@ -873,11 +880,10 @@ def _deep_research_brief(dr_view: dict, lang: str = "ar") -> list[str]:
     # البادئةُ تتبع ما يقوله الحقلُ فعلاً، فيقرأ المصنعُ سطراً مستقيماً.
     if ar:
         _lead = "الحالة" if _tone.startswith("data_") else "التوصية"
-        lines = [f"{_lead}: {v} — سوق {market} (بحث عميق شامل)"]
+        lines = [f"{_lead}: {v} — سوق {market}"]   # الدرس ٢٩٥: بلا وسمِ المسار
     else:
         _lead = "Status" if _tone.startswith("data_") else "Recommendation"
-        lines = [f"{_lead}: {v} — {market} market (comprehensive deep "
-                 "research)"]
+        lines = [f"{_lead}: {v} — {market} market"]
     by_cat = (dr_view.get("analyst") or {}).get("by_category", {})
     # دورة C4 (صيد ٣): لاحقةُ المصدر أُسقطت عمداً من المختصر — حقلُ المصدر
     # ملاحظةُ بعثةٍ قد تحمل اسمَ مرجعٍ داخلي (demographics_l1.csv وقعت في
@@ -885,9 +891,13 @@ def _deep_research_brief(dr_view: dict, lang: str = "ar") -> list[str]:
     # التقرير وقسم المراجع، والمختصرُ سطرُ جوّالٍ.
     demand = by_cat.get("demand") or []
     if demand:
-        lines.append((f"الطلب الفعلي المقدَّر: {demand[0].get('value')}"
-                      if ar else
-                      f"Estimated actual demand: {demand[0].get('value')}"))
+        _dv = demand[0].get("value")
+        # الدرس ٢٩٥: رقمٌ خام «42000000» بلا فاصل آلاف — يُفصَّل كما هو.
+        if isinstance(_dv, (int, float)) and not isinstance(_dv, bool):
+            from silk_narrative import fmt_number
+            _dv = fmt_number(_dv)
+        lines.append((f"الطلب الفعلي المقدَّر: {_dv}" if ar else
+                      f"Estimated actual demand: {_dv}"))
     entry_door = by_cat.get("entry_door") or []
     if entry_door:
         lines.append((f"أفضل باب دخول: {entry_door[0].get('value')}"
@@ -3202,8 +3212,8 @@ def _hs_derivation(result: dict) -> dict | None:
     elif result.get("hs_resolution_note"):
         basis = str(result["hs_resolution_note"])
     else:
-        basis = ("الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف — "
-                 "راجع منهجية التقرير")
+        # الدرس ٢٩٥: لا إحالةَ إلى «منهجية التقرير» — قسمٌ لا تحمله نسخة العميل.
+        basis = "الرمز مُدخل صراحة في الطلب أو محسوم من مرجع الأصناف"
     record = {
         "hs6": hs6,
         "chapter": hs6[:2],
@@ -3398,8 +3408,12 @@ def _deep_research_view(result: dict, lang: str = "ar",
     # لأغراض تشخيص المطوّرين (silk_ai_judge.failure_reason) لكن كان يصل
     # العميل حرفياً بما فيه توجيه تشغيلي ("راجع سجلّات الخادم") — العقد
     # الخام يبقى في `report_out` كما هو؛ التطهير هنا للعرض فقط.
+    # الدرس ٢٩٥ (الدراسة ١٠): ملاحظةُ مراجعٍ تقتبس رمزَ سجلٍّ إنذارٌ كاذبٌ
+    # بالبناء — الرمزُ يُملأ عند العرض دائماً — وكانت تحمل القوسين إلى نصّ
+    # العميل فتحجبه (`ledger_token_unbound`). تُسقَط.
     clean_unresolved = [_strip_internal_plumbing(n)
-                        for n in (report_out.get("unresolved_notes") or [])]
+                        for n in (report_out.get("unresolved_notes") or [])
+                        if "{{" not in str(n)]
     clean_failure_reason = (_strip_internal_plumbing(report_out.get("failure_reason"))
                             if report_out.get("failure_reason") else "")
     # PART B1 (أمر العمل الرئيس — «حدود هذا البحث» تناقض المتن): البعثات
@@ -3434,8 +3448,10 @@ def _deep_research_view(result: dict, lang: str = "ar",
              + [_i18n.t("limit_analyst_thin", lang,
                         label=_category_label(c, lang))
                for c in (analyst.get("missing_categories") or [])]
-             + [_i18n.t("limit_unresolved_note", lang, detail=n)
-                for n in clean_unresolved])
+             # الدرس ٢٩٥: ملاحظاتُ المراجع لغةُ فحصٍ داخلية («ملاحظة مراجع لم
+             # تُعالَج: …») — تبقى للمشغّل في `report.unresolved_notes` (لوحته
+             # وملفّه)، ولا تدخل حدودَ العميل ولا جدولَ نواقصه.
+             )
     if not report_out.get("report") and clean_failure_reason:
         limits.append(_i18n.t("limit_report_missing", lang,
                               detail=clean_failure_reason))
@@ -3914,7 +3930,9 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
         "value_line": _I.t("imports_value_line", lang,
                            amount=_fmt_usd(latest["value"], lang),
                            year=latest["year"],
-                           source=latest.get("source") or "UN Comtrade"),
+                           # «(مرآة)» وسمٌ داخليّ — سطرُ المرآة يشرحه للقارئ.
+                           source=(latest.get("source") or "UN Comtrade")
+                           .replace(" (مرآة)", "")),
         "growth_pct": s.get("growth_pct"),
         "cagr_pct": s.get("cagr_pct"),
         "years_missing": s.get("years_missing") or [],

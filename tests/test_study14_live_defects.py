@@ -336,10 +336,12 @@ _FAIL_DECISION = {
 def test_client_quality_summary_carries_names_on_fail():
     """حجب #14 وصل المالك بلا أسماء فحوص («رفض ينزل الملف») — ملخّص
     الجودة على FAIL يحمل الأسماء الحاجبة وقائد الحكم معاً."""
+    # الدرس ٢٩٥ (قرار المالك): السببُ يُقال جملاً لا معرّفات — الأسماءُ في
+    # سجلّ الخدمة (`record_block`) وفي حمولة المشغّل.
     out = EG.client_quality_summary(_FAIL_DECISION)
-    assert out["blocked_checks"] == ["language_consistency",
-                                    "trends_hollow_completion"]
-    assert out["fail_drivers"] == ["language_consistency"]
+    assert "blocked_checks" not in out and "fail_drivers" not in out
+    assert out["fail_driver_reasons"] and out["blocked_reasons"]
+    assert "language_consistency" not in str(out)
 
 
 def test_client_quality_summary_additive_only_on_pass():
@@ -371,9 +373,9 @@ def test_platform_ui_renders_driver_and_check_names():
     الذي واجه المالك هو الذي كان أعمى."""
     html = open(os.path.join(_ROOT, "web", "platform.html"),
                 encoding="utf-8").read()
-    assert "قائد الحجب" in html
-    assert "الفحوص الحاجبة" in html
-    assert "fail_drivers" in html and "blocked_checks" in html
+    # الدرس ٢٩٥: الجملُ لا المعرّفات — «أهمّ سبب» من `fail_driver_reasons`.
+    assert "fail_driver_reasons" in html and "blocked_reasons" in html
+    assert '"للدعم الفنّي — الفحوص الحاجبة: "' not in html
 
 
 def test_api_block_paths_pass_fail_drivers():

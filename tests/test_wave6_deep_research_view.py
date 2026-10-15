@@ -109,7 +109,9 @@ def test_header_brief_and_limits_reflect_deep_research():
 
     view = build_view(_deep_research_result())
     assert view["header"]["target_market"] in ("نيجيريا", "Nigeria")
-    assert any("WATCH" in b or "بحث عميق" in b for b in view["brief"])
+    # الدرس ٢٩٥: وسمُ المسار «(بحث عميق شامل)» حُذف من سطر المختصر.
+    assert any("WATCH" in b or "مراقبة" in b or "التوصية" in b
+               for b in view["brief"])
     # بلاغ منتج من المالك: المفتاح snake_case الخام (pricing_scout) لا
     # يجوز أن يظهر في حدود معروضة للعميل — اسم البعثة العربي يحل محله.
     assert not any("pricing_scout" in x for x in view["limits"])
@@ -118,7 +120,10 @@ def test_header_brief_and_limits_reflect_deep_research():
     # يصل هذا الحدّ حرفياً — الاسم التجاري العربي يحل محله الآن.
     assert not any("entry_cost" in x for x in view["limits"])
     assert any("تكلفة وصعوبة الدخول" in x for x in view["limits"])
-    assert any("ملاحظة" in x for x in view["limits"])
+    # الدرس ٢٩٥: ملاحظاتُ المراجع لغةُ فحصٍ داخلية — للمشغّل في
+    # `report.unresolved_notes` لا في حدود العميل.
+    assert not any("ملاحظة مراجع" in x for x in view["limits"])
+    assert view["deep_research"]["report"]["unresolved_notes"]
 
 
 def test_next_step_paid_layer_hint_only_on_go_verdict():

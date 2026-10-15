@@ -505,15 +505,23 @@ def test_research_docx_endpoint_serves_clean_client_report(tmp_path):
 # (غير `internal=1`) ⇒ 409 مع ملخّص النتائج؛ `?override=1` يتخطّى الحجب؛
 # `internal=1` معفًى تماماً من هذا الفحص (يبقى متاحاً للمدقّق دوماً).
 
-def _seed_client_export(tmp_path, full_sections):
+def _seed_client_export(tmp_path, full_sections, leak: bool = False):
+    """`leak=True` (الدرس ٢٩٥): الحجبُ لثلاث عائلات — يُحقَن رمزُ سجلٍّ داخليٌّ
+    غيرُ مكتمل في سرد الكاتب كي يبقى مسارُ 409 والتجاوز مختبَراً على حجبٍ
+    حقيقيّ (ذكرُ الأداة تُصلحه طبقةُ العرض قبل البوّابة فلا يصلح محفّزاً)."""
     import silk_storage as storage
     db = os.path.join(str(tmp_path), "research.db")
     os.environ["SILK_HERMETIC"] = "1"
-    aid = _store_deep_research(db, full_sections=full_sections)
+    aid = _store_deep_research(
+        db, full_sections=full_sections,
+        report_text=("## 1. الخلاصة التنفيذية\nالقيمة {{tariff_applied_pct غير مملوءة.\n"
+                     if leak else None))
     return db, aid
 
 
 def test_client_docx_export_blocked_409_when_gate_fails(tmp_path):
+    """الدرس ٢٩٥: الحجبُ يُختبَر على لغة نظامٍ حقيقية (ذكرُ الأداة) — الأقسامُ
+    الناقصة وحدها صارت ملاحظةً لا حجباً."""
     import pytest
     pytest.importorskip("fastapi")
     pytest.importorskip("httpx")
@@ -522,7 +530,7 @@ def test_client_docx_export_blocked_409_when_gate_fails(tmp_path):
     import api
     import silk_storage as storage
 
-    db, aid = _seed_client_export(tmp_path, full_sections=False)
+    db, aid = _seed_client_export(tmp_path, full_sections=False, leak=True)
     saved = storage._DEFAULT_PATH
     storage._DEFAULT_PATH = db
     try:
@@ -534,7 +542,8 @@ def test_client_docx_export_blocked_409_when_gate_fails(tmp_path):
             body = r.json()["detail"]
             assert body["error"] == "quality_gate_fail"
             assert body["findings"]
-            assert any(f["check"] == "section_structure" for f in body["findings"])
+            assert any(f["check"] == "ledger_token_unbound"
+                       for f in body["findings"])
             # قفل انحدار (رسالة 409 القديمة): كانت تعِد بأن ?override=1 يكفي
             # بمفتاح API العادي بينما WP-7 §1 يرفضه 403 بلا X-Owner-Key —
             # الرسالة يجب أن تذكر سلطة المالك، لا أن تَعِد بما يرفضه الخادم.
@@ -564,6 +573,7 @@ def test_client_docx_export_blocked_409_when_gate_fails(tmp_path):
 
 
 def test_client_pdf_export_blocked_409_when_gate_fails(tmp_path):
+    """الدرس ٢٩٥: كنظيره docx — الحجبُ على لغة نظامٍ حقيقية."""
     import pytest
     pytest.importorskip("fastapi")
     pytest.importorskip("httpx")
@@ -572,7 +582,7 @@ def test_client_pdf_export_blocked_409_when_gate_fails(tmp_path):
     import api
     import silk_storage as storage
 
-    db, aid = _seed_client_export(tmp_path, full_sections=False)
+    db, aid = _seed_client_export(tmp_path, full_sections=False, leak=True)
     saved = storage._DEFAULT_PATH
     storage._DEFAULT_PATH = db
     try:
@@ -640,5 +650,26 @@ def test_gate_crash_treated_as_fail_for_client_export(tmp_path):
             r = client.get(f"/analyses/{aid}/report.docx")
             assert r.status_code == 409
             assert r.json()["detail"]["error"] == "quality_gate_fail"
+    finally:
+        storage._DEFAULT_PATH = saved
+
+
+def test_missing_sections_alone_are_delivered_not_blocked(tmp_path):
+    """الدرس ٢٩٥ (قرار المالك): أقسامٌ ناقصة ملاحظةٌ تُسلَّم — لا 409."""
+    import pytest
+    pytest.importorskip("fastapi")
+    from unittest.mock import patch
+    from fastapi.testclient import TestClient
+    import api
+    import silk_storage as storage
+
+    db, aid = _seed_client_export(tmp_path, full_sections=False)
+    saved = storage._DEFAULT_PATH
+    storage._DEFAULT_PATH = db
+    try:
+        client = TestClient(api.create_app())
+        with patch("requests.sessions.Session.request",
+                   side_effect=OSError("network disabled for offline test")):
+            assert client.get(f"/analyses/{aid}/report.docx").status_code == 200
     finally:
         storage._DEFAULT_PATH = saved
