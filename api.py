@@ -4430,6 +4430,164 @@ def create_app():
         silk_storage.save_analysis(found, analysis_id=analysis_id)
         return _json(found)
 
+    class RefinedReportRequest(BaseModel):
+        """جسم التقرير المنقَّح بيد المالك — owner-refined report body
+        (قرار المالك 2026-10-20، `silk_refined_report`)."""
+        markdown: str
+
+    def _refined_gate(found: dict) -> dict:
+        """قرار بوّابة التسليم على العرض الحالي — بلا أي نداء كلود.
+
+        `prepare_fallback_prose` **لا يُنادى هنا عمداً** (مراجعة §58، الملاحظة ٤):
+        على سطوح التصدير يستدعي كلود (مدفوعاً) لصياغة قسمٍ بلا سرد؛ مسار MCP
+        قرارُ المالك فيه صفرُ نداء كلود من الخادم، فيُقيَّم العرضُ بما فيه من نثرٍ
+        مخزَّن فقط — فرقٌ معلَن لا تباينُ سياسةٍ صامت. عطلٌ داخلي = FAIL (لا تخطٍّ)."""
+        import silk_export_gate as _EGR
+        try:
+            return _EGR.evaluate(found.get("view") or _view(found))
+        except Exception as _ge:  # noqa: BLE001 — بوّابةٌ لا تُفحَص لا تُسلِّم
+            log.warning("refined gate failed closed: %s", _ge)
+            return {"verdict": "FAIL", "findings": [], "digest": [],
+                    "fail_drivers": ["gate_error"]}
+
+    @app.get("/analyses/{analysis_id}/report/refined")
+    def get_refinable_report(analysis_id: int, request: Request):
+        """نصّ الكاتب المخزَّن كما هو — سطحُ التنقيح في كلود (عبر خادم MCP).
+
+        **لا المستند المعروض للعميل** (مراجعة §58، الملاحظة ١): ما يُسحَب من هنا
+        هو ما يُعاد إلى `POST /analyses/{id}/report/refined` فيحلّ مكانه — صيغةٌ
+        واحدة في الاتجاهين، فلا يتداخل قالبٌ داخل قالب. يرافقه قرار بوّابة
+        التسليم الحالي وقائمة عناصر `{{…}}` كي يعرف المنقِّح ما يُبقيه حرفياً.
+        سطحُ مشغّل (مفتاح API) لا سطحُ عميل — لا بوّابة حجبٍ على القراءة.
+        """
+        _require_key(request)
+        _rate_limit(request)
+        found = silk_storage.get_analysis(analysis_id)
+        if found is None:
+            raise HTTPException(status_code=404,
+                                detail=f"analysis {analysis_id} not found")
+        dr = found.get("deep_research")
+        if not dr:
+            raise HTTPException(
+                status_code=400,
+                detail=f"analysis {analysis_id} is not a /research run "
+                       "(no deep_research section) — nothing to refine")
+        _node = dr.get("report") or {}
+        text = _node.get("report") or ""
+        if not text:
+            raise HTTPException(status_code=409, detail={
+                "error": "no_report",
+                "message": "لا تقرير مخزَّن لهذا التحليل — ولّده أولاً "
+                           "(POST /analyses/{id}/report) ثم نقّحه."})
+        import silk_refined_report as _RR
+        found["view"] = _view(found)
+        _dec = _refined_gate(found)
+        _notes = [str(f.get("note") or "")[:200] for f in (_dec.get("digest") or [])
+                  if isinstance(f, dict)][:10]
+        return _json({"analysis_id": analysis_id, "markdown": text,
+                      "refined_count": int(_node.get("refined_count") or 0),
+                      "has_original": bool(_node.get("report_original")),
+                      "placeholders": _RR.placeholders(text),
+                      "sections": _RR.section_heads(text),
+                      "gate": {"verdict": _dec.get("verdict"),
+                               "fail_drivers": _dec.get("fail_drivers") or [],
+                               "notes": _notes}})
+
+    def _refine_evidence(found: dict) -> str:
+        """أدلة الدراسة بمصادرها كنصّ — نفس أرضية `/ask` (`analysis_context`) بسقفٍ
+        أوسع: المنقِّح في كلود يراجع الدقة عليها، وأرقامها مسموحة في المنقَّح.
+        صفر شبكة، صفر كلود — قراءة النتيجة المخزَّنة فقط."""
+        try:
+            from silk_render import analysis_context
+            return analysis_context(found, max_chars=int(
+                os.environ.get("SILK_REFINE_EVIDENCE_CHARS", "30000") or 30000))
+        except Exception as _ee:  # noqa: BLE001 — بلا أدلة يبقى الأصل حدّاً صالحاً
+            log.warning("refine evidence unavailable: %s", _ee)
+            return ""
+
+    @app.get("/analyses/{analysis_id}/evidence")
+    def get_refine_evidence(analysis_id: int, request: Request):
+        """أدلة الدراسة بمصادرها للمراجعة النهائية في كلود (عبر MCP) — زيادة الدقة.
+
+        توضيح المالك (2026-10-20): المراجعة النهائية تحتاج ما يُقارَن به النصّ، لا
+        النصّ وحده. هذا النصّ هو أرضية `/ask` نفسها (`silk_render.analysis_context`):
+        أرقام سجلّ الحقائق ونتائج المهام والمكوّنات كلٌّ بمصدره، والفجوات معلَنة.
+        سطحُ مشغّل (مفتاح API)؛ قراءة مخزَّنة بلا أي نداء خارجي.
+        """
+        _require_key(request)
+        _rate_limit(request)
+        found = silk_storage.get_analysis(analysis_id)
+        if found is None:
+            raise HTTPException(status_code=404,
+                                detail=f"analysis {analysis_id} not found")
+        found["view"] = _view(found)
+        ctx = _refine_evidence(found)
+        return _json({"analysis_id": analysis_id, "context": ctx, "chars": len(ctx)})
+
+    @app.post("/analyses/{analysis_id}/report/refined")
+    def submit_refined_report(analysis_id: int, req: RefinedReportRequest,
+                              request: Request):
+        """استقبل التقرير المنقَّح من كلود (عبر خادم MCP) وخزّنه مكان نصّ الكاتب.
+
+        قرار المالك (2026-10-20): التنقيح يجري في كلود Desktop/Code على اشتراك
+        المالك لا بنداء API من الخادم (مرحلةُ تلميعٍ داخل المسار تكلّف لكل
+        تقرير). هذه النقطة **لا تنادي كلود إطلاقاً** — فحوص حتمية فقط:
+        `silk_refined_report.verify` (لا رقم خارج الأصل والأدلة، هيكل الأقسام
+        وعناصر `{{…}}` محفوظان، لا بتر) على **النصّ المخزَّن نفسه** الذي سحبه `GET`
+        أعلاه، ثم
+        بوّابة التسليم على العرض الجديد (`_refined_gate`) — رفضُ أيٍّ منهما = 409
+        ولا حفظ، والسجلّ المخزَّن كما هو (لا يُكتَب إلا عند القبول).
+        القبول يعيد بناء القالب الموحّد + بوابة الجودة ويحفظ (نفس ذيل
+        `POST /analyses/{id}/report`)، فتصدر ملفات العميل من النصّ المنقَّح.
+        """
+        _require_key(request)
+        _rate_limit(request)
+        found = silk_storage.get_analysis(analysis_id)
+        if found is None:
+            raise HTTPException(status_code=404,
+                                detail=f"analysis {analysis_id} not found")
+        dr = found.get("deep_research")
+        if not dr:
+            raise HTTPException(
+                status_code=400,
+                detail=f"analysis {analysis_id} is not a /research run "
+                       "(no deep_research section) — nothing to refine")
+        _node = dr.get("report") or {}
+        original = _node.get("report")
+        if not original:
+            raise HTTPException(status_code=409, detail={
+                "error": "no_report",
+                "message": "لا تقرير مخزَّن لهذا التحليل — ولّده أولاً "
+                           "(POST /analyses/{id}/report) ثم نقّحه."})
+        import silk_refined_report as _RR
+        found["view"] = _view(found)
+        findings = _RR.verify(req.markdown, original, _refine_evidence(found))
+        if findings:
+            raise HTTPException(status_code=409, detail={
+                "error": "refined_report_rejected",
+                "message": "رُفض التقرير المنقَّح قبل الحفظ — صحّح الملاحظات "
+                           "وأعد الإرسال؛ التقرير المخزَّن لم يُمَسّ.",
+                "findings": findings})
+        found["deep_research"]["report"] = _RR.apply(_node, req.markdown)
+        found["analysis_id"] = analysis_id
+        found["view"] = _view(found)
+        _dec = _refined_gate(found)
+        import silk_export_gate as _EGR
+        if _EGR.is_blocked(_dec):
+            raise HTTPException(status_code=409, detail=_EGR.operator_detail(
+                _dec.get("digest") or [], fail_drivers=_dec.get("fail_drivers")))
+        _attach_quality_gate(found, dr.get("trace_id"))
+        silk_storage.save_analysis(found, analysis_id=analysis_id)
+        _n = found["deep_research"]["report"]
+        return _json({"saved": True, "analysis_id": analysis_id,
+                      "refined_at": _n.get("refined_at"),
+                      "refined_count": _n.get("refined_count"),
+                      "gate": _dec.get("verdict"),
+                      "export": {
+                          "docx": f"/analyses/{analysis_id}/report.docx",
+                          "pdf": f"/analyses/{analysis_id}/report.pdf",
+                          "md": f"/analyses/{analysis_id}/report.md"}})
+
     @app.post("/analyses/{analysis_id}/enrich-leads")
     def enrich_leads(analysis_id: int, request: Request):
         """أعد رصد جهات اتصال المستوردين لبحث محفوظ — كشط الخرائط فقط، بلا
