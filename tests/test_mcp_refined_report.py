@@ -59,10 +59,36 @@ def test_new_figure_detected_even_when_fewer_figures_overall():
     assert RR.new_figures("نمو 7% في 2019", "نمو 7% (2023) و38 مليون") == ["2019"]
 
 
-def test_section_heads_are_required_verbatim_at_any_level():
-    orig = "## 1. الخلاصة التنفيذية\nنص\n# 2) المنهجية\nنص\n### فرعي\nنص"
-    assert RR.missing_heads(orig, "## 1. الخلاصة التنفيذية\nنص\nالمنهجية\nنص\n### فرعي") == ["2) المنهجية"]
-    assert RR.missing_heads(orig, orig.replace("\n## 1.", "\n##   1.")) == []
+def test_structure_requires_numbered_skeleton_and_roadmap_only():
+    """إعادة كتابة إنسانية: ما يثبت هو «## N. العنوان» بترتيبه وعنوان خارطة الدخول؛
+    العناوين الفرعية والفقرات حرّة (مرساة القالب `_CLIENT_SECTION_BY_ORDINAL`)."""
+    orig = ("## 1. الخلاصة التنفيذية\nنص\n## 2. المنهجية\nنص\n### أرقام القرار\nنص\n"
+            "## 10. التوصيات\nنص\n### خارطة طريق الدخول (٩٠ يوماً)\nخطوات")
+    assert RR.section_heads(orig) == ["1. الخلاصة التنفيذية", "2. المنهجية", "10. التوصيات"]
+    free = orig.replace("### أرقام القرار\nنص", "ما يعنيه هذا لقرارك: فقرة طبيعية") \
+               .replace("##   1.", "## 1.")
+    assert RR.structure_issues(orig, free) == []
+    dropped = orig.replace("## 2. المنهجية\nنص\n", "")
+    assert [i["check"] for i in RR.structure_issues(orig, dropped)] == ["missing_sections"]
+    assert RR.structure_issues(orig, dropped)[0]["items"] == ["2. المنهجية"]
+    reordered = orig.replace("## 1. الخلاصة التنفيذية\nنص\n## 2. المنهجية\nنص\n",
+                             "## 2. المنهجية\nنص\n## 1. الخلاصة التنفيذية\nنص\n")
+    assert [i["check"] for i in RR.structure_issues(orig, reordered)] == ["section_order"]
+    no_map = orig.replace("### خارطة طريق الدخول (٩٠ يوماً)", "### الخطوات")
+    assert [i["check"] for i in RR.structure_issues(orig, no_map)] == ["missing_roadmap_subhead"]
+    retitled_sub = orig.replace("### خارطة طريق الدخول (٩٠ يوماً)", "### Entry roadmap (90 days)")
+    assert RR.structure_issues(orig, retitled_sub) == []
+
+
+def test_figures_from_evidence_are_allowed_but_unsourced_are_not():
+    """زيادة الدقة: رقمٌ من الأدلة المسنَدة يصحّح النصّ؛ رقمٌ لا في الأصل ولا الأدلة مرفوض."""
+    orig = "## 1. الخلاصة التنفيذية\n" + "واردات 38 مليون دولار بحسب كومتريد. " * 8
+    evidence = "سجلّ الحقائق — نمو الواردات: 7% [المصدر: UN Comtrade 2023]"
+    fixed = orig.replace("واردات 38 مليون دولار", "واردات 38 مليون دولار بنمو 7% (2023)")
+    assert RR.verify(fixed, orig, evidence) == []
+    assert [f["check"] for f in RR.verify(fixed, orig)] == ["new_figures"]
+    invented = orig.replace("38 مليون", "41 مليون")
+    assert RR.verify(invented, orig, evidence)[0]["items"] == ["41"]
 
 
 def test_ledger_placeholders_must_survive_verbatim_and_none_added():
@@ -81,7 +107,7 @@ def test_verify_rejects_empty_truncated_and_new_figures_together():
     orig = "## 1. الخلاصة التنفيذية\n" + "جملة طويلة بما يكفي للمقارنة. " * 10 + "\n## 2. المنهجية\nنص"
     assert [f["check"] for f in RR.verify("", orig)] == ["empty"]
     checks = [f["check"] for f in RR.verify("## 1. الخلاصة التنفيذية\nنمو 12%", orig)]
-    assert checks == ["truncated", "missing_heads", "new_figures"]
+    assert checks == ["truncated", "missing_sections", "new_figures"]
     assert RR.verify(orig.replace("جملة طويلة", "عبارة مطوَّلة"), orig) == []
 
 
@@ -130,8 +156,14 @@ def test_get_refinable_report_returns_stored_writer_text_not_client_document():
         assert r.status_code == 200, r.text
         d = r.json()
         assert d["markdown"] == original and d["refined_count"] == 0
-        assert d["has_original"] is False and d["heads"][0] == "1. الخلاصة التنفيذية"
+        assert d["has_original"] is False and d["sections"][0] == "1. الخلاصة التنفيذية"
         assert d["gate"]["verdict"] and isinstance(d["gate"]["fail_drivers"], list)
+        assert isinstance(d["gate"]["notes"], list)
+        # الأدلة بمصادرها — أرضية المراجعة النهائية.
+        ev = c.get(f"/analyses/{aid}/evidence", headers=_H)
+        assert ev.status_code == 200 and ev.json()["chars"] == len(ev.json()["context"])
+        assert "المصدر" in ev.json()["context"] or "سجلّ الحقائق" in ev.json()["context"]
+        assert c.get(f"/analyses/{aid}/evidence").status_code == 401
         # الجولة الكاملة بلا تغيير: ما سُحب يُعاد ويُقبَل — صيغةٌ واحدة في الاتجاهين.
         md_before = c.get(f"/analyses/{aid}/report.md", headers=_H).text
         r = c.post(f"/analyses/{aid}/report/refined", json={"markdown": d["markdown"]},
@@ -173,16 +205,40 @@ def test_refined_report_with_new_figure_is_rejected_without_saving():
         import silk_storage
         aid, original = _seed()
         c = _client()
+        # رقمان لا في النصّ ولا في أدلة الدراسة (الأرقام المسنَدة وحدها تمرّ).
         r = c.post(f"/analyses/{aid}/report/refined",
-                   json={"markdown": original + "\nوبلغت الحصة 17% عام 2019."},
+                   json={"markdown": original + "\nوبلغت الحصة 73.91% عام 1987."},
                    headers=_H)
         assert r.status_code == 409
         d = r.json()["detail"]
         assert d["error"] == "refined_report_rejected"
         new = [f for f in d["findings"] if f["check"] == "new_figures"]
-        assert new and set(new[0]["items"]) == {"17", "2019"}
+        assert new and set(new[0]["items"]) == {"73.91", "1987"}
         node = silk_storage.get_analysis(aid)["deep_research"]["report"]
         assert node["report"] == original and "report_original" not in node
+
+
+def test_human_rewrite_inside_sections_is_accepted_and_exported():
+    """إعادة كتابة فعلية: فقرة الخلاصة تُستبدل كاملةً بصياغة إنسانية (أرقامها من الأصل)،
+    والهيكل المرقّم ثابت ⇒ تُقبَل وتصدر في Markdown العميل."""
+    db = os.path.join(tempfile.mkdtemp(), "silk.db")
+    with _env(SILK_API_KEY="secret", SILK_DB=db, SILK_HERMETIC="1"), \
+            patch("requests.get", side_effect=OSError("no network")):
+        aid, original = _seed()
+        head, rest = original.split("\n## 2.", 1)
+        human = ("## 1. الخلاصة التنفيذية\n"
+                 "نقول للقارئ بوضوح: السوق موجود لكنه ليس ناضجاً لقرار استثماري بعد. "
+                 "تُظهر بيانات UN Comtrade واردات تقارب 9 ملايين دولار في 2023 تحت الرمز "
+                 "040510، في سوق مرتفع التركّز (HHI 2900)، ونوصي بمراقبته بثقة منخفضة (50%) "
+                 "حتى تُغلَق فجوة التصنيف الجمركي وتُوثَّق قناة التوزيع.\n"
+                 "ماذا يعني هذا لقرارك: لا تلتزم استثمارياً الآن؛ ابدأ بملف التصنيف والقناة.")
+        refined = human + "\n## 2." + rest
+        assert RR.extract_figures(human) <= RR.extract_figures(head)
+        c = _client()
+        r = c.post(f"/analyses/{aid}/report/refined", json={"markdown": refined}, headers=_H)
+        assert r.status_code == 200, r.text
+        md = c.get(f"/analyses/{aid}/report.md", headers=_H)
+        assert md.status_code == 200 and "ليس ناضجاً لقرار استثماري بعد" in md.text
 
 
 def test_refined_report_missing_section_head_or_truncated_is_rejected():
@@ -195,7 +251,7 @@ def test_refined_report_missing_section_head_or_truncated_is_rejected():
                    json={"markdown": original.replace("## 2. منهجية البحث ونطاقه", "منهجية")},
                    headers=_H)
         assert r.status_code == 409
-        assert [f["check"] for f in r.json()["detail"]["findings"]] == ["missing_heads"]
+        assert [f["check"] for f in r.json()["detail"]["findings"]] == ["missing_sections"]
         r = c.post(f"/analyses/{aid}/report/refined",
                    json={"markdown": "## 1. الخلاصة التنفيذية\nقصير"}, headers=_H)
         assert r.status_code == 409
@@ -247,9 +303,14 @@ def test_refined_report_endpoint_contracts_auth_missing_nonresearch_body():
 
 def test_refined_endpoint_makes_no_claude_call():
     """المسار كلّه حتمي — لا استيراد لطبقة كلود داخل نقطة النهاية ولا في الوحدة."""
-    src = (_ROOT / "silk_refined_report.py").read_text(encoding="utf-8")
-    for name in ("silk_ai_judge", "silk_llm_provider", "anthropic", "requests", "urllib"):
-        assert name not in src, f"silk_refined_report must stay deterministic: {name}"
+    tree = ast.parse((_ROOT / "silk_refined_report.py").read_text(encoding="utf-8"))
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    assert imported <= {"__future__", "re", "datetime"}, imported   # حتمي: لا كلود ولا شبكة
     api_src = (_ROOT / "api.py").read_text(encoding="utf-8")
     start = api_src.index("    def _refined_gate(found: dict) -> dict:")
     end = api_src.index('@app.post("/analyses/{analysis_id}/enrich-leads")', start)
@@ -257,7 +318,7 @@ def test_refined_endpoint_makes_no_claude_call():
     assert "silk_ai_judge" not in body and "_free_ai_extras_allowed" not in body
     # لا نداءَ تحضيرِ نثرٍ (يستدعي كلود مدفوعاً) — يُذكَر في الوثائق فقط، لا يُنادى.
     assert "prepare_fallback_prose(" not in body
-    assert "silk_export_gate" in body and body.count("_require_key(request)") == 2
+    assert "silk_export_gate" in body and body.count("_require_key(request)") == 3  # GET refined + GET evidence + POST
 
 
 # ── (٣) خادم MCP — tools/silk_mcp.py ────────────────────────────────────────
@@ -292,7 +353,9 @@ def test_mcp_handshake_tools_list_and_unknown_method():
     assert m.handle({"jsonrpc": "2.0", "id": 2, "method": "ping"})["result"] == {}
     tools = m.handle({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})["result"]["tools"]
     assert [t["name"] for t in tools] == ["start_study", "study_status", "download_report",
-                                          "list_studies", "get_report", "submit_refined_report"]
+                                          "list_studies", "get_evidence", "get_report",
+                                          "submit_refined_report"]
+    assert "إعادة كتابة إنسانية" in next(t for t in tools if t["name"] == "get_report")["description"]
     assert "مدفوع" in next(t for t in tools if t["name"] == "start_study")["description"]
     for t in tools:
         assert t["inputSchema"]["type"] == "object" and t["description"]
@@ -315,7 +378,10 @@ def test_mcp_tools_proxy_to_silk_api_with_key_header(monkeypatch):
         if method == "GET" and path.endswith("/report/refined"):
             return 200, json.dumps({"analysis_id": 7, "markdown": "## 1. الخلاصة التنفيذية\nنص الكاتب",
                                     "refined_count": 2, "placeholders": ["{{x}}"],
-                                    "gate": {"verdict": "FAIL", "fail_drivers": ["owner_flagged_phrase"]}})
+                                    "gate": {"verdict": "FAIL", "fail_drivers": ["owner_flagged_phrase"],
+                                             "notes": ["عبارةٌ رفضها المالك: «يسجل مستنتج»"]}})
+        if method == "GET" and path.endswith("/evidence"):
+            return 200, json.dumps({"analysis_id": 7, "context": "سجلّ الحقائق — الواردات: 38 مليون [المصدر: Comtrade]", "chars": 55})
         if method == "POST" and path.endswith("/report/refined"):
             return 409, json.dumps({"detail": {"error": "refined_report_rejected",
                                                "findings": [{"check": "new_figures",
@@ -335,11 +401,15 @@ def test_mcp_tools_proxy_to_silk_api_with_key_header(monkeypatch):
     assert out["isError"] is False and len(out["content"]) == 2
     note, text = out["content"][0]["text"], out["content"][1]["text"]
     assert "FAIL" in note and "owner_flagged_phrase" in note and "2" in note
+    assert "يسجل مستنتج" in note                      # ملاحظات البوّابة تصل المنقِّح
     assert text == "## 1. الخلاصة التنفيذية\nنص الكاتب"      # النصّ المخزَّن نفسه، بلا ترويسة
+    out = call("get_evidence", {"analysis_id": 7})
+    assert out["isError"] is False and "Comtrade" in out["content"][1]["text"]
     out = call("submit_refined_report", {"analysis_id": 7, "markdown": "x"})
     assert out["isError"] is True and "17" in out["content"][0]["text"]
     assert seen == [("GET", "/analyses?limit=5", None),
                     ("GET", "/analyses/7/report/refined", None),
+                    ("GET", "/analyses/7/evidence", None),
                     ("POST", "/analyses/7/report/refined", {"markdown": "x"})]
     out = call("nope", {})
     assert out["isError"] is True

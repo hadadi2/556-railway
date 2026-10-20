@@ -9,7 +9,9 @@
 المسار كلّه من داخل كلود (توضيح المالك 2026-10-20): `start_study` (يشغّل البحث
 الكامل — **مدفوع**) ← `study_status` (متابعة) ← `get_report` ← تنقيح ←
 `submit_refined_report` ← `download_report` (Word/PDF إلى جهاز المالك ليرسله).
-`list_studies` للجرد. `get_report` يسحب **نصّ الكاتب المخزَّن**
+`get_evidence` يعطي كلود أدلة الدراسة بمصادرها فيراجع الدقة قبل إعادة الكتابة
+(توضيح المالك: مراجعة نهائية وإعادة كتابة إنسانية، لا تعديل خفيف). `list_studies`
+للجرد. `get_report` يسحب **نصّ الكاتب المخزَّن**
 (`GET /analyses/{id}/report/refined`) لا المستند المعروض للعميل — وهو نفسُ ما يُعاد
 في `submit_refined_report`، فالطرفان صيغةٌ واحدة (مراجعة §58). الخادم وكيلٌ رقيق فوق
 HTTP API القائم — لا منطق أعمال هنا؛ كل فحصٍ وكل بوّابة ما قبل التشغيل تجري في
@@ -29,21 +31,26 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 # إصدارات البروتوكول التي يطبّقها هذا الخادم فعلاً (الأحدث أولاً). غير المعروف
 # من العميل يُجاب بأحدثها — لا ادّعاءُ دعمٍ لما لا نعرفه (مراجعة §58، الملاحظة ١٠).
 SUPPORTED_PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")
 TIMEOUT_S = 120
 
 _REVIEW_RULES = (
-    "قواعد التنقيح (يفرضها الخادم حتمياً عند الإرجاع ويرفض بلا حفظ): "
-    "١) لا رقم ولا نسبة ولا سنة غير واردة في النص — انسخ الأرقام كما هي؛ "
-    "٢) أبقِ كل سطر عنوان (#/##/###) حرفياً وبترتيبه؛ "
-    "٣) أبقِ كل عنصر «{{…}}» حرفياً في مكانه — يُملأ آلياً بقيمته عند التصيير؛ "
+    "المطلوب: مراجعة نهائية وإعادة كتابة إنسانية احترافية للدراسة بصوت مستشار تجاري "
+    "خبير يخاطب صاحب قرار — جمل طبيعية مترابطة، لا قوالب ولا تكرار ولا حشو؛ راجع الدقة "
+    "على الأدلة (get_evidence) وصحّح ما يخالفها. الحرّية كاملة داخل الأقسام (الصياغة، "
+    "ترتيب الفقرات، العناوين الفرعية). "
+    "ما يفرضه الخادم حتمياً ويرفض بلا حفظ: "
+    "١) كل رقم ونسبة وسنة في النص واردٌ في الأصل أو في الأدلة — لا تخمين، ولا تركيب "
+    "رقمَين في ادّعاء جديد، ولا اسم جهة أو علامة بلا سند في الأدلة؛ "
+    "٢) أبقِ سطور الأقسام الأحد عشر «## N. العنوان» بأرقامها وعناوينها وترتيبها (بنية "
+    "الدراسة الإلزامية عند المالك)، وأبقِ عنوان «### خارطة طريق الدخول»؛ "
+    "٣) أبقِ كل عنصر «{{…}}» حرفياً — يُملأ آلياً بقيمته عند التصيير؛ "
     "٤) أعد النص كاملاً لا قسماً واحداً؛ "
-    "٥) لا اسم جهة أو علامة أو ادّعاء سببي غير وارد في النص، ولا تركيب رقمَين في ادّعاء جديد؛ "
-    "٦) لغة عميل تجاري: لا «بعثة/وكيل/نداء/JSON/إذن ماذا»، ولا وصف لآلية البناء؛ "
-    "٧) حسّن الوضوح والترابط والإيجاز فقط — المعنى والحكم والأرقام ثابتة."
+    "٥) لغة عميل: لا «بعثة/وكيل/نداء/JSON/إذن ماذا» ولا وصف لآلية البناء، والحكم "
+    "النهائي (التوصية ودرجة الثقة) ثابت كما هو."
 )
 
 TOOLS = [
@@ -110,11 +117,25 @@ TOOLS = [
             "additionalProperties": False},
     },
     {
+        "name": "get_evidence",
+        "description": "أدلة الدراسة بمصادرها (سجلّ الحقائق، نتائج المهام، المكوّنات؛ كلٌّ "
+                       "بمصدره والفجوات معلَنة) — المرجع الذي تراجَع عليه دقة النصّ قبل "
+                       "إعادة كتابته؛ أرقامه مسموحة في النصّ المنقَّح، وما ليس فيه ولا في "
+                       "النصّ الأصلي رقمٌ مرفوض.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "analysis_id": {"type": "integer", "description": "معرّف الدراسة"}},
+            "required": ["analysis_id"],
+            "additionalProperties": False},
+    },
+    {
         "name": "get_report",
-        "description": "اسحب نصّ تقرير الدراسة المخزَّن القابل للتنقيح (Markdown بعناوين "
-                       "وعناصر {{…}})، مع قرار بوّابة التسليم الحالي. تعود كتلتان: "
-                       "الأولى ملاحظة قصيرة (البوّابة، العناصر)، والثانية النصّ نفسه — "
-                       "وهو ما تنقّحه وتعيده كاملاً عبر submit_refined_report. " + _REVIEW_RULES,
+        "description": "اسحب نصّ تقرير الدراسة المخزَّن لإعادة كتابته (Markdown بأقسامه "
+                       "المرقّمة وعناصر {{…}})، مع قرار بوّابة التسليم وملاحظاتها. تعود "
+                       "كتلتان: الأولى ملاحظة (البوّابة وملاحظاتها، العناصر)، والثانية النصّ "
+                       "نفسه — وهو ما تعيد كتابته وتعيده كاملاً عبر submit_refined_report. "
+                       + _REVIEW_RULES,
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -124,11 +145,12 @@ TOOLS = [
     },
     {
         "name": "submit_refined_report",
-        "description": "أعد النصّ المنقَّح كاملاً إلى Silk ليحلّ مكان نصّ الكاتب وتصدر "
-                       "منه ملفات العميل (Word/PDF/Markdown) بالقالب الرسمي. الخادم "
-                       "يرفض (بلا حفظ) أي رقم جديد، أو عنوان أو عنصر {{…}} غائب أو "
-                       "جديد، أو نصاً مبتوراً، أو ما تحجبه بوّابة التسليم — ويعيد "
-                       "الملاحظات لتصحيحها وإعادة الإرسال. الأصل يُحفَظ دائماً.",
+        "description": "أعد الدراسة المُعاد كتابتها كاملةً إلى Silk لتحلّ مكان نصّ الكاتب "
+                       "وتصدر منها ملفات العميل (Word/PDF/Markdown) بالقالب الرسمي. الخادم "
+                       "يرفض (بلا حفظ) رقماً ليس في الأصل ولا الأدلة، أو قسماً مرقّماً غائباً "
+                       "أو مُعاد ترتيبه، أو عنصر {{…}} غائباً أو جديداً، أو نصاً مبتوراً، أو "
+                       "ما تحجبه بوّابة التسليم — ويعيد الملاحظات لتصحيحها وإعادة الإرسال. "
+                       "الأصل يُحفَظ دائماً.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -334,6 +356,20 @@ def _tool_list_studies(args: dict) -> tuple:
     return "\n".join(lines), False
 
 
+def _tool_get_evidence(args: dict) -> tuple:
+    aid = int(args["analysis_id"])
+    path = f"/analyses/{aid}/evidence"
+    status, text = _http("GET", path)
+    if status != 200:
+        return f"تعذّر سحب أدلة الدراسة {aid} ({status}): {_detail(text)}", True
+    data = _json_body(path, text)
+    ctx = data.get("context") or ""
+    if not ctx.strip():
+        return f"لا أدلة مخزَّنة للدراسة {aid}", True
+    return [f"أدلة الدراسة {aid} بمصادرها ({data.get('chars', len(ctx))} حرفاً) — كل رقم هنا "
+            "مسموح في النصّ المنقَّح؛ ما ليس هنا ولا في النصّ الأصلي مرفوض:", ctx], False
+
+
 def _tool_get_report(args: dict) -> tuple:
     aid = int(args["analysis_id"])
     path = f"/analyses/{aid}/report/refined"
@@ -343,11 +379,15 @@ def _tool_get_report(args: dict) -> tuple:
     data = _json_body(path, text)
     gate = data.get("gate") or {}
     drivers = gate.get("fail_drivers") or []
+    notes = gate.get("notes") or []
     note = (f"الدراسة {aid} · بوّابة التسليم الآن: {gate.get('verdict') or '—'}"
             + (f" (أسباب الحجب: {', '.join(drivers)})" if drivers else "")
             + f" · تنقيحات سابقة: {data.get('refined_count', 0)}"
             + f" · عناصر {{{{…}}}} تُبقى حرفياً: {len(data.get('placeholders') or [])}"
-            + " — النصّ القابل للتنقيح في الكتلة التالية؛ أعده كاملاً إلى submit_refined_report.")
+            + (("\nملاحظات البوّابة لتعالجها في إعادة الكتابة:\n- " + "\n- ".join(notes))
+               if notes else "")
+            + "\nالنصّ في الكتلة التالية؛ راجع دقته على get_evidence ثم أعده كاملاً إلى "
+              "submit_refined_report.")
     return [note, data.get("markdown") or ""], False
 
 
@@ -376,6 +416,7 @@ _HANDLERS = {
     "study_status": _tool_study_status,
     "download_report": _tool_download_report,
     "list_studies": _tool_list_studies,
+    "get_evidence": _tool_get_evidence,
     "get_report": _tool_get_report,
     "submit_refined_report": _tool_submit_refined,
 }
@@ -426,9 +467,9 @@ def handle(msg: dict) -> dict | None:
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": "silk", "version": VERSION},
             "instructions": ("Silk: دراسات سوق للمصدّر السعودي. المسار: start_study (مدفوع — "
-                             "استأذن المالك) ← study_status ← get_report ← تنقيح ← "
-                             "submit_refined_report ← download_report. list_studies للجرد. "
-                             + _REVIEW_RULES),
+                             "استأذن المالك) ← study_status ← get_report + get_evidence ← "
+                             "مراجعة وإعادة كتابة ← submit_refined_report ← download_report. "
+                             "list_studies للجرد. " + _REVIEW_RULES),
         })
     if method == "ping":
         return _ok(mid, {})

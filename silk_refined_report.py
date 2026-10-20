@@ -10,11 +10,20 @@
 المخزَّن نفسه لا المستند المعروض للعميل، وما يُعاد يُخزَّن مكانه — فلا يتداخل قالبٌ
 داخل قالب، وفحوص العناوين والطول والأرقام تقارن شيئاً بمثله.
 
+**إعادة كتابة إنسانية لا تعديلاً خفيفاً (توضيح المالك):** داخل الأقسام الحرّية كاملة —
+صياغة، ترتيب الفقرات، عناوين فرعية، حذف الحشو. ما يثبت هو الهيكل الذي يقرأه القالب
+والبوّابة، والأرقام المسنَدة، وعناصر السجلّ.
+
 ما يحميه هذا الملف (حتمي بالكامل، صفر نداء خارجي):
-  ١. **لا رقم جديد** — كل عددٍ في المنقَّح وارد في الأصل (عقد عدم الاختلاق، البند ٨).
-     الأرقام الهندية تُوحَّد قبل المقارنة. حدُّ الفحص معلَن: عضويةُ العدد لا ارتباطُه
-     بادّعائه — إعادةُ تركيب رقمَين واردَين في ادّعاءٍ جديد يبقى على المالك عند المراجعة.
-  ٢. **عناوين الأقسام محفوظة** (`#`…`######`) — القالب والبوّابة يقرآنها حرفياً.
+  ١. **لا رقم غير مسنَد** — كل عددٍ في المنقَّح وارد في الأصل **أو في أدلة الدراسة**
+     (`silk_render.analysis_context`: أرقام السجلّ والمهام بمصادرها) — فتصحيحُ رقمٍ خاطئ
+     في النصّ من دليلٍ مسنَد مسموح (زيادة الدقة)، واختراعُ رقمٍ ممنوع (عقد عدم الاختلاق،
+     البند ٨). الأرقام الهندية تُوحَّد قبل المقارنة. حدُّ الفحص معلَن: عضويةُ العدد لا
+     ارتباطُه بادّعائه — إعادةُ تركيب رقمَين في ادّعاءٍ جديد يبقى على المالك عند المراجعة.
+  ٢. **هيكل الأقسام الأحد عشر محفوظ** — سطور `## N. العنوان` بأرقامها وعناوينها وترتيبها
+     (بوّابة التسليم تُفشِل `section_structure` دونها — قاعدة المالك للبنية العلمية، لا
+     قيدٌ من هنا)، وعنوان «### خارطة طريق الدخول» الذي يقسم القالب عنده قسمَ التوصيات.
+     العناوين الفرعية الأخرى وكل ما تحت العناوين حرّ.
   ٣. **عناصر السجلّ `{{…}}` محفوظة ولا جديدة** — `silk_fact_ledger` يملؤها عند
      التصيير ويرصد بها البيانات البائتة (الدرس ٢٦٢)؛ ضياعُها = رقمٌ يتجمّد بلا رصد.
   ٤. **لا بترٌ صامت** — نصٌّ أقصر من نصف الأصل يُرفَض (كلود قد يعيد قسماً واحداً).
@@ -30,7 +39,11 @@ from datetime import datetime, timezone
 # الأرقام الهندية (العربية المشرقية) والفارسية → ASCII قبل أي مقارنة.
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 _FIGURE = re.compile(r"\d+(?:[.,٫٬]\d+)*")
-_HEAD = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.MULTILINE)
+# نفس مرساة القالب والبوّابة: `silk_reports._WRITER_HEADING_NUM_RE` /
+# `silk_ai_judge._section_order_issues` — «## N. العنوان».
+_NUMBERED_HEAD = re.compile(r"^##\s+(\d+)\.\s*(.+?)\s*$", re.MULTILINE)
+# نقطة قسم التوصيات في القالب (`silk_reports._ROADMAP_SUBHEAD_RE` ومرآتها الإنجليزية).
+_ROADMAP = re.compile(r"^###\s+(?:خارطة طريق الدخول|Entry\s+roadmap)", re.MULTILINE | re.IGNORECASE)
 # نفس الشكل الرخو في `silk_fact_ledger._LOOSE_TOKEN_RE` — أي «{{…}}» عنصرٌ يُملأ آلياً.
 _TOKEN = re.compile(r"\{\{[^{}\n]{0,120}\}\}")
 _WS = re.compile(r"\s+")
@@ -50,21 +63,38 @@ def extract_figures(text: str) -> set[str]:
     return {_canon_figure(m.group(0)) for m in _FIGURE.finditer(norm)}
 
 
-def new_figures(refined: str, original: str) -> list[str]:
-    """الأعداد الواردة في المنقَّح وغير الواردة في الأصل."""
-    extra = extract_figures(refined) - extract_figures(original)
+def new_figures(refined: str, allowed_text: str) -> list[str]:
+    """الأعداد الواردة في المنقَّح وغير الواردة في النصّ المسموح (الأصل + الأدلة)."""
+    extra = extract_figures(refined) - extract_figures(allowed_text)
     return sorted(extra, key=lambda s: (len(s), s))
 
 
 def section_heads(text: str) -> list[str]:
-    """عناوين Markdown (`#`…`######`) بترتيبها، بمسافاتٍ موحَّدة."""
-    return [_WS.sub(" ", h).strip() for h in _HEAD.findall(text or "")]
+    """عناوين الأقسام المرقّمة «N. العنوان» بترتيبها (مرساة القالب)."""
+    return [f"{n}. {_WS.sub(' ', t).strip()}" for n, t in _NUMBERED_HEAD.findall(text or "")]
 
 
-def missing_heads(original: str, refined: str) -> list[str]:
-    """عناوين الأصل الغائبة عن المنقَّح — القالب يحتاجها حرفياً."""
-    have = set(section_heads(refined))
-    return [h for h in section_heads(original) if h not in have]
+def structure_issues(original: str, refined: str) -> list[dict]:
+    """ما يحتاجه القالب والبوّابة من الهيكل: الأقسام المرقّمة كما في الأصل وبترتيبه،
+    وعنوان خارطة الدخول إن كان في الأصل. كل ما سواه حرّ."""
+    out: list[dict] = []
+    orig, new = section_heads(original), section_heads(refined)
+    missing = [h for h in orig if h not in new]
+    if missing:
+        out.append({"check": "missing_sections",
+                    "note": "أقسام مرقّمة من الأصل غائبة — أبقِ سطور «## N. العنوان» الأحد عشر "
+                            "كما هي (بنية الدراسة الإلزامية)؛ ما تحتها حرّ",
+                    "items": missing})
+    kept = [h for h in new if h in orig]
+    if kept != [h for h in orig if h in new]:
+        out.append({"check": "section_order",
+                    "note": "ترتيب الأقسام المرقّمة يختلف عن الأصل — أعدها إلى ترتيبها",
+                    "items": kept})
+    if _ROADMAP.search(original or "") and not _ROADMAP.search(refined or ""):
+        out.append({"check": "missing_roadmap_subhead",
+                    "note": "عنوان «### خارطة طريق الدخول» غائب — القالب يقسم قسم التوصيات عنده",
+                    "items": []})
+    return out
 
 
 def placeholders(text: str) -> list[str]:
@@ -77,11 +107,12 @@ def placeholders(text: str) -> list[str]:
     return out
 
 
-def verify(refined: str, original: str) -> list[dict]:
+def verify(refined: str, original: str, evidence: str = "") -> list[dict]:
     """الفحوص الحتمية قبل أي حفظ. تعيد قائمة ملاحظات؛ فارغة = مقبول.
 
-    كل ملاحظة `{"check", "note", "items"}` بلغةٍ يفهمها المالك في كلود مباشرة —
-    فيُصلِح ويعيد الإرسال بلا قراءة سجلّات."""
+    `evidence`: نصّ أدلة الدراسة بمصادرها (`analysis_context`) — أرقامه مسموحة في
+    المنقَّح إلى جانب أرقام الأصل. كل ملاحظة `{"check", "note", "items"}` بلغةٍ يفهمها
+    المالك في كلود مباشرة — فيُصلِح ويعيد الإرسال بلا قراءة سجلّات."""
     out: list[dict] = []
     text = (refined or "").strip()
     if not text:
@@ -92,11 +123,7 @@ def verify(refined: str, original: str) -> list[dict]:
                     "note": (f"النصّ المنقَّح أقصر من نصف الأصل "
                              f"({len(text)} مقابل {len(base)} حرفاً) — أعد التقرير كاملاً"),
                     "items": []})
-    heads = missing_heads(base, text)
-    if heads:
-        out.append({"check": "missing_heads",
-                    "note": "عناوين أقسام من الأصل غائبة — أبقِ سطور العناوين كما هي",
-                    "items": heads})
+    out += structure_issues(base, text)
     orig_tok, new_tok = placeholders(base), placeholders(text)
     lost = [t for t in orig_tok if t not in new_tok]
     if lost:
@@ -108,10 +135,11 @@ def verify(refined: str, original: str) -> list[dict]:
         out.append({"check": "new_placeholders",
                     "note": "عناصر «{{…}}» غير واردة في الأصل — لا تُضاف عناصر جديدة",
                     "items": added})
-    figs = new_figures(text, base)
+    figs = new_figures(text, base + "\n" + (evidence or ""))
     if figs:
         out.append({"check": "new_figures",
-                    "note": "أرقام غير واردة في التقرير الأصلي — لا نخمّن الأرقام؛ احذفها أو أعدها كما وردت",
+                    "note": "أرقام غير واردة في التقرير الأصلي ولا في أدلة الدراسة — لا نخمّن "
+                            "الأرقام؛ احذفها أو خذها من الأدلة (get_evidence) كما وردت",
                     "items": figs[:20]})
     return out
 
