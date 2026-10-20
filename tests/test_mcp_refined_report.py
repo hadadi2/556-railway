@@ -291,7 +291,9 @@ def test_mcp_handshake_tools_list_and_unknown_method():
     assert m.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}) is None
     assert m.handle({"jsonrpc": "2.0", "id": 2, "method": "ping"})["result"] == {}
     tools = m.handle({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})["result"]["tools"]
-    assert [t["name"] for t in tools] == ["list_studies", "get_report", "submit_refined_report"]
+    assert [t["name"] for t in tools] == ["start_study", "study_status", "download_report",
+                                          "list_studies", "get_report", "submit_refined_report"]
+    assert "مدفوع" in next(t for t in tools if t["name"] == "start_study")["description"]
     for t in tools:
         assert t["inputSchema"]["type"] == "object" and t["description"]
     err = m.handle({"jsonrpc": "2.0", "id": 4, "method": "resources/list"})
@@ -398,3 +400,119 @@ def test_mcp_serve_loop_is_line_delimited_and_survives_bad_input(monkeypatch):
     assert replies[1]["error"]["code"] == -32700
     assert replies[2]["result"]["content"][1]["text"] == "## 1. x"
     assert replies[0]["result"]["protocolVersion"] == m.SUPPORTED_PROTOCOLS[0]
+
+
+# ── (٤) المسار الكامل من كلود: بدء الدراسة، المتابعة، التنزيل ──────────────
+def _fake_start_http(readiness: dict, research_status=200, research_body=None):
+    seen = []
+
+    def fake(method, path, body=None, raw=False):
+        seen.append((method, path, body))
+        if path.startswith("/research/readiness?"):
+            return 200, json.dumps(readiness, ensure_ascii=False)
+        if path == "/research":
+            return research_status, json.dumps(
+                research_body if research_body is not None else {"analysis_id": 42, "status": "running"})
+        return 500, "boom"
+    return fake, seen
+
+
+def _call(m, name, args):
+    return m.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                     "params": {"name": name, "arguments": args}})["result"]
+
+
+def test_start_study_blocked_readiness_spends_nothing(monkeypatch):
+    m = _mcp()
+    fake, seen = _fake_start_http({"checks": [{"key": "market", "label_ar": "السوق المستهدفة",
+                                               "status": "blocked", "detail_ar": "سوق غامضة",
+                                               "blocking": True}],
+                                   "can_run": False, "needs_ack": False})
+    monkeypatch.setattr(m, "_http", fake)
+    out = _call(m, "start_study", {"product": "تمور", "market": "هولاندا؟"})
+    assert out["isError"] is True and "سوق غامضة" in out["content"][0]["text"]
+    assert [p for _, p, _ in seen if p == "/research"] == []       # لا POST ⇒ لا إنفاق
+
+
+def test_start_study_advisory_requires_owner_ack_then_starts(monkeypatch):
+    m = _mcp()
+    readiness = {"checks": [{"key": "producer", "label_ar": "بلد منشأ منتِج",
+                             "status": "advisory", "detail_ar": "السوق من كبار المصدّرين",
+                             "blocking": False}],
+                 "can_run": True, "needs_ack": True}
+    fake, seen = _fake_start_http(readiness)
+    monkeypatch.setattr(m, "_http", fake)
+    out = _call(m, "start_study", {"product": "تمور", "market": "مصر"})
+    assert out["isError"] is True and "ack=true" in out["content"][0]["text"]
+    assert all(p != "/research" for _, p, _ in seen)
+    out = _call(m, "start_study", {"product": "تمور", "market": "مصر", "hs_code": "080410",
+                                   "production_cost_per_unit": 2.5, "ack": True})
+    assert out["isError"] is False and "42" in out["content"][0]["text"]
+    post = [b for mth, p, b in seen if p == "/research"][0]
+    assert post["async_run"] is True and post["persist"] is True
+    assert post["hs_code"] == "080410" and post["production_cost_per_unit"] == 2.5
+    assert post["advisories_ack"] and post["producer_ack"] and post["hs_confirmed"] is True
+
+
+def test_start_study_without_ack_sends_no_acknowledgements(monkeypatch):
+    """الموافقات لا تُمرَّر إلا حين أعطاها المالك صراحةً — لا تجاوز صامت لاستشاري."""
+    m = _mcp()
+    fake, seen = _fake_start_http({"checks": [], "can_run": True, "needs_ack": False})
+    monkeypatch.setattr(m, "_http", fake)
+    out = _call(m, "start_study", {"product": "عسل", "market": "اليابان"})
+    assert out["isError"] is False
+    post = [b for _, p, b in seen if p == "/research"][0]
+    assert "advisories_ack" not in post and "producer_ack" not in post and "hs_code" not in post
+
+
+def test_start_study_server_refusal_is_reported_not_swallowed(monkeypatch):
+    m = _mcp()
+    fake, _ = _fake_start_http({"checks": [], "can_run": True, "needs_ack": False},
+                               research_status=422,
+                               research_body={"detail": {"error": "hs_unconfirmed", "reason": "أكّد الرمز"}})
+    monkeypatch.setattr(m, "_http", fake)
+    out = _call(m, "start_study", {"product": "عسل", "market": "اليابان"})
+    assert out["isError"] is True and "hs_unconfirmed" in out["content"][0]["text"]
+
+
+def test_study_status_summarizes_progress_and_next_step(monkeypatch):
+    m = _mcp()
+    payload = {"analysis_id": 5, "status": "running", "product": "قهوة", "stage": "writer",
+               "stage_label": "كاتب التقرير", "elapsed_seconds": 310, "llm_calls": 14,
+               "cost_usd_estimate": 0.42, "cost_unpriced_models": [],
+               "missions_completed": 12, "missions_total": 12, "report_present": False}
+    monkeypatch.setattr(m, "_http", lambda *a, **k: (200, json.dumps(payload, ensure_ascii=False)))
+    txt = _call(m, "study_status", {"analysis_id": 5})["content"][0]["text"]
+    assert "12/12" in txt and "0.42$" in txt and "كاتب التقرير" in txt and "ما زالت تعمل" in txt
+    payload.update(status="completed", report_present=True)
+    txt = _call(m, "study_status", {"analysis_id": 5})["content"][0]["text"]
+    assert "get_report" in txt and "download_report" in txt
+    payload.update(status="failed", skip_reason="نفاد الاعتمادات")
+    assert "نفاد الاعتمادات" in _call(m, "study_status", {"analysis_id": 5})["content"][0]["text"]
+
+
+def test_download_report_writes_file_to_owner_dir_and_respects_gate(monkeypatch, tmp_path):
+    m = _mcp()
+    monkeypatch.setenv("SILK_DOWNLOAD_DIR", str(tmp_path / "out"))
+    seen = []
+
+    def fake(method, path, body=None, raw=False):
+        seen.append((path, raw))
+        if path.endswith("report.docx"):
+            return 200, b"PK\x03\x04docx-bytes"
+        if path.endswith("report.pdf"):
+            return 409, json.dumps({"detail": {"error": "quality_gate_fail",
+                                               "fail_drivers": ["owner_flagged_phrase"]}})
+        return 500, "boom"
+    monkeypatch.setattr(m, "_http", fake)
+    out = _call(m, "download_report", {"analysis_id": 3})
+    assert out["isError"] is False
+    saved = str(tmp_path / "out" / "silk-3.docx")
+    assert saved in out["content"][0]["text"]
+    assert open(saved, "rb").read() == b"PK\x03\x04docx-bytes"
+    assert seen == [("/analyses/3/report.docx", True)]
+    out = _call(m, "download_report", {"analysis_id": 3, "format": "pdf"})
+    assert out["isError"] is True and "owner_flagged_phrase" in out["content"][0]["text"]
+    assert not (tmp_path / "out" / "silk-3.pdf").exists()
+    out = _call(m, "download_report", {"analysis_id": 3, "format": "exe"})
+    assert out["isError"] is True and "format" in out["content"][0]["text"]
