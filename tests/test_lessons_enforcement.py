@@ -2757,7 +2757,8 @@ _SYMBOL_ANCHORS_EXTRA = [
                                          "def remote_doc", "mode=ro"]),
     (299, "tests/golden/baseline.json", ['"study_001_bahrain_coffee"', '"mode": "detect"']),
     (299, "tests/golden/fixtures/study_001_bahrain_coffee/expected.json", ["817,876 طن", "known_errors"]),
-    (299, "data/hs_scope_terms_l1.csv", ["090111,بن أخضر", "090122,منزوع الكافيين"]),
+    (299, "data/hs_descriptor_terms_l1.csv", ["roasted,unroasted", "decaffeinated,", "0901,بن"]),
+    (299, "silk_study_checks.py", ["def study_facts", "def descriptor_spec", "def _mentions"]),
     (299, "tests/test_golden_study_checks.py", [
         "def test_study1_known_errors_are_each_caught_by_their_check",
         "def test_fully_corrected_study1_passes_every_check",

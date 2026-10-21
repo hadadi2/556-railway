@@ -66,14 +66,37 @@ def _read(path: str) -> str:
         return fh.read()
 
 
+#: الدراسات المقنَّنة (مموّهة بشكل دراساتٍ حقيقية، `tests/baseline/*.view.json`) — مرجعٌ
+#: للإنذارات الكاذبة: حالة كل فحص عليها موسومة يدوياً في خط الأساس.
+CODIFIED = os.path.join(REPO, "tests", "baseline")
+CODIFIED_PREFIX = "codified/"
+
+
 def cases() -> list:
-    if not os.path.isdir(FIXTURES):
-        return []
-    return sorted(d for d in os.listdir(FIXTURES)
-                  if os.path.isfile(os.path.join(FIXTURES, d, "report.md")))
+    real = sorted(d for d in os.listdir(FIXTURES)
+                  if os.path.isfile(os.path.join(FIXTURES, d, "report.md"))) \
+        if os.path.isdir(FIXTURES) else []
+    cod = sorted(CODIFIED_PREFIX + f[:-len(".view.json")] for f in os.listdir(CODIFIED)
+                 if f.endswith(".view.json")) if os.path.isdir(CODIFIED) else []
+    return real + cod
+
+
+def _codified_doc(name: str) -> "C.StudyDoc":
+    path = os.path.join(CODIFIED, f"{name}.view.json")
+    if not os.path.isfile(path):
+        raise InputError(f"لا دراسة مقنَّنة باسم {name}")
+    view = _load_json(path)
+    dr = view.get("deep_research") or {}
+    found = {"view": view, "deep_research": dr, "hs_code": view.get("hs_code"),
+             "market": dr.get("market") or {}, "product": view.get("product")}
+    doc = C.StudyDoc.from_result(found)
+    doc.meta = infer_meta(doc.evidence, doc.meta)
+    return doc
 
 
 def case_doc(key: str) -> "C.StudyDoc":
+    if key.startswith(CODIFIED_PREFIX):
+        return _codified_doc(key[len(CODIFIED_PREFIX):])
     d = os.path.join(FIXTURES, key)
     if not os.path.isfile(os.path.join(d, "report.md")):
         raise InputError(f"لا دراسة مرجعية باسم {key} في {FIXTURES}")

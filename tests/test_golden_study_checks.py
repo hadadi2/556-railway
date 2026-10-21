@@ -101,8 +101,8 @@ def test_f3_flags_unlabelled_divergence_and_mirror_headed_ledger():
     assert {"الحصة السعودية", "واردات السوق"} <= inds
     ledger = [i for i in f.items if i.get("where") == "سجلّ الحقائق"]
     keys = {i["key"] for i in ledger}
-    assert {"واردات السوق", "أحدث سنة بيانات للواردات", "نمو الواردات",
-            "معدل النمو السنوي المركّب"} <= keys
+    assert {C.norm_digits(k) for k in ("واردات السوق", "أحدث سنة بيانات للواردات", "نمو الواردات",
+                                       "معدل النمو السنوي المركّب")} <= keys
     assert all("دخل الفرد" not in k for k in keys), "دخل الفرد 2025 مباشر — لا يُوسَم"
 
 
@@ -187,6 +187,7 @@ def test_f3_mirror_figure_banned_in_exec_summary_and_as_first_figure():
 
 
 def _with_origin_rule(rep: str) -> str:
+    rep = C.norm_digits(rep)  # الفقرات تُقرأ مطبَّعة (بلا حركات) — الاستبدال على النصّ نفسه
     for p in C.paragraphs(rep):
         if C._EXEMPT_RE.search(p) and p in rep:
             rep = rep.replace(p, p + ORIGIN_RULE)
@@ -219,7 +220,6 @@ def test_f7_passes_when_halal_is_classified_once():
 def test_fully_corrected_study1_passes_every_check():
     """معيار الإنجاز بصيغته الهرمتية: دراسة البحرين بأخطائها مصحّحةً تنجح في كل الفحوصات."""
     rep, ev = _corrected_mirror()
-    rep = _with_origin_rule(rep)
     rep = rep.replace("التوصية: دخول مشروط", "التوصية: فرز سوق أولي", 1)
     rep = (rep.replace("### الاشتراطات التي يطلبها المشترون عملياً", "### اشتراطات إلزامية إضافية")
               .replace("فهي شرط عملي للقبول لدى الموزّعين وسلاسل التجزئة",
@@ -231,6 +231,7 @@ def test_fully_corrected_study1_passes_every_check():
                       "| أعلى سعر رف موثق | 12.98 دينار بحريني/كجم (Lulu) |")
     rep = rep.replace("التي تتراوح بين 2.50 و20.00 دينار بحريني للكيلوغرام",
                       "التي تتراوح بين 9.90 و12.98 دينار بحريني للكيلوغرام")
+    rep = _with_origin_rule(rep)  # آخراً: تُطبِّع النصّ (بلا حركات)
     rep += ("\nضريبة القيمة المضافة في البحرين 10%، والدينار مربوط بالدولار عند 0.376 دينار "
             "للدولار.\n")
     ev = ev.replace("817,876 طن", "817,876 كيلوغرام")
@@ -245,22 +246,63 @@ _H = "### خارطة طريق الدخول (90 يوماً)"
 
 
 @pytest.mark.parametrize("code,line,status,term", [
-    ("090121", "ننصح أيضاً ببيع البن الأخضر للمحامص.", C.FAIL, "البن الأخضر"),
+    ("090121", "ننصح أيضاً ببيع البن الأخضر للمحامص.", C.FAIL, "090111"),
     ("090121", "ننصح بطرح قهوة محمصة غير منزوعة الكافيين بعبوات 250 غرام.", C.PASS, None),
-    ("090121", "اطرح نسخة منزوعة الكافيين لاحقاً.", C.FAIL, "منزوعة الكافيين"),
+    ("090121", "اطرح نسخة منزوعة الكافيين لاحقاً.", C.FAIL, "090122"),
+    ("090121", "ننصح بطرح قهوة محمصة منزوعة الكافيين.", C.FAIL, "090122"),
     ("090121", "يمكن لاحقاً التوسع إلى البند 090111.", C.FAIL, "090111"),
+    ("090121", "احصل على الضوء الأخضر من الموزع قبل الشحن.", C.PASS, None),
+    ("090111", "ننصح ببيع البن الأخضر للمحامص البحرينية.", C.FAIL, "090121"),
+    ("080410", "ركّز على التمور الطازجة غير المجففة في رمضان.", C.PASS, None),
+    ("190219", "ننصح بطرح معكرونة مطبوخة جاهزة.", C.FAIL, None),
+    ("200911", "ننصح بعصير برتقال غير مجمد.", C.FAIL, "200912"),
 ])
-def test_f6_scope(code, line, status, term):
+def test_f6_scope_is_read_from_the_official_hs_description(code, line, status, term):
+    """لا جدول لكل منتج: الصفات وقطبيتها من وصف البند الرسمي عبر معجمٍ عامّ."""
     rep = _read("report.md").replace(_H, _H + "\n\n" + line)
     f = C.check_scope(_doc(report=rep, hs_code=code))
     assert f.status == status, _blob(f)
     if term:
-        assert any(term in i["term"] for i in f.items)
+        assert any(i["hs_code"] == term for i in f.items), _blob(f)
+
+
+def test_f6_descriptor_spec_parses_hs_grammar():
+    assert C.descriptor_spec("090111") == {"roasted": "-", "decaffeinated": "-"}
+    assert C.descriptor_spec("090121") == {"roasted": "+", "decaffeinated": "-"}
+    assert C.descriptor_spec("090122") == {"roasted": "+", "decaffeinated": "+"}
+    assert C.descriptor_spec("190230") == {"stuffed": "-"}, "«cooked or otherwise prepared» بديل"
+    assert C.descriptor_spec("080410") == {}, "«fresh or dried» بديلٌ لا شرط"
+    assert C.descriptor_spec("200912") == {"frozen": "-", "fermented": "-"}
+    assert not os.path.exists(os.path.join(ROOT, "data", "hs_scope_terms_l1.csv"))
 
 
 def test_f6_decaf_study_is_not_flagged_for_its_own_product():
     rep = "## 10. التوصيات الاستراتيجية\n\nننصح بطرح قهوة محمصة منزوعة الكافيين، وdecaf roasted coffee.\n"
     assert C.check_scope(_doc(report=rep, hs_code="090122")).status == C.PASS
+
+
+def test_f3_does_not_read_expected_json():
+    """F3 من أدلة الدراسة نفسها: النتيجة واحدة بالقيم المرجعية وبدونها."""
+    with_exp = C.check_mirror(_doc())
+    doc = _doc()
+    doc.expected = {}
+    without = C.check_mirror(doc)
+    assert with_exp.status == without.status == C.FAIL
+    assert [i["why"] for i in with_exp.items] == [i["why"] for i in without.items]
+    facts = C.study_facts(doc)
+    share = {(f.kind, f.value) for f in facts if f.indicator == "saudi_share_pct"}
+    assert ("direct", 1.43) in share and ("mirror", 12.02) in share
+    assert ("direct", 9.23) not in share, "«المملكة المتحدة» ليست السعودية"
+    assert {f.year for f in facts if f.indicator == "imports_usd" and f.kind == "direct"} >= {2019, 2022, 2023}
+
+
+def test_f3_mirror_only_market_may_cite_a_labelled_mirror_figure():
+    """سوقٌ لا تصرّح (لا رقم مباشر): المرآة مسموحة في الخلاصة موسومةً، وممنوعة بلا وسم."""
+    ev = "تدفقات التجارة: مرآة صادرات الشركاء 2023: 9.6 مليون دولار [المصدر: UN Comtrade (مرآة)]"
+    ok = "## 1. الخلاصة التنفيذية\n\nالواردات نحو 9.6 مليون دولار (تقدير من بيانات الشركاء، مرآة).\n"
+    bad = "## 1. الخلاصة التنفيذية\n\nالواردات نحو 9.6 مليون دولار.\n"
+    assert C.check_mirror(C.StudyDoc(report=ok, evidence=ev)).status == C.PASS
+    assert C.check_mirror(C.StudyDoc(report=bad, evidence=ev)).status == C.FAIL
 
 
 # ── G0 القيم المرجعية والتسامح ─────────────────────────────────────────────────
@@ -406,16 +448,21 @@ def test_review_embedded_report_copy_is_stripped_even_when_not_byte_identical():
           "حجم واردات السوق = 9170000 [المصدر: UN Comtrade]\nحدّ معلن: شيء")
     out = C.strip_embedded_report(ev, report="نصٌّ خام مختلف 777")
     assert "777" not in out and "## 1." not in out
-    assert "حجم واردات السوق = 9170000" in out and "حدّ معلن: شيء" in out
-    assert out.startswith("سجلّ الحقائق — واردات السوق")
+    assert "حجم واردات السوق = 9170000" in out and C.norm_digits("حدّ معلن: شيء") in out
+    assert out.startswith(C.norm_digits("سجلّ الحقائق — واردات السوق"))
+    raw = ("التقرير المكتوب للدراسة:\n## 1. خ\n\nنص 555.\nمورّد: Brazil — حصة 30% [UN Comtrade]\n"
+           "حدّ معلن: شيء")
+    kept = C.strip_embedded_report(raw)
+    assert "555" not in kept and "Brazil" in kept, "سطور ما بعد التقرير بحركاتها تُنهي القصّ"
 
 
 def test_review_from_result_measures_the_bound_text_and_excludes_it_from_evidence():
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from canonical_bahrain_coffee import bahrain_coffee_research_blob
     doc = C.StudyDoc.from_result(bahrain_coffee_research_blob())
-    assert "المسار الأول برّي بالشاحنات" in doc.report
-    assert "المسار الأول برّي بالشاحنات" not in doc.evidence
+    needle = C.norm_digits("المسار الأول برّي بالشاحنات")
+    assert needle in doc.report
+    assert needle not in doc.evidence
     assert "التقرير المكتوب للدراسة" not in doc.evidence
 
 
@@ -467,11 +514,12 @@ def test_review_verdict_labels_are_whole_words():
 
 
 def test_review_f3_single_sentence_pair_follows_the_markers():
-    ev = "حصة المرآة 12.02% مقابل 1.43% في البيانات المباشرة."
+    ev = "حصة السعودية في المرآة 12.02% مقابل 1.43% في البيانات المباشرة."
     doc = C.StudyDoc(report="## 4. د\n\nالحصة 12.02% في 2025.\n", evidence=ev, meta={}, expected={})
     f = C.check_mirror(doc)
-    pair = next(i for i in f.items if i.get("indicator") == "جملة مقارنة")
-    assert pair["direct"] == 1.43 and pair["mirror"] == 12.02
+    share = {(x.kind, x.value) for x in C.study_facts(doc) if x.indicator == "saudi_share_pct"}
+    assert ("direct", 1.43) in share and ("mirror", 12.02) in share
+    assert f.status == C.FAIL
 
 
 def test_review_link_cell_with_na_letters_is_a_link():
@@ -511,3 +559,124 @@ def test_review_remote_prefers_the_full_blob(monkeypatch, capsys):
     local = C.summarize(C.run_all(C.StudyDoc.from_result(bahrain_coffee_research_blob(),
                                                          meta=out["meta"])))["checks"]
     assert code in (0, 1) and out["checks"] == local
+
+
+# ── أقفال قياس الإنذارات الكاذبة (الدراسة ١ + ٢٠ دراسة مقنَّنة) ───────────────────
+
+def _r(body: str, **meta) -> C.StudyDoc:
+    return C.StudyDoc(report=body, meta=meta)
+
+
+def test_measure_f2_prose_shelf_price_needs_a_documented_record():
+    """jordan/egypt/kenya…: سعر رف في النصّ بلا جدولٍ موثّق ولا رابط = مخالفة."""
+    f = C.check_shelf_prices(_r("## 4. د\n\nعلاوة تجزئة: 0.85 دينار/لتر مقابل 0.55 دينار/لتر.\n"))
+    assert f.status == C.FAIL and "بلا سجل" in f.items[0]["why"]
+
+
+def test_measure_f2_production_cost_is_not_a_shelf_price():
+    """india_honey: «تكلفة إنتاج الكيلوغرام (95 روبية)» في جملةٍ تذكر سعر الرف لاحقاً."""
+    body = ("## 2. م\n\nأدخل المصدر تكلفة إنتاج الكيلوغرام (95 روبية)، ورصد سعر رف منافس واحد موثق.\n")
+    assert C.check_shelf_prices(_r(body)).status == C.WARN
+
+
+def test_measure_f2_usd_retail_counts_and_usd_border_price_does_not():
+    retail = C.check_shelf_prices(_r("## 6. م\n\nمتوسط سعر التجزئة 18–34 دولار/كغم للعسل الفاخر.\n"))
+    border = C.check_shelf_prices(_r("## 3. س\n\nمتوسط سعر الاستيراد الحدودي 3.40 دولار للكيلوغرام.\n"))
+    fee = C.check_shelf_prices(_r("## 7. ت\n\nرسوم بيان جمركي 3 دينار للشحنة.\n"))
+    assert retail.status == C.FAIL and border.status == C.WARN and fee.status == C.WARN
+
+
+def test_measure_f4_reads_through_arabic_diacritics():
+    """qatar: «فتتمتّع واردات المنشأ السعوديّ بإعفاءٍ جمركيّ» كان يفلت بسبب الحركات."""
+    body = "## 7. ت\n\nقطر عضوٌ في مجلس التعاون، فتتمتّع واردات المنشأ السعوديّ بإعفاءٍ جمركيّ.\n"
+    assert C.check_tariff_claims(_r(body)).status == C.FAIL
+    assert C.norm_digits("بإعفاءٍ جمركيّ بـ2.50") == "بإعفاء جمركي ب2.50"
+
+
+def test_measure_f5_hold_verdicts_commit_no_money():
+    """«مراقبة السوق»/«لا تدخل» لا تلتزم بمال — قراءةٌ معلنة للمالك؛ حكم الدخول وحده يحتاج تكلفة."""
+    for v in ("مراقبة السوق", "لا تدخل", "NO-GO"):
+        assert C.check_verdict_basis(_r(f"## 1. الخلاصة التنفيذية\n\nالتوصية: {v}.\n")).status == C.PASS, v
+    for v in ("دخول مشروط", "توصية أولية بالدخول", "CONDITIONAL-GO"):
+        assert C.check_verdict_basis(_r(f"## 1. الخلاصة التنفيذية\n\nالتوصية: {v}.\n")).status == C.FAIL, v
+
+
+def test_measure_f3_only_indicator_values_are_mirror_figures():
+    """jordan: كل رقمٍ في جملةٍ فيها «مرآة» كان يُعَدّ رقم مرآة («5» من «فجوة 5.6×»)."""
+    ev = "تحليل المنافسين: صادرات السعودية للأردن تحت 040110 (مرآة) 2024: 11.2 مليون دولار، فجوة 5 أضعاف [المصدر: UN Comtrade (مرآة)]"
+    rep = "## 9. م\n\nفجوة المرآة غير المحسومة (5) تبقى الخطر الأكبر.\n"
+    f = C.check_mirror(C.StudyDoc(report=rep, evidence=ev))
+    assert f.status == C.PASS, _blob(f)
+    assert [x.indicator for x in C.study_facts(C.StudyDoc(report="", evidence=ev))] == ["saudi_flow_usd"]
+
+
+def test_measure_codified_corpus_has_no_unlabelled_change():
+    """الدراسات المقنَّنة العشرون في خط الأساس بنمط detect — كل حالة موسومة يدوياً."""
+    rc = _runner()
+    with open(rc.BASELINE, encoding="utf-8") as fh:
+        base = json.load(fh)
+    cod = [k for k in rc.cases() if k.startswith(rc.CODIFIED_PREFIX)]
+    assert len(cod) == 20
+    for k in cod:
+        assert base[k]["mode"] == "detect"
+        assert not rc.compare_baseline(k, rc._status_map(C.run_all(rc.case_doc(k))), base), k
+
+
+# ── أقفال المراجعة الذاتية الثانية (§58) ─────────────────────────────────────────
+
+def test_review2_supplier_line_is_not_a_market_total():
+    line = ("مورّد: Brazil — حصة 30.0% من إجمالي واردات السوق؛ قيمة صادرات هذا المورّد وحده "
+            "4536000.0$ (ليست إجمالي واردات السوق)")
+    assert not [f for f in C._facts_from_text(line, "UN Comtrade", "direct") if f.indicator == "imports_usd"]
+
+
+def test_review2_thousands_separator_is_not_a_clause_break():
+    fs = C._facts_from_text("بلغت واردات السوق الإجمالية 15,120,000 دولار حسب UN Comtrade.", "UN Comtrade", "direct")
+    assert [(f.indicator, f.value) for f in fs] == [("imports_usd", 15120000.0)]
+
+
+def test_review2_yen_needs_a_word_boundary():
+    body = "## 6. م\n\nطرحت العلامة الجديدة منتجها في السوق يوم 15 يناير.\n"
+    assert C.check_shelf_prices(_r(body)).status == C.WARN
+
+
+def test_review2_brand_and_vat_words_do_not_hide_a_shelf_price():
+    for body in ("## 6. م\n\nتباع Costa Coffee بسعر 4.500 دينار للعبوة على الرفوف.\n",
+                 "## 6. م\n\nسعر التجزئة 4.5 دينار شامل ضريبة القيمة المضافة.\n"):
+        assert C.check_shelf_prices(_r(body)).status == C.FAIL, body
+
+
+def test_review2_wrapped_cost_line_is_not_a_shelf_price():
+    """india_honey حرفياً: «تكلفة إنتاج\\nالكيلوغرام (95 روبية)» — السطر الملفوف جملةٌ واحدة."""
+    body = ("## 2. م\n\nأدخل المصدر تكلفة إنتاج\nالكيلوغرام (95 روبية)، ورصد سعر رف منافس واحد موثق.\n")
+    assert C.check_shelf_prices(_r(body)).status == C.WARN
+    india = _runner().case_doc("codified/india_honey")
+    whys = [i["why"] for i in C.check_shelf_prices(india).items]
+    assert not any("95 روبية" in w for w in whys) and any("480" in w for w in whys)
+
+
+def test_review2_a_direct_figure_equal_to_a_mirror_figure_is_not_mirror_usage():
+    ev = ("تحليل المنافسين: 12 دولة موردة في 2023 [المصدر: UN Comtrade]\n"
+          "تقاطع: تقدير مرآة 2025 يظهر 12 دولة موردة وحصة سعودية 12.02% [المصدر: UN Comtrade (مرآة)]")
+    rep = "## 1. الخلاصة التنفيذية\n\nتصل القهوة من 12 دولة مورّدة، والواردات تنمو 12% سنوياً.\n"
+    f = C.check_mirror(C.StudyDoc(report=rep, evidence=ev))
+    assert not any(i.get("where") == "القسم 1" for i in f.items), _blob(f)
+
+
+def test_review2_f6_negation_and_generic_words():
+    assert C._mentions("عبوة أولا محمصة.", "0901")[0][1] == "+"
+    rep = "## 10. التوصيات الاستراتيجية\n\nنوصي بتأمين المواد الخام محليا.\n"
+    assert C.check_scope(_doc(report=rep, hs_code="151219")).status == C.PASS
+
+
+def test_review2_free_text_entry_verdict_is_not_read_as_hold():
+    rep = "## 1. الخلاصة التنفيذية\n\nالتوصية: ادخل تدريجيا لأجل اختبار السوق.\n"
+    assert C.check_verdict_basis(_r(rep)).status == C.FAIL
+
+
+def test_review2_evidence_link_needs_the_same_record():
+    ev = "تحليل الأسعار: منتج x https://shop.bh/p/3 بسعر 7 دينار"
+    doc = C.StudyDoc(report="## 6. م\n\nسعر التجزئة 3 دينار للعبوة.\n", evidence=ev)
+    assert C.check_shelf_prices(doc).status == C.FAIL
+    ok = C.StudyDoc(report="## 6. م\n\nسعر التجزئة 7 دينار للعبوة.\n", evidence=ev)
+    assert C.check_shelf_prices(ok).status != C.FAIL

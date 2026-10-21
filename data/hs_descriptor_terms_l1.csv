@@ -1,0 +1,29 @@
+# hs_descriptor_terms_l1 — معجمٌ عامّ لصفات البنود الجمركية (فحص F6، silk_study_checks.check_scope).
+# الغرض: يُقرأ وصفُ كل بندٍ سداسي من data/hs_reference.csv (الإنجليزية الرسمية) إلى صفاتٍ
+#   بقطبيتها: «Coffee; roasted, not decaffeinated» ⇒ roasted+ decaffeinated−. ثم أيُّ منتجٍ
+#   تذكره التوصيات بصفةٍ تعاكس قطبيةَ بند الدراسة المعلنة خارجُ النطاق. لا صفَّ لمنتجٍ بعينه.
+# الأعمدة: descriptor = الصفة كما ترد في الوصف الإنجليزي؛ en_neg = صيغ النفي الملتصقة
+#   (uncooked)؛ ar_forms/en_forms = صيغها في نصّ التقرير؛ polarity = قطبية الصيغة (+ أو −)؛
+#   hs4 + head_ar = مرادفٌ تجاريّ خاصّ بترويسةٍ واحدة لا يُقرأ إلا بجوار اسم المنتج؛ head_ar
+#   وحده (بلا hs4) = لفظٌ عامّ الاستعمال («خام»، «بكر») لا يُقرأ صفةً إلا بجوار اسم المنتج
+#   («بن أخضر» = غير محمّص في 0901 وحدها؛ «الضوء الأخضر» ليس بُنّاً).
+# المصدر: مفردات وصف النظام المنسّق نفسه؛ الصيغ العربية مفرداتٌ لغوية عامّة.
+descriptor,en_neg,ar_forms,en_forms,polarity,hs4,head_ar
+roasted,unroasted,محمص|محمصة|محمّص|محمّصة,roasted,+,,
+roasted,,أخضر|خضراء,green,-,0901,بن|قهوة|حبوب|coffee
+decaffeinated,,منزوع الكافيين|منزوعة الكافيين|خالي من الكافيين|خالية من الكافيين|بدون كافيين|ديكاف,decaf|decaffeinated,+,,
+frozen,,مجمد|مجمدة|مجمّد|مجمّدة,frozen,+,,
+chilled,,مبرد|مبردة|مبرّد|مبرّدة,chilled,+,,
+dried,,مجفف|مجففة|مجفّف|مجفّفة,dried|dehydrated,+,,
+cooked,uncooked,مطبوخ|مطبوخة,cooked,+,,
+cooked,,غير مطبوخ|غير مطبوخة|نيئ|نيئة,uncooked,-,,
+stuffed,,محشو|محشوة|محشي|محشية,stuffed,+,,
+fermented,unfermented,مخمر|مخمرة|مخمّر|مخمّرة,fermented,+,,
+concentrated,,مركز|مركزة|مركّز|مركّزة,concentrated|concentrate,+,,
+added sugar,,محلى|محلاة|مُحلّى|بسكر مضاف|مضاف إليه سكر,sweetened,+,,
+added sugar,,بدون سكر|بلا سكر|غير محلى|خالي من السكر,unsweetened|sugar-free,-,,
+smoked,,مدخن|مدخنة|مدخّن|مدخّنة,smoked,+,,
+salted,,مملح|مملحة|مملّح|مملّحة,salted,+,,
+virgin,,بكر,virgin,+,,زيت|زيوت|oil
+refined,,مكرر|مكررة|مكرّر|مكرّرة,refined,+,,
+crude,,خام,crude,+,,زيت|زيوت|oil

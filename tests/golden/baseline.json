@@ -1,5 +1,5 @@
 {
-  "_doc": "خط أساس الدراسات المرجعية · golden baseline. detect = دراسة معيبة مجمَّدة: كل فحص يبقى بحالته حرفياً (يستمر في إمساك الخطأ المعروف ولا يبدأ يخطئ في الصحيح). quality = دراسة يُعاد توليدها: لا فحص يسوء (PASS < WARN < FAIL). التحديث: python3 tests/golden/run_checks.py --update-baseline ثم مراجعة الفرق في الـPR.",
+  "_doc": "خط أساس الدراسات المرجعية · golden baseline. detect = حالةٌ موسومة يدوياً (صحيح/إنذار كاذب) تبقى مطابقة حرفياً: الفحص يستمر في إمساك الخطأ المعروف ولا يبدأ يخطئ في الصحيح. codified/* = الدراسات المقنَّنة في tests/baseline (مموّهة بشكل دراسات حقيقية) — مرجع الإنذارات الكاذبة. quality = دراسة يُعاد توليدها: لا فحص يسوء (PASS < WARN < FAIL). التحديث: python3 tests/golden/run_checks.py --update-baseline ثم مراجعة الفرق في الـPR.",
   "study_001_bahrain_coffee": {
     "mode": "detect",
     "checks": {
@@ -11,6 +11,266 @@
       "F5": "FAIL",
       "F6": "PASS",
       "F7": "FAIL"
+    }
+  },
+  "codified/dza_peanut_butter": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/egypt_olive_oil": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "FAIL",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/fettuccine": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/germany_dates": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "FAIL",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/india_honey": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/japan_cosmetics": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/japan_honey": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/jordan_milk": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/kenya_honey": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/kuwait_peanut_butter": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/libya_tahini": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/malaysia_cosmetics": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/morocco_juice": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/nadec_yemen_dairy": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "FAIL",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/netherlands": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/netherlands_honey": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "FAIL",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/nigeria_dates": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "FAIL",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/qatar_peanut_butter": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "PASS",
+      "F4": "FAIL",
+      "F5": "FAIL",
+      "F6": "WARN",
+      "F7": "PASS"
+    }
+  },
+  "codified/turkey_polymers": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "FAIL",
+      "F6": "PASS",
+      "F7": "PASS"
+    }
+  },
+  "codified/yemen": {
+    "mode": "detect",
+    "checks": {
+      "G0": "SKIP",
+      "F1": "PASS",
+      "F2": "WARN",
+      "F3": "PASS",
+      "F4": "PASS",
+      "F5": "PASS",
+      "F6": "PASS",
+      "F7": "PASS"
     }
   }
 }
