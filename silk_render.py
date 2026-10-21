@@ -3929,6 +3929,14 @@ def _fmt_usd(n: object, lang: str) -> str:
     return f"USD {fmt_number(v, 0)}"
 
 
+def _en_source(src: str, mirrored: bool) -> str:
+    """الدرس ٣٠١ (مراجعة §58): مصدرُ التقرير الإنجليزيّ بلا أيّ حرفٍ عربيّ — أيُّ تهجئةٍ
+    لوسم المرآة («(مرآة)»، «(مرآة الشركاء)»، «مرآة») تُحذف ويُقال الوسمُ بالإنجليزية."""
+    out = re.sub(r"\s*\([^)]*[\u0600-\u06FF][^)]*\)|[\u0600-\u06FF]+", "", src or "")
+    out = re.sub(r"\s{2,}", " ", out).strip() or "UN Comtrade"
+    return f"{out} (mirror)" if mirrored and "mirror" not in out.lower() else out
+
+
 def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
     """وارداتُ السوق من هذا الصنف **جاهزةً للعرض** — البند ٢ من الموجة الرابعة.
 
@@ -3954,11 +3962,14 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
     # الدرس ٣٠٠: الرأسُ آخرُ سنةٍ صرّحت بها السوق (`import_series`) — سنةُ
     # مرآةٍ أحدث تُعرض منفصلةً في سطر المرآة بقيمتها، لا رقمَ العنوان.
     latest = s.get("head") or full[-1]
-    head_is_mirror = bool(s.get("head_is_mirror"))
+    # الدرس ٣٠١: الوسمُ من النقطة المعروضة نفسِها (سلسلةٌ كلُّها جزئية لا رأسَ لها).
+    head_is_mirror = bool(latest.get("mirrored"))
+    _src = latest.get("source") or "UN Comtrade"
     out = {
         "head": _I.t("imports_head", lang),
         "series": pts,
-        "source": latest.get("source") or "UN Comtrade",
+        # الدرس ٣٠١: «(مرآة)» حرفٌ عربيّ — مصدرُ التقرير الإنجليزيّ يقولها بلغته.
+        "source": (_en_source(_src, head_is_mirror) if lang == "en" else _src),
         "latest_year": latest["year"],
         "latest_value_usd": latest["value"],
         "value_line": (
@@ -4083,7 +4094,11 @@ def _chart_imports_trend(imports: "dict | None", lang: str) -> "dict | None":
     all_pts = (imports or {}).get("series") or []
     # الدرس ٢٨٠: السنةُ الجارية الجزئية لا تُرسَم عموداً بجوار سنواتٍ كاملة
     # (انكماشٌ زائف بصرياً) — تبقى صفّاً موسوماً في الجدول، ويقولها التعليق.
-    pts = [p for p in all_pts if not p.get("partial")]
+    # الدرس ٣٠١: سنةُ مرآةٍ بعد الرأس لا تصير عموداً — تُعرض منفصلةً موسومةً في التعليق
+    # (سطرُ المرآة)، فيبقى مدى الرسم منتهياً عند سنة الأساس كالسجلّ.
+    head_year = (imports or {}).get("latest_year")
+    pts = [p for p in all_pts if not p.get("partial")
+           and not (p.get("mirrored") and head_year and int(p["year"]) > int(head_year))]
     partial = [p for p in all_pts if p.get("partial")]
     # مراجعة §58: عمودٌ واحدٌ بعنوان «بالسنوات» ومعه تعليقٌ يقول «لا يُرسَم
     # مسارٌ بلا سنتين» — الرسمُ يكذّب تعليقَه. سنتان شرطُ المسار كما هو شرطُ

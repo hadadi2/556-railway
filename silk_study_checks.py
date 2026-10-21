@@ -974,11 +974,16 @@ _IND_CTX = {"imports_usd": re.compile(r"واردات|استيراد|حجم|سو�
 def check_mirror(doc: StudyDoc) -> Finding:
     facts = study_facts(doc)
     items: list = []
-    direct = {i: [f for f in facts if f.indicator == i and f.kind == "direct"] for i in INDICATORS}
+    # الدرس ٣٠١: رقمٌ مباشرٌ لسنةٍ جارية (جزئيٌّ بطبيعته) ليس «تصريحاً مباشراً» يمنع المرآة —
+    # الرأسُ عندها مرآةٌ موسومة بحكم السلسلة نفسِها.
+    import datetime as _dt
+    _cur = _dt.date.today().year
+    direct = {i: [f for f in facts if f.indicator == i and f.kind == "direct"
+                  and not (f.year and f.year >= _cur)] for i in INDICATORS}
     mirror = {i: [f for f in facts if f.indicator == i and f.kind == "mirror"] for i in INDICATORS}
     paras = paragraphs(doc.report)
 
-    all_direct = [f for fs in direct.values() for f in fs]
+    all_direct = [f for f in facts if f.kind == "direct"]
 
     def mirror_hit(fig: tuple, fact: "Fact", text: str) -> bool:
         """الرقم رقمُ مرآةٍ لهذا المؤشر: يطابق قيمتها، ولا يطابق رقماً مباشراً، وفي سياق مؤشره."""

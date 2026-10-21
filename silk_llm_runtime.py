@@ -1184,6 +1184,44 @@ def _cited_contract_fields(cited: list, primary_source: str = "") -> dict:
     return out
 
 
+_GROWTH_CLAIM_RE = re.compile(
+    r"(?<!\w)(?:نمو|نمت|نما|ينمو|المركّ?ب|مركّ?ب|CAGR|growth|grew|انكماش|انكمشت|تراجعت|"
+    r"ارتفعت|انخفضت)(?!\w)", re.I)
+_PCT_RE = re.compile(r"\d\s*[%٪]")
+_MIRROR_WORD_RE = re.compile(r"مرآة|مرآتية|بيانات\s+(?:الدول\s+)?(?:الشريكة|الشركاء)|\bmirror", re.I)
+_CLAIM_YEAR_RE = re.compile(r"(?<!\d)((?:19|20)\d\d)(?!\d)")
+
+
+def _label_mirror_growth(claim, cited: list):
+    """الدرس ٣٠١: ادّعاءُ نموٍّ/مركّبٍ (نسبةٌ مئوية) يستشهد بنقطة مرآة يُوسَم حتمياً — كان يرث
+    مصدرَ أول نقطةٍ مباشرة («UN Comtrade») وسنةَ المرآة فيُقرأ تصريحاً مباشراً (213%/20.9%)
+    عند الكاتب والمحلّل والدردشة والأدلة. الرقمُ لا يُمَسّ؛ الوسمُ يُلحَق (قرار الدرس ٣٠٠: لا
+    نموَّ من سنة مرآة)، والنموُّ المعتمد هو ما في سجلّ الحقائق من السنوات المصرّحة."""
+    # مراجعة §58: ضيّقٌ عمداً — ادّعاءُ نموٍّ بنسبةٍ مئوية، لم يسمِّ المرآةَ بنفسه، ويستشهد
+    # بنقطة **إجمالي واردات** مرآة سنتُها في نصّه (أو بلا سنةٍ أصلاً). حصّةٌ مرآة أو
+    # «نموذج/مركبات» أو جملةٌ تفصل المرآة صراحةً لا تُمَسّ.
+    if not isinstance(claim, str) or not _GROWTH_CLAIM_RE.search(claim) \
+            or not _PCT_RE.search(claim) or _MIRROR_WORD_RE.search(claim):
+        return claim
+    from silk_deep_pillars import is_mirror_finding, import_series
+    in_text = {int(y) for y in _CLAIM_YEAR_RE.findall(claim)}
+    yrs = []
+    for c in cited:
+        y = getattr(c, "data_year", None)
+        if not (isinstance(y, int) and is_mirror_finding(c)):
+            continue
+        # نقطةُ إجمالي واردات بحكم `import_series` نفسِه (كلماتُ tam_usd ومداه).
+        if not import_series({"trade_flow": {"findings": [c]}}).get("series"):
+            continue
+        if not in_text or y in in_text:
+            yrs.append(y)
+    yrs = sorted(set(yrs))
+    if not yrs:
+        return claim
+    return (f"{claim} (يشمل سنة {'، '.join(map(str, yrs))} من بيانات الدول الشريكة (مرآة) — "
+            "لا يُعتمد هذا النمو؛ المعتمد ما حُسب من السنوات التي صرّحت بها السوق)")
+
+
 def _mark_cache_boundary(messages: list[dict]) -> None:
     """علّم آخر رسالة في `messages` بـ`cache_control` (ephemeral) — نقطة
     التخزين المؤقت تتقدّم مع كل جولة فتُخزَّن الجولات السابقة كاملة (المرحلة ٠).
@@ -1709,6 +1747,7 @@ def run_llm_agent(mission: dict, market: MarketRef, product: str = "",
         # `source_ids` ليسطّحها المُصدِّر فيُسنِد كلَّ مصدرٍ لرابطه الصحيح.
         primary_source = pub_sources[0] if pub_sources else label
         prefix = f"[{f['category']}] " if f.get("category") else ""
+        claim = _label_mirror_growth(f["claim"], cited)
         # **الموجة B (البند T-01).** حين لا يوجد مصدرٌ عموميٌّ للنقاط
         # المستشهَد بها يسقط `source` إلى **اسم البعثة الداخليّ** — وهو
         # ليس مصدراً. وكان `silk_source_coverage._is_backed` يقبل أيَّ سلسلةٍ
@@ -1724,7 +1763,7 @@ def run_llm_agent(mission: dict, market: MarketRef, product: str = "",
         _inherit = _cited_contract_fields(cited, primary_source)
         from silk_evidence_contract import raw_snapshots
         findings.append(DataPoint(
-            f["claim"], primary_source, f["confidence"],
+            claim, primary_source, f["confidence"],
             _truncate_at_word(f"{prefix}مبني على: {cited_notes}", 500), today,
             source_ids=tuple(pub_sources),
             evidence_ids=tuple(f.get("datapoint_ids") or ()),

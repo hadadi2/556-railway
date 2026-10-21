@@ -1973,6 +1973,10 @@ def _annual_import_series(dr: dict) -> dict:
     try:
         from silk_deep_pillars import import_series
         _s = import_series(dr.get("missions") or {})
+        # الدرس ٣٠١: نموٌّ رُفض لأن السلسلةَ مرآة ⇒ لا نافذةَ نموٍّ تُختبر ولا مركّبَ يُحسب
+        # من سنوات المرآة (كان الفحصُ يطلب من الكاتب «عرض القراءتين» على المرآة).
+        if _s.get("growth_refused"):
+            return {}
         partial = {int(p["year"]) for p in (_s.get("series") or []) if p.get("partial")}
         # الدرس ٢٩٧: سنواتُ أساسٍ خارج نافذة النموّ المعتمدة (مرآةٌ أقدم) لا
         # تُختبر — السجلُّ لا يستعملها فانقلابُ إشارتها ليس تناقضاً معروضاً.
@@ -3247,6 +3251,15 @@ def _check_cagr_endpoint_lag(dr: dict) -> list[dict]:
             rng = _CAGR_RANGE_NOTE_RE.search(note)
             if rng:
                 cagr_end = max(cagr_end or 0, int(rng.group(2)))
+            # الدرس ٣٠١: سنةُ مرآةٍ ليست «أحدثَ سنةٍ مرصودة» لنافذة النموّ — لا يُطلب من
+            # الكاتب مدُّ المركّب إليها.
+            _src = str((f.get("source") if isinstance(f, dict)
+                        else getattr(f, "source", None)) or "")
+            _st = str((f.get("status") if isinstance(f, dict)
+                       else getattr(f, "status", None)) or "")
+            if _st == "mirrored" or "مرآة" in _src or "مرآة" in note \
+                    or "mirror" in _src.lower():
+                continue
             if "TAM" in note or "إجمالي واردات" in note:
                 ty = _TAM_YEAR_NOTE_RE.search(note)
                 if ty:
@@ -6375,6 +6388,15 @@ def _check_metric_value_divergence(view: dict, dr: dict) -> list[dict]:
         near = body[max(0, shown[0][0] - _DIVERGENCE_WINDOW):
                     shown[0][1] + _DIVERGENCE_WINDOW]
         if _DIVERGENCE_DISCLOSED_RE.search(near):
+            continue
+        # الدرس ٣٠١: قراءاتٌ لسنواتٍ مختلفة وكلٌّ بسنته بجواره («4.83 مليون في 2019 إلى 9.17
+        # مليون في 2024») — الفرقُ مُسمّى (سنةٌ أخرى)؛ هذا مسارُ السلسلة لا تعارض.
+        _by_year: dict = {}
+        for _, _, f in shown:
+            _by_year.setdefault(f.get("year"), set()).add(round(f["value"], 6))
+        if None not in _by_year and len(_by_year) >= 2 \
+                and all(len(v) == 1 for v in _by_year.values()) \
+                and all(str(f["year"]) in body[max(0, a - 30):b + 30] for a, b, f in shown):
             continue
         vals = "، ".join(f"{f['id']}={_fmt_gate_num(f['value'])}"
                          for _, _, f in shown[:3])

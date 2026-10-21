@@ -212,7 +212,7 @@ class Renderer:
             "market_nisba": c["market"]["nisba_f"] or f"المحلية في {c['market']['name_ar']}",
             "prep_year": c["prepared"]["year"], "prep_month": c["prepared"]["month"],
             # الدرس ٣٠٠: رأسُ السلسلة لا أحدثُ صفّ — سنةُ مرآةٍ أحدث لا تصير «أحدث سنة مكتملة».
-            "last_complete_year": _last_complete_year(c),
+            "last_complete_year": _last_complete_label(c),
             "gdp_growth": c["imports"].get("gdp_growth_pct"), "gdp_source": c["imports"].get("gdp_source"),
             "local_producers_word": c["imports"].get("local_producers_word"),
             "uv_first": c["imports"].get("unit_value_first"), "uv_last": c["imports"].get("unit_value_last_reliable"),
@@ -636,11 +636,21 @@ _TABLE_GAP = "غير مرصود في هذه النسخة"
 
 
 def _last_complete_year(case: dict):
-    """رأسُ سلسلة الواردات (الدرس ٣٠٠) — وبلا رأسٍ محسوب أحدثُ صفٍّ مكتمل كما كان."""
+    """أحدثُ سنةٍ **مكتملة** حتى رأس السلسلة (الدرس ٣٠٠): سنةُ مرآةٍ بعد الرأس لا تُعدّ،
+    والرأسُ الأوليّ (`provisional`) ليس «مكتملاً» (الدرس ٣٠١) — أحدثُ صفٍّ مكتمل قبله."""
     imp = case.get("imports") or {}
-    if imp.get("head_year"):
-        return imp["head_year"]
-    return max((r["year"] for r in (imp.get("series") or []) if r.get("complete")), default=None)
+    head = imp.get("head_year")
+    return max((r["year"] for r in (imp.get("series") or []) if r.get("complete")
+                and (not head or r["year"] <= head)), default=None)
+
+
+def _last_complete_label(case: dict):
+    """سطرُ «أحدث سنة مكتملة»: السنةُ وسمُها من **صفّها هي** (مراجعة §58) — صفٌّ مرآة يُوسَم
+    ولو كان الرأسُ مباشراً أوّلياً."""
+    year = _last_complete_year(case)
+    row = next((r for r in ((case.get("imports") or {}).get("series") or [])
+                if r.get("year") == year), None)
+    return f"{year} (تقدير من بيانات الشركاء)" if year and row and row.get("mirrored") else year
 
 
 def _provisional_year(year, case: dict):

@@ -378,6 +378,10 @@ def build_case(found: dict, *, product_short: str | None = None,
 
     # ── الواردات ─────────────────────────────────────────────────────────
     imp = import_series(missions)
+    # الدرس ٣٠١ (مراجعة §58): وسمُ المرآة من النقطة المعروضة نفسِها — سلسلةٌ كلُّها جزئية لا
+    # رأسَ لها و`head_is_mirror` كاذب، كما في السجلّ والعرض.
+    _disp = imp.get("head") or ((imp.get("series") or [None])[-1])
+    _disp_mirror = bool(_disp and _disp.get("mirrored"))
     # الدرس ٣٠٠: نافذةُ النموّ سنواتُ المباشر وحدها — نموٌّ رُفض لأن السلسلةَ مرآة
     # يُغلق النافذةَ كلَّها (لا اتجاهَ ولا تفكيكَ من بيانات المرآة)، لا يفتحها.
     _win = set(imp.get("basis_year_set") or [])
@@ -389,7 +393,9 @@ def build_case(found: dict, *, product_short: str | None = None,
                # الدرس ٢٩٧: وسمُ المرآة يرافق النقطة — شكلُ الاتجاه وآخرُ تغيّرٍ
                # سنويّ كانا يخلطان المرآة بالمباشر بلا تمييز.
                "mirrored": bool(p.get("mirrored")),
-               "in_growth_window": (int(p["year"]) in _win) if _gated else True}
+               # الدرس ٣٠١: صفُّ مرآةٍ ليس في نافذة النموّ أبداً — ولو كان صفّاً وحيداً.
+               "in_growth_window": (not p.get("mirrored")) and (
+                   (int(p["year"]) in _win) if _gated else True)}
               for p in imp.get("series") or []]
     # الوزن (إن وُجد) من نقاط «صافي الوزن» بسنة بنيوية
     for f in _findings(dr, "trade_flow"):
@@ -401,7 +407,9 @@ def build_case(found: dict, *, product_short: str | None = None,
     for p in series:
         if p["kg"] and p["kg"] > 0:
             p["unit_value"] = p["value_usd"] / p["kg"]
-    uvs = [p for p in series if p.get("unit_value")]
+    # الدرس ٣٠١: سعرُ الكيلو الأول والأخير من نافذة النموّ المباشرة — صفُّ مرآةٍ خارجها كان
+    # يصير «سعر 2019» و«سعر 2024» بقيمتَي مرآة 2018 و2025.
+    uvs = [p for p in series if p.get("unit_value") and p.get("in_growth_window", True)]
     if len(uvs) >= 2:
         med = sorted(p["unit_value"] for p in uvs)[len(uvs) // 2]
         for p in uvs:
@@ -554,14 +562,19 @@ def build_case(found: dict, *, product_short: str | None = None,
                    **_land_route(iso3)},
         "prepared": {"year": today.year, "month": today.month, "collected_on": today.isoformat()},
         "imports": {"source": "UN Comtrade",
-                    "source_line": f"تصريحات الاستيراد لدى {name_ar}، قاعدة بيانات UN Comtrade." + (
-                        # الدرس ٣٠٠: صفُّ المرآة في الجدول موسومٌ، والسطرُ يقول ما هو.
-                        " السنوات الموسومة «تقدير من بيانات الشركاء» مقدَّرة من بيانات الدول "
-                        "المصدّرة إليها (بيانات مرآة)، ولا تدخل حساب النمو."
-                        if any(r["mirrored"] for r in series) else ""),
+                    "source_line": (
+                        # الدرس ٣٠١: سوقٌ لم تصرّح بشيء — السطرُ لا يقول «تصريحات الاستيراد لديها».
+                        f"تقدير من بيانات الدول المصدّرة إلى {name_ar} (بيانات مرآة)، قاعدة بيانات "
+                        f"UN Comtrade؛ لم تصرّح {name_ar} نفسها بأرقام هذه السنوات، فلا يُحسب منها نمو."
+                        if _disp_mirror else
+                        f"تصريحات الاستيراد لدى {name_ar}، قاعدة بيانات UN Comtrade." + (
+                            # الدرس ٣٠٠: صفُّ المرآة في الجدول موسومٌ، والسطرُ يقول ما هو.
+                            " السنوات الموسومة «تقدير من بيانات الشركاء» مقدَّرة من بيانات الدول "
+                            "المصدّرة إليها (بيانات مرآة)، ولا تدخل حساب النمو."
+                            if any(r["mirrored"] for r in series) else "")),
                     # الدرس ٣٠٠: سنةُ العنوان رأسُ السلسلة (آخرُ سنةٍ مصرَّحة مباشرةً).
                     "head_year": int(imp["head"]["year"]) if imp.get("head") else None,
-                    "head_is_mirror": bool(imp.get("head_is_mirror")),
+                    "head_is_mirror": _disp_mirror,
                     "series": series, "unit_value_first": reliable[0]["unit_value"] if reliable else None,
                     "unit_value_last_reliable": reliable[-1]["unit_value"] if reliable else None,
                     "unit_value_year_excluded": excluded[-1] if excluded else None,

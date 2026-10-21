@@ -4598,6 +4598,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    301: lambda: (
+        _needles("silk_deep_pillars.py", "def head_finding")(),
+        _needles("silk_llm_runtime.py", "def _label_mirror_growth")(),
+        _needles("tests/test_lesson301_head_gaps.py",
+                 "def test_imports_chart_shows_the_mirror_after_the_head_apart_not_as_a_bar",
+                 "def test_ledger_check_accepts_a_labelled_mirror_year_and_still_flags_an_unlabelled_one")(),
+        _needles("tests/test_lessons_enforcement.py", "(301, ")()),
     300: lambda: (
         _needles("silk_deep_pillars.py", '"head_is_mirror": head_is_mirror',
                  'refused = "mirror_only"')(),
