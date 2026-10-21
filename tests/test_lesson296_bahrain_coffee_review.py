@@ -400,7 +400,11 @@ def test_review_growth_window_ends_at_the_base_year():
             for y, v, src in ((2019, 4e6, "UN Comtrade"), (2022, 6e6, "UN Comtrade"),
                               (2024, 9e6, "UN Comtrade (mirror)"))]
     s = P.import_series({"trade_flow": {"findings": rows}})
-    assert s["growth_pct"] == 125.0                       # 2019→2024 لا 2019→2022
+    # الدرس ٣٠٠ (قرار المالك 2026-10-21) يعكس هذا القفل: سنةُ المرآة 2024 لا تصير
+    # قاعدةَ نموٍّ ولا رأساً — النموُّ 2019→2022 المباشر، والرأسُ 2022، والمرآةُ منفصلة.
+    assert s["growth_pct"] == 50.0 and s["basis_years"] == [2019, 2022]
+    assert s["head"]["year"] == 2022
+    assert [p["year"] for p in s["mirror_after_head"]] == [2024]
 
 
 def test_review_study_inflation_follows_the_gdp_year():

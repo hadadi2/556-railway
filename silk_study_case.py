@@ -378,6 +378,10 @@ def build_case(found: dict, *, product_short: str | None = None,
 
     # ── الواردات ─────────────────────────────────────────────────────────
     imp = import_series(missions)
+    # الدرس ٣٠٠: نافذةُ النموّ سنواتُ المباشر وحدها — نموٌّ رُفض لأن السلسلةَ مرآة
+    # يُغلق النافذةَ كلَّها (لا اتجاهَ ولا تفكيكَ من بيانات المرآة)، لا يفتحها.
+    _win = set(imp.get("basis_year_set") or [])
+    _gated = bool(_win) or bool(imp.get("growth_refused"))
     # مراجعة (١٤): القيمة الخام تُحفظ بجانب المقرَّبة — النسب تُحسب منها لا من 0.1 مليون.
     series = [{"year": p["year"], "value_musd": round(p["value"] / 1e6, 1),
                "value_usd": float(p["value"]), "kg": None,
@@ -385,8 +389,7 @@ def build_case(found: dict, *, product_short: str | None = None,
                # الدرس ٢٩٧: وسمُ المرآة يرافق النقطة — شكلُ الاتجاه وآخرُ تغيّرٍ
                # سنويّ كانا يخلطان المرآة بالمباشر بلا تمييز.
                "mirrored": bool(p.get("mirrored")),
-               "in_growth_window": bool(not imp.get("basis_year_set") or
-                                        int(p["year"]) in imp["basis_year_set"])}
+               "in_growth_window": (int(p["year"]) in _win) if _gated else True}
               for p in imp.get("series") or []]
     # الوزن (إن وُجد) من نقاط «صافي الوزن» بسنة بنيوية
     for f in _findings(dr, "trade_flow"):
@@ -550,7 +553,15 @@ def build_case(found: dict, *, product_short: str | None = None,
                    "nisba_m": _nisba(iso3)[1], "capital_port": None,
                    **_land_route(iso3)},
         "prepared": {"year": today.year, "month": today.month, "collected_on": today.isoformat()},
-        "imports": {"source": "UN Comtrade", "source_line": f"تصريحات الاستيراد لدى {name_ar}، قاعدة بيانات UN Comtrade.",
+        "imports": {"source": "UN Comtrade",
+                    "source_line": f"تصريحات الاستيراد لدى {name_ar}، قاعدة بيانات UN Comtrade." + (
+                        # الدرس ٣٠٠: صفُّ المرآة في الجدول موسومٌ، والسطرُ يقول ما هو.
+                        " السنوات الموسومة «تقدير من بيانات الشركاء» مقدَّرة من بيانات الدول "
+                        "المصدّرة إليها (بيانات مرآة)، ولا تدخل حساب النمو."
+                        if any(r["mirrored"] for r in series) else ""),
+                    # الدرس ٣٠٠: سنةُ العنوان رأسُ السلسلة (آخرُ سنةٍ مصرَّحة مباشرةً).
+                    "head_year": int(imp["head"]["year"]) if imp.get("head") else None,
+                    "head_is_mirror": bool(imp.get("head_is_mirror")),
                     "series": series, "unit_value_first": reliable[0]["unit_value"] if reliable else None,
                     "unit_value_last_reliable": reliable[-1]["unit_value"] if reliable else None,
                     "unit_value_year_excluded": excluded[-1] if excluded else None,

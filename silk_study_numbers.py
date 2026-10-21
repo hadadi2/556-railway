@@ -118,9 +118,14 @@ def series_shape(series: list[dict]) -> dict:
 
 def decomposition(series: list[dict]) -> dict:
     """نافذة السنوات ذات الوزن السليم؛ dv/dp/dq؛ حصة الكمية من نمو القيمة؛ النسخة."""
-    ok = [r for r in (series or []) if r.get("kg") and not r.get("weight_anomaly") and r.get("complete", True)]
-    excluded = [r["year"] for r in series if r.get("weight_anomaly")]
+    # الدرس ٣٠٠: التفكيكُ نموٌّ (dv/dp/dq) — على نافذة النموّ المباشرة نفسِها، لا سنةِ مرآة؛
+    # والسنةُ المستبعدة وسببُ التعذّر من النافذة نفسِها لا من صفوفٍ خارجها.
+    win = [r for r in (series or []) if r.get("in_growth_window", True)]
+    ok = [r for r in win if r.get("kg") and not r.get("weight_anomaly") and r.get("complete", True)]
+    excluded = [r["year"] for r in win if r.get("weight_anomaly")]
     if len(ok) < 3:
+        # نافذةٌ مغلقة (نموٌّ مرفوضٌ لأنه مرآة): فقرةُ التعذّر تسقط مع غياب النموّ نفسِه
+        # (`shape_g_first_last` بلا قيمة) فلا يصل سببٌ عن الوزن إلى القارئ.
         return {"variant": "not_decomposable", "reason": "غياب بيانات الوزن" if not ok else "عدم موثوقية بيانات الوزن في أكثر من سنة"}
     a, b = ok[0], ok[-1]
     p_a = _raw_musd(a) * 1e6 / a["kg"]

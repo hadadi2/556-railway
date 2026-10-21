@@ -3951,19 +3951,27 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
     # تقرير ٧ §3.2: سنةُ الملخّص والنموّ سنةٌ كاملةٌ واحدة — السنةُ الجارية
     # الجزئية تبقى صفّاً موسوماً في الجدول لا رقمَ العنوان.
     full = [p for p in pts if not p.get("partial")] or pts
-    latest = full[-1]
+    # الدرس ٣٠٠: الرأسُ آخرُ سنةٍ صرّحت بها السوق (`import_series`) — سنةُ
+    # مرآةٍ أحدث تُعرض منفصلةً في سطر المرآة بقيمتها، لا رقمَ العنوان.
+    latest = s.get("head") or full[-1]
+    head_is_mirror = bool(s.get("head_is_mirror"))
     out = {
         "head": _I.t("imports_head", lang),
         "series": pts,
         "source": latest.get("source") or "UN Comtrade",
         "latest_year": latest["year"],
         "latest_value_usd": latest["value"],
-        "value_line": _I.t("imports_value_line", lang,
-                           amount=_fmt_usd(latest["value"], lang),
-                           year=latest["year"],
-                           # «(مرآة)» وسمٌ داخليّ — سطرُ المرآة يشرحه للقارئ.
-                           source=(latest.get("source") or "UN Comtrade")
-                           .replace(" (مرآة)", "")),
+        "value_line": (
+            # قراءةُ المالك ٢: لا مباشرَ ⇒ رقمُ المرآة موسوماً في جملته نفسِها.
+            _I.t("imports_value_line_mirror", lang,
+                 amount=_fmt_usd(latest["value"], lang), year=latest["year"])
+            if head_is_mirror else
+            _I.t("imports_value_line", lang,
+                 amount=_fmt_usd(latest["value"], lang),
+                 year=latest["year"],
+                 # «(مرآة)» وسمٌ داخليّ — سطرُ المرآة يشرحه للقارئ.
+                 source=(latest.get("source") or "UN Comtrade")
+                 .replace(" (مرآة)", ""))),
         "growth_pct": s.get("growth_pct"),
         "cagr_pct": s.get("cagr_pct"),
         "years_missing": s.get("years_missing") or [],
@@ -3981,8 +3989,11 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
             growth=fmt_pct(abs(g)), first_year=y0, last_year=y1,
             cagr=(fmt_pct(s["cagr_pct"]) if has_cagr else ""))
     elif len(full) >= 2:
-        # سنتان فأكثر ولا نموَّ محسوب (مراجعة §58): غيابٌ يُقال لا يُسكَت.
-        out["note"] = _I.t("imports_trend_not_computed", lang)
+        # سنتان فأكثر ولا نموَّ محسوب (مراجعة §58): غيابٌ يُقال لا يُسكَت —
+        # وسببُه حين يكون المرآة (الدرس ٣٠٠: لا نموَّ من بيانات المرآة).
+        out["note"] = _I.t("imports_trend_mirror_only"
+                           if s.get("growth_refused") == "mirror_only"
+                           else "imports_trend_not_computed", lang)
     if len(full) < 2:
         out["note"] = _I.t("imports_single_year_note", lang,
                            year=latest["year"])
@@ -3994,10 +4005,23 @@ def _imports_view(result: dict, dr: dict, lang: str) -> "dict | None":
         out["gap_line"] = _I.t("imports_gap_years_note", lang,
                                years=_sep.join(str(y) for y in
                                                out["years_missing"]))
-    if any(p.get("mirrored") for p in pts):
-        out["mirror_line"] = _I.t(
+    # الدرس ٣٠٠: سنواتُ المرآة الأحدث من الرأس بقيمتها وسببِ فصلها؛ وما سواها
+    # من سنوات المرآة (أقدم أو جزئية) بالوسم القائم.
+    after = s.get("mirror_after_head") or []
+    after_years = {p["year"] for p in after}
+    mirror_lines = []
+    if after:
+        mirror_lines.append(_I.t(
+            "imports_mirror_after_head_note", lang, head_year=latest["year"],
+            items=_sep.join(f"{p['year']} ({_fmt_usd(p['value'], lang)})"
+                            for p in after)))
+    other = [p for p in pts if p.get("mirrored") and p["year"] not in after_years]
+    if other:
+        mirror_lines.append(_I.t(
             "imports_mirrored_note", lang,
-            years=_sep.join(str(p["year"]) for p in pts if p.get("mirrored")))
+            years=_sep.join(str(p["year"]) for p in other)))
+    if mirror_lines:
+        out["mirror_line"] = " ".join(mirror_lines)
     # نصيبُ السعودية من هذه الواردات — من مكوّن الصفّ نفسِه (لا حسابَ ثانٍ).
     comps = (((result.get("markets") or [None])[0]) or {}).get("components") \
         or {}

@@ -192,13 +192,13 @@ def _anchors(dr: dict) -> dict:
     series_anchor = False
     try:
         from silk_deep_pillars import _RANGE, import_series
-        full = [p for p in (import_series(dr.get("missions") or {}).get("series") or [])
-                if not p.get("partial")]
+        # الدرس ٣٠٠: المرتكزُ رأسُ السلسلة (آخرُ سنةٍ مصرَّحة مباشرةً)، لا سنةُ مرآةٍ أحدث.
+        head = import_series(dr.get("missions") or {}).get("head")
         lo, hi = _RANGE.get("tam_usd", (0.0, float("inf")))
     except Exception:  # noqa: BLE001 — السلسلة تحسينٌ لا شرط
-        full, lo, hi = [], 0.0, float("inf")
-    if full:
-        imports, imports_year = float(full[-1]["value"]), int(full[-1]["year"])
+        head, lo, hi = None, 0.0, float("inf")
+    if head:
+        imports, imports_year = float(head["value"]), int(head["year"])
         series_anchor = True
     for _key, f in _iter_findings(dr):
         blob = f"{f.get('note') or ''} {f.get('value') or ''}"

@@ -4598,6 +4598,13 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    300: lambda: (
+        _needles("silk_deep_pillars.py", '"head_is_mirror": head_is_mirror',
+                 'refused = "mirror_only"')(),
+        _needles("tests/test_lesson300_series_head.py",
+                 "def test_growth_and_cagr_are_computed_from_direct_years_only",
+                 "def test_ledger_head_and_growth_are_direct")(),
+        _needles("tests/test_lessons_enforcement.py", "(300, ")()),
     299: lambda: (
         _needles("silk_study_checks.py", "def check_units", "def check_mirror",
                  "def _mirror_only_years")(),
