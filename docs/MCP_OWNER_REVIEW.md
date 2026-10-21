@@ -52,7 +52,30 @@
   لصياغة قسمٍ بلا سرد قبل البوّابة؛ هذا المسار لا يستدعيه بقرار المالك، فقد يُرفَض
   هنا ما كان التصدير العادي سيكمله بنداء — الرفض يسمّي القسم.
 
-## الإعداد على جهاز المالك
+## الربط برابط (Connectors في كلود) — الطريقة الأسهل
+
+Silk يخدم نفس الأدوات السبع على رابط MCP بعيد (Streamable HTTP):
+
+```
+https://<railway-domain>/mcp/<SILK_MCP_TOKEN>
+```
+
+1. على Railway ← الخدمة 556-railway ← Variables: أضف `SILK_MCP_TOKEN` برمزٍ قوي
+   (`python3 -c "import secrets; print(secrets.token_urlsafe(32))"`)، ١٦ محرفاً فأكثر؛
+   أقل من ذلك أو غيابه = النقطة مُطفأة (404).
+2. في كلود: Settings ← Connectors ← Add custom connector ← الصق الرابط أعلاه (بلا مصادقة
+   إضافية؛ الرمز في الرابط هو المصادقة لأن Connectors لا تمرّر ترويسات).
+3. فعّل الموصّل في المحادثة واكتب مثلاً «اعرض دراسات Silk».
+
+فرقان عن الوضع المحلّي: `download_report` يعيد **رابط ملف** محمياً بالرمز نفسه
+(`…/mcp/<token>/files/<id>/report.docx`) تفتحه فيُنزَّل، بدل الحفظ على جهازك؛ والرابط
+سرٌّ كامل — من يملكه يشغّل دراسات مدفوعة باسمك، فبدّل `SILK_MCP_TOKEN` عند أي شكّ
+(تغييره يُبطل الرابط القديم فوراً). كل نداء من الرابط يعود إلى الخادم نفسه عبر نقاط
+النهاية القائمة بمفتاحه فلا يُلتَفّ على أي بوّابة (العنوان من `PORT` الذي يحقنه Railway،
+أو `SILK_MCP_LOOPBACK_URL` صريحاً عند تشغيلٍ محلّي على منفذٍ آخر)، والرمز يُنقَّح من سجلّ
+الوصول تلقائياً.
+
+## الإعداد على جهاز المالك (الوضع المحلّي، بديل)
 
 يلزم `python3` فقط (الخادم بالمكتبة القياسية، بلا `pip install`) ونسخة من الريبو.
 
@@ -98,5 +121,7 @@ claude mcp add silk -e SILK_BASE_URL=https://<railway-domain> -e SILK_API_KEY=<k
 - `tools/silk_mcp.py` — الخادم (stdio، JSON-RPC، سبع أدوات؛ `start_study` وحده مدفوع).
 - `silk_refined_report.py` — الفحوص الحتمية وعقدة التقرير الجديدة.
 - `api.py` — `GET`/`POST /analyses/{analysis_id}/report/refined`،
-  `GET /analyses/{analysis_id}/evidence`، و`_refined_gate`/`_refine_evidence`.
+  `GET /analyses/{analysis_id}/evidence`، و`_refined_gate`/`_refine_evidence`؛
+  والرابط البعيد `POST /mcp/{token}` + `GET /mcp/{token}/files/{id}/report.{fmt}`.
+- `tests/test_mcp_remote_endpoint.py` — أقفال الرابط البعيد (الرمز، النقل، الروابط).
 - `tests/test_mcp_refined_report.py` — أقفال المسار كلّه.

@@ -17,6 +17,13 @@
 HTTP API القائم — لا منطق أعمال هنا؛ كل فحصٍ وكل بوّابة ما قبل التشغيل تجري في
 الخادم فلا يُلتَفّ عليها من هذا الباب.
 
+وضعان لنفس الأدوات (توضيح المالك: «وين رابط MCP»):
+  • محلّي (stdio): هذا الملف يعمل على جهاز المالك ويُضاف في إعداد Claude Desktop/Code.
+  • بعيد (Streamable HTTP): `api.py` يستورد هذه الوحدة ويخدمها على `/mcp/<SILK_MCP_TOKEN>`
+    فيُلصَق الرابط في Connectors؛ `REMOTE` (contextvar لكل طلب) يوجّه نداءات الأدوات إلى
+    الخادم نفسه (loopback) ويجعل `download_report` يعيد رابط ملفٍ محمياً بالرمز نفسه
+    بدل الحفظ على قرص الخادم.
+
 التشغيل (على جهاز المالك):
   SILK_BASE_URL=https://<railway-domain>  SILK_API_KEY=<key>  python3 tools/silk_mcp.py
   SILK_DOWNLOAD_DIR (اختياري): مجلّد حفظ الملفات، افتراضياً ~/Downloads/silk-reports
@@ -24,6 +31,7 @@ HTTP API القائم — لا منطق أعمال هنا؛ كل فحصٍ وكل
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import os
 import sys
@@ -31,7 +39,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 # إصدارات البروتوكول التي يطبّقها هذا الخادم فعلاً (الأحدث أولاً). غير المعروف
 # من العميل يُجاب بأحدثها — لا ادّعاءُ دعمٍ لما لا نعرفه (مراجعة §58، الملاحظة ١٠).
 SUPPORTED_PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")
@@ -165,7 +173,20 @@ TOOLS = [
 
 
 # ── HTTP نحو Silk ────────────────────────────────────────────────────────────
+#: الوضع البعيد (api.py) — إعدادٌ **لكل طلب** لا حالةٌ عالمية (مراجعة §58: طلبان على
+#: مضيفَين مختلفَين كانا يتسابقان على متغيّر وحدة): `{"base_url": عنوان الخادم نفسه
+#: (loopback)، "download_link_base": قاعدة روابط الملفات}`؛ None = الوضع المحلّي (stdio).
+REMOTE: contextvars.ContextVar = contextvars.ContextVar("silk_mcp_remote", default=None)
+
+
+def _remote() -> dict:
+    return REMOTE.get() or {}
+
+
 def _base_url() -> str:
+    override = _remote().get("base_url")
+    if override:
+        return str(override).rstrip("/")
     url = os.environ.get("SILK_BASE_URL", "").strip().rstrip("/")
     if not url:
         raise RuntimeError("SILK_BASE_URL غير مضبوط — عنوان خادم Silk (مثال: "
@@ -304,6 +325,7 @@ def _tool_study_status(args: dict) -> tuple:
     return "\n".join(lines), False
 
 
+#: صيغة → نوع الوسيط — المصدر الواحد لـ`download_report` ولنقطة الملفات البعيدة في api.py.
 _MEDIA = {"docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           "pdf": "application/pdf", "md": "text/markdown"}
 
@@ -320,6 +342,23 @@ def _tool_download_report(args: dict) -> tuple:
     fmt = str(args.get("format") or "docx").lower()
     if fmt not in _MEDIA:
         raise ValueError("format يجب أن يكون docx أو pdf أو md")
+    link_base = _remote().get("download_link_base")
+    if link_base:
+        # الوضع البعيد: لا قرصَ مالكٍ هنا، ولا نصيّر الملف مرّتين (مراجعة §58) — نقرأ قرار
+        # بوّابة التسليم من سطح التنقيح (بناءُ عرضٍ واحد) ثم نعيد رابطاً محمياً بالرمز نفسه
+        # يصيّر الملف عند فتحه؛ نقطةُ الملف تعيد 409 البوّابة كما هو إن تغيّر الحال.
+        status, text = _http("GET", f"/analyses/{aid}/report/refined")
+        if status == 200:
+            gate = (_json_body(f"/analyses/{aid}/report/refined", text).get("gate") or {})
+            if str(gate.get("verdict") or "").upper() == "FAIL":
+                return (f"تسليم الدراسة {aid} محجوب بالبوّابة — لا رابطَ لملفٍ محجوب "
+                        f"(أسباب الحجب: {', '.join(gate.get('fail_drivers') or []) or '—'})؛ "
+                        f"عالج الأسباب عبر get_report ثم submit_refined_report."), True
+        elif status not in (400,):      # 400 = تحليل /analyze لا بحث — بوّابته عند التنزيل
+            return f"تعذّر فحص جاهزية الملف للدراسة {aid} ({status}): {_detail(text)}", True
+        link = f"{str(link_base).rstrip('/')}/{aid}/report.{fmt}"
+        return (f"ملف العميل للدراسة {aid} جاهز — افتح الرابط لتنزيله ثم أرسله للعميل بعد "
+                f"مراجعتك النهائية:\n{link}"), False
     path = f"/analyses/{aid}/report.{fmt}"
     status, data = _http("GET", path, raw=True)
     if status == 409:
@@ -459,6 +498,8 @@ def handle(msg: dict) -> dict | None:
     params = msg.get("params") or {}
     if method is None:
         return None            # ردٌّ من العميل (لا طلب) — يُتجاهَل
+    if not isinstance(method, str) or not isinstance(params, dict):
+        return _err(mid, -32600, "Invalid Request")
     if method.startswith("notifications/"):
         return None
     if method == "initialize":
@@ -483,6 +524,25 @@ def handle(msg: dict) -> dict | None:
     if mid is None:
         return None
     return _err(mid, -32601, f"Method not found: {method}")
+
+
+def handle_payload(payload):
+    """حمولة HTTP واحدة (رسالة أو دفعة قائمة — بروتوكول 2025-03-26 يسمح بالدفعات) →
+    قائمة الردود (بلا الإشعارات). قائمة فارغة = لا ردّ (202 عند النقل عبر HTTP)."""
+    items = payload if isinstance(payload, list) else [payload]
+    out = []
+    for msg in items:
+        if not isinstance(msg, dict):
+            out.append(_err(None, -32600, "Invalid Request"))
+            continue
+        try:
+            resp = handle(msg)
+        except Exception as e:  # noqa: BLE001 — رسالةٌ مشوَّهة لا تُسقِط الدفعة ولا تعطي 500
+            print(f"silk_mcp: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            resp = _err(msg.get("id"), -32603, f"Internal error: {type(e).__name__}")
+        if resp is not None:
+            out.append(resp)
+    return out
 
 
 def serve(stdin=None, stdout=None) -> None:
