@@ -4598,6 +4598,14 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    299: lambda: (
+        _needles("silk_study_checks.py", "def check_units", "def check_mirror",
+                 "def _mirror_only_years")(),
+        _needles("tests/golden/run_checks.py", "def compare_baseline")(),
+        _needles("tests/test_golden_study_checks.py",
+                 "def test_study1_known_errors_are_each_caught_by_their_check",
+                 "def test_fully_corrected_study1_passes_every_check")(),
+        _needles("tests/test_lessons_enforcement.py", "(299, ")()),
     298: lambda: (
         _needles("silk_quality_gate.py", "def _flag_norm", "def strip_flagged_sentences")(),
         _needles("silk_collectors.py", "LAST_POST_DEPLOY_AUDIT")(),

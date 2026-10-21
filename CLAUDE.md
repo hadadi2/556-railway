@@ -131,6 +131,7 @@ python3 -m pytest tests/test_smoke.py::test_resolver_real_hs_codes -q  # one tes
 uvicorn api:app --host 0.0.0.0 --port 8000     # API + dashboard (web/ served at /)
 python3 silk_engine.py                         # engine demo from the terminal
 python3 silk_requirements_agent.py             # most silk_*.py files have a __main__ demo
+python3 tests/golden/run_checks.py --all --baseline   # deterministic study checks F1–F7 on every golden study (lesson 299)
 ```
 
 CI (`.github/workflows/ci.yml`) runs a syntax/undefined-name gate (`ruff check --select E9,F63,F7,F82` — no style rules) and `pip-audit` on the pinned production requirements, then exactly `python -m pytest tests/ -q`. There is no linter config file (R0, audit 2026-09-01). `e2e-live-shape.yml` also builds the deploy image and hits `/health` inside it (`docker-health` job).

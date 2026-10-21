@@ -1,0 +1,16 @@
+{
+  "_doc": "خط أساس الدراسات المرجعية · golden baseline. detect = دراسة معيبة مجمَّدة: كل فحص يبقى بحالته حرفياً (يستمر في إمساك الخطأ المعروف ولا يبدأ يخطئ في الصحيح). quality = دراسة يُعاد توليدها: لا فحص يسوء (PASS < WARN < FAIL). التحديث: python3 tests/golden/run_checks.py --update-baseline ثم مراجعة الفرق في الـPR.",
+  "study_001_bahrain_coffee": {
+    "mode": "detect",
+    "checks": {
+      "G0": "WARN",
+      "F1": "FAIL",
+      "F2": "FAIL",
+      "F3": "FAIL",
+      "F4": "FAIL",
+      "F5": "FAIL",
+      "F6": "PASS",
+      "F7": "FAIL"
+    }
+  }
+}

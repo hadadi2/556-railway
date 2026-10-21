@@ -1,0 +1,19 @@
+{
+  "key": "study_001_bahrain_coffee",
+  "analysis_id": 1,
+  "frozen_at": "2026-10-21",
+  "frozen_from": "Railway silk study · MCP get_report + get_evidence (refined_count=2, gate=PASS-WITH-WARNINGS)",
+  "note_ar": "evidence.txt هو سياق get_evidence بلا نسخة التقرير المضمَّنة فيه (التقرير في report.md)؛ المحمِّل يضمّهما عند الحاجة.",
+  "note_en": "evidence.txt is the get_evidence context minus its embedded copy of the report (kept in report.md); the loader joins them.",
+  "product_ar": "البن المحمص غير منزوع الكافيين",
+  "product_en": "Roasted coffee, not decaffeinated",
+  "hs_code": "090121",
+  "origin_iso3": "SAU",
+  "market_iso3": "BHR",
+  "market_ar": "البحرين",
+  "lang": "ar",
+  "currency": "BHD",
+  "fx_local_per_usd": 0.376,
+  "vat_pct": 10.0,
+  "production_cost_per_unit": null
+}
