@@ -336,7 +336,7 @@ def test_mcp_server_imports_stdlib_only():
             mods.update(a.name.split(".")[0] for a in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
             mods.add(node.module.split(".")[0])
-    assert mods <= {"json", "os", "sys", "urllib", "__future__"}, mods
+    assert mods <= {"json", "os", "sys", "urllib", "contextvars", "__future__"}, mods
 
 
 def test_mcp_handshake_tools_list_and_unknown_method():
@@ -476,7 +476,7 @@ def test_mcp_serve_loop_is_line_delimited_and_survives_bad_input(monkeypatch):
 def _fake_start_http(readiness: dict, research_status=200, research_body=None):
     seen = []
 
-    def fake(method, path, body=None, raw=False):
+    def fake(method, path, body=None, *, raw=False):
         seen.append((method, path, body))
         if path.startswith("/research/readiness?"):
             return 200, json.dumps(readiness, ensure_ascii=False)
@@ -566,7 +566,7 @@ def test_download_report_writes_file_to_owner_dir_and_respects_gate(monkeypatch,
     monkeypatch.setenv("SILK_DOWNLOAD_DIR", str(tmp_path / "out"))
     seen = []
 
-    def fake(method, path, body=None, raw=False):
+    def fake(method, path, body=None, *, raw=False):
         seen.append((path, raw))
         if path.endswith("report.docx"):
             return 200, b"PK\x03\x04docx-bytes"

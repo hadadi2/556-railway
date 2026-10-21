@@ -369,6 +369,8 @@ def _cors_origins() -> list[str]:
 
 _OWNER_ENV_ONLY = ("ANTHROPIC_API_KEY",)   # R7 (SEC-13): لا يُخزَّن من الواجهة أبداً
 _TOKEN_QS_RX = re.compile(r"((?:token|sig)=)[^&\s\"']+")   # مراجعة: `sig=` للروابط الموقّعة
+# رابط MCP البعيد يحمل رمزه في **المسار** (`/mcp/<token>/…`) — نفس عائلة SEC-6 (مراجعة §58).
+_MCP_PATH_RX = re.compile(r"(/mcp/)[^/\s\"'?#]+")
 
 
 class _QueryTokenFilter(logging.Filter):
@@ -379,10 +381,12 @@ class _QueryTokenFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:  # noqa: A003
         try:
             if isinstance(record.args, tuple):
-                record.args = tuple(_TOKEN_QS_RX.sub(r"\1<redacted>", a)
+                record.args = tuple(_MCP_PATH_RX.sub(r"\1<redacted>",
+                                                     _TOKEN_QS_RX.sub(r"\1<redacted>", a))
                                     if isinstance(a, str) else a for a in record.args)
-            if isinstance(record.msg, str) and "token=" in record.msg:
-                record.msg = _TOKEN_QS_RX.sub(r"\1<redacted>", record.msg)
+            if isinstance(record.msg, str) and ("token=" in record.msg or "/mcp/" in record.msg):
+                record.msg = _MCP_PATH_RX.sub(r"\1<redacted>",
+                                              _TOKEN_QS_RX.sub(r"\1<redacted>", record.msg))
         except Exception:  # noqa: BLE001 — مرشّحُ سجلّ لا يُسقط طلباً أبداً
             pass
         return True
@@ -554,7 +558,7 @@ def create_app():
     try:
         from fastapi import FastAPI, HTTPException, Request
         from fastapi.middleware.cors import CORSMiddleware
-        from fastapi.responses import JSONResponse
+        from fastapi.responses import JSONResponse, Response
         from fastapi.staticfiles import StaticFiles
         from pydantic import BaseModel, Field
         from typing import Literal
@@ -4587,6 +4591,130 @@ def create_app():
                           "docx": f"/analyses/{analysis_id}/report.docx",
                           "pdf": f"/analyses/{analysis_id}/report.pdf",
                           "md": f"/analyses/{analysis_id}/report.md"}})
+
+    # ── MCP عبر HTTP (رابطٌ يُلصَق في Connectors) — توضيح المالك «وين رابط MCP» ──
+    _MCP_TOKEN_MIN = 16
+    _mcp_executor_box: list = []
+
+    def _mcp_token_expected() -> str:
+        """`SILK_MCP_TOKEN` — رمز الرابط. أقصر من ١٦ محرفاً = مُطفأ (فشلٌ مغلق لا رمزٌ ضعيف)."""
+        tok = os.environ.get("SILK_MCP_TOKEN", "").strip()
+        return tok if len(tok) >= _MCP_TOKEN_MIN else ""
+
+    def _mcp_require_token(token: str) -> None:
+        """مقارنةٌ ثابتة الزمن؛ غيابُ الرمز أو خطؤه = 404 (لا نكشف وجود النقطة)."""
+        expected = _mcp_token_expected()
+        if not expected or not hmac.compare_digest(token.encode("utf-8"),
+                                                   expected.encode("utf-8")):
+            raise HTTPException(status_code=404, detail="Not Found")
+
+    def _mcp_loopback_url() -> str:
+        """عنوان الخادم نفسه لنداءات الأدوات: `SILK_MCP_LOOPBACK_URL` صريحاً، وإلا منفذ
+        `PORT` (يحقنه Railway) وإلا 8000 — تشغيلٌ محلّي على منفذٍ آخر يحتاج الصريح."""
+        explicit = os.environ.get("SILK_MCP_LOOPBACK_URL", "").strip().rstrip("/")
+        if explicit:
+            return explicit
+        return f"http://127.0.0.1:{os.environ.get('PORT', '8000').strip() or '8000'}"
+
+    def _mcp_remote_cfg(request: Request, token: str) -> dict:
+        """إعداد الوضع البعيد **لهذا الطلب** (contextvar في `tools.silk_mcp.REMOTE`):
+        نداءات الأدوات تعود إلى هذا الخادم عبر loopback بمفتاح API الخادم (تقرؤه `_http`
+        من البيئة) فلا يُلتَفّ على أي بوّابة؛ وروابط الملفات تحمل الرمز نفسه."""
+        _pub = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip()
+        base = f"https://{_pub}" if _pub else str(request.base_url).rstrip("/")
+        return {"base_url": _mcp_loopback_url(),
+                "download_link_base": f"{base}/mcp/{token}/files"}
+
+    def _mcp_executor():
+        """مجمّعُ خيوطٍ **مستقل** عن مجمّع Starlette (مراجعة §58): نداء الأداة يحجز
+        خيطاً ثم ينادي الخادمَ نفسه عبر loopback، والنقطةُ المستهدفة تحتاج خيطاً من
+        مجمّع Starlette — لو كان الاثنان مجمّعاً واحداً لتعطّل المجمّع كلّه عند ٤٠
+        نداءً متزامناً. `SILK_MCP_MAX_CONCURRENT` (افتراضياً ٨) سقفُ النداءات المتزامنة."""
+        if not _mcp_executor_box:
+            import concurrent.futures
+            _n = int(os.environ.get("SILK_MCP_MAX_CONCURRENT", "8") or 8)
+            _mcp_executor_box.append(concurrent.futures.ThreadPoolExecutor(
+                max_workers=max(1, _n), thread_name_prefix="silk-mcp"))
+        return _mcp_executor_box[0]
+
+    async def _mcp_run(fn, *args):
+        """نفّذ في المجمّع المستقل مع نسخ سياق contextvars (إعداد الطلب يصل الخيط)."""
+        import asyncio
+        import contextvars as _cv
+        ctx = _cv.copy_context()
+        return await asyncio.get_running_loop().run_in_executor(
+            _mcp_executor(), ctx.run, fn, *args)
+
+    @app.post("/mcp/{token}")
+    async def mcp_http(token: str, request: Request):
+        """MCP بنقل Streamable HTTP (بلا جلسات ولا بثّ): رسالة JSON-RPC أو دفعة في
+        الجسم → ردّ JSON؛ إشعارٌ بلا ردّ → 202. الرمز في المسار هو المصادقة لأن
+        Connectors لا تمرّر ترويسات. نفس الأدوات السبع ونفس البوّابات (loopback).
+        حدُّ المعدّل **قبل** فحص الرمز كي يُحاسَب التخمين أيضاً (مراجعة §58)."""
+        _rate_limit(request)
+        _mcp_require_token(token)
+        try:
+            payload = json.loads((await request.body()).decode("utf-8") or "null")
+        except (ValueError, UnicodeDecodeError):
+            return JSONResponse(status_code=400, content={
+                "jsonrpc": "2.0", "id": None,
+                "error": {"code": -32700, "message": "Parse error"}})
+        if not isinstance(payload, (dict, list)) or payload == []:
+            return JSONResponse(status_code=400, content={
+                "jsonrpc": "2.0", "id": None,
+                "error": {"code": -32600, "message": "Invalid Request"}})
+        import tools.silk_mcp as _m
+        _ctx_token = _m.REMOTE.set(_mcp_remote_cfg(request, token))
+        try:
+            responses = await _mcp_run(_m.handle_payload, payload)
+        finally:
+            _m.REMOTE.reset(_ctx_token)
+        if not responses:
+            return Response(status_code=202)
+        body = responses if isinstance(payload, list) else responses[0]
+        return JSONResponse(content=body)
+
+    @app.get("/mcp/{token}")
+    @app.delete("/mcp/{token}")
+    def mcp_http_unsupported(token: str, request: Request):
+        """لا بثّ SSE ولا جلسات — 405 كما تسمح المواصفة؛ الرمز يُفحَص (404 لغيره)."""
+        _rate_limit(request)
+        _mcp_require_token(token)
+        return Response(status_code=405, headers={"Allow": "POST"})
+
+    @app.get("/mcp/{token}/files/{analysis_id}/report.{fmt}")
+    async def mcp_file(token: str, analysis_id: int, fmt: str, request: Request):
+        """ملف العميل بالرمز نفسه (رابط `download_report` في الوضع البعيد) — يمرّ
+        عبر نقطة التصدير القائمة بكل بوّاباتها (loopback في المجمّع المستقل)؛ الحجب
+        يعود 409 كما هو، وتعذّر loopback = 502 معلَن لا 500."""
+        _rate_limit(request)
+        _mcp_require_token(token)
+        import tools.silk_mcp as _m
+        media = _m._MEDIA.get(fmt)
+        if media is None:
+            raise HTTPException(status_code=404, detail="Not Found")
+        _ctx_token = _m.REMOTE.set(_mcp_remote_cfg(request, token))
+        try:
+            import functools
+            status, data = await _mcp_run(functools.partial(
+                _m._http, "GET", f"/analyses/{analysis_id}/report.{fmt}", raw=True))
+        except Exception as _le:  # noqa: BLE001 — تعذّر loopback = 502 معلَن لا 500 غير مُدار
+            log.warning("mcp file loopback failed: %s", _le)
+            return JSONResponse(status_code=502, content={
+                "detail": "loopback unavailable — الخادم لم يصل إلى نقطة التصدير الخاصة به"})
+        finally:
+            _m.REMOTE.reset(_ctx_token)
+        if status != 200:
+            text = data if isinstance(data, str) else data.decode("utf-8", "replace")
+            try:
+                detail = json.loads(text)
+            except ValueError:
+                detail = {"detail": text[:500]}
+            return JSONResponse(status_code=status, content=detail)
+        if isinstance(data, str):
+            data = data.encode("utf-8")
+        return Response(content=data, media_type=media, headers={
+            "Content-Disposition": f'attachment; filename="silk-{analysis_id}.{fmt}"'})
 
     @app.post("/analyses/{analysis_id}/enrich-leads")
     def enrich_leads(analysis_id: int, request: Request):

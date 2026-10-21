@@ -192,3 +192,62 @@ def test_health_answers_within_a_second_while_the_threadpool_is_saturated():
     assert st == 200 and json.loads(body)["status"] == "ok"
     assert elapsed < 1.0, f"/health أجاب بعد {elapsed:.2f}s تحت الإشباع"
     assert codes.count(200) == 45, codes
+
+
+def test_remote_mcp_link_runs_tools_via_loopback_and_serves_file_link():
+    """رابط MCP البعيد (توضيح المالك 2026-10-21): `POST /mcp/<token>` على خادم حقيقي —
+    الأدوات تنادي الخادمَ **نفسه** عبر loopback بمفتاحه (لا يُلتَفّ على البوّابات)،
+    و`download_report` يعيد رابطاً بالرمز نفسه يُنزِّل Word فعلياً. هذا ما لا تستطيع
+    الحزمة الهرمتية إثباته (كل اختباراتها تُطعِّم `_http`)."""
+    import socket
+    from live_shape_server import LiveShapeServer
+    with socket.socket() as sk:
+        sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]
+    token = "rung2-remote-mcp-token-0123456789"
+    with LiveShapeServer(port=port, env={"SILK_MCP_TOKEN": token, "PORT": str(port)}) as srv:
+        def rpc(payload, tok=token):
+            req = urllib.request.Request(
+                f"{srv.base_url}/mcp/{tok}", method="POST",
+                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                headers={"Content-Type": "application/json",
+                         "Accept": "application/json, text/event-stream"})
+            try:
+                with urllib.request.urlopen(req, timeout=120) as r:
+                    return r.status, r.read().decode("utf-8")
+            except urllib.error.HTTPError as e:
+                return e.code, e.read().decode("utf-8")
+        assert rpc({"jsonrpc": "2.0", "id": 0, "method": "ping"}, tok="wrong-token-wrong-token")[0] == 404
+        st, body = rpc({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                        "params": {"protocolVersion": "2025-06-18"}})
+        assert st == 200 and json.loads(body)["result"]["serverInfo"]["name"] == "silk"
+        assert rpc({"jsonrpc": "2.0", "method": "notifications/initialized"})[0] == 202
+
+        def call(mid, name, args):
+            st, body = rpc({"jsonrpc": "2.0", "id": mid, "method": "tools/call",
+                            "params": {"name": name, "arguments": args}})
+            assert st == 200, body
+            res = json.loads(body)["result"]
+            return res["isError"], [c["text"] for c in res["content"]]
+        err, txt = call(2, "list_studies", {"limit": 20})         # loopback حقيقي بمفتاح الخادم
+        assert err is False and "|" in txt[0], txt
+        # بعض الصفوف المبذورة /analyze أو بلا نصّ كاتب — نأخذ أول دراسة يعيد الخادم نصَّها
+        # (نفس ما يفعله المالك في كلود: يجرّب، والأداة تقول لماذا لا).
+        rows = [[c.strip() for c in ln.split("|")] for ln in txt[0].splitlines()[1:]]
+        first_id, got = None, None
+        for r in rows:
+            err, got = call(3, "get_report", {"analysis_id": int(r[0])})
+            if err is False and got[1].startswith("## 1."):
+                first_id = int(r[0])
+                break
+        assert first_id is not None, (rows, got)
+        err, txt = call(4, "download_report", {"analysis_id": first_id})
+        assert err is False, txt
+        link = [ln for ln in txt[0].splitlines() if "/mcp/" in ln][-1].strip()
+        assert f"/mcp/{token}/files/{first_id}/report.docx" in link
+        with urllib.request.urlopen(link, timeout=120) as r:
+            data, ctype = r.read(), r.headers.get("Content-Type", "")
+        assert data[:2] == b"PK" and len(data) > 10_000 and "wordprocessingml" in ctype
+        with pytest.raises(urllib.error.HTTPError) as ex:
+            urllib.request.urlopen(link.replace(token, "x" * len(token)), timeout=30)
+        assert ex.value.code == 404
