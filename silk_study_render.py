@@ -211,7 +211,8 @@ class Renderer:
             # بدل إسقاط فقرة الملخّص والتعرفة والاقتصاد الكلي والمتطلبات معاً.
             "market_nisba": c["market"]["nisba_f"] or f"المحلية في {c['market']['name_ar']}",
             "prep_year": c["prepared"]["year"], "prep_month": c["prepared"]["month"],
-            "last_complete_year": max((r["year"] for r in (c["imports"].get("series") or []) if r.get("complete")), default=None),
+            # الدرس ٣٠٠: رأسُ السلسلة لا أحدثُ صفّ — سنةُ مرآةٍ أحدث لا تصير «أحدث سنة مكتملة».
+            "last_complete_year": _last_complete_label(c),
             "gdp_growth": c["imports"].get("gdp_growth_pct"), "gdp_source": c["imports"].get("gdp_source"),
             "local_producers_word": c["imports"].get("local_producers_word"),
             "uv_first": c["imports"].get("unit_value_first"), "uv_last": c["imports"].get("unit_value_last_reliable"),
@@ -255,7 +256,10 @@ class Renderer:
         })
         sh = ctx
         sh["shape_g_abs"] = abs(n["shape_g_first_last"]) if n.get("shape_g_first_last") is not None else None
-        ser = c["imports"]["series"]
+        # الدرس ٣٠٠: الأدنى والأعلى والسنةُ السابقة من نافذة النموّ نفسِها التي يقرؤها
+        # `series_shape` — صفُّ مرآةٍ خارجها لا يصير «أدنى مستوى» ولا طرفَ «آخر تغيّر».
+        ser = [r for r in c["imports"]["series"] if r.get("value_musd") is not None
+               and r.get("complete", True) and r.get("in_growth_window", True)]
         if ser:
             mn = min(ser, key=lambda r: r["value_musd"]); mx = max(ser, key=lambda r: r["value_musd"])
             sh["shape_min_year"], sh["shape_min_value"] = mn["year"], mn["value_musd"]
@@ -264,7 +268,7 @@ class Renderer:
             sh["shape_min_year"] = sh["shape_min_value"] = sh["shape_max_value"] = None
         sh["decision_word_gen"] = {"defer": "الإرجاء", "no_entry": "عدم الدخول", "entry": "الدخول", "conditional": "الدخول المشروط"}[n["decision"]]
         sh["shape_dip_sign"] = (n["shape_dip_value"] - n["shape_v_first"]) if n.get("shape_dip_value") is not None else None
-        yrs = [r["year"] for r in c["imports"]["series"]]
+        yrs = [r["year"] for r in ser]
         sh["shape_y_prev"] = yrs[-2] if len(yrs) > 1 else None
         sh["last_yoy_abs"] = abs(sh["last_yoy"]) if sh.get("last_yoy") is not None else None
         for key in ("dv", "dp", "dq"):
@@ -509,7 +513,9 @@ class Renderer:
     def _rows(self, source: str) -> list[list[str]]:
         c = self.case
         if source == "imports_series":
-            return [[str(r["year"]), f"{r['value_musd']:.1f}" + ("" if r.get("complete", True) else " (أولي)")]
+            # الدرس ٣٠٠: صفُّ المرآة موسومٌ في خليّته — لا يُقرأ تصريحاً من السوق نفسها.
+            return [[str(r["year"]), f"{r['value_musd']:.1f}" + ("" if r.get("complete", True) else " (أولي)")
+                     + (" (تقدير من بيانات الشركاء)" if r.get("mirrored") else "")]
                     for r in c["imports"]["series"]]
         if source == "shelf_prices":
             return [[r["product"], r["segment"], r["price"], r["source"]] for r in c["shelf_prices"]["rows"]]
@@ -629,10 +635,27 @@ class Renderer:
 _TABLE_GAP = "غير مرصود في هذه النسخة"
 
 
+def _last_complete_year(case: dict):
+    """أحدثُ سنةٍ **مكتملة** حتى رأس السلسلة (الدرس ٣٠٠): سنةُ مرآةٍ بعد الرأس لا تُعدّ،
+    والرأسُ الأوليّ (`provisional`) ليس «مكتملاً» (الدرس ٣٠١) — أحدثُ صفٍّ مكتمل قبله."""
+    imp = case.get("imports") or {}
+    head = imp.get("head_year")
+    return max((r["year"] for r in (imp.get("series") or []) if r.get("complete")
+                and (not head or r["year"] <= head)), default=None)
+
+
+def _last_complete_label(case: dict):
+    """سطرُ «أحدث سنة مكتملة»: السنةُ وسمُها من **صفّها هي** (مراجعة §58) — صفٌّ مرآة يُوسَم
+    ولو كان الرأسُ مباشراً أوّلياً."""
+    year = _last_complete_year(case)
+    row = next((r for r in ((case.get("imports") or {}).get("series") or [])
+                if r.get("year") == year), None)
+    return f"{year} (تقدير من بيانات الشركاء)" if year and row and row.get("mirrored") else year
+
+
 def _provisional_year(year, case: dict):
     """سنة حصص الموردين بعد آخر سنة واردات مكتملة تُوسم «أولي» (الدرس ٢٩١)."""
-    last = max((r["year"] for r in ((case.get("imports") or {}).get("series") or [])
-                if r.get("complete")), default=None)
+    last = _last_complete_year(case)
     if isinstance(year, int) and isinstance(last, int) and year > last:
         return f"{year} (أولي)"
     return year

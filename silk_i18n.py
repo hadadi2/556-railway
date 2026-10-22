@@ -1131,6 +1131,32 @@ TERMS.update({
         "en": "The {years} value is estimated from trading partners' "
               "declarations (mirror data) — less certain than a direct "
               "declaration."},
+    # الدرس ٣٠٠: رأسٌ مرآةٌ حين لا تصريحَ مباشراً (قراءة المالك ٢) — الوسمُ في
+    # جملة الرقم نفسِها؛ وسنةُ مرآةٍ أحدث من الرأس تُعرض منفصلةً بقيمتها.
+    "imports_value_line_mirror": {
+        "ar": "بلغت واردات السوق من هذا الصنف نحو {amount} في {year} بتقدير من "
+              "بيانات الدول المصدّرة إليها (بيانات مرآة)، إذ لا رقم صرّحت به "
+              "السوق نفسها.",
+        "en": "The market imported about {amount} of this product in {year}, "
+              "estimated from trading partners' declarations (mirror data); "
+              "the market itself has not reported a figure."},
+    "imports_mirror_after_head_note": {
+        "ar": "بعد آخر سنة صرّحت بها السوق ({head_year}) يتوفر تقدير من بيانات "
+              "الدول المصدّرة إليها (بيانات مرآة): {items}. يُعرض منفصلاً لأنه "
+              "أقل دقة من الرقم المباشر، ولا يدخل حجم السوق ولا حساب النمو.",
+        "en": "After the last year the market itself reported ({head_year}), "
+              "an estimate from trading partners' declarations (mirror data) "
+              "is available: {items}. It is shown separately because it is "
+              "less certain than a direct declaration, and it is excluded "
+              "from the market size and the growth calculation."},
+    "imports_trend_mirror_only": {
+        "ar": "لم يُحسب النمو: لا تتوفر سنتان صرّحت بهما السوق نفسها، والسنوات "
+              "الأخرى مقدَّرة من بيانات الدول المصدّرة إليها (بيانات مرآة) ولا "
+              "يُحسب منها نمو.",
+        "en": "Growth is not computed: fewer than two years were reported by "
+              "the market itself, and the other years are estimates from "
+              "trading partners' declarations (mirror data), which are never "
+              "used for growth."},
     "chart_imports_trend": {
         "ar": "واردات السوق بالسنوات (دولار)",
         "en": "Market imports by year (USD)"},

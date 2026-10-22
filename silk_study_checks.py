@@ -946,6 +946,23 @@ def _mirror_only_years(facts: list) -> set:
 
 
 _IMPORT_LEDGER_KEY_RE = re.compile(r"واردات|الواردات|النمو|نمو|المركّب|المركب|imports|growth|CAGR", re.I)
+_SAUDI_KEY_RE = re.compile(_SAUDI, re.I)
+_SHARE_KEY_RE = re.compile(r"حصة|نصيب|share", re.I)
+_HHI_KEY_RE = re.compile(r"HHI|تركّ?ز|هيرفندال", re.I)
+_COUNT_KEY_RE = re.compile(r"عدد\s+(?:ال)?(?:دول|مورّ?د)|supplier\s+count", re.I)
+
+
+def _ledger_indicator(key: str) -> "str | None":
+    """مؤشرُ F3 لبند سجلّ الحقائق من تسميته — None حين لا يقابل مؤشراً من الخمسة."""
+    if _HHI_KEY_RE.search(key):
+        return "hhi"
+    if _SAUDI_KEY_RE.search(key):
+        return "saudi_share_pct" if _SHARE_KEY_RE.search(key) else "saudi_flow_usd"
+    if _COUNT_KEY_RE.search(key):
+        return "supplier_count"
+    if _SHARE_KEY_RE.search(key):
+        return None                                  # حصةُ أكبر مورّد ليست مؤشراً هنا
+    return "imports_usd" if _IMPORT_LEDGER_KEY_RE.search(key) else None
 #: سياقُ كل مؤشر حول رقمه في النصّ — «12%» نموٌّ ليست الحصة السعودية 12.02%.
 _IND_CTX = {"imports_usd": re.compile(r"واردات|استيراد|حجم|سوق|imports|market", re.I),
             "saudi_flow_usd": re.compile(r"سعودي|المملكة|Saudi", re.I),
@@ -957,11 +974,16 @@ _IND_CTX = {"imports_usd": re.compile(r"واردات|استيراد|حجم|سو�
 def check_mirror(doc: StudyDoc) -> Finding:
     facts = study_facts(doc)
     items: list = []
-    direct = {i: [f for f in facts if f.indicator == i and f.kind == "direct"] for i in INDICATORS}
+    # الدرس ٣٠١: رقمٌ مباشرٌ لسنةٍ جارية (جزئيٌّ بطبيعته) ليس «تصريحاً مباشراً» يمنع المرآة —
+    # الرأسُ عندها مرآةٌ موسومة بحكم السلسلة نفسِها.
+    import datetime as _dt
+    _cur = _dt.date.today().year
+    direct = {i: [f for f in facts if f.indicator == i and f.kind == "direct"
+                  and not (f.year and f.year >= _cur)] for i in INDICATORS}
     mirror = {i: [f for f in facts if f.indicator == i and f.kind == "mirror"] for i in INDICATORS}
     paras = paragraphs(doc.report)
 
-    all_direct = [f for fs in direct.values() for f in fs]
+    all_direct = [f for f in facts if f.kind == "direct"]
 
     def mirror_hit(fig: tuple, fact: "Fact", text: str) -> bool:
         """الرقم رقمُ مرآةٍ لهذا المؤشر: يطابق قيمتها، ولا يطابق رقماً مباشراً، وفي سياق مؤشره."""
@@ -1026,18 +1048,24 @@ def check_mirror(doc: StudyDoc) -> Finding:
                                           "indicator": _INDICATOR_AR[ind], "figure": m.value,
                                           "text": _snip(p),
                                           "why": "رقم مرآة بلا وسم «مرآة/تقدير من بيانات الشركاء»"})
-    # ٣) رأس سجلّ الحقائق: مرآةٌ صريحة، أو مؤشرُ وارداتٍ سنتُه سنةُ مرآةٍ فقط.
+    # ٣) رأس سجلّ الحقائق: مرآةٌ صريحة، أو مؤشرُ وارداتٍ سنتُه سنةُ مرآةٍ فقط — ممنوعان
+    #    حين للمؤشر رقمٌ مباشر. الدرس ٣٠٠ (قراءة المالك ٢): سوقٌ لا تصرّح أصلاً رأسُها مرآةٌ
+    #    موسومة (السجلّ يكتب «بيانات مرآة» بجوار رقمها) — مسموح.
     mirror_years = _mirror_only_years(facts)
     for line in doc.evidence_lines:
         m = _LEDGER_HEAD_RE.match(line)
         if not m:
             continue
         key = m.group(1).strip()
+        ind = _ledger_indicator(key)
+        has_direct = bool(direct[ind]) if ind else bool(all_direct)
         if _MIRROR_RE.search(line):
-            items.append({"status": FAIL, "where": "سجلّ الحقائق", "key": key, "text": _snip(line),
-                          "why": "رأس السجلّ لهذا المؤشر رقم مرآة لا تصريح مباشر"})
+            if has_direct:
+                items.append({"status": FAIL, "where": "سجلّ الحقائق", "key": key,
+                              "text": _snip(line),
+                              "why": "رأس السجلّ لهذا المؤشر رقم مرآة وله تصريح مباشر"})
             continue
-        if _IMPORT_LEDGER_KEY_RE.search(key):
+        if _IMPORT_LEDGER_KEY_RE.search(key) and direct["imports_usd"]:
             bad = sorted({int(y) for y in _YEAR_RE.findall(line[m.end():])} & mirror_years)
             if bad:
                 items.append({"status": FAIL, "where": "سجلّ الحقائق", "key": key, "text": _snip(line),

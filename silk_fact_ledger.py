@@ -479,10 +479,12 @@ def _fill_from_research(dr: dict, put, result: dict | None = None) -> None:
             put(_entry(key, None, origin=mission,
                        note="لم يرصده المحرّك في نتائج هذه البعثة"))
             continue
+        # الدرس ٣٠١: حجمُ السوق يُسنَد لنتيجة رأس السلسلة بنوعها — المطابقةُ بالقيمة وحدها
+        # كانت تنسبه لمرآة سنةٍ أخرى مساويةٍ له فيُوسَم «ضعيفاً» وسنتُه غيرُ سنة الرأس.
+        winner = (_hhi_winner(missions) if key == "hhi" else
+                  P.head_finding(missions) if key == "market_imports_usd" else None)
         put(_entry(key, value, origin=mission,
-                   **_attribution(missions, mission, metric, value,
-                                  winner=(_hhi_winner(missions)
-                                          if key == "hhi" else None))))
+                   **_attribution(missions, mission, metric, value, winner=winner)))
     _fill_series(missions, put)
     _fill_requirements_from_table(result or {}, put)
     put(_entry("population", None, note="لا يُقرأ عدد السكان من البعثات"))
@@ -607,11 +609,28 @@ def _fill_series(missions: dict, put) -> None:
         put(_entry("import_growth_pct", None, note="لا سلسلة واردات مرصودة"))
         return
     # الدرس ٢٨٠: أحدثُ سنةٍ **كاملة** — السنةُ الجارية الجزئية تبقى في
-    # البنود موسومةً ولا تصير سنةَ العنوان.
+    # البنود موسومةً ولا تصير سنةَ العنوان. الدرس ٣٠٠: والعنوانُ رأسُ السلسلة
+    # (آخرُ سنةٍ مصرَّحة مباشرةً) — سنةُ مرآةٍ أحدث تبقى بنداً موسوماً.
     full = [p for p in pts if not p.get("partial")] or pts
-    latest = max(int(p["year"]) for p in full)
-    put(_entry("imports_latest_year", latest, source="UN Comtrade",
-               confidence=0.9, note="أحدث سنة كاملة مرصودة في سلسلة الواردات",
+    head = series.get("head") or full[-1]
+    latest = int(head["year"])
+    # الدرس ٣٠١: الوسمُ من النقطة المعروضة نفسِها — حين كلُّ النقاط جزئية لا رأسَ محسوب
+    # و`head_is_mirror` كاذبٌ بينما النقطةُ مرآة.
+    h_mirror = bool(head.get("mirrored"))
+    h_partial = bool(head.get("partial"))
+    # مراجعة §58: رأسٌ مرآةٌ يُسجَّل بمصدره وثقته ووسمه (ضعيفٌ «بيانات مرآة» في
+    # كلّ سطرٍ يصيّره) — لا «UN Comtrade» بثقة المباشر 0.9.
+    put(_entry("imports_latest_year", latest,
+               source=(head.get("source") or "UN Comtrade (مرآة)") if h_mirror else "UN Comtrade",
+               confidence=(head.get("confidence") or 0.6) if h_mirror else 0.9,
+               mirrored=h_mirror,
+               note=(("أحدث سنة مرصودة في سلسلة الواردات، وهي سنة جارية — رقم جزئي"
+                      + ("، من بيانات الدول الشريكة (بيانات مرآة)" if h_mirror else ""))
+                     if h_partial else
+                     "أحدث سنة كاملة مرصودة في سلسلة الواردات، من بيانات الدول "
+                     "الشريكة (بيانات مرآة) إذ لا تصريح مباشر من السوق"
+                     if h_mirror else
+                     "أحدث سنة كاملة صرّحت بها السوق في سلسلة الواردات"),
                origin="trade_flow", items=[dict(p) for p in pts]))
     g = _num(series.get("growth_pct"))
     by = series.get("basis_years") or []
@@ -619,11 +638,19 @@ def _fill_series(missions: dict, put) -> None:
                origin="trade_flow", year=(by[-1] if by else None),
                note=((f"نمو الواردات {by[0]}–{by[-1]}" if by else
                       "نمو الواردات بين أول وآخر سنة كاملة مرصودة")
-                     if g is not None else "يتطلب سنتين مرصودتين")))
+                     if g is not None else
+                     ("لا يُحسب النمو من بيانات الدول الشريكة (بيانات مرآة) — "
+                      "يتطلب سنتين صرّحت بهما السوق"
+                      if series.get("growth_refused") == "mirror_only"
+                      else "يتطلب سنتين مرصودتين"))))
     # الدرس ٢٩٦: النموُّ المركّب من السلسلة نفسِها بمصدرها — كان يُقرأ من نثر
     # البعثة فتفشل مطابقةُ الإسناد ويُوسَم «من مصادر غير رسمية فقط»، أو يغيب
     # فيُعلَن «غير متاح» بينما السلسلةُ المرسومة تعطيه.
     c = _num(series.get("cagr_pct"))
+    if c is None and series.get("growth_refused") == "mirror_only":
+        put(_entry("import_cagr_pct", None, origin="trade_flow",
+                   note="لا يُحسب المعدل السنوي المركّب من بيانات الدول الشريكة "
+                        "(بيانات مرآة) — يتطلب سنتين صرّحت بهما السوق"))
     if c is not None:
         # الدرس ٢٩٧: النافذةُ من `import_series` نفسِه — لا قاعدةٌ ثانية هنا.
         yrs = by or [int(full[0]["year"]), int(full[-1]["year"])]
@@ -1482,6 +1509,14 @@ def _finding(check: str, note: str, *, always_block: bool = False) -> dict:
             "note": note}
 
 
+# مراجعة §58: نقطةُ اختصارٍ إنجليزيّ («U.S.»، «e.g.») ليست نهايةَ جملة، ولا نقطةٌ عشرية.
+_SENT_END_RE = re.compile(r"(?<!\b[A-Za-z])\.(?!\d)|[؛!?؟\n]")
+# وسمُ المرآة صريحٌ لا عامّ: «من الدول المصدّرة» (المورّدون) أو «partners» ليسا وسماً.
+_MIRROR_LABEL_RE = re.compile(r"مرآة|مرآتية|بيانات\s+(?:الدول\s+)?(?:الشريكة|الشركاء)|"
+                              r"بيانات\s+الدول\s+المصدّ?رة|\bmirror(?:ed)?\b|"
+                              r"partner[- ](?:reported|country\s+data)", re.I)
+
+
 def _chart_year_findings(view: dict, latest: int) -> list:
     """الدرس 290: سنةُ رسم الواردات مدىً نصّيّ («2019–2023») — كان `_num` يُرجع None فيموت
     الفحص. تُقرأ نهايةُ المدى وتُقارَن بسنة الأساس."""
@@ -1594,9 +1629,26 @@ def check(view: dict, text: str) -> list:
     ly = entries.get("imports_latest_year") or {}
     if ly.get("status") != MISSING and ly.get("value"):
         latest = int(ly["value"])
+        # الدرس ٣٠١: سنةُ مرآةٍ بعد الرأس تُعرض منفصلةً **موسومة** (الدرس ٣٠٠) — جملتُها
+        # الموسومة ليست نسبةً للواردات إلى سنةٍ غير الرأس؛ غيرُ الموسومة تبقى تُطلق.
+        mirror_after = {int(p["year"]) for p in (ly.get("items") or [])
+                        if isinstance(p, dict) and p.get("mirrored")
+                        and str(p.get("year") or "").isdigit() and int(p["year"]) > latest}
         for m in re.finditer(r"واردات|الواردات|imports", text):
             win = text[m.start():m.end() + 60].split("\n")[0]
+            # الدرس ٣٠١: النافذةُ داخل جملتها — سنةٌ في الجملة التالية ليست نسبةً لهذه الواردات
+            # (ونقطةُ «9.17» العشرية ليست نهايةَ جملة).
+            _cut = _SENT_END_RE.search(win, m.end() - m.start())
+            if _cut:
+                win = win[:_cut.start()]
             yrs = [int(y) for y in _YEAR_RE.findall(win)]
+            if yrs and max(yrs) > latest and mirror_after and \
+                    {y for y in yrs if y > latest} <= mirror_after:
+                _lo = max(0, m.start() - 300)
+                _s0 = max([b.end() for b in _SENT_END_RE.finditer(text, _lo, m.start())]
+                          or [_lo])
+                if _MIRROR_LABEL_RE.search(text[_s0:m.start()] + win):
+                    continue
             if yrs and max(yrs) > latest:
                 findings.append(_finding(
                     "ledger_series_year_mismatch",

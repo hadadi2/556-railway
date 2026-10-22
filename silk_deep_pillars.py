@@ -584,18 +584,25 @@ def build_pillar_inputs(dr: dict, *, product_card: dict | None = None,
     # الدرس 290 (مراجعة §58): حجمُ السوق من سلسلة الواردات عند سنة الأساس — مرشّحٌ من سنةٍ
     # جزئية (مرآة ناقصة) أو نثرٍ لسنة أخرى لا يصير TAM بينما الرسم والدفتر على سنة الأساس.
     _series = import_series(missions)
-    _series_pts = [p for p in (_series.get("series") or []) if not p.get("partial")]
-    _tam = float(_series_pts[-1]["value"]) if _series_pts else _numeric(trade, "tam_usd")
+    # الدرس ٣٠٠: حجمُ السوق رأسُ السلسلة (آخرُ سنةٍ مباشرة) لا سنةُ مرآةٍ أحدث.
+    _head = _series.get("head")
+    # الدرس ٣٠١: سلسلةٌ كلُّ نقاطها جزئية (سنةٌ جارية فقط) لا رأسَ لها ولا حجمَ سوقٍ منها —
+    # الاحتياطُ النثريّ كان يعيد الرقمَ الجزئيَّ نفسَه حجماً (الدرس ٢٩٠). النثرُ حين لا سلسلةَ فقط.
+    _tam = (float(_head["value"]) if _head else
+            (None if _series.get("series") else _numeric(trade, "tam_usd")))
     # الدرس ٢٩٦ (قرار المالك «fix it all» 2026-10-15): عمودُ القرار يقرأ مركّبَ
     # السلسلة المرسومة نفسَه الذي يقرؤه السجلُّ والنصّ — رقمٌ ملتقَطٌ من نثر
     # البعثة كان يُعرَض أو يغيب فيُطبَع «غير متاح» والسلسلةُ تعطيه. النثرُ
     # احتياطٌ فقط. خطُّ الأساس حُدِّث بقراره (nadec_yemen_dairy: السوق
     # 0.363→0.483، الحكم ثابت).
     _cagr = _series.get("cagr_pct")
+    # الدرس ٣٠٠: نموٌّ رُفض لأن السلسلةَ مرآة لا يعود من نثر البعثة (قد يكون
+    # محسوباً على المرآة نفسِها) — النثرُ احتياطٌ حين لا سلسلةَ فقط.
+    if _cagr is None and not _series.get("growth_refused"):
+        _cagr = _numeric(trade, "import_cagr_pct")
     market = {
         "tam_usd": _tam,
-        "import_cagr_pct": (_cagr if _cagr is not None
-                            else _numeric(trade, "import_cagr_pct")),
+        "import_cagr_pct": _cagr,
         "gdp_per_capita_usd": _numeric(econ, "gdp_per_capita_usd"),
         "saudi_share_pct": saudi_share,
     }
@@ -752,6 +759,19 @@ def build_components(dr: dict) -> dict:
             if value is None:
                 value, comp_src_f = _saudi_share_from_competitors(
                     _metric_findings(missions, "competitors"))
+        elif metric == "tam_usd" and (_ser := import_series(missions)).get("series"):
+            # الدرس ٣٠٠ (مراجعة §58): حجمُ السوق في الصفّ رأسُ السلسلة نفسُه الذي
+            # يقرؤه `tam_usd` والسجلُّ والعرض — «الأحدث سنةً» كان يعيد مرآةَ 2025.
+            # الدرس ٣٠١: الإسنادُ من نتيجة الرأس بنوعها (`head_finding`)، وسلسلةٌ بلا رأس
+            # (كلُّها جزئية) = لا حجمَ سوق، لا رقمَ سنةٍ جارية.
+            head = _ser["head"]
+            if head:
+                value = float(head["value"])
+                comp_src_f = head_finding(missions, _ser) or {
+                    "source": head["source"], "data_year": head["year"],
+                    "note": "", "confidence": head["confidence"]}
+            else:
+                value, comp_src_f = None, None
         else:
             # D5 (دراسة #12): القيمة والإسناد من **النتيجة الفائزة نفسها**
             # (أحدث سنة حقيقة) — حلقةُ إعادة البحث بأول مطابقة كلمةٍ كانت
@@ -801,6 +821,9 @@ def import_series(missions: dict) -> dict:
       الاختلاق حرفياً؛ والنموُّ يُحسَب من المرصود وحده (`silk_trend`).
     * نفسُ إبرة `tam_usd` ومداه: سعرُ الوحدة («متوسط سعر استيراد») يسقط
       بالمدى، والسنةُ لا تُقرَأ حجماً.
+    * الدرس ٣٠٠: `head` آخرُ سنةٍ كاملةٍ مصرَّحة مباشرةً (وبلا مباشرٍ آخرُ مرآةٍ
+      و`head_is_mirror`)، و`mirror_after_head` سنواتُ مرآةٍ أحدث منه تُعرض منفصلة،
+      والنموُّ من المباشر وحده (`growth_refused="mirror_only"` حين لا يكفي).
     """
     findings = _metric_findings(missions or {}, "trade_flow")
     words = _KW.get("tam_usd", ())
@@ -856,22 +879,35 @@ def import_series(missions: dict) -> dict:
     # الدرس 290 (قرار المالك): أحدثُ سنةٍ **فقط**، ولم تُبلِغ عنها السوق نفسها (مرآة)، وقيمتُها
     # دون 80% من متوسط السنتين السابقتين ⇒ جزئية (تصريحات الشركاء لم تكتمل). سنةُ هبوطٍ مُبلَّغة
     # مباشرةً أو سنةٌ أقدم تُقبل كما هي — لا يُسقَط هبوطٌ حقيقي.
-    if len(series) >= 3 and series[-1].get("mirrored") and not series[-1]["partial"]:
-        prev = [p["value"] for p in series[-3:-1]]
-        if series[-1]["value"] < 0.8 * (sum(prev) / len(prev)):
-            series[-1]["partial"] = True
-            series[-1]["partial_reason"] = "mirror_incomplete"
+    # الدرس ٣٠١: «أحدثُ سنةٍ» هي أحدثُ سنةٍ غيرِ جارية — نقطةُ السنة الجارية (جزئيةٌ بطبيعتها)
+    # كانت تحجب القاعدةَ عن سنة مرآةٍ ناقصةٍ قبلها فتصير رأسَ سوقٍ لا تصرّح.
+    _done = [p for p in series if not p["partial"]]
+    if len(_done) >= 3 and _done[-1].get("mirrored"):
+        prev = [p["value"] for p in _done[-3:-1]]
+        if _done[-1]["value"] < 0.8 * (sum(prev) / len(prev)):
+            _done[-1]["partial"] = True
+            _done[-1]["partial_reason"] = "mirror_incomplete"
     full = [p for p in series if not p["partial"]]
     years_missing = sorted(y for y in missing if y not in best)
     growth = cagr = None
-    # الدرس ٢٩٦ (دراسة قهوة البحرين): «نمو 213% ومركّب 21%» قاعدتُهما سنةُ
-    # مرآةٍ أقدم، بينما السلسلةُ المباشرة 2019–2024 تعطي نحو 13.7%. النموُّ من
-    # تصريحات السوق نفسِها حين تكفي (نقطتان)، والمرآةُ احتياطٌ لا قاعدة.
+    # الدرس ٣٠٠ (PR-B البند أ، قرار المالك 2026-10-21): «آخر سنة بتصريح مباشر هي
+    # الرأس، وسنة المرآة تُعرض منفصلة ومعلَّمة، ولا يُحسب منها نمو ولا معدل
+    # سنوي». دراسةُ قهوة البحرين: مرآةُ 2025 (15.12 مليون) صارت الرأسَ وقاعدةَ
+    # «نمو 213% ومركّب 20.9%» بينما المباشرُ 2019–2024 يعطي 89.9% و13.7% —
+    # تكرّر في أربع دراساتٍ مدفوعة. كانت المرآةُ «احتياطاً» للنموّ (الدرس ٢٩٦)
+    # وقاعدةً حين تكون أحدثَ من المباشر (مراجعة §58)؛ كلاهما أُلغي.
     direct = [p for p in full if not p.get("mirrored")]
-    # المراجعة الذاتية §58: المباشرةُ قاعدةٌ فقط حين تنتهي عند سنة الأساس —
-    # وإلا يُعرَض نموُّ 2019–2022 بجوار حجم سوق 2024.
-    basis = (direct if len(direct) >= 2 and full
-             and direct[-1]["year"] == full[-1]["year"] else full)
+    # الرأس: آخرُ سنةٍ مباشرةٍ كاملة؛ ولا مباشرَ أصلاً ⇒ آخرُ سنةِ مرآةٍ **موسومة**
+    # (قراءةُ المالك ٢: رقمُ المرآة مسموحٌ موسوماً حين لا رقمَ مباشر).
+    head = direct[-1] if direct else (full[-1] if full else None)
+    head_is_mirror = bool(head and head.get("mirrored"))
+    # سنواتُ المرآة الأحدث من الرأس تُعرض منفصلةً — لا تدخل الحجمَ ولا النموّ.
+    mirror_after = ([p for p in full if p.get("mirrored") and p["year"] > head["year"]]
+                    if head and not head_is_mirror else [])
+    basis = direct if len(direct) >= 2 else []
+    # سنتان كاملتان فأكثر ولا مباشرَ يكفي ⇒ النموُّ مرفوضٌ لأنه مرآة (سببٌ
+    # يُقال للقارئ)، لا لنقصٍ في السنوات — السببان لا يُخلطان.
+    refused = "mirror_only" if (len(full) >= 2 and len(direct) < 2) else None
     if len(basis) >= 2:
         try:
             from silk_trend import cagr_pct, growth_pct
@@ -888,15 +924,44 @@ def import_series(missions: dict) -> dict:
     basis_set = sorted({int(p["year"]) for p in basis}) if len(basis) >= 2 else []
     return {"series": series, "years_missing": years_missing,
             "growth_pct": growth, "cagr_pct": cagr, "basis_years": basis_years,
-            "basis_year_set": basis_set}
+            "basis_year_set": basis_set, "head": head,
+            "head_is_mirror": head_is_mirror, "mirror_after_head": mirror_after,
+            "growth_refused": refused}
+
+
+def is_mirror_finding(f) -> bool:
+    """الحكمُ الواحد «هل هذه النتيجةُ مرآة؟» (الدرس ٣٠١، مراجعة §58): الحالةُ `mirrored` أو
+    مصدرٌ يحمل «مرآة»/mirror — كما تقرؤه `import_series` نفسُها."""
+    st = str((f.get("status") if isinstance(f, dict) else getattr(f, "status", "")) or "")
+    src = str((f.get("source") if isinstance(f, dict) else getattr(f, "source", "")) or "")
+    return st == "mirrored" or "مرآة" in src or "mirror" in src.lower()
+
+
+def head_finding(missions: dict, series: "dict | None" = None):
+    """النتيجةُ التي أنتجت رأسَ السلسلة (الدرس ٣٠١): القيمةُ والسنةُ **ونوعُها** (مباشر/مرآة)
+    — مطابقةٌ بالقيمة وحدها كانت تنسب رأساً مباشراً لنتيجة مرآةٍ مساويةٍ له. None = لا رأس."""
+    head = (series if series is not None else import_series(missions or {})).get("head")
+    if not head:
+        return None
+    for f in _metric_findings(missions or {}, "trade_flow"):
+        v = _fv(f)
+        if not isinstance(v, (int, float)) or isinstance(v, bool):
+            continue
+        if abs(float(v) - float(head["value"])) >= 1e-6:
+            continue
+        if _fact_year(f, allow_note_year=True) != head["year"]:
+            continue
+        if is_mirror_finding(f) == bool(head.get("mirrored")):
+            return f
+    return None
 
 
 def base_year(missions: dict) -> "int | None":
-    """سنةُ الأساس الواحدة (الدرس 290): أحدثُ سنةٍ غير جزئية في سلسلة الواردات — تقرؤها
-    الرسوم والنص والدفتر وملخّص المنافسين. None = لا سلسلة."""
-    full = [p for p in (import_series(missions or {}).get("series") or [])
-            if not p.get("partial")]
-    return int(full[-1]["year"]) if full else None
+    """سنةُ الأساس الواحدة (الدرس 290): رأسُ سلسلة الواردات — تقرؤها الرسوم والنص
+    والدفتر وملخّص المنافسين. الدرس ٣٠٠: الرأسُ آخرُ سنةٍ مصرَّحة مباشرةً، لا سنةُ
+    مرآةٍ أحدث منها. None = لا سلسلة."""
+    head = import_series(missions or {}).get("head")
+    return int(head["year"]) if head else None
 
 
 def top_supplier_shares(missions: dict) -> tuple:
