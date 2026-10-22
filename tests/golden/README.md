@@ -26,8 +26,8 @@ python3 tests/golden/run_checks.py --report-file study.md --evidence-file ev.txt
 ```
 
 `--expected-from KEY` يقيس دراسةً أُعيد توليدها بقيم مرجعيةٍ لدراسة مجمَّدة (البحرين
-الجديدة مقابل `study_001_bahrain_coffee`). `--fx` و`--vat` يتجاوزان البيانات الوصفية حتى
-تصل جداول الضريبة والصرف (PR-C). الخروج: 0 لا فشل، 1 فحص فشل، 2 خطأ مدخلات، 3 تراجع.
+الجديدة مقابل `study_001_bahrain_coffee`). الضريبة والصرف تُقرآن من `data/market_fiscal_l1.csv`
+(الدرس ٣٠٤) وقاعدة المنشأ من `data/origin_rules_l1.csv`؛ `--fx` و`--vat` يعلوانهما. الخروج: 0 لا فشل، 1 فحص فشل، 2 خطأ مدخلات، 3 تراجع.
 
 ## قياس الإنذارات الكاذبة
 

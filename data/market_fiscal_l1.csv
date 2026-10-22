@@ -1,0 +1,11 @@
+# ضريبة القيمة المضافة وسعر الصرف لكل سوق — PR-C، الدرس ٣٠٤. العملةُ من data/market_locale.csv (مصدرٌ واحد). مرجعٌ ثابت يُعامَل كالشيفرة: لكلّ صفٍّ جهةٌ رسمية ورابطها.
+# fx_local_per_usd يُملأ للعملات المربوطة بالدولار وحدها؛ العائمة وسلّة العملات = فارغ (فجوة معلنة، يُقرأ حياً لا يُخمَّن).
+# vat_pct = المعدّل القياسيّ؛ صفرٌ يعني ضريبةً غير مطبَّقة؛ السلعُ الغذائية المعفاة/الصفرية في بعض الأسواق تُذكر في vat_note ويُؤكَّد بندُها قبل الاعتماد.
+iso3,fx_regime,fx_local_per_usd,vat_pct,vat_note,source,source_url
+BHR,peg,0.376,10,المعدّل القياسيّ منذ 2022-01-01؛ سلعٌ غذائية أساسية مصفّرة بقائمة الجهاز,National Bureau for Revenue; Central Bank of Bahrain,https://www.nbr.gov.bh
+SAU,peg,3.75,15,المعدّل القياسيّ منذ 2020-07-01,ZATCA; Saudi Central Bank,https://zatca.gov.sa
+ARE,peg,3.6725,5,المعدّل القياسيّ منذ 2018-01-01,UAE Federal Tax Authority; Central Bank of the UAE,https://tax.gov.ae
+OMN,peg,0.3845,5,المعدّل القياسيّ منذ 2021-04-16؛ سلعٌ غذائية أساسية مصفّرة بقائمة الجهاز,Oman Tax Authority; Central Bank of Oman,https://taxoman.gov.om
+QAT,peg,3.64,0,ضريبة القيمة المضافة غير مطبَّقة,General Tax Authority; Qatar Central Bank,https://www.gta.gov.qa
+KWT,basket,,0,ضريبة القيمة المضافة غير مطبَّقة؛ الدينار مربوط بسلّة عملات غير معلنة (لا سعر ثابت),Ministry of Finance; Central Bank of Kuwait,https://www.cbk.gov.kw
+JOR,peg,0.709,16,ضريبة المبيعات العامة القياسية؛ معدّلات مخفّضة لبعض السلع الغذائية,Income and Sales Tax Department; Central Bank of Jordan,https://www.istd.gov.jo
