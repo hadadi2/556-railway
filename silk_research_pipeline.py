@@ -1073,6 +1073,14 @@ def build(*, view_fn, attach_quality_gate, attach_watchdog,
         except Exception as e:  # noqa: BLE001 — فحص إضافي لا شرط تشغيل
             log.warning("verdict consistency check failed: %s", e)
         result["view"] = _view(result)
+        # الدرس ٣٠٢ (PR-B البند ب): فحوصُ F1–F7 الحتمية في وضع الظلّ — تُسجَّل ولا تحجب ولا
+        # تمسّ النتيجة؛ `SILK_STUDY_CHECKS=off` يطفئها. قناةٌ جانبية لا تكسر التشغيلة.
+        try:
+            import silk_study_checks_shadow
+            silk_study_checks_shadow.run_async(result, analysis_id=analysis_id,
+                                               source="pipeline")
+        except Exception as e:  # noqa: BLE001
+            log.warning("study checks shadow failed: %s", e)
 
         # بوابة الجودة قبل التسليم (الموجة ١٠) — تعمل على القالب الموحّد
         # النهائي **قبل** أي عرض docx، فتلحَق نتيجتها بالتتبّع وبقسم

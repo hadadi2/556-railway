@@ -3601,6 +3601,19 @@ def create_app():
             out["next_after"] = rows[-1].get("study")
         return _json(out)
 
+    @app.get("/ops/study-checks")
+    def ops_study_checks(request: Request, n: int = 20, report: int = 0, days: int = 7):
+        """الدرس ٣٠٢ (PR-B البند ب): نتائجُ فحوص F1–F7 في وضع الظلّ — أحدثُ n تشغيلة،
+        و`report=1` تقريرُ الإنذارات لكلّ فحصٍ عن آخر `days` أيام. محروسة كبقية سطوح المشغّل؛
+        ملخّصاتُ فحصٍ حتمية لا نصّ دراسة."""
+        _require_key(request)
+        _rate_limit(request)
+        import silk_study_checks_shadow as S
+        out = {"mode": S.mode(), "rows": S.recent(max(1, min(int(n), 200)))}
+        if report:
+            out["report"] = S.report(days=max(1, min(int(days), 90)))
+        return _json(out)
+
     @app.get("/ops/backup")
     def ops_backup(request: Request):
         """شغّل نسخاً احتياطياً الآن وأعِد المانيفست — سطح مشغّل محروس.
@@ -4432,6 +4445,9 @@ def create_app():
                 log.warning("regen delivery guard skipped for %s: %s", analysis_id, _ge)
         _attach_quality_gate(found, trace_id)
         silk_storage.save_analysis(found, analysis_id=analysis_id)
+        # الدرس ٣٠٢: النصُّ المُعاد توليده يُقاس في الظلّ كأيّ دراسةٍ جديدة.
+        import silk_study_checks_shadow
+        silk_study_checks_shadow.run_async(found, analysis_id=analysis_id, source="regenerated")
         return _json(found)
 
     class RefinedReportRequest(BaseModel):
@@ -4582,6 +4598,9 @@ def create_app():
                 _dec.get("digest") or [], fail_drivers=_dec.get("fail_drivers")))
         _attach_quality_gate(found, dr.get("trace_id"))
         silk_storage.save_analysis(found, analysis_id=analysis_id)
+        # الدرس ٣٠٢: التنقيحُ (MCP) نصٌّ مسلَّمٌ جديد — يُقاس في الظلّ.
+        import silk_study_checks_shadow
+        silk_study_checks_shadow.run_async(found, analysis_id=analysis_id, source="refined")
         _n = found["deep_research"]["report"]
         return _json({"saved": True, "analysis_id": analysis_id,
                       "refined_at": _n.get("refined_at"),

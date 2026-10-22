@@ -4598,6 +4598,11 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    302: lambda: (
+        _needles("silk_study_checks_shadow.py", "def run_and_record", "def report")(),
+        _needles("tests/test_lesson302_checks_shadow.py",
+                 "def test_run_records_each_check_status_and_the_failing_reasons")(),
+        _needles("tests/test_lessons_enforcement.py", "(302, ")()),
     301: lambda: (
         _needles("silk_deep_pillars.py", "def head_finding")(),
         _needles("silk_llm_runtime.py", "def _label_mirror_growth")(),

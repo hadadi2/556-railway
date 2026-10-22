@@ -559,6 +559,14 @@ def start_post_deploy_audit():
                     "تجتاز فحصَ التسليم", context={"error": str(e)[:200]})
             except Exception:  # noqa: BLE001
                 pass
+        # الدرس ٣٠٢: فحوصُ F1–F7 في الظلّ على الدراسات المخزَّنة بالشيفرة الجديدة — خطوةٌ
+        # شقيقة لا داخل محاولة التدقيق (تعذُّرُه لا يُسقطها؛ رايتُها SILK_STUDY_CHECKS).
+        try:
+            import silk_study_checks_shadow
+            log.info("study checks shadow after deploy: %s studies",
+                     silk_study_checks_shadow.audit_stored())
+        except Exception as e:  # noqa: BLE001
+            log.warning("study checks shadow after deploy failed: %s", e)
 
     t = threading.Thread(target=_run, daemon=True, name="silk-post-deploy-audit")
     t.start()
