@@ -42,7 +42,8 @@ os.environ.setdefault("SILK_PREFLIGHT", "0")
 # الدرس 290 (مراجعة §58): إلحاق سلسلة الواردات (2019→الأحدث) يبلغ كومتريد الحي — هرمتياً مطفأ؛
 # `tests/test_proposal_phase1.py` يستدعي الدالة مباشرةً بأداةٍ محاكاة.
 os.environ.setdefault("SILK_SERIES_AUGMENT", "0")
-os.environ.setdefault("SILK_STUDY_SLOTS", "0")   # P2-3: نداءات الفراغات تُفعَّل صراحةً في اختباراتها
+os.environ.setdefault("SILK_STUDY_SLOTS", "0")
+os.environ.setdefault("SILK_STUDY_CHECKS", "off")  # الدرس ٣٠٢: الظلُّ يُفعَّل صراحةً في اختباراته   # P2-3: نداءات الفراغات تُفعَّل صراحةً في اختباراتها
 os.environ.setdefault("SILK_INDICATOR_RETRY_BACKOFF", "0")
 # سجل العمليات إلى ملف مؤقت لا إلى data/ops_errors.db في الريبو (مراجعة ذاتية، الدفعة ٦).
 import tempfile as _tmp_ops  # noqa: E402
