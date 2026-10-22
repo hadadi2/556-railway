@@ -4598,6 +4598,11 @@ _LESSONS = {
                  "def test_presence_conditional_checks_are_real_and_still_"
                  "fire")(),
         _needles("tests/test_lessons_enforcement.py", '(257, ')()),
+    304: lambda: (
+        _needles("silk_market_tables.py", "def fiscal", "def origin_rule")(),
+        _needles("tests/test_lesson304_market_tables.py",
+                 "def test_every_table_row_cites_a_source")(),
+        _needles("tests/test_lessons_enforcement.py", "(304, ")()),
     303: lambda: (
         _needles("silk_writer_claims.py", "def strip", "def check")(),
         _needles("tests/test_lesson303_writer_claims.py",

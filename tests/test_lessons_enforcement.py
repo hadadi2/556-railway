@@ -2749,6 +2749,13 @@ _SYMBOL_ANCHORS_EXTRA = [
                                             "def test_gate_blocks_a_route_that_starts_in_the_target_market"]),
     (292, "silk_data_layer.py", ["def comtrade_area_code", "str(comtrade_area_code(reporter_m49))",
                                  "str(comtrade_area_code(partner))"]),
+    (304, "silk_market_tables.py", ["def fiscal", "def origin_rule"]),
+    (304, "data/market_fiscal_l1.csv", ["BHR,peg,0.376,10", "KWT,basket,,0"]),
+    (304, "data/origin_rules_l1.csv", ["GCC,40", "GAFTA,40"]),
+    (304, "silk_study_checks.py", ["def _fill_fiscal", "def _origin_rule_for"]),
+    (304, "tests/test_lesson304_market_tables.py", [
+        "def test_f4_fails_a_wrong_value_added_threshold_and_names_the_rule",
+        "def test_study_meta_is_filled_from_the_tables_and_explicit_meta_wins"]),
     (303, "silk_writer_claims.py", ["def strip", "def take", "def check", '"C1"']),
     (303, "silk_ai_judge.py", ["_WC.take(out)", "@_attach_writer_claims", "```claims"]),
     (303, "silk_study_checks_shadow.py", ["findings.append(_WC.check(found))"]),

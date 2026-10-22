@@ -266,7 +266,10 @@ class StudyDoc:
              "lang": (found or {}).get("lang") or "ar",
              "production_cost_per_unit": ((found or {}).get("request") or {})
              .get("production_cost_per_unit")}
+        # الدرس ٣٠٤ (PR-C): الضريبة والصرف من الجدول الرسميّ بدل meta.json اليدويّ؛ ما يمرّره
+        # المستدعي صراحةً يعلوه، والسوقُ خارج الجدول تبقى فجوة.
         m.update(meta or {})
+        _fill_fiscal(m)
         return cls(report=report, evidence=evidence, meta=m, expected=expected or {},
                    view=view, findings=fnd)
 
@@ -458,8 +461,12 @@ _MONTH_RE = re.compile(r"(?:يناير|فبراير|مارس|أبريل|إبري
 _NA_RE = re.compile(r"غير\s+متاح|غير\s+محسوب|^\s*(?:—|-|n/?a)\s*$", re.I)
 _PACK_TO_KG = {"كيلوغرام": 1.0, "كيلوجرام": 1.0, "كجم": 1.0, "كغم": 1.0, "كغ": 1.0, "kg": 1.0,
                "غرام": .001, "جرام": .001, "غم": .001, "جم": .001, "غ": .001, "g": .001}
+# مراجعة §58 (الدرس ٣٠٤): العُماني والأردني بعد دخول جدول الضريبة والصرف؛ و«ريال» العاري للسعودي
+# وحده — ريالٌ قطريّ أو عُمانيّ يُسمّى (لا يُقرأ «12 ريال سعودي» في دراسة قطر عملةً محلية).
 _LOCAL_CUR = {"BHD": ("دينار", "د.ب", "bhd"), "SAR": ("ريال", "sar", "ر.س"),
-              "AED": ("درهم", "aed"), "KWD": ("دينار", "kwd"), "QAR": ("ريال", "qar")}
+              "AED": ("درهم", "aed"), "KWD": ("دينار", "kwd"),
+              "QAR": ("ريال قطري", "ر.ق", "qar"), "OMR": ("ريال عماني", "ر.ع", "omr"),
+              "JOD": ("دينار", "jod")}
 
 
 def _table_rows(text: str) -> list:
@@ -1099,20 +1106,78 @@ _ORIGIN_RULE_RE = re.compile(
     re.I)
 
 
+# مراجعة §58: «القيمة المضافة» معرَّفةً أيضاً، والفجوةُ لا تعبر نسبةً أخرى (رسوم 0%)، و«ضريبة القيمة
+# المضافة»/VAT ليست قيمةً مضافة محلية (تُستبعد في الشيفرة).
+_VALUE_ADDED_PCT_RE = re.compile(
+    r"(?:(?:ال)?قيمة\s+(?:ال)?مضافة|value[- ]added)([^.\n|%٪]{0,40}?)(\d+(?:\.\d+)?)\s*[%٪]"
+    r"|(\d+(?:\.\d+)?)\s*[%٪]\s*(?:من\s+)?(?:ال)?قيمة\s+(?:ال)?مضافة", re.I)
+_VAT_BEFORE_RE = re.compile(r"(?:ضريبة|vat)\s*(?:ال)?$", re.I)
+_TARIFF_WORD_RE = re.compile(r"رسوم|تعرفة|تعريفة|جمرك|tariff|dut", re.I)
+_OWNERSHIP_RE = re.compile(r"ملكية|ownership", re.I)
+
+
+def _value_added_pct(p: str) -> "tuple | None":
+    """(النسبة، النصّ) لأول «قيمة مضافة محلية N%» — لا ضريبة قيمة مضافة ولا رسوماً عبرت الفجوة."""
+    for m in _VALUE_ADDED_PCT_RE.finditer(p):
+        before = p[max(0, m.start() - 12):m.start()]
+        after = p[m.end():m.end() + 8]
+        if _VAT_BEFORE_RE.search(before) or re.match(r"\s*tax", after, re.I) \
+                or (m.group(1) and _TARIFF_WORD_RE.search(m.group(1))):
+            continue
+        return float(m.group(2) or m.group(3)), m.group(0)
+    return None
+
+
+def _origin_rule_for(doc: StudyDoc) -> "dict | None":
+    try:
+        import silk_market_tables as _MT
+        return _MT.origin_rule(doc.meta.get("market_iso3") or "")
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def check_tariff_claims(doc: StudyDoc) -> Finding:
     items: list = []
+    # الدرس ٣٠٤ (PR-C): قاعدةُ منشأ اتفاقية السوق من الجدول — السببُ يسمّيها، والنسبةُ المذكورة تُقارَن بها.
+    rule = _origin_rule_for(doc)
+    _min = (rule or {}).get("min_value_added_pct")
+    need = (f"قاعدة منشأ {rule['agreement']}"
+            + (f": قيمة مضافة لا تقل عن {_min:g}%" if _min is not None else "")
+            + (f"؛ {rule['other_conditions']}" if rule.get("other_conditions") else "")) if rule else ""
     for num, title, body in doc.sections or [(None, "", doc.report)]:
         for p in paragraphs(body):
             m = _EXEMPT_RE.search(p)
             if not m:
                 continue
+            where = f"القسم {num} ({title})" if num else "التقرير"
             if _ORIGIN_RULE_RE.search(p):
+                va = _value_added_pct(p)
+                if rule and va and _min is not None and abs(va[0] - _min) > 0.01:
+                    items.append({"status": FAIL, "kind": "threshold", "where": where,
+                                  "phrase": va[1], "text": _snip(p),
+                                  "why": f"نسبة القيمة المضافة المذكورة {va[0]:g}% وقاعدة "
+                                         f"{rule['agreement']} {_min:g}% ({rule['source']})"})
+                elif rule and _OWNERSHIP_RE.search(rule.get("other_conditions") or "") \
+                        and not _OWNERSHIP_RE.search(p):
+                    # مراجعة §58: شرطُ الملكية (GCC 51%) يُذكر مع الإعفاء — تحذيرٌ لا رفض.
+                    items.append({"status": WARN, "kind": "ownership", "where": where,
+                                  "text": _snip(p),
+                                  "why": f"شرط {rule['agreement']} غير مذكور: {rule['other_conditions']}"})
                 continue
-            items.append({"status": FAIL, "where": f"القسم {num} ({title})" if num else "التقرير",
+            items.append({"status": FAIL, "where": where,
                           "phrase": m.group(0), "text": _snip(p),
-                          "why": "إعفاء/رسوم 0% بلا شرط قاعدة المنشأ للاتفاقية في الفقرة نفسها"})
+                          "kind": "missing",
+                          "why": "إعفاء/رسوم 0% بلا شرط قاعدة المنشأ للاتفاقية في الفقرة نفسها"
+                                 + (f" — المطلوب: {need}" if need else "")})
+    fails = [i for i in items if i["status"] == FAIL]
+    if fails:
+        miss = sum(i["kind"] == "missing" for i in fails)
+        bad = len(fails) - miss
+        note = "؛ ".join(x for x in (f"{miss} فقرة إعفاء بلا شرط منشأ" if miss else "",
+                                     f"{bad} نسبة قيمة مضافة تخالف قاعدة الاتفاقية" if bad else "") if x)
+        return Finding("F4", "فحص الجمارك", FAIL, note, items)
     if items:
-        return Finding("F4", "فحص الجمارك", FAIL, f"{len(items)} فقرة إعفاء بلا شرط منشأ", items)
+        return Finding("F4", "فحص الجمارك", WARN, f"{len(items)} إعفاء بلا شرط الملكية", items)
     if _EXEMPT_RE.search(doc.report):
         return Finding("F4", "فحص الجمارك", PASS, "كل إعفاء مقرون بشرط المنشأ")
     return Finding("F4", "فحص الجمارك", PASS, "لا ادّعاء إعفاء في التقرير")
@@ -1547,7 +1612,18 @@ def _strip_pattern_tashkeel() -> None:
 _strip_pattern_tashkeel()
 
 
+def _fill_fiscal(meta: dict) -> None:
+    """الدرس ٣٠٤: الضريبة والصرف من الجدول حيثما عُرفت السوق (الصريحُ يعلو) — من النتيجة الكاملة
+    ومن مسار الملفّات (`run_checks --report-file`) معاً (مراجعة §58)."""
+    try:
+        import silk_market_tables as _MT
+        _MT.fill_meta(meta)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def run_all(doc: StudyDoc) -> list:
+    _fill_fiscal(doc.meta)
     out = []
     for key, fn in CHECKS:
         try:

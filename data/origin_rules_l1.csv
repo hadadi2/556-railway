@@ -1,0 +1,5 @@
+# قواعد المنشأ للاتفاقيات التي تُعفي المصدِّر السعودي — PR-C، الدرس ٣٠٤. لكلّ صفٍّ جهتُه الرسمية.
+# min_value_added_pct = أدنى قيمة مضافة محلية لاكتساب صفة المنشأ؛ other_conditions شروطٌ أخرى تُذكر مع الإعفاء.
+agreement,min_value_added_pct,other_conditions,source,source_url
+GCC,40,ملكية مواطني دول المجلس لا تقل عن 51% من رأس مال المنشأة المنتجة؛ شهادة منشأ خليجية,GCC Secretariat General — Unified Economic Agreement / GCC rules of origin,https://www.gcc-sg.org
+GAFTA,40,شهادة منشأ عربية مصدّقة,League of Arab States — GAFTA rules of origin,https://www.lasportal.org
