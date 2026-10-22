@@ -192,3 +192,25 @@ def test_review_async_runs_on_a_copy(tmp_path):
         b["deep_research"]["report"]["report"] = "تغيّر بعد الإطلاق"
         t.join(30)
         assert S.recent(1)[0]["statuses"]["F3"] == "FAIL"
+
+
+def test_async_writes_to_the_database_chosen_at_launch(tmp_path):
+    import threading
+    import silk_study_checks_shadow as S
+    gate = threading.Event()
+    real = S.run_and_record
+
+    def slow(*a, **k):
+        gate.wait(10)
+        return real(*a, **k)
+    first, second = tmp_path / "a", tmp_path / "b"
+    first.mkdir(), second.mkdir()
+    with mock.patch.object(S, "run_and_record", slow):
+        with _env(first):
+            t = S.run_async(_blob(), analysis_id=15)
+        with _env(second):
+            gate.set()
+            t.join(30)
+            assert S.recent(10) == []                 # لا شيءَ في قاعدة الاختبار التالي
+    with _env(first):
+        assert [r["analysis_id"] for r in S.recent(10)] == [15]

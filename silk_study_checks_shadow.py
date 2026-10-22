@@ -37,12 +37,16 @@ def _cap() -> int:
         return _DEFAULT_CAP
 
 
-@contextlib.contextmanager
-def _open():
-    """اتصالٌ يُغلَق دائماً بقاعدة سجلّ المشغّل (نمطُ `silk_ops_log._open`)."""
+def _db_path() -> str:
     import silk_ops_log
+    return silk_ops_log._db_path()
+
+
+@contextlib.contextmanager
+def _open(path: "str | None" = None):
+    """اتصالٌ يُغلَق دائماً بقاعدة سجلّ المشغّل (نمطُ `silk_ops_log._open`)."""
     import silk_sqlite
-    conn = silk_sqlite.connect(silk_ops_log._db_path())
+    conn = silk_sqlite.connect(path or _db_path())
     try:
         with conn:
             conn.execute(
@@ -71,9 +75,11 @@ def _summarize(findings: list) -> tuple:
 
 
 def run_and_record(found: dict, analysis_id: "int | None" = None,
-                   source: str = "pipeline") -> "dict | None":
-    """شغّل F1–F7 على نتيجةٍ كاملة وسجّلها — يعيد الملخّص، أو None (مطفأ/تعذّر)."""
-    if mode() == "off":
+                   source: str = "pipeline", db_path: "str | None" = None,
+                   _checked: bool = False) -> "dict | None":
+    """شغّل F1–F7 على نتيجةٍ كاملة وسجّلها — يعيد الملخّص، أو None (مطفأ/تعذّر).
+    `db_path` يثبّت القاعدةَ عند الإطلاق (خيطٌ جانبيّ لا يقرأ بيئةً تغيّرت بعده)."""
+    if not _checked and mode() == "off":
         return None
     dr = (found or {}).get("deep_research") if isinstance(found, dict) else None
     rep = (dr or {}).get("report") if isinstance(dr, dict) else None
@@ -90,7 +96,7 @@ def run_and_record(found: dict, analysis_id: "int | None" = None,
         return None
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
-        with _open() as conn:
+        with _open(db_path) as conn:
             if source == "post_deploy" and analysis_id is not None:
                 # كلُّ إقلاعٍ يعيد فحصَ الدراسات نفسها — صفٌّ واحدٌ لكلّ دراسة لا صفٌّ لكلّ
                 # إقلاع (لا يُغرِق الحلقةَ ولا يضاعف التقرير، مراجعة §58).
@@ -169,7 +175,9 @@ def run_async(found: dict, analysis_id: "int | None" = None, source: str = "pipe
     except Exception as e:  # noqa: BLE001
         log.warning("study checks shadow copy failed: %s", e)
         return None
-    t = threading.Thread(target=run_and_record, args=(snap, analysis_id, source),
+    # الرايةُ والقاعدةُ تُقرآن **عند الإطلاق** لا عند الكتابة — خيطٌ متأخّر لا يكتب في قاعدةٍ
+    # أو بيئةٍ تغيّرت بعده (التقطه سباقٌ بين اختبارين).
+    t = threading.Thread(target=run_and_record, args=(snap, analysis_id, source, _db_path(), True),
                          daemon=True, name="silk-study-checks-shadow")
     t.start()
     return t
