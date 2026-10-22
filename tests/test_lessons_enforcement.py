@@ -2749,6 +2749,12 @@ _SYMBOL_ANCHORS_EXTRA = [
                                             "def test_gate_blocks_a_route_that_starts_in_the_target_market"]),
     (292, "silk_data_layer.py", ["def comtrade_area_code", "str(comtrade_area_code(reporter_m49))",
                                  "str(comtrade_area_code(partner))"]),
+    (303, "silk_writer_claims.py", ["def strip", "def take", "def check", '"C1"']),
+    (303, "silk_ai_judge.py", ["_WC.take(out)", "@_attach_writer_claims", "```claims"]),
+    (303, "silk_study_checks_shadow.py", ["findings.append(_WC.check(found))"]),
+    (303, "tests/test_lesson303_writer_claims.py", [
+        "def test_c1_fails_mirror_presented_as_direct_and_mirror_growth",
+        "def test_writer_output_is_stripped_before_any_completeness_logic_and_kept_on_the_node"]),
     (302, "silk_study_checks_shadow.py", ["def run_and_record", "def report", "def audit_stored",
                                           "CREATE TABLE IF NOT EXISTS study_checks"]),
     (302, "silk_research_pipeline.py", ["silk_study_checks_shadow.run_async("]),

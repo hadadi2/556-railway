@@ -1844,6 +1844,19 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
     # بوابة الجودة قبل التسليم؛ المخالفة تعيد المسوّدة أو تحجبها.
     parts.append(
         "قواعد إخراج إلزامية (تُفحَص آلياً قبل التسليم):\n"
+        # الدرس ٣٠٣ (PR-B البند د): الادعاءاتُ الرقمية منظّمةً تُفحص حتمياً بدل
+        # تحليل النثر؛ السياجُ يُنزع آلياً فلا يصل العميل.
+        "- **الادعاءات المنظّمة (إلزامي، آخر شيءٍ في مخرَجك)**: بعد القسم الأخير "
+        "أضف سياجاً واحداً يبدأ بسطر ```claims وينتهي بسطر ``` يحوي كائن JSON "
+        "واحداً {\"claims\": [...]} — عنصرٌ لكلّ رقمٍ كتبتَه في المتن من المؤشرات "
+        "أدناه (عدا رموز {{…}}): {\"v\": القيمة، \"unit\": "
+        "الوحدة كما كتبتها (مثل «مليون دولار» أو «%»)، \"year\": سنتها، "
+        "\"indicator\": imports | imports_growth | imports_cagr | saudi_share | "
+        "price | tariff، \"basis\": direct (تصريح السوق نفسها) | mirror "
+        "(من بيانات الدول الشريكة) | estimate | other، \"source\": المصدر، "
+        "و\"from_year\" لسنة بداية النمو أو المركّب}. أدرج أرقامَ هذه المؤشرات "
+        "وحدها، والقيمةَ بأرقامٍ لاتينية بلا فواصل. لا تكتب داخل السياج غير هذا "
+        "الكائن؛ لا يُعرَض للقارئ.\n"
         "- **مفردات الغياب اثنتان فقط**: «غير متاح» (الرقم لا وجود له في "
         "المصادر) و«غير محسوب» (يوجد ولم يُنفَّذ حسابه) — ممنوع: «لم يُرصَد "
         "بعد»، «غير مرصود»، «فجوة معلنة»، «يتعذّر الحساب»، «غير محدد ضمن "
@@ -2509,6 +2522,10 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
         # الدرس ٢٦١: يُطبَّع مخرَجُ الكاتب فورَ وصوله — كلُّ قياسٍ بعده
         # (الاكتمال، التغطية، الترتيب) يقرأ الصيغةَ القانونية نفسَها.
         out = canonicalize_section_headings(out, lang)
+        # الدرس ٣٠٣: سياجُ الادعاءات المنظّمة يُنزع فورَ الوصول — قبل قياس الاكتمال
+        # والإكمال (يقرآن نهايةَ النصّ) وقبل أن يصل أيَّ سطح.
+        import silk_writer_claims as _WC
+        out = _WC.take(out)
         if out and len(out) > len(best):
             best = out
         if last_stop_reason() not in _TRUNCATED:
@@ -2559,6 +2576,10 @@ def deep_report(mission_reports: dict, analyst_summary: str, verdict: dict,
                     trace_id, user, best, lang,
                     stage_name=("draft_continue" if cont == 1
                                 else f"draft_continue{cont}")), lang)
+            # الدرس ٣٠٣: الإكمالُ قد يحمل سياجَ الادعاءات في ذيله.
+            import silk_writer_claims as _WC
+            if completed:
+                completed = _WC.take(completed)
             grew = bool(completed) and len(completed) > len(best)
             missing_after = _missing_sections(completed, lang) if completed \
                 else missing_before
@@ -3363,6 +3384,29 @@ def _record_ledger_reject(issues: list, trace_id: str | None) -> None:
         log.warning("ledger reject not recorded: %s", exc)
 
 
+def _attach_writer_claims(fn):
+    """الدرس ٣٠٣: ادعاءاتُ الكاتب المنظّمة تُلحق بالعقدة (`claims`, `claims_status`) — ادعاءاتُ
+    **المسوّدة المسلَّمة نفسِها** (`silk_writer_claims.for_text`) لا آخرِ نداءٍ قد يُرفض. `wraps`
+    يُبقي التوقيعَ والمصدرَ ظاهرين لمن يفحصهما."""
+    import functools
+
+    @functools.wraps(fn)
+    def _wrapped(*args, **kwargs):
+        import silk_writer_claims as _WC
+        _WC.reset()
+        node = fn(*args, **kwargs)
+        if isinstance(node, dict) and node.get("report"):
+            got = _WC.for_text(node["report"])
+            if got is not None:
+                node["claims"] = got.get("claims")
+                node["claims_status"] = got.get("status")
+                if got.get("dropped"):
+                    node["claims_dropped"] = got["dropped"]
+        return node
+    return _wrapped
+
+
+@_attach_writer_claims
 def write_reviewed_report(mission_reports: dict, analyst_summary: str,
                           verdict: dict, product: str, market_name: str,
                           max_cycles: "int | None" = None,

@@ -90,7 +90,14 @@ def run_and_record(found: dict, analysis_id: "int | None" = None,
     try:
         import silk_study_checks as C
         doc = C.StudyDoc.from_result(found)
-        statuses, fails = _summarize(C.run_all(doc))
+        findings = list(C.run_all(doc))
+        try:      # الدرس ٣٠٣: C1 — عطلُه لا يُسقط تسجيلَ F1–F7 (مراجعة §58)
+            import silk_writer_claims as _WC
+            findings.append(_WC.check(found))
+        except Exception as e:  # noqa: BLE001
+            log.warning("C1 skipped (analysis %s): %s", analysis_id, e)
+            findings.append(C.Finding("C1", "فحص الادعاءات المنظّمة", C.SKIP, f"تعذّر: {e}"[:200]))
+        statuses, fails = _summarize(findings)
     except Exception as e:  # noqa: BLE001 — ظلٌّ لا يكسر التشغيلة
         log.warning("study checks shadow skipped (analysis %s): %s", analysis_id, e)
         return None
